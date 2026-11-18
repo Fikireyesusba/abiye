@@ -5,6 +5,7 @@ import { toAppError, type AppErrorCode } from "@/lib/errors";
 import { clientIpKey, rateLimitAll } from "@/lib/security/rate-limit";
 import { generateAccessToken, sha256Hex } from "@/lib/security/tokens";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { dispatchSoon } from "@/lib/telegram/dispatch";
 import { ethiopianPhoneSchema } from "@/lib/validation/checkout";
 import { PRINT_TYPES, validateUpload, type DetectedType } from "@/lib/validation/upload";
 import { rememberJobAccess } from "./access";
@@ -132,5 +133,6 @@ export async function submitPrintJob(input: unknown): Promise<SubmitPrintResult>
     return { ok: false, error: appError.code };
   }
   await rememberJobAccess(v.jobId, token);
+  dispatchSoon();
   return { ok: true, jobId: v.jobId };
 }

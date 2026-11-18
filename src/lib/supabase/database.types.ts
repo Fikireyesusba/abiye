@@ -566,8 +566,19 @@ isOneToOne: false
 "admin_mark_printing_files_deleted":
 { Args: { "p_job_id": string }; Returns: number
                            },
+"admin_notifications":
+{ Args: { "p_limit"?: number }; Returns: {
+              "attempts": number,"created_at": string,"event_type": string,"id": number,"last_error": string,"max_attempts": number,"next_attempt_at": string,"reference": string,"sent_at": string,"status": Database["public"]['Enums']["notification_status"]
+            }[]
+                           },
+"admin_queue_test_notification":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
 "admin_quote_printing_job":
 { Args: { "p_job_id": string,"p_note"?: string,"p_page_count": number,"p_total_etb"?: number }; Returns: Json
+                           },
+"admin_retry_notification":
+{ Args: { "p_id": number }; Returns: undefined
                            },
 "admin_review_payment":
 { Args: { "p_decision": string,"p_note"?: string,"p_submission_id": string }; Returns: undefined

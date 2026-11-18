@@ -99,12 +99,20 @@ select public.bootstrap_super_admin(
 
 Both routes refuse to run once an active Super Admin exists.
 
-## 4. Telegram bot _(Phase 6)_
+## 4. Telegram bot
 
-1. In Telegram, open **@BotFather** → `/newbot` → save the token as `TELEGRAM_BOT_TOKEN`.
-2. Create a private group for order alerts, add the bot, send any message in the group.
-3. Open `https://api.telegram.org/bot<TOKEN>/getUpdates` and copy `chat.id` (negative number for groups) → `TELEGRAM_ADMIN_CHAT_ID`.
-4. In BotFather, `/setjoingroups` → Disable, so nobody can add the bot elsewhere.
+1. In Telegram, open **@BotFather** → `/newbot` → choose a name → copy the token (looks like `7000000000:AA…`).
+2. Create a **private group** for staff alerts (e.g. "Abiye Orders"), add the bot to it, and send any message in the group.
+3. Open `https://api.telegram.org/bot<TOKEN>/getUpdates` in a browser and copy `"chat":{"id": …}` — group ids are negative (e.g. `-1001234567890`).
+4. In BotFather: `/setjoingroups` → **Disable** (nobody can add your bot to other groups) and `/setprivacy` → **Enable**.
+5. In Vercel → Settings → Environment Variables (Production), add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_ADMIN_CHAT_ID` (mark the token **Sensitive**), then redeploy.
+6. Sign in to `/admin/notifications` and press **Send test message**. You should see “Telegram notifications are working” in the group.
+
+**How delivery works.** Every order event writes a row to `notifications_outbox` in the same database transaction, so an order can never be lost because Telegram is down. The message is sent immediately after the customer's request finishes (Next.js `after()`), with the payment receipt attached as a photo (or PDF). Failed sends retry with backoff (1, 2, 4 … minutes, 8 attempts) whenever the next event happens or the retry job runs; `/admin/notifications` shows failures and has a **Retry** button.
+
+**Retry job frequency.** `vercel.json` runs `/api/cron/notifications` once a day because the Vercel Hobby plan only allows daily cron jobs (a more frequent schedule makes the deployment fail). For faster retries during a Telegram outage either:
+- on Vercel **Pro**, change its schedule to `*/15 * * * *`; or
+- use a free external scheduler (e.g. cron-job.org) to call `GET https://yourshop.com/api/cron/notifications` every 10–15 minutes with the header `Authorization: Bearer <CRON_SECRET>`.
 
 ## 5. Vercel _(full checklist in Phase 7)_
 
@@ -113,4 +121,4 @@ Both routes refuse to run once an active Super Admin exists.
 3. Set `APP_URL=https://yourshop.com`.
 4. **Domains**: add `yourshop.com` and `www.yourshop.com`, follow the DNS instructions (A/CNAME at your registrar), redirect `www` → apex.
 5. In Supabase **Auth → URL Configuration**: Site URL `https://yourshop.com`, redirect URL `https://yourshop.com/admin/**`.
-6. Cron: `vercel.json` schedules `/api/cron/expire-orders` daily (Hobby plan limit). Vercel sends `Authorization: Bearer $CRON_SECRET` automatically once `CRON_SECRET` is set. On the Pro plan, change the schedule to hourly (e.g. `17 * * * *`).
+6. Cron: `vercel.json` schedules `/api/cron/expire-orders`, `/api/cron/printing-retention` and `/api/cron/notifications` daily (Hobby plan limit). Vercel sends `Authorization: Bearer $CRON_SECRET` automatically once `CRON_SECRET` is set. On the Pro plan, change the schedule to hourly (e.g. `17 * * * *`).

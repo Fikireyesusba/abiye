@@ -14,8 +14,8 @@ Living tracker so work can continue across sessions. **Update this file at the e
 | 3 — Checkout & bank transfer | ✅ Complete (2026-11-19) |
 | 4 — Admin dashboard | ✅ Complete (2026-11-19) |
 | 5 — Printing services | ✅ Complete (2026-11-19) |
-| 6 — Telegram integration | ⏭ Next (outbox done + tested) |
-| 7 — Finalization & deployment | ⬜ Not started |
+| 6 — Telegram integration | ✅ Complete (2026-11-19) |
+| 7 — Finalization & deployment | ⏭ Next |
 
 ## Phase 1 — what exists and is verified
 
@@ -90,6 +90,18 @@ Verified with `npm run test:smoke:printing` (37 browser checks) plus all other s
 - Retention: migration 0014 (`printing_files_due_for_deletion`, `mark_printing_files_deleted`, `admin_mark_printing_files_deleted`, paper-size check) + `/api/cron/printing-retention` (daily in `vercel.json`). Files are never deleted while a job is being paid for or produced.
 - Secret-key Supabase client is now typed with the database schema.
 
+## Phase 6 — Telegram (verified)
+
+Verified with `npm run test:smoke:telegram` (31 checks against a mock Telegram Bot API; the test starts its own app on :3101) plus all other suites.
+
+- `src/lib/telegram/format.ts`: HTML-escaped message builders for new order (the required layout), payment resubmitted (+ reused-reference warning), printing request (priced / needs quote), payment verified / rejected, order cancelled (+ refund warning), test message; admin deep links.
+- `client.ts`: sendMessage / sendPhoto / sendDocument, 20 s timeout, error classes (retry, rate-limited, permanent); token never logged.
+- `dispatch.ts`: claim (SKIP LOCKED) → send → complete; receipt sent as photo (PDF/large → document) in ONE call with the text as caption so retries cannot duplicate text; stops a batch on 429; `dispatchSoon()` uses `after()` so alerts go out right after the customer/admin request.
+- Wired into: payment proof submitted, printing request, payment verified/rejected, order cancelled.
+- `/api/cron/notifications` safety net (daily on Hobby — see DEPLOYMENT §4 for faster options).
+- `/admin/notifications` (settings.manage): configured status, send test message, recent queue with errors, Retry for failed/dead (migration 0015: `admin_notifications`, `admin_retry_notification`, `admin_queue_test_notification`).
+- Verified: alert arrives without cron; photo + caption content; HTML injection escaped; outage → retry with backoff → delivered once; 429 handling; 3 parallel workers send 6 messages exactly once; admin test/retry; rejection & cancellation alerts; token never in DB or logs.
+
 ## Decisions made (change if you disagree)
 
 1. Customers are guests (no accounts). Staff are the only Supabase Auth users; public sign-ups disabled.
@@ -124,9 +136,9 @@ Verified with `npm run test:smoke:printing` (37 browser checks) plus all other s
 - Word (.docx) page counts are not automatic (layout-dependent); staff quote them. Customers are not messaged when a quote is ready — they revisit the job link (saved on the job page), or staff call them.
 - No customer notification channel yet (SMS/Telegram to customers) — customers check the order page or /track-order.
 
-## Next session: start Phase 6 (Telegram)
+## Next session: start Phase 7 (finalization)
 
 1. Read `AGENTS.md` (Next.js 16 rules), this file, and `docs/ARCHITECTURE.md`.
 2. Run `npm run dev:up` — starts Docker if the sandbox restarted, then local Supabase, then checks the API (data persists in Docker volumes). A "cannot connect to Docker" / curl exit 7 at session start just means this hasn't run yet. If the DB was reset: `npm run dev:sample-images` and `ADMIN_PASSWORD=LocalDevOwner2026 npm run admin:create -- --email owner@abiye.local --name "Abiye Owner"`.
-3. Build the Telegram sender (`src/lib/telegram/*`: escaped HTML message builders per event type in the outbox, sendMessage + sendDocument/sendPhoto for receipts from the private bucket, error classification incl. 429 retry_after), `/api/cron/notifications` (claim → send → complete), schedule it, admin "notifications" health view (failed/dead) + retry, and tests with a mocked Telegram API (no real token in the sandbox).
-4. Tests: `npm run check`, `npm run test:db`, then with the app on :3100 (`npx next start -p 3100`) and `NODE_PATH=$(npm root -g)`: `npm run test:smoke`, `npm run test:smoke:checkout`, `npm run test:smoke:admin`, `npm run test:smoke:printing`. Update this file.
+3. Phase 7 scope: promotions + homepage banners admin (`/admin/promotions`), analytics page (`/admin/analytics`: daily/weekly/monthly sales, by category, best sellers, status distribution, inventory status — real queries), Content-Security-Policy (nonce), orphaned-upload sweep in a cron, security review (`/security-review`), accessibility + mobile pass, convert smoke scripts to a Playwright test project if desired, production deployment checklist, and owner hand-off notes.
+4. Tests: `npm run check`, `npm run test:db`, then with the app on :3100 (`npx next start -p 3100`) and `NODE_PATH=$(npm root -g)`: `npm run test:smoke`, `test:smoke:checkout`, `test:smoke:admin`, `test:smoke:printing`; and `npm run test:smoke:telegram` (starts its own app on :3101). Update this file.

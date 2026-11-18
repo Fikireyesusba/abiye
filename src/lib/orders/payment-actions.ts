@@ -3,6 +3,7 @@ import { toAppError, type AppErrorCode } from "@/lib/errors";
 import { clientIpKey, rateLimitAll } from "@/lib/security/rate-limit";
 import { sha256Hex } from "@/lib/security/tokens";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { dispatchSoon } from "@/lib/telegram/dispatch";
 import { paymentSubmissionSchema } from "@/lib/validation/checkout";
 import { RECEIPT_MAX_BYTES, RECEIPT_TYPES, validateUpload } from "@/lib/validation/upload";
 import { getOrderForCustomer, isAccessToken, isGuid } from "./access";
@@ -110,5 +111,6 @@ export async function submitPaymentProof(input: {
     if (appError.code === "unexpected") console.error("[receipt] submit_payment failed:", error.code, error.message);
     return { ok: false, error: appError.code };
   }
+  dispatchSoon(); // staff Telegram alert with the receipt, sent after this response
   return { ok: true };
 }

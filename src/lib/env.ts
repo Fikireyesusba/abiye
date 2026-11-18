@@ -19,6 +19,11 @@ const serverEnvSchema = z.object({
     .regex(/^\d+:[A-Za-z0-9_-]{30,}$/, "Invalid Telegram bot token format")
     .optional(),
   TELEGRAM_ADMIN_CHAT_ID: z.string().regex(/^-?\d+$/, "Chat id must be numeric").optional(),
+  // Only for tests (a local mock of the Bot API). https anywhere, http only on localhost.
+  TELEGRAM_API_BASE: z
+    .url()
+    .refine((u) => u.startsWith("https://") || /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(u), "Must be https (or http on localhost)")
+    .optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
@@ -37,6 +42,7 @@ export function getServerEnv(): ServerEnv {
     CRON_SECRET: process.env.CRON_SECRET,
     TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || undefined,
     TELEGRAM_ADMIN_CHAT_ID: process.env.TELEGRAM_ADMIN_CHAT_ID || undefined,
+    TELEGRAM_API_BASE: process.env.TELEGRAM_API_BASE || undefined,
   });
   if (!parsed.success) {
     // Report variable NAMES only — never values.

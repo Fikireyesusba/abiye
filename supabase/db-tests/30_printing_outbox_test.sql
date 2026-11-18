@@ -113,6 +113,7 @@ select pg_temp.ok((select array_agg(job_id::text) from public.printing_files_due
 
 set role service_role;
 create temp table t_claim as select * from public.claim_notifications(50);
+grant select on t_claim to authenticated;
 select pg_temp.ok((select count(*) from t_claim) = (select count(*) from public.notifications_outbox),
   'worker claims all due notifications');
 select pg_temp.ok((select count(*) from public.claim_notifications(50)) = 0, 'claimed rows are locked from other workers');
@@ -130,6 +131,24 @@ select pg_temp.ok((select status from public.notifications_outbox where id = (se
 select public.complete_notification((select min(id) from t_claim), false, 'late duplicate callback');
 select pg_temp.ok((select status from public.notifications_outbox where id = (select min(id) from t_claim)) = 'sent',
   'sent notification cannot be re-opened by a stale worker');
+
+-- ----------------------------------------------------------- admin notification view
+reset role;
+select pg_temp.login(:super);
+select pg_temp.ok((select count(*) from public.admin_notifications(100)) > 0, 'super admin can view the notification queue');
+select public.admin_retry_notification((select max(id) from t_claim));
+select pg_temp.throws(format($$select public.admin_retry_notification(%s)$$, (select min(id) from t_claim)), 'invalid_transition',
+  'sent messages cannot be re-queued (no duplicate sends)');
+select public.admin_queue_test_notification();
+reset role;
+select pg_temp.ok((select status = 'pending' and attempts = 0 from public.notifications_outbox where id = (select max(id) from t_claim)),
+  'retry re-queues a dead message with fresh attempts');
+select pg_temp.ok(exists (select 1 from public.notifications_outbox where event_type = 'test_message'), 'test message queued');
+select pg_temp.login(:manager);
+select pg_temp.throws($$select * from public.admin_notifications()$$, 'forbidden', 'manager cannot view notification queue');
+select pg_temp.throws($$select public.admin_queue_test_notification()$$, 'forbidden', 'manager cannot send test messages');
+reset role;
+set role service_role;
 
 -- ----------------------------------------------------------- rate limiting
 select pg_temp.ok(public.check_rate_limit('checkout:ip:1.2.3.4', 3, 60), 'rate limit hit 1 allowed');
