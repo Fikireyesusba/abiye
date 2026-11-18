@@ -18,7 +18,8 @@
     "test:smoke:checkout": "node --env-file=.env.local tests/e2e/checkout.smoke.cjs",
     "dev:up": "bash scripts/dev-up.sh",
     "admin:create": "node --env-file=.env.local scripts/create-super-admin.mjs",
-    "test:smoke:admin": "node --env-file=.env.local tests/e2e/admin.smoke.cjs"
+    "test:smoke:admin": "node --env-file=.env.local tests/e2e/admin.smoke.cjs",
+    "test:smoke:printing": "node --env-file=.env.local tests/e2e/printing.smoke.cjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

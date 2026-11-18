@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Boxes, CreditCard, FolderTree, LayoutDashboard, Menu, Package, Settings, ShoppingCart, UserCog, Users,
+  Boxes, CreditCard, FolderTree, LayoutDashboard, Menu, Package, Printer, Settings, ShoppingCart, UserCog, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
@@ -12,6 +12,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/admin": LayoutDashboard,
   "/admin/orders": ShoppingCart,
   "/admin/payments": CreditCard,
+  "/admin/printing": Printer,
   "/admin/products": Package,
   "/admin/categories": FolderTree,
   "/admin/inventory": Boxes,

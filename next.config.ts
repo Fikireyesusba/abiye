@@ -54,6 +54,13 @@ const nextConfig: NextConfig = {
       { source: "/:path*", headers: securityHeaders },
       // Private order links carry an access token: never leak it via Referer, never cache.
       {
+        source: "/printing/jobs/:path*",
+        headers: [
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "Cache-Control", value: "private, no-store" },
+        ],
+      },
+      {
         source: "/order-success/:path*",
         headers: [
           { key: "Referrer-Policy", value: "no-referrer" },

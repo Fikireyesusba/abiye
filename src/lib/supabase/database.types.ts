@@ -563,6 +563,9 @@ isOneToOne: false
 "admin_dashboard_stats":
 { Args: { "p_days"?: number }; Returns: Json
                            },
+"admin_mark_printing_files_deleted":
+{ Args: { "p_job_id": string }; Returns: number
+                           },
 "admin_quote_printing_job":
 { Args: { "p_job_id": string,"p_note"?: string,"p_page_count": number,"p_total_etb"?: number }; Returns: Json
                            },
@@ -620,8 +623,16 @@ isOneToOne: false
 "expire_unpaid_orders":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"mark_printing_files_deleted":
+{ Args: { "p_file_ids": (string)[] }; Returns: number
+                           },
 "my_admin_context":
 { Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"printing_files_due_for_deletion":
+{ Args: { "p_limit"?: number }; Returns: {
+              "file_id": string,"job_id": string,"storage_path": string
+            }[]
                            },
 "quote_printing":
 { Args: { "p_color": Database["public"]['Enums']["print_color_mode"],"p_copies": number,"p_page_count": number,"p_paper_size": string,"p_sides": Database["public"]['Enums']["print_sides"] }; Returns: Json

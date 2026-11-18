@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { FileText, Printer } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Printer } from "lucide-react";
+import { PrintForm } from "@/components/shop/print-form";
 import { getPrintingPrices } from "@/lib/catalog/queries";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import { formatETB, toSantim } from "@/lib/money";
@@ -13,16 +12,13 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("printingTitle") };
 }
 
-/**
- * Phase 2: live price list from the database. Online upload, page counting
- * and ordering are added in Phase 5.
- */
+/** Online printing: upload → server page count → priced job (or staff quote) → basket → bank transfer. */
 export default async function PrintingPage() {
   const [t, locale, prices, s] = await Promise.all([getTranslations(), getLocale() as Promise<Locale>, getPrintingPrices(), getSiteSettings()]);
   const charge = s.printing.service_charge_etb;
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:py-12">
+    <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:py-12">
       <header className="mb-8 space-y-3">
         <span className="inline-flex size-12 items-center justify-center rounded-xl bg-printing/12 text-printing">
           <Printer className="size-6" aria-hidden />
@@ -62,13 +58,25 @@ export default async function PrintingPage() {
         )}
       </section>
 
-      <div className="mt-8 flex flex-col items-start gap-4 rounded-xl border border-dashed p-6 sm:flex-row sm:items-center">
-        <FileText className="size-8 shrink-0 text-muted-foreground" aria-hidden />
-        <p className="flex-1 text-sm text-muted-foreground">{t("pages.onlineSoon")}</p>
-        <Button variant="outline" asChild>
-          <Link href="/contact">{t("nav.contact")}</Link>
-        </Button>
-      </div>
+      <section className="mt-10 space-y-4" aria-labelledby="order-online">
+        <h2 id="order-online" className="text-xl font-semibold">{t("printing.formTitle")}</h2>
+        <ol className="grid gap-3 text-sm sm:grid-cols-4">
+          {(["step1", "step2", "step3", "step4"] as const).map((k, i) => (
+            <li key={k} className="flex gap-3 rounded-lg bg-printing/8 p-3">
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-printing text-xs font-semibold text-white">{i + 1}</span>
+              <span>{t(`printing.${k}`)}</span>
+            </li>
+          ))}
+        </ol>
+        <PrintForm
+          rules={prices}
+          serviceCharge={charge}
+          maxMb={Math.min(25, s.printing.max_file_mb)}
+          maxCopies={s.printing.max_copies}
+          pickupEnabled={s.delivery.pickup_enabled}
+          deliveryEnabled={s.delivery.delivery_enabled}
+        />
+      </section>
     </div>
   );
 }

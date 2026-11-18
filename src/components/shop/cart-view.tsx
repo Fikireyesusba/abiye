@@ -1,14 +1,14 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { AlertTriangle, ShoppingBag, Trash2 } from "lucide-react";
+import { AlertTriangle, Printer, ShoppingBag, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getCartDetails, type CartDetails } from "@/lib/cart/actions";
-import { cart, readFulfillmentPrefs, saveFulfillmentPrefs, useCart, type FulfillmentPrefs } from "@/lib/cart/store";
+import { cart, itemKey, readFulfillmentPrefs, saveFulfillmentPrefs, type FulfillmentPrefs } from "@/lib/cart/store";
+import { useCartDetails } from "@/lib/cart/use-cart-details";
 import { formatETB, toSantim } from "@/lib/money";
 import { computeCartTotals } from "@/lib/pricing/cart";
 import { localized, type Locale } from "@/i18n/config";
@@ -17,29 +17,11 @@ import { Price } from "./price";
 import { ProductImage } from "./product-image";
 
 export function CartView() {
-  const items = useCart();
+  const { items, productItems, details, error } = useCartDetails();
   const locale = useLocale() as Locale;
   const t = useTranslations();
   // Prefs are only rendered after details load (client-only), so lazy init cannot cause a hydration mismatch.
   const [prefs, setPrefs] = useState<FulfillmentPrefs>(() => readFulfillmentPrefs());
-  const [result, setResult] = useState<{ key: string; details?: CartDetails; error?: boolean } | null>(null);
-  const idsKey = items.map((i) => i.productId).sort().join(",");
-
-  useEffect(() => {
-    if (!idsKey) return; // empty basket (also the pre-hydration snapshot): nothing to fetch
-    let cancelled = false;
-    const ids = idsKey.split(",");
-    getCartDetails(ids)
-      .then((d) => !cancelled && setResult({ key: idsKey, details: d }))
-      .catch(() => !cancelled && setResult({ key: idsKey, error: true }));
-    return () => {
-      cancelled = true;
-    };
-  }, [idsKey]);
-
-  // Keep showing the previous details while a refresh for a changed basket is in flight.
-  const details = result?.details ?? null;
-  const error = result?.key === idsKey && !!result.error;
 
   const updatePrefs = (p: FulfillmentPrefs) => {
     setPrefs(p);
@@ -49,12 +31,18 @@ export function CartView() {
   const lines = useMemo(() => {
     if (!details) return [];
     const byId = new Map(details.products.map((p) => [p.id, p]));
-    return items.map((item) => {
+    return productItems.map((item) => {
       const product = byId.get(item.productId) ?? null;
       const unavailable = !product || (product.available !== null && product.available <= 0);
       const short = !!product && product.available !== null && product.available > 0 && product.available < item.quantity;
       return { item, product, unavailable, short };
     });
+  }, [productItems, details]);
+
+  const printLines = useMemo(() => {
+    if (!details) return [];
+    const byId = new Map(details.printing.map((j) => [j.id, j]));
+    return items.filter((i) => i.type === "printing").map((i) => ({ id: i.printingJobId, job: byId.get(i.printingJobId) ?? null }));
   }, [items, details]);
 
   if (items.length === 0) {
@@ -78,7 +66,7 @@ export function CartView() {
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="space-y-3">
           {items.map((i) => (
-            <Skeleton key={i.productId} className="h-28 w-full" />
+            <Skeleton key={itemKey(i)} className="h-28 w-full" />
           ))}
         </div>
         <Skeleton className="h-72 w-full" />
@@ -89,18 +77,20 @@ export function CartView() {
   const zone = details.zones.find((z) => z.id === prefs.deliveryZoneId) ?? null;
   const method = prefs.method === "pickup" && details.pickupEnabled ? "pickup" : details.deliveryEnabled ? "delivery" : "pickup";
   const valid = lines.filter((l) => !l.unavailable && l.product);
+  const payablePrint = printLines.filter((l) => l.job?.payable);
   const totals = computeCartTotals(
-    valid.map((l) => ({
-      unitPrice: toSantim(l.product!.unit_price_etb),
-      quantity: l.item.quantity,
-    })),
+    [
+      ...valid.map((l) => ({ unitPrice: toSantim(l.product!.unit_price_etb), quantity: l.item.quantity })),
+      ...payablePrint.map((l) => ({ unitPrice: toSantim(l.job!.total_etb!), quantity: 1 })),
+    ],
     {
       fulfillment: method,
       zoneFee: zone ? toSantim(zone.fee_etb) : null,
       freeDeliveryThreshold: details.freeDeliveryThresholdEtb !== null ? toSantim(details.freeDeliveryThresholdEtb) : null,
     },
   );
-  const hasIssues = lines.some((l) => l.unavailable || l.short);
+  const anythingToPay = valid.length > 0 || payablePrint.length > 0;
+  const hasIssues = lines.some((l) => l.unavailable || l.short) || printLines.some((l) => !l.job?.payable);
   const needsZone = method === "delivery" && !zone;
 
   return (
@@ -153,6 +143,36 @@ export function CartView() {
             </li>
           );
         })}
+        {printLines.map(({ id, job }) => (
+          <li key={id} className="flex gap-3 p-3 sm:gap-4 sm:p-4">
+            <div className="flex w-20 shrink-0 items-center justify-center self-start rounded-lg border bg-printing/10 text-printing sm:w-24 aspect-square">
+              <Printer className="size-7" aria-hidden />
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <div className="flex items-start justify-between gap-2">
+                {job ? (
+                  <Link href={`/printing/jobs/${id}`} className="font-medium hover:text-primary">{t("printJob.title", { number: job.job_number })}</Link>
+                ) : (
+                  <span className="text-muted-foreground">{t("cartPage.unavailable")}</span>
+                )}
+                <Button variant="ghost" size="icon" className="-mt-1 -mr-1 size-8 shrink-0" onClick={() => cart.remove(id)} aria-label={t("cart.remove")}>
+                  <Trash2 className="size-4" />
+                </Button>
+              </div>
+              {job && (
+                <p className="text-sm text-muted-foreground">
+                  {t(`printing.${job.summary.color_mode}`)} · {job.summary.paper_size} · {t(`printing.${job.summary.sides}`)} · {t("printJob.copiesN", { count: job.summary.copies })}
+                  {job.summary.page_count ? ` · ${t("printJob.pagesN", { count: job.summary.page_count })}` : ""}
+                </p>
+              )}
+              {job?.payable ? (
+                <span className="text-sm font-semibold tabular-nums">{formatETB(toSantim(job.total_etb!), locale)}</span>
+              ) : (
+                <p className="flex items-center gap-1.5 text-sm text-destructive"><AlertTriangle className="size-4" aria-hidden /> {t("printJob.notPayable")}</p>
+              )}
+            </div>
+          </li>
+        ))}
       </ul>
 
       <Card className="lg:sticky lg:top-24">
@@ -220,7 +240,7 @@ export function CartView() {
           </dl>
           <p className="text-xs text-muted-foreground">{t("cartPage.calculatedAtCheckout")}</p>
           {hasIssues && <p className="text-sm text-destructive">{t("cartPage.fixIssues")}</p>}
-          {hasIssues || needsZone || valid.length === 0 ? (
+          {hasIssues || needsZone || !anythingToPay ? (
             <Button size="lg" className="w-full" disabled>
               {t("cart.checkout")}
             </Button>

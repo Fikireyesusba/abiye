@@ -68,7 +68,8 @@ export function AddToCart({
   const t = useTranslations();
   const router = useRouter();
   const items = useCart();
-  const inCart = items.find((i) => i.productId === productId)?.quantity ?? 0;
+  const line = items.find((i) => i.type === "product" && i.productId === productId);
+  const inCart = line?.type === "product" ? line.quantity : 0;
   const max = Math.max(0, Math.min(MAX_LINE_QUANTITY, (available ?? MAX_LINE_QUANTITY) - inCart));
   const [qty, setQty] = useState(1);
   const soldOut = available !== null && available <= 0;

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -11,8 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { getCartDetails, type CartDetails } from "@/lib/cart/actions";
-import { cart, readFulfillmentPrefs, saveFulfillmentPrefs, useCart, type FulfillmentPrefs } from "@/lib/cart/store";
+import { cart, readFulfillmentPrefs, saveFulfillmentPrefs, type FulfillmentPrefs } from "@/lib/cart/store";
+import { useCartDetails } from "@/lib/cart/use-cart-details";
 import type { AppErrorCode } from "@/lib/errors";
 import { formatETB, toSantim } from "@/lib/money";
 import { placeOrder } from "@/lib/orders/checkout-action";
@@ -40,46 +40,38 @@ export function CheckoutForm({ shopAddress }: { shopAddress: string }) {
   const t = useTranslations();
   const locale = useLocale() as Locale;
   const router = useRouter();
-  const items = useCart();
-  const [details, setDetails] = useState<CartDetails | null>(null);
+  const { items, productItems, details, error: loadError, refresh } = useCartDetails();
   const [prefs, setPrefs] = useState<FulfillmentPrefs>(() => readFulfillmentPrefs());
   const [form, setForm] = useState({ fullName: "", phone: "", addressLine: "", instructions: "" });
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<AppErrorCode | null>(null);
   const [pending, startTransition] = useTransition();
-  const idsKey = items.map((i) => i.productId).sort().join(",");
-
-  useEffect(() => {
-    if (!idsKey) return;
-    let cancelled = false;
-    getCartDetails(idsKey.split(","))
-      .then((d) => !cancelled && setDetails(d))
-      .catch(() => !cancelled && setError("unexpected"));
-    return () => {
-      cancelled = true;
-    };
-  }, [idsKey]);
 
   const view = useMemo(() => {
     if (!details) return null;
     const byId = new Map(details.products.map((p) => [p.id, p]));
-    const lines = items.map((item) => ({ item, product: byId.get(item.productId) ?? null }));
-    const problem = lines.some(
-      ({ item, product }) => !product || (product.available !== null && product.available < item.quantity),
-    );
+    const lines = productItems.map((item) => ({ item, product: byId.get(item.productId) ?? null }));
+    const jobs = new Map(details.printing.map((j) => [j.id, j]));
+    const printLines = items.filter((i) => i.type === "printing").map((i) => jobs.get(i.printingJobId) ?? null);
+    const problem =
+      lines.some(({ item, product }) => !product || (product.available !== null && product.available < item.quantity)) ||
+      printLines.some((j) => !j?.payable);
     const method: "delivery" | "pickup" =
       prefs.method === "pickup" && details.pickupEnabled ? "pickup" : details.deliveryEnabled ? "delivery" : "pickup";
     const zone = details.zones.find((z) => z.id === prefs.deliveryZoneId) ?? null;
     const totals = computeCartTotals(
-      lines.filter((l) => l.product).map((l) => ({ unitPrice: toSantim(l.product!.unit_price_etb), quantity: l.item.quantity })),
+      [
+        ...lines.filter((l) => l.product).map((l) => ({ unitPrice: toSantim(l.product!.unit_price_etb), quantity: l.item.quantity })),
+        ...printLines.filter((j) => j?.payable).map((j) => ({ unitPrice: toSantim(j!.total_etb!), quantity: 1 })),
+      ],
       {
         fulfillment: method,
         zoneFee: zone ? toSantim(zone.fee_etb) : null,
         freeDeliveryThreshold: details.freeDeliveryThresholdEtb !== null ? toSantim(details.freeDeliveryThresholdEtb) : null,
       },
     );
-    return { lines, problem, method, zone, totals };
-  }, [details, items, prefs]);
+    return { lines, printLines, problem, method, zone, totals };
+  }, [details, items, productItems, prefs]);
 
   const updatePrefs = (p: FulfillmentPrefs) => {
     setPrefs(p);
@@ -105,8 +97,8 @@ export function CheckoutForm({ shopAddress }: { shopAddress: string }) {
     );
   }
   if (!view || !details) {
-    return error ? (
-      <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-destructive">{t(`errors.${error}`)}</p>
+    return loadError ? (
+      <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-destructive">{t("errors.unexpected")}</p>
     ) : (
       <div className="grid gap-6 lg:grid-cols-[1fr_24rem]">
         <Skeleton className="h-96" />
@@ -129,7 +121,11 @@ export function CheckoutForm({ shopAddress }: { shopAddress: string }) {
         deliveryZoneId: view.method === "delivery" ? (view.zone?.id ?? undefined) : undefined,
         addressLine: view.method === "delivery" ? form.addressLine || undefined : undefined,
         instructions: form.instructions || undefined,
-        items: items.map((i) => ({ type: "product", productId: i.productId, quantity: i.quantity })),
+        items: items.map((i) =>
+          i.type === "product"
+            ? { type: "product" as const, productId: i.productId, quantity: i.quantity }
+            : { type: "printing" as const, printingJobId: i.printingJobId, accessToken: i.accessToken },
+        ),
       }).catch(() => ({ ok: false as const, error: "unexpected" as AppErrorCode }));
 
       if (result.ok) {
@@ -149,13 +145,12 @@ export function CheckoutForm({ shopAddress }: { shopAddress: string }) {
         setFieldErrors(result.fieldErrors);
       }
       setError(result.error);
-      if (["out_of_stock", "product_unavailable"].includes(result.error)) {
-        getCartDetails(items.map((i) => i.productId)).then(setDetails).catch(() => {});
-      }
+      if (["out_of_stock", "product_unavailable", "printing_job_not_payable", "printing_job_not_found"].includes(result.error)) refresh();
     });
   };
 
-  const stockError = error === "out_of_stock" || error === "product_unavailable" || view.problem;
+  const stockError =
+    error === "out_of_stock" || error === "product_unavailable" || error === "printing_job_not_payable" || error === "printing_job_not_found" || view.problem;
 
   return (
     <form onSubmit={submit} noValidate className="grid items-start gap-6 lg:grid-cols-[1fr_24rem]">
@@ -252,6 +247,12 @@ export function CheckoutForm({ shopAddress }: { shopAddress: string }) {
                   {product ? localized(product, "name", locale) : t("cartPage.unavailable")} <span className="text-muted-foreground">× {item.quantity}</span>
                 </span>
                 {product && <span className="shrink-0 tabular-nums">{formatETB(toSantim(product.unit_price_etb * item.quantity), locale)}</span>}
+              </li>
+            ))}
+            {view.printLines.map((j, i) => (
+              <li key={j?.id ?? i} className="flex justify-between gap-3">
+                <span className="min-w-0">{j ? t("printJob.title", { number: j.job_number }) : t("cartPage.unavailable")}</span>
+                {j?.payable && <span className="shrink-0 tabular-nums">{formatETB(toSantim(j.total_etb!), locale)}</span>}
               </li>
             ))}
           </ul>

@@ -12,7 +12,14 @@ export interface CartProductItem {
   productId: string;
   quantity: number;
 }
-export type CartItem = CartProductItem;
+/** A priced printing job. The token proves ownership; the price is re-read on the server. */
+export interface CartPrintingItem {
+  type: "printing";
+  printingJobId: string;
+  accessToken: string;
+}
+export type CartItem = CartProductItem | CartPrintingItem;
+export const itemKey = (i: CartItem) => (i.type === "product" ? i.productId : i.printingJobId);
 
 export interface FulfillmentPrefs {
   method: "delivery" | "pickup";
@@ -28,16 +35,26 @@ const EMPTY: CartItem[] = [];
 let cachedRaw: string | null = null;
 let cachedItems: CartItem[] = EMPTY;
 
+const TOKEN = /^[A-Za-z0-9_-]{43}$/;
+
 function sanitize(value: unknown): CartItem[] {
   if (!Array.isArray(value)) return EMPTY;
   const seen = new Map<string, CartItem>();
   for (const v of value) {
     if (!v || typeof v !== "object") continue;
-    const { type, productId, quantity } = v as Record<string, unknown>;
+    const r = v as Record<string, unknown>;
+    if (r.type === "printing") {
+      if (typeof r.printingJobId === "string" && GUID.test(r.printingJobId) && typeof r.accessToken === "string" && TOKEN.test(r.accessToken)) {
+        seen.set(r.printingJobId, { type: "printing", printingJobId: r.printingJobId, accessToken: r.accessToken });
+      }
+      continue;
+    }
+    const { type, productId, quantity } = r;
     if (type !== "product" || typeof productId !== "string" || !GUID.test(productId)) continue;
     if (!Number.isInteger(quantity) || (quantity as number) < 1) continue;
-    const prev = seen.get(productId)?.quantity ?? 0;
-    seen.set(productId, { type, productId, quantity: Math.min(MAX_LINE_QUANTITY, prev + (quantity as number)) });
+    const prevItem = seen.get(productId);
+    const prev = prevItem?.type === "product" ? prevItem.quantity : 0;
+    seen.set(productId, { type: "product", productId, quantity: Math.min(MAX_LINE_QUANTITY, prev + (quantity as number)) });
   }
   return [...seen.values()].slice(0, MAX_CART_LINES);
 }
@@ -85,19 +102,23 @@ export function useCart(): CartItem[] {
 }
 
 export function useCartCount(): number {
-  return useCart().reduce((n, i) => n + i.quantity, 0);
+  return useCart().reduce((n, i) => n + (i.type === "product" ? i.quantity : 1), 0);
 }
 
 export const cart = {
   add(productId: string, quantity = 1) {
     write(sanitize([...read(), { type: "product", productId, quantity }]));
   },
+  addPrinting(printingJobId: string, accessToken: string) {
+    write(sanitize([...read(), { type: "printing", printingJobId, accessToken }]));
+  },
   setQuantity(productId: string, quantity: number) {
     const q = Math.max(1, Math.min(MAX_LINE_QUANTITY, Math.trunc(quantity)));
-    write(read().map((i) => (i.productId === productId ? { ...i, quantity: q } : i)));
+    write(read().map((i) => (i.type === "product" && i.productId === productId ? { ...i, quantity: q } : i)));
   },
-  remove(productId: string) {
-    write(read().filter((i) => i.productId !== productId));
+  /** Remove a product (by product id) or a printing job (by job id). */
+  remove(key: string) {
+    write(read().filter((i) => itemKey(i) !== key));
   },
   clear() {
     write([]);

@@ -120,7 +120,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
               <Field label="Delete customer files after (days)"><Input name="retention_days" type="number" min={1} max={365} defaultValue={s.printing.retention_days} /></Field>
             </div>
           </ActionForm>
-          <p className="mt-3 text-xs text-muted-foreground">Per-page prices are managed with the printing module (Phase 5).</p>
+          <p className="mt-3 text-xs text-muted-foreground">Per-page prices: <Link href="/admin/printing/prices" className="text-primary hover:underline">Printing → Price list</Link>.</p>
         </Panel>
       )}
     </>

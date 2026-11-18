@@ -13,8 +13,8 @@ Living tracker so work can continue across sessions. **Update this file at the e
 | 2 — Customer storefront | ✅ Complete (2026-11-18) |
 | 3 — Checkout & bank transfer | ✅ Complete (2026-11-19) |
 | 4 — Admin dashboard | ✅ Complete (2026-11-19) |
-| 5 — Printing services | ⏭ Next (DB functions done + tested) |
-| 6 — Telegram integration | ⬜ Not started (outbox done + tested) |
+| 5 — Printing services | ✅ Complete (2026-11-19) |
+| 6 — Telegram integration | ⏭ Next (outbox done + tested) |
 | 7 — Finalization & deployment | ⬜ Not started |
 
 ## Phase 1 — what exists and is verified
@@ -78,6 +78,18 @@ Verified with `npm run test:smoke:admin` (50 browser checks across Super Admin, 
 
 Local dev admin: `owner@abiye.local` / `LocalDevOwner2026` (local Docker database only — never used anywhere else).
 
+## Phase 5 — printing services (verified)
+
+Verified with `npm run test:smoke:printing` (37 browser checks) plus all other suites (storefront 40, checkout 37, admin 50), 168 SQL assertions and 101 unit tests.
+
+- `/printing`: live price list + online order form (PDF, DOCX, JPG, PNG; up to 10 files; size limit from settings ≤ 25 MB). Instant estimate in the browser (pdf-lib loaded on demand); the server's page count is authoritative.
+- Upload flow: signed upload URLs to `printing-files/jobs/<jobId>/` → server re-downloads every file, checks content type vs. extension and size, counts PDF pages (`src/lib/printing/page-count.ts`), images = 1 page, DOCX → staff quote → `create_printing_job`. Any failure deletes all of the job's files.
+- `/printing/jobs/[jobId]` (token cookie or private link, no-referrer): status, price breakdown or "preparing your quote", add to basket, link to its order, files + retention date, progress.
+- Basket/checkout carry printing jobs (`{ type: "printing", printingJobId, accessToken }`), re-validated on the server; non-payable jobs block checkout. Payment moves jobs to Payment verification → Printing automatically.
+- Admin `/admin/printing`: tabs (needs action / waiting / done), nav badge, job page with 5-minute signed downloads, quote form (pages → price list, or manual total), ready / collected / back-to-printing / cancel, delete files now (blocked while in production). `/admin/printing/prices` editor (`printing.pricing`).
+- Retention: migration 0014 (`printing_files_due_for_deletion`, `mark_printing_files_deleted`, `admin_mark_printing_files_deleted`, paper-size check) + `/api/cron/printing-retention` (daily in `vercel.json`). Files are never deleted while a job is being paid for or produced.
+- Secret-key Supabase client is now typed with the database schema.
+
 ## Decisions made (change if you disagree)
 
 1. Customers are guests (no accounts). Staff are the only Supabase Auth users; public sign-ups disabled.
@@ -108,12 +120,13 @@ Local dev admin: `owner@abiye.local` / `LocalDevOwner2026` (local Docker databas
 - Content-Security-Policy deferred to Phase 7.
 - `/admin/login` must validate the `next` redirect parameter (same-origin `/admin/...` only) — Phase 4.
 - Vercel Hobby allows only daily cron jobs, so `vercel.json` runs expiry daily (03:17 UTC); on Vercel Pro change it to hourly. Checkout also expires overdue orders on every new order.
-- Orphaned receipt uploads (signed URL issued but never submitted) are not yet cleaned up; add a storage sweep to the cron in Phase 7.
+- Orphaned uploads (signed URL issued but never submitted — receipts and printing files) are not yet cleaned up; add a storage sweep to the cron in Phase 7.
+- Word (.docx) page counts are not automatic (layout-dependent); staff quote them. Customers are not messaged when a quote is ready — they revisit the job link (saved on the job page), or staff call them.
 - No customer notification channel yet (SMS/Telegram to customers) — customers check the order page or /track-order.
 
-## Next session: start Phase 5 (printing services)
+## Next session: start Phase 6 (Telegram)
 
 1. Read `AGENTS.md` (Next.js 16 rules), this file, and `docs/ARCHITECTURE.md`.
 2. Run `npm run dev:up` — starts Docker if the sandbox restarted, then local Supabase, then checks the API (data persists in Docker volumes). A "cannot connect to Docker" / curl exit 7 at session start just means this hasn't run yet. If the DB was reset: `npm run dev:sample-images` and `ADMIN_PASSWORD=LocalDevOwner2026 npm run admin:create -- --email owner@abiye.local --name "Abiye Owner"`.
-3. Build `/printing` ordering (signed upload to `printing-files/jobs/<id>/`, server-side PDF page count with pdf-lib, options + live estimate, `create_printing_job`, job link with token, add to basket as a printing item), `/admin/printing` (jobs list, secure downloads, quotes, statuses), printing price rules editor, retention cron; add `/admin/printing` to `ADMIN_ROUTES`.
-4. Tests: `npm run check`, `npm run test:db`, then with the app on :3100 (`npx next start -p 3100`) and `NODE_PATH=$(npm root -g)`: `npm run test:smoke`, `npm run test:smoke:checkout`, `npm run test:smoke:admin`. Update this file.
+3. Build the Telegram sender (`src/lib/telegram/*`: escaped HTML message builders per event type in the outbox, sendMessage + sendDocument/sendPhoto for receipts from the private bucket, error classification incl. 429 retry_after), `/api/cron/notifications` (claim → send → complete), schedule it, admin "notifications" health view (failed/dead) + retry, and tests with a mocked Telegram API (no real token in the sandbox).
+4. Tests: `npm run check`, `npm run test:db`, then with the app on :3100 (`npx next start -p 3100`) and `NODE_PATH=$(npm root -g)`: `npm run test:smoke`, `npm run test:smoke:checkout`, `npm run test:smoke:admin`, `npm run test:smoke:printing`. Update this file.

@@ -85,8 +85,32 @@ select pg_temp.throws($$select public.admin_update_printing_status('c0000000-000
   'invalid_transition', 'completed job cannot go backwards');
 select pg_temp.ok(exists (select 1 from public.audit_logs where action = 'payment_verified'), 'payment decision audit-logged');
 reset role;
+set role service_role;
+update public.printing_jobs set files_delete_after = now() - interval '1 day' where id = 'c0000000-0000-0000-0000-000000000001';
+select pg_temp.ok((select count(*) from public.printing_files_due_for_deletion(100) where job_id = 'c0000000-0000-0000-0000-000000000001') = 1,
+  'completed job''s files become due after the retention period');
+select pg_temp.ok(public.mark_printing_files_deleted(array(select file_id from public.printing_files_due_for_deletion(100))) >= 1, 'files marked deleted');
+select pg_temp.ok((select files_deleted_at is not null from public.printing_jobs where id = 'c0000000-0000-0000-0000-000000000001'),
+  'job records that all its files are gone');
+select pg_temp.ok((select count(*) from public.printing_files_due_for_deletion(100)) = 0, 'nothing due twice');
+reset role;
+set role anon;
+select pg_temp.throws($$select public.printing_files_due_for_deletion()$$, '%permission denied%', 'anon cannot list files due for deletion');
+reset role;
+select pg_temp.login(:staff);
+select pg_temp.throws($$select public.mark_printing_files_deleted(array[gen_random_uuid()])$$, '%permission denied%', 'staff cannot call the retention worker');
+reset role;
+select pg_temp.login(:super);
+reset role;
 
--- ----------------------------------------------------------- outbox worker
+-- ----------------------------------------------------------- file retention
+set role service_role;
+select public.create_printing_job(pg_temp.job_payload('c0000000-0000-0000-0000-000000000009', 4));
+update public.printing_jobs set files_delete_after = now() - interval '1 day'
+ where id in ('c0000000-0000-0000-0000-000000000009', 'c0000000-0000-0000-0000-000000000001');
+select pg_temp.ok((select array_agg(job_id::text) from public.printing_files_due_for_deletion(100)) = array['c0000000-0000-0000-0000-000000000009'],
+  'retention: overdue idle job due; completed+overdue job due only once not in production');
+
 set role service_role;
 create temp table t_claim as select * from public.claim_notifications(50);
 select pg_temp.ok((select count(*) from t_claim) = (select count(*) from public.notifications_outbox),

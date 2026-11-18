@@ -196,7 +196,8 @@ Errors are raised as stable codes (e.g. `out_of_stock`) that the app maps to tra
 |---|---|---|
 | `/` | Hero, departments, featured products, offers, why-us, contact | `website_settings`, `homepage_banners`, `promotions`, products |
 | `/shop`, `/cosmetics`, `/electronics` | Catalog with search, category filter, price sort | `products` (RLS: active only) |
-| `/printing` | Upload, options, live estimate, add to basket | `printing_price_rules`, `create_printing_job` |
+| `/printing` | Price list, upload, options, live estimate | `printing_price_rules`, `create_printing_job` |
+| `/printing/jobs/[jobId]?t=token` | Job status, price or quote, add to basket | token-verified lookup |
 | `/products/[slug]` | Gallery, bilingual description, stock, quantity | `products`, `product_images` |
 | `/cart` | Basket (localStorage), totals preview | display mirror `src/lib/pricing/cart.ts` |
 | `/checkout` | Contact, fulfillment, review → creates order | `create_order` |
@@ -216,7 +217,7 @@ Errors are raised as stable codes (e.g. `out_of_stock`) that the app maps to tra
 | `prepareReceiptUpload` / `submitPaymentProof` (Server Actions) | Signed upload URL for a server-chosen private path, then content verification + `submit_payment` |
 | `GET /api/cron/expire-orders` | Vercel Cron, `CRON_SECRET` bearer (constant-time check) |
 | `GET /api/cron/notifications` _(Phase 6)_ | Drain the Telegram outbox |
-| `GET /api/cron/printing-retention` _(Phase 5)_ | Delete expired printing files |
+| `GET /api/cron/printing-retention` | Delete expired printing files (never jobs in production) |
 
 ---
 

@@ -24,14 +24,19 @@ const ROLE_LABEL = { super_admin: "Super Admin", manager: "Manager", staff: "Sta
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   const ctx = await requireAdmin();
   const supabase = await createSupabaseServerClient();
-  const pending = ctx.permissions.has("payments.view")
-    ? (await supabase.from("payment_submissions").select("id", { count: "exact", head: true }).eq("status", "pending")).count ?? 0
-    : 0;
+  const [pending, quotes] = await Promise.all([
+    ctx.permissions.has("payments.view")
+      ? supabase.from("payment_submissions").select("id", { count: "exact", head: true }).eq("status", "pending").then((r) => r.count ?? 0)
+      : 0,
+    ctx.permissions.has("printing.view")
+      ? supabase.from("printing_jobs").select("id", { count: "exact", head: true }).in("status", ["awaiting_quote", "printing"]).then((r) => r.count ?? 0)
+      : 0,
+  ]);
 
   const items: NavItem[] = ADMIN_ROUTES.filter((r) => r.anyOf.some((p) => ctx.permissions.has(p))).map((r) => ({
     href: r.href,
     label: r.label,
-    badge: r.href === "/admin/payments" ? pending : undefined,
+    badge: r.href === "/admin/payments" ? pending : r.href === "/admin/printing" ? quotes : undefined,
   }));
   const canSearch = ctx.permissions.has("orders.view_all") || ctx.permissions.has("orders.view_assigned");
 
