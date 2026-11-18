@@ -1,0 +1,61 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import { PERMISSIONS, parseAdminContext } from "@/lib/auth/permissions";
+import { APP_ERROR_CODES } from "@/lib/errors";
+import en from "../../messages/en.json";
+import am from "../../messages/am.json";
+
+const root = join(__dirname, "../..");
+const sql = readdirSync(join(root, "supabase/migrations"))
+  .sort()
+  .map((f) => readFileSync(join(root, "supabase/migrations", f), "utf8"))
+  .join("\n");
+
+const keysOf = (o: object, prefix = ""): string[] =>
+  Object.entries(o).flatMap(([k, v]) => (v && typeof v === "object" ? keysOf(v, `${prefix}${k}.`) : [`${prefix}${k}`]));
+
+describe("TypeScript ↔ SQL consistency", () => {
+  it("permission list matches public.admin_permissions", () => {
+    const block = sql.split("insert into public.admin_permissions")[1].split(";")[0];
+    const dbPerms = [...block.matchAll(/\('([a-z_]+\.[a-z_]+)'/g)].map((m) => m[1]).sort();
+    expect([...PERMISSIONS].sort()).toEqual(dbPerms);
+  });
+
+  it("every app_error code raised in SQL is known to the app and translated", () => {
+    const raised = new Set([...sql.matchAll(/app_error\('([a-z_]+)'/g)].map((m) => m[1]));
+    for (const code of raised) {
+      expect(APP_ERROR_CODES, `missing code ${code}`).toContain(code);
+    }
+    for (const code of APP_ERROR_CODES) {
+      expect(en.errors, `en missing errors.${code}`).toHaveProperty(code);
+      expect(am.errors, `am missing errors.${code}`).toHaveProperty(code);
+    }
+  });
+
+  it("every order/payment/print status enum value is translated", () => {
+    const enumValues = (name: string) => {
+      const body = sql.match(new RegExp(`create type public\\.${name} as enum \\(([\\s\\S]*?)\\n\\);`))?.[1] ?? "";
+      return [...body.replace(/--.*$/gm, "").matchAll(/'([a-z_]+)'/g)].map((m) => m[1]);
+    };
+    for (const [type, ns] of [["order_status", "orderStatus"], ["payment_status", "paymentStatus"], ["print_job_status", "printStatus"]] as const) {
+      const values = enumValues(type);
+      expect(values.length).toBeGreaterThan(0);
+      expect(Object.keys(en[ns]).sort()).toEqual([...values].sort());
+      expect(Object.keys(am[ns]).sort()).toEqual([...values].sort());
+    }
+  });
+
+  it("English and Amharic catalogs have identical keys", () => {
+    expect(keysOf(am).sort()).toEqual(keysOf(en).sort());
+  });
+});
+
+describe("admin context parsing", () => {
+  it("drops unknown permissions and rejects unknown roles", () => {
+    const ctx = parseAdminContext({ user_id: "u", full_name: "A", role: "staff", permissions: ["orders.view_assigned", "god.mode"] });
+    expect([...ctx!.permissions]).toEqual(["orders.view_assigned"]);
+    expect(parseAdminContext({ user_id: "u", role: "owner", permissions: [] })).toBeNull();
+    expect(parseAdminContext(null)).toBeNull();
+  });
+});
