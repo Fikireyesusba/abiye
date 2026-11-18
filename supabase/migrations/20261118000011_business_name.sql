@@ -1,4 +1,4 @@
--- Business name: "Abiye" (Amharic: አብዬ — spelling to be confirmed by the owner).
+-- Business name: "Abiye" (Amharic: አብዬ, confirmed by the owner).
 -- Only replaces the original placeholder, so it never overwrites a name an
 -- administrator has already set in /admin/settings.
 update public.website_settings
