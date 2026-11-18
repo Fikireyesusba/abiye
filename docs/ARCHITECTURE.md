@@ -89,14 +89,14 @@ erDiagram
 | Area | Tables | Notes |
 |---|---|---|
 | Staff & RBAC | `profiles`, `admin_roles`, `admin_permissions`, `role_permissions` | Customers have **no** accounts (guest checkout). Roles → permissions are data, editable without code changes. |
-| Catalog | `categories` (department + parent), `products`, `product_images`, `inventory_movements` | Products are archived, not deleted, once ordered (FK `RESTRICT`). `stock_quantity` can only change via functions — the column is excluded from the `UPDATE` grant. |
+| Catalog | `categories` (department + parent), `products` (incl. generated `effective_price_etb`), `product_images`, `inventory_movements` | Products are archived, not deleted, once ordered (FK `RESTRICT`). `stock_quantity` can only change via functions — the column is excluded from the `UPDATE` grant. |
 | Customers | `customers` (unique normalized phone), `addresses` | Upserted at checkout. |
 | Orders | `orders`, `order_items`, `order_status_history`, `order_notes` | Items snapshot name/SKU/unit price. Order snapshots bank details (`bank_snapshot`) so history survives bank edits. CHECK `total = subtotal + delivery − discount`. |
 | Payments | `payment_submissions` | One pending submission per order (partial unique index). Reviewer + time recorded. Reused transaction references flagged. |
 | Printing | `printing_jobs`, `printing_files`, `printing_job_history`, `printing_price_rules` | Authoritative `total_etb` set by auto-pricing or admin quote; a job cannot be paid before it has one (CHECK). |
 | Config | `website_settings` (key → jsonb, `is_public`), `bank_accounts`, `delivery_zones` (spec: *delivery_settings*), `promotions`, `homepage_banners` | Settings shapes validated by Zod (`src/lib/validation/settings.ts`). |
 | Operations | `notifications_outbox`, `audit_logs` (append-only), `rate_limits` | Outbox + rate limits are service-role only. |
-| Carts | — | Carts live in the browser (`localStorage`); the server re-validates everything at checkout, so a `carts` table adds no security. |
+| Carts | — | Carts live in the browser (`localStorage`, ids + quantities only); the cart page re-reads live prices/stock via a server action, and checkout recomputes everything in the DB, so a `carts` table adds no security. |
 
 ### Order lifecycle
 
@@ -178,9 +178,9 @@ Errors are raised as stable codes (e.g. `out_of_stock`) that the app maps to tra
 | Malicious uploads | Type detected from magic bytes, size limits at bucket + app level, server-generated file names, private buckets, signed URLs with short expiry. |
 | Large uploads on Vercel (4.5 MB body limit) | _(Phase 3/5)_ Server issues a **signed upload URL** for a server-chosen path; browser uploads directly to the private bucket; server then downloads and verifies content (magic bytes, SHA-256, PDF page count) before calling the DB function. |
 | Secret leakage | Secrets only in server env; `server-only` imports; env validated by name (values never logged). |
-| XSS | React escaping; no `dangerouslySetInnerHTML` on user content; Telegram messages sent as escaped HTML. CSP added in Phase 7. |
+| XSS | React escaping; the only `dangerouslySetInnerHTML` is product JSON-LD with `<` escaped; Telegram messages sent as escaped HTML. CSP added in Phase 7. |
 | CSRF | Server Actions are POST-only with Origin checks (Next.js); admin auth cookies are `SameSite=Lax`. |
-| SQL injection | Parameterized PostgREST/RPC calls only; `SECURITY DEFINER` functions pin `search_path = ''` and fully qualify objects. |
+| SQL / filter injection | Parameterized PostgREST/RPC calls only; catalog search terms stripped to letters/digits/spaces/hyphens before entering an `or=` filter; `SECURITY DEFINER` functions pin `search_path = ''` and fully qualify objects. |
 | Brute force / abuse | `check_rate_limit` on checkout, receipt upload, tracking lookups, printing uploads, admin login. |
 | Lost notifications | Transactional outbox; retries with backoff; dedupe key prevents duplicates. |
 | Repudiation | Append-only `audit_logs` (trigger blocks UPDATE/DELETE) for bank accounts, settings, prices, roles, payment decisions, stock, status changes. |

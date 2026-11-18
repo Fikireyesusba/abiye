@@ -1,0 +1,31 @@
+import type { Metadata } from "next";
+import { getLocale } from "next-intl/server";
+import { SiteFooter } from "@/components/shop/site-footer";
+import { SiteHeader } from "@/components/shop/site-header";
+import { Toaster } from "@/components/ui/sonner";
+import { getSiteSettings } from "@/lib/catalog/settings";
+import type { Locale } from "@/i18n/config";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [s, locale] = await Promise.all([getSiteSettings(), getLocale() as Promise<Locale>]);
+  const name = s.business.name[locale] || s.business.name.en;
+  return {
+    title: { default: name, template: `%s · ${name}` },
+    description: s.business.tagline[locale] || s.business.tagline.en,
+    metadataBase: process.env.APP_URL ? new URL(process.env.APP_URL) : undefined,
+    openGraph: { siteName: name, type: "website", locale: locale === "am" ? "am_ET" : "en_US" },
+  };
+}
+
+export default function ShopLayout({ children }: LayoutProps<"/">) {
+  return (
+    <>
+      <SiteHeader />
+      <main id="main" className="flex flex-1 flex-col">
+        {children}
+      </main>
+      <SiteFooter />
+      <Toaster />
+    </>
+  );
+}

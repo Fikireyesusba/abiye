@@ -3,13 +3,14 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
-const supabaseHost = (() => {
+const supabaseUrl = (() => {
   try {
-    return process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname : undefined;
+    return process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL) : undefined;
   } catch {
     return undefined;
   }
 })();
+const isLocalSupabase = !!supabaseUrl && ["127.0.0.1", "localhost"].includes(supabaseUrl.hostname);
 
 /**
  * Baseline security headers for every response. A nonce-based
@@ -35,12 +36,18 @@ const nextConfig: NextConfig = {
   },
   images: {
     // Only PUBLIC buckets are ever rendered through next/image.
-    remotePatterns: supabaseHost
-      ? [
-          { protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/product-images/**" },
-          { protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/site-assets/**" },
-        ]
+    remotePatterns: supabaseUrl
+      ? (["product-images", "site-assets"] as const).map((bucket) => ({
+          protocol: supabaseUrl.protocol.replace(":", "") as "http" | "https",
+          hostname: supabaseUrl.hostname,
+          port: supabaseUrl.port,
+          pathname: `/storage/v1/object/public/${bucket}/**`,
+        }))
       : [],
+    // Only when Supabase itself runs on this machine (`supabase start`); a
+    // deployed site always points at https://<ref>.supabase.co, so this is off.
+    dangerouslyAllowLocalIP: isLocalSupabase,
+    formats: ["image/avif", "image/webp"],
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

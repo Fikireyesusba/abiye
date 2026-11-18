@@ -8,7 +8,8 @@ export function isLocale(value: unknown): value is Locale {
 }
 
 /** Pick a field like name_en / name_am for the active locale, falling back to English. */
-export function localized<T extends Record<string, unknown>>(row: T, field: string, locale: Locale): string {
-  const v = row[`${field}_${locale}`] ?? row[`${field}_en`];
+export function localized(row: object, field: string, locale: Locale): string {
+  const r = row as Record<string, unknown>;
+  const v = r[`${field}_${locale}`] || r[`${field}_en`];
   return typeof v === "string" ? v : "";
 }

@@ -20,7 +20,17 @@ Option A — local Supabase (Docker):
 npx supabase start
 ```
 
-`supabase start` applies `supabase/migrations/*` and `supabase/seed.sql` and prints the local URL and keys; copy them into `.env.local`.
+`supabase start` applies `supabase/migrations/*` and `supabase/seed.sql` and prints the local URL and keys; copy them into `.env.local`. Then add labelled sample product images (local projects only):
+
+```bash
+npm run dev:sample-images
+```
+
+After changing migrations, regenerate types:
+
+```bash
+npm run db:types
+```
 
 Option B — a hosted Supabase dev project: see §2, then put its URL/keys in `.env.local`.
 

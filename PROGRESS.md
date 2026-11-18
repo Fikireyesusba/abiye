@@ -10,8 +10,8 @@ Living tracker so work can continue across sessions. **Update this file at the e
 | Phase | Status |
 |---|---|
 | 1 — Planning & foundation | ✅ Complete (2026-11-18) |
-| 2 — Customer storefront | ⏭ Next |
-| 3 — Checkout & bank transfer | ⬜ Not started (DB functions already done + tested) |
+| 2 — Customer storefront | ✅ Complete (2026-11-18) |
+| 3 — Checkout & bank transfer | ⏭ Next (DB functions already done + tested) |
 | 4 — Admin dashboard | ⬜ Not started (auth guards + RBAC SQL done + tested) |
 | 5 — Printing services | ⬜ Not started (DB functions done + tested) |
 | 6 — Telegram integration | ⬜ Not started (outbox done + tested) |
@@ -32,6 +32,20 @@ Living tracker so work can continue across sessions. **Update this file at the e
 - Domain libs: phone normalization, santim money math, cart + printing price mirrors, tokens/tracking codes, upload magic-byte validation, checkout/payment/settings Zod schemas, DB error-code mapping.
 - i18n (next-intl, cookie/Accept-Language, en + am catalogs), design tokens, Inter + Noto Sans Ethiopic, shadcn/ui base components, `StatusBadge`.
 - Security headers (HSTS, frame deny, nosniff, referrer, permissions policy).
+
+## Phase 2 — storefront (verified)
+
+Verified against a **real local Supabase stack** (`npx supabase start`, Docker): all migrations apply, all 145 SQL assertions pass there too, and a 40-check browser smoke test passes (`npm run test:smoke`).
+
+- Pages: `/`, `/shop`, `/cosmetics`, `/electronics`, `/products/[slug]`, `/cart`, `/printing` (live price list; online ordering is Phase 5), `/about`, `/contact`, `/privacy`, `/terms` (DRAFT legal text, EN + AM), 404, error boundary, `sitemap.xml`, `robots.txt`.
+- Header (logo/name from settings, nav, search, language switch, cart count), mobile slide-out menu, footer from settings.
+- Homepage fully driven by DB: hero text/image, banners, featured products, sale products + homepage promotions, why-us, contact.
+- Catalog: department + subcategory filters, search in English and Amharic (sanitized against PostgREST filter injection), sort by newest/price/name, in-stock filter, pagination — all URL-based (works without JS).
+- Product page: gallery, sale price + savings, stock state, quantity, add to basket, related products, JSON-LD.
+- Cart: localStorage (ids + quantities only), live prices/stock re-read from the server, delivery/pickup + city fee, free-delivery threshold, over-stock lines block checkout with a one-tap fix, cross-tab sync.
+- Migration `0010`: `effective_price_etb` generated column (sortable by anon) replacing the computed-field function; **fixed `product_images.storage_path` check** (PostgreSQL regex max repetition is 255, the old check failed every insert).
+- Dev tooling: `npm run db:types`, `npm run dev:sample-images` (labelled SAMPLE images, refuses non-local projects).
+- Known: the cart's “Proceed to checkout” goes to `/checkout`, built in Phase 3.
 
 ## Decisions made (change if you disagree)
 
@@ -58,13 +72,13 @@ Living tracker so work can continue across sessions. **Update this file at the e
 
 - shadcn CLI registry is blocked in the Claude cloud sandbox; components are authored manually in shadcn format. On a normal machine `npx shadcn@latest add <component>` works.
 - `npm install` hit an npm arborist bug resolving vitest peers; `vitest`/`vite` were added with `--legacy-peer-deps`. `npm ci` from the lockfile works normally.
-- Supabase TypeScript types not generated yet (needs a live project): run `npx supabase gen types typescript --project-id <ref> > src/lib/supabase/database.types.ts` in Phase 2.
+- `src/lib/supabase/database.types.ts` is generated from the local stack (`npm run db:types`); regenerate after every migration.
 - Content-Security-Policy deferred to Phase 7.
 - `/admin/login` must validate the `next` redirect parameter (same-origin `/admin/...` only) — Phase 4.
 
-## Next session: start Phase 2
+## Next session: start Phase 3 (checkout)
 
 1. Read `AGENTS.md` (Next.js 16 rules), this file, and `docs/ARCHITECTURE.md`.
-2. Create/link a Supabase project (or `npx supabase start` locally), apply migrations, generate types.
-3. Build storefront layout, homepage, catalog, product page, cart.
-4. Run `npm run check` and `npm run test:db`; update this file.
+2. In the cloud sandbox Docker is available but stopped: run `dockerd &` then `npx supabase start`, then `npm run dev:sample-images` (needs `NODE_PATH=$(npm root -g)` for Playwright).
+3. Build `/checkout` (server action → `create_order`, rate-limited), `/order-success/[orderId]` (bank details + copy, signed receipt upload → verify → `submit_payment`), `/track-order`, and the expiry cron route.
+4. Run `npm run check`, `npm run test:db`, `npm run test:smoke`; update this file.

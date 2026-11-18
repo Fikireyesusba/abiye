@@ -74,6 +74,14 @@ select pg_temp.ok(public.admin_adjust_stock((select id from public.products wher
   'manager adjusts stock through audited function');
 select pg_temp.throws($$select public.admin_adjust_stock((select id from public.products where sku = 'TST-NEW-1'), -100, 'damage')$$,
   'insufficient_stock', 'stock can never go negative');
+insert into public.product_images (product_id, storage_path, is_primary)
+select id, 'products/test-new-product/main.webp', true from public.products where sku = 'TST-NEW-1';
+select pg_temp.ok((select count(*) from public.product_images p join public.products x on x.id = p.product_id where x.sku = 'TST-NEW-1') = 1,
+  'manager can attach product images');
+select pg_temp.throws($$insert into public.product_images (product_id, storage_path) values ('20000000-0000-0000-0000-000000000001', '../../etc/passwd')$$,
+  '%check constraint%', 'image paths cannot traverse directories');
+select pg_temp.throws($$insert into public.product_images (product_id, storage_path, is_primary) select id, 'p/second.webp', true from public.products where sku = 'TST-NEW-1'$$,
+  '%duplicate key%', 'only one primary image per product');
 update public.products set status = 'archived' where sku = 'TST-NEW-1';
 select pg_temp.ok((select archived_at is not null from public.products where sku = 'TST-NEW-1'), 'archiving sets archived_at');
 select pg_temp.ok((select count(*) from public.bank_accounts) = 2, 'manager can view bank accounts (payment review)');

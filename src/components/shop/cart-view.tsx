@@ -1,0 +1,239 @@
+"use client";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
+import { AlertTriangle, ShoppingBag, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { getCartDetails, type CartDetails } from "@/lib/cart/actions";
+import { cart, readFulfillmentPrefs, saveFulfillmentPrefs, useCart, type FulfillmentPrefs } from "@/lib/cart/store";
+import { formatETB, toSantim } from "@/lib/money";
+import { computeCartTotals } from "@/lib/pricing/cart";
+import { localized, type Locale } from "@/i18n/config";
+import { QuantityStepper } from "./add-to-cart";
+import { Price } from "./price";
+import { ProductImage } from "./product-image";
+
+export function CartView() {
+  const items = useCart();
+  const locale = useLocale() as Locale;
+  const t = useTranslations();
+  // Prefs are only rendered after details load (client-only), so lazy init cannot cause a hydration mismatch.
+  const [prefs, setPrefs] = useState<FulfillmentPrefs>(() => readFulfillmentPrefs());
+  const [result, setResult] = useState<{ key: string; details?: CartDetails; error?: boolean } | null>(null);
+  const idsKey = items.map((i) => i.productId).sort().join(",");
+
+  useEffect(() => {
+    if (!idsKey) return; // empty basket (also the pre-hydration snapshot): nothing to fetch
+    let cancelled = false;
+    const ids = idsKey.split(",");
+    getCartDetails(ids)
+      .then((d) => !cancelled && setResult({ key: idsKey, details: d }))
+      .catch(() => !cancelled && setResult({ key: idsKey, error: true }));
+    return () => {
+      cancelled = true;
+    };
+  }, [idsKey]);
+
+  // Keep showing the previous details while a refresh for a changed basket is in flight.
+  const details = result?.details ?? null;
+  const error = result?.key === idsKey && !!result.error;
+
+  const updatePrefs = (p: FulfillmentPrefs) => {
+    setPrefs(p);
+    saveFulfillmentPrefs(p);
+  };
+
+  const lines = useMemo(() => {
+    if (!details) return [];
+    const byId = new Map(details.products.map((p) => [p.id, p]));
+    return items.map((item) => {
+      const product = byId.get(item.productId) ?? null;
+      const unavailable = !product || (product.available !== null && product.available <= 0);
+      const short = !!product && product.available !== null && product.available > 0 && product.available < item.quantity;
+      return { item, product, unavailable, short };
+    });
+  }, [items, details]);
+
+  if (items.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed py-20 text-center">
+        <ShoppingBag className="size-12 text-muted-foreground" aria-hidden />
+        <p className="text-lg">{t("cart.empty")}</p>
+        <Button asChild>
+          <Link href="/shop">{t("cartPage.continueShopping")}</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (error) {
+    return <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-destructive">{t("errors.unexpected")}</p>;
+  }
+
+  if (!details) {
+    return (
+      <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
+        <div className="space-y-3">
+          {items.map((i) => (
+            <Skeleton key={i.productId} className="h-28 w-full" />
+          ))}
+        </div>
+        <Skeleton className="h-72 w-full" />
+      </div>
+    );
+  }
+
+  const zone = details.zones.find((z) => z.id === prefs.deliveryZoneId) ?? null;
+  const method = prefs.method === "pickup" && details.pickupEnabled ? "pickup" : details.deliveryEnabled ? "delivery" : "pickup";
+  const valid = lines.filter((l) => !l.unavailable && l.product);
+  const totals = computeCartTotals(
+    valid.map((l) => ({
+      unitPrice: toSantim(l.product!.unit_price_etb),
+      quantity: l.item.quantity,
+    })),
+    {
+      fulfillment: method,
+      zoneFee: zone ? toSantim(zone.fee_etb) : null,
+      freeDeliveryThreshold: details.freeDeliveryThresholdEtb !== null ? toSantim(details.freeDeliveryThresholdEtb) : null,
+    },
+  );
+  const hasIssues = lines.some((l) => l.unavailable || l.short);
+  const needsZone = method === "delivery" && !zone;
+
+  return (
+    <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem]">
+      <ul className="divide-y rounded-xl border bg-card">
+        {lines.map(({ item, product, unavailable, short }) => {
+          const name = product ? localized(product, "name", locale) : "—";
+          const max = product?.available ?? 100;
+          return (
+            <li key={item.productId} className="flex gap-3 p-3 sm:gap-4 sm:p-4">
+              <div className="w-20 shrink-0 self-start overflow-hidden rounded-lg border sm:w-24">
+                <ProductImage src={product?.imageUrl ?? null} alt={name} department={product?.department ?? "cosmetics"} sizes="96px" />
+              </div>
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
+                <div className="flex items-start justify-between gap-2">
+                  {product ? (
+                    <Link href={`/products/${product.slug}`} className="line-clamp-2 font-medium hover:text-primary">
+                      {name}
+                    </Link>
+                  ) : (
+                    <span className="text-muted-foreground">{t("cartPage.unavailable")}</span>
+                  )}
+                  <Button variant="ghost" size="icon" className="-mt-1 -mr-1 size-8 shrink-0" onClick={() => cart.remove(item.productId)} aria-label={`${t("cart.remove")} ${name}`}>
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
+                {product && <Price price={product.price_etb} salePrice={product.sale_price_etb} locale={locale} size="sm" />}
+                {unavailable && product && (
+                  <p className="flex items-center gap-1.5 text-sm text-destructive">
+                    <AlertTriangle className="size-4" aria-hidden /> {t("cartPage.unavailable")}
+                  </p>
+                )}
+                {short && (
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-amber-700">
+                    <AlertTriangle className="size-4" aria-hidden /> {t("cartPage.adjusted", { count: product!.available! })}
+                    <Button size="sm" variant="outline" className="h-7" onClick={() => cart.setQuantity(item.productId, product!.available!)}>
+                      {t("cartPage.setQuantity", { count: product!.available! })}
+                    </Button>
+                  </div>
+                )}
+                {product && !unavailable && (
+                  <div className="flex items-center justify-between gap-2">
+                    <QuantityStepper size="sm" value={item.quantity} max={Math.max(item.quantity, Math.min(100, max))} onChange={(n) => cart.setQuantity(item.productId, n)} />
+                    <span className="text-sm font-semibold tabular-nums">
+                      {formatETB(toSantim(product.unit_price_etb * item.quantity), locale)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+
+      <Card className="lg:sticky lg:top-24">
+        <CardHeader>
+          <CardTitle>{t("cartPage.summary")}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <fieldset className="space-y-2">
+            <legend className="mb-2 text-sm font-medium">{t("checkout.fulfillment")}</legend>
+            {details.deliveryEnabled && (
+              <label className="flex cursor-pointer items-center gap-2 rounded-md border p-3 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                <input type="radio" name="method" className="accent-[var(--primary)]" checked={method === "delivery"} onChange={() => updatePrefs({ ...prefs, method: "delivery" })} />
+                {t("checkout.delivery")}
+              </label>
+            )}
+            {details.pickupEnabled && (
+              <label className="flex cursor-pointer items-center gap-2 rounded-md border p-3 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                <input type="radio" name="method" className="accent-[var(--primary)]" checked={method === "pickup"} onChange={() => updatePrefs({ ...prefs, method: "pickup" })} />
+                {t("checkout.pickup")}
+              </label>
+            )}
+          </fieldset>
+
+          {method === "delivery" ? (
+            <label className="block space-y-1.5 text-sm">
+              <span className="font-medium">{t("cartPage.deliveryTo")}</span>
+              <select
+                value={zone?.id ?? ""}
+                onChange={(e) => updatePrefs({ ...prefs, deliveryZoneId: e.target.value || null })}
+                className="h-10 w-full rounded-md border border-input bg-card px-3 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              >
+                <option value="">{t("cartPage.chooseCity")}</option>
+                {details.zones.map((z) => (
+                  <option key={z.id} value={z.id}>
+                    {localized(z, "name", locale)} — {formatETB(toSantim(z.fee_etb), locale)}
+                  </option>
+                ))}
+              </select>
+              {zone?.estimated_days && <span className="text-xs text-muted-foreground">{t("cartPage.estimatedDays", { days: zone.estimated_days })}</span>}
+            </label>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t("cartPage.pickupFree")}</p>
+          )}
+          {details.freeDeliveryThresholdEtb !== null && method === "delivery" && (
+            <p className="text-xs text-success">{t("cartPage.freeOver", { amount: formatETB(toSantim(details.freeDeliveryThresholdEtb), locale) })}</p>
+          )}
+
+          <Separator />
+          <dl className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">{t("cart.subtotal")}</dt>
+              <dd className="tabular-nums">{formatETB(totals.subtotal, locale)}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">{t("cart.delivery")}</dt>
+              <dd className="tabular-nums">
+                {method === "pickup" || totals.freeDeliveryApplied ? t("cart.freeDelivery") : zone ? formatETB(totals.deliveryFee, locale) : "—"}
+              </dd>
+            </div>
+            <Separator />
+            <div className="flex justify-between text-base font-semibold">
+              <dt>{t("cart.total")}</dt>
+              <dd className="tabular-nums">{formatETB(totals.total, locale)}</dd>
+            </div>
+          </dl>
+          <p className="text-xs text-muted-foreground">{t("cartPage.calculatedAtCheckout")}</p>
+          {hasIssues && <p className="text-sm text-destructive">{t("cartPage.fixIssues")}</p>}
+          {hasIssues || needsZone || valid.length === 0 ? (
+            <Button size="lg" className="w-full" disabled>
+              {t("cart.checkout")}
+            </Button>
+          ) : (
+            <Button size="lg" className="w-full" asChild>
+              <Link href="/checkout">{t("cart.checkout")}</Link>
+            </Button>
+          )}
+          <Button variant="link" className="w-full" asChild>
+            <Link href="/shop">{t("cartPage.continueShopping")}</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
