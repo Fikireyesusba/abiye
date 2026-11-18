@@ -176,7 +176,7 @@ Errors are raised as stable codes (e.g. `out_of_stock`) that the app maps to tra
 | Unauthorized admin access | `proxy.ts` gate → `requirePermission()` in every page/action → RLS/permission check inside each SQL function. Unauthorized pages return 404. |
 | Privilege escalation | Role changes only via `admin_set_staff_role` (needs `staff.manage`, cannot modify self, keeps ≥1 Super Admin). Public sign-ups disabled. |
 | Malicious uploads | Type detected from magic bytes, size limits at bucket + app level, server-generated file names, private buckets, signed URLs with short expiry. |
-| Large uploads on Vercel (4.5 MB body limit) | _(Phase 3/5)_ Server issues a **signed upload URL** for a server-chosen path; browser uploads directly to the private bucket; server then downloads and verifies content (magic bytes, SHA-256, PDF page count) before calling the DB function. |
+| Large uploads on Vercel (4.5 MB body limit) | Server issues a **signed upload URL** for a server-chosen path; browser uploads directly to the private bucket; server then downloads and verifies content (magic bytes, SHA-256, PDF page count) before calling the DB function. |
 | Secret leakage | Secrets only in server env; `server-only` imports; env validated by name (values never logged). |
 | XSS | React escaping; the only `dangerouslySetInnerHTML` is product JSON-LD with `<` escaped; Telegram messages sent as escaped HTML. CSP added in Phase 7. |
 | CSRF | Server Actions are POST-only with Origin checks (Next.js); admin auth cookies are `SameSite=Lax`. |
@@ -213,8 +213,8 @@ Errors are raised as stable codes (e.g. `out_of_stock`) that the app maps to tra
 | Endpoint | Purpose |
 |---|---|
 | Server Actions | Checkout, payment submission, admin mutations (each re-checks auth) |
-| `POST /api/uploads/sign` _(Phase 3)_ | Signed upload URLs for receipts / printing documents |
-| `GET /api/cron/expire-orders` _(Phase 3)_ | Vercel Cron, `CRON_SECRET` bearer |
+| `prepareReceiptUpload` / `submitPaymentProof` (Server Actions) | Signed upload URL for a server-chosen private path, then content verification + `submit_payment` |
+| `GET /api/cron/expire-orders` | Vercel Cron, `CRON_SECRET` bearer (constant-time check) |
 | `GET /api/cron/notifications` _(Phase 6)_ | Drain the Telegram outbox |
 | `GET /api/cron/printing-retention` _(Phase 5)_ | Delete expired printing files |
 

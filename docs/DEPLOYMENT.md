@@ -105,4 +105,4 @@ The function refuses to run again once an active Super Admin exists. All further
 3. Set `APP_URL=https://yourshop.com`.
 4. **Domains**: add `yourshop.com` and `www.yourshop.com`, follow the DNS instructions (A/CNAME at your registrar), redirect `www` → apex.
 5. In Supabase **Auth → URL Configuration**: Site URL `https://yourshop.com`, redirect URL `https://yourshop.com/admin/**`.
-6. Cron jobs (`vercel.json`) are added in Phases 3, 5 and 6.
+6. Cron: `vercel.json` schedules `/api/cron/expire-orders` daily (Hobby plan limit). Vercel sends `Authorization: Bearer $CRON_SECRET` automatically once `CRON_SECRET` is set. On the Pro plan, change the schedule to hourly (e.g. `17 * * * *`).

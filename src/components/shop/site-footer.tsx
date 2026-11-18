@@ -34,9 +34,9 @@ export async function SiteFooter() {
         <nav className="space-y-3 text-sm" aria-label={t("footer.help")}>
           <p className="font-semibold">{t("footer.help")}</p>
           <ul className="space-y-2 opacity-85">
-            {(["about", "contact", "privacy", "terms"] as const).map((k) => (
+            {([["trackOrder", "/track-order"], ["about", "/about"], ["contact", "/contact"], ["privacy", "/privacy"], ["terms", "/terms"]] as const).map(([k, href]) => (
               <li key={k}>
-                <Link href={`/${k}`} className="hover:underline">
+                <Link href={href} className="hover:underline">
                   {t(`nav.${k}`)}
                 </Link>
               </li>

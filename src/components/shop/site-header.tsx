@@ -41,6 +41,7 @@ export async function SiteHeader() {
     { href: "/printing", label: t("nav.printing") },
   ];
   const secondary = [
+    { href: "/track-order", label: t("nav.trackOrder") },
     { href: "/about", label: t("nav.about") },
     { href: "/contact", label: t("nav.contact") },
   ];

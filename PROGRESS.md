@@ -11,8 +11,8 @@ Living tracker so work can continue across sessions. **Update this file at the e
 |---|---|
 | 1 — Planning & foundation | ✅ Complete (2026-11-18) |
 | 2 — Customer storefront | ✅ Complete (2026-11-18) |
-| 3 — Checkout & bank transfer | ⏭ Next (DB functions already done + tested) |
-| 4 — Admin dashboard | ⬜ Not started (auth guards + RBAC SQL done + tested) |
+| 3 — Checkout & bank transfer | ✅ Complete (2026-11-19) |
+| 4 — Admin dashboard | ⏭ Next (auth guards + RBAC SQL done + tested) |
 | 5 — Printing services | ⬜ Not started (DB functions done + tested) |
 | 6 — Telegram integration | ⬜ Not started (outbox done + tested) |
 | 7 — Finalization & deployment | ⬜ Not started |
@@ -47,6 +47,19 @@ Verified against a **real local Supabase stack** (`npx supabase start`, Docker):
 - Dev tooling: `npm run db:types`, `npm run dev:sample-images` (labelled SAMPLE images, refuses non-local projects).
 - Known: the cart's “Proceed to checkout” goes to `/checkout`, built in Phase 3.
 
+## Phase 3 — checkout & bank transfer (verified)
+
+Verified with `npm run test:smoke:checkout` (37 browser checks against local Supabase) plus all previous suites.
+
+- `/checkout`: contact + delivery/pickup form, live summary, server action `placeOrder` → Zod → rate limits (IP 10/10 min, phone 5/10 min) → `create_order`. Idempotency key per attempt (sessionStorage) so double-submits never create two orders. Field-level translated errors; stock problems link back to the basket.
+- Order access: 256-bit token in an httpOnly cookie (`ord_<id>`, 60 days) for the buying browser + private link `?t=` for other devices. The order URL itself never carries the token; `/order-success/*` sends `Referrer-Policy: no-referrer` and `no-store`.
+- `/order-success/[orderId]`: bank details snapshotted on the order, exact amount, copy buttons, payment deadline (Addis Ababa time), numbered instructions, tracking code (shown to the buying browser), private link, status banners (pending / rejected with reason / confirmed / expired / cancelled), order history, items & totals.
+- Receipt upload: server issues a one-time signed upload URL to `payment-receipts/orders/<id>/<uuid>.<ext>` → browser uploads directly to Storage → server downloads, checks magic bytes vs. extension, size, SHA-256 → `submit_payment`. Anything failing verification or the DB call is deleted. Receipts are never publicly reachable.
+- `/track-order`: order number + tracking code, rate-limited (IP 10/15 min, order 5/15 min), returns status/items/total/history only — no name, phone or address.
+- `/api/cron/expire-orders` (Bearer `CRON_SECRET`, constant-time) + `vercel.json` daily cron; checkout also expires overdue orders opportunistically so stock frees up between cron runs.
+- New error codes: `invalid_reference`, `upload_too_large`, `upload_invalid_type`, `upload_failed` (EN + AM).
+- Fixed: React 19 form reset cleared the tracking form; mobile overflow on the order page; missing terms link; lint failure in the Phase 2 smoke script (`.cjs` override).
+
 ## Decisions made (change if you disagree)
 
 1. Customers are guests (no accounts). Staff are the only Supabase Auth users; public sign-ups disabled.
@@ -76,10 +89,13 @@ Verified against a **real local Supabase stack** (`npx supabase start`, Docker):
 - `src/lib/supabase/database.types.ts` is generated from the local stack (`npm run db:types`); regenerate after every migration.
 - Content-Security-Policy deferred to Phase 7.
 - `/admin/login` must validate the `next` redirect parameter (same-origin `/admin/...` only) — Phase 4.
+- Vercel Hobby allows only daily cron jobs, so `vercel.json` runs expiry daily (03:17 UTC); on Vercel Pro change it to hourly. Checkout also expires overdue orders on every new order.
+- Orphaned receipt uploads (signed URL issued but never submitted) are not yet cleaned up; add a storage sweep to the cron in Phase 7.
+- No customer notification channel yet (SMS/Telegram to customers) — customers check the order page or /track-order.
 
-## Next session: start Phase 3 (checkout)
+## Next session: start Phase 4 (admin dashboard)
 
 1. Read `AGENTS.md` (Next.js 16 rules), this file, and `docs/ARCHITECTURE.md`.
-2. In the cloud sandbox Docker is available but stopped: run `dockerd &` then `npx supabase start`, then `npm run dev:sample-images` (needs `NODE_PATH=$(npm root -g)` for Playwright).
-3. Build `/checkout` (server action → `create_order`, rate-limited), `/order-success/[orderId]` (bank details + copy, signed receipt upload → verify → `submit_payment`), `/track-order`, and the expiry cron route.
-4. Run `npm run check`, `npm run test:db`, `npm run test:smoke`; update this file.
+2. In the cloud sandbox Docker may be stopped: run `dockerd &`, then `npx supabase start` (data persists in Docker volumes). If the DB was reset: `npm run dev:sample-images` (needs `NODE_PATH=$(npm root -g)`).
+3. Build `/admin/login` (safe `next` redirect), admin layout + navigation from `ADMIN_ROUTES`, dashboard, products/images, categories, inventory, orders (status, assign, notes), payments review (signed receipt URLs), customers, staff, settings (business, banks, delivery zones, homepage), and a `create-super-admin` script.
+4. Browser tests: `npm run test:smoke` and `npm run test:smoke:checkout` (app on :3100, `NODE_PATH=$(npm root -g)`), plus `npm run check` and `npm run test:db`; update this file.
