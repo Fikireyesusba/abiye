@@ -13,7 +13,7 @@ const ethiopic = Noto_Sans_Ethiopic({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Shop", template: "%s · Shop" },
+  title: { default: "Abiye", template: "%s · Abiye" },
   description: "Cosmetics, electronics and printing services in Ethiopia.",
 };
 

@@ -59,7 +59,8 @@ Verified against a **real local Supabase stack** (`npx supabase start`, Docker):
 
 ## Needed from the business owner before production
 
-- [ ] Business name, logo, brand colors (if different from emerald/gold)
+- [x] Business name: **Abiye** (Amharic spelling አብዬ to be confirmed)
+- [ ] Logo, brand colors (if different from emerald/gold)
 - [ ] Real bank account(s): bank, holder, number, branch, instructions (EN + AM)
 - [ ] Delivery cities/zones and fees; free-delivery threshold (if any); payment window
 - [ ] Printing prices per color/size/sides; service charge; file retention days
