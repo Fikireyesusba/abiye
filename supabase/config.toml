@@ -243,15 +243,9 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Use a production-ready SMTP server
-# [auth.email.smtp]
-# enabled = true
-# host = "smtp.sendgrid.net"
-# port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# Production SMTP (for staff invites/password resets) is configured in the
+# Supabase dashboard: Authentication -> Emails -> SMTP Settings. Never store
+# SMTP credentials in this file.
 
 # Uncomment to customize email template
 # [auth.email.template.invite]
