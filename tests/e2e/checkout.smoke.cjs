@@ -28,7 +28,18 @@ fs.writeFileSync(realPng, Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfF
 const fakePng = path.join(tmp, "evil.png");
 fs.writeFileSync(fakePng, "<html><script>alert(1)</script></html>".padEnd(200, " "));
 
+// Repeatable runs: other suites reserve sample stock, so restore the seeded levels (LOCAL database only).
+function resetSampleStock() {
+  if (!/127\.0\.0\.1|localhost/.test(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")) throw new Error("Local Supabase only");
+  require("child_process").execSync(`psql -Atq -v ON_ERROR_STOP=1 "postgresql://postgres:postgres@127.0.0.1:54322/postgres"`, {
+    input: `update products p set stock_quantity = v.q from (values ('SMP-PF-001',15),('SMP-PF-002',40),('SMP-SK-001',3),('SMP-MK-001',60),
+      ('SMP-HC-001',0),('SMP-PH-001',5),('SMP-CH-001',80),('SMP-EP-001',25),('SMP-PB-001',12),('SMP-CB-001',200)) v(sku,q) where p.sku = v.sku;
+      delete from rate_limits;`,
+  });
+}
+
 (async () => {
+  resetSampleStock();
   sql("delete from rate_limits");
   sql(`insert into auth.users (id, email) values ('${MANAGER}', 'e2e-manager@test.local') on conflict do nothing`);
   sql(`insert into profiles (id, full_name, role_id) select '${MANAGER}', 'E2E Manager', id from admin_roles where key = 'manager' on conflict do nothing`);

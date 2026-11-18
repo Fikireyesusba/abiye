@@ -37,6 +37,9 @@
   --input: oklch(0.89 0.012 85);
   --ring: oklch(0.42 0.09 165);
 
+  /* Data-viz: validated with the dataviz palette checker (light surface). */
+  --chart-1: oklch(0.58 0.12 165);
+
   --cosmetics: oklch(0.62 0.14 5);
   --electronics: oklch(0.52 0.14 255);
   --printing: oklch(0.68 0.14 55);
@@ -97,6 +100,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
   --color-cosmetics: var(--cosmetics);
   --color-electronics: var(--electronics);
   --color-printing: var(--printing);

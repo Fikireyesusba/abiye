@@ -557,6 +557,12 @@ isOneToOne: false
 "admin_assign_order":
 { Args: { "p_assignee": string,"p_order_id": string }; Returns: undefined
                            },
+"admin_create_staff_profile":
+{ Args: { "p_full_name": string,"p_role_key": string,"p_user_id": string }; Returns: undefined
+                           },
+"admin_dashboard_stats":
+{ Args: { "p_days"?: number }; Returns: Json
+                           },
 "admin_quote_printing_job":
 { Args: { "p_job_id": string,"p_note"?: string,"p_page_count": number,"p_total_etb"?: number }; Returns: Json
                            },

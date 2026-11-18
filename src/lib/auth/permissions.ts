@@ -69,13 +69,11 @@ export const ADMIN_ROUTES: ReadonlyArray<{ href: string; label: string; anyOf: r
   { href: "/admin", label: "Dashboard", anyOf: ["dashboard.view"] },
   { href: "/admin/orders", label: "Orders", anyOf: ["orders.view_all", "orders.view_assigned"] },
   { href: "/admin/payments", label: "Payments", anyOf: ["payments.view"] },
-  { href: "/admin/printing", label: "Printing", anyOf: ["printing.view"] },
   { href: "/admin/products", label: "Products", anyOf: ["products.view"] },
   { href: "/admin/categories", label: "Categories", anyOf: ["categories.manage"] },
   { href: "/admin/inventory", label: "Inventory", anyOf: ["inventory.manage"] },
   { href: "/admin/customers", label: "Customers", anyOf: ["customers.view"] },
-  { href: "/admin/promotions", label: "Promotions", anyOf: ["promotions.manage"] },
-  { href: "/admin/analytics", label: "Analytics", anyOf: ["analytics.view", "reports.operational"] },
   { href: "/admin/staff", label: "Staff", anyOf: ["staff.manage"] },
   { href: "/admin/settings", label: "Settings", anyOf: ["settings.manage", "bank_accounts.manage"] },
+  // Added in later phases: /admin/printing (5), /admin/promotions + /admin/analytics (7).
 ];

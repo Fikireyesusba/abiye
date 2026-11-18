@@ -77,9 +77,17 @@ npx supabase gen types typescript --project-id YOUR_PROJECT_REF > src/lib/supaba
 
 ## 3. First Super Admin (secure bootstrap)
 
-No admin passwords exist in code. Until the guided script ships in Phase 4:
+No admin passwords exist in code. From your machine, with the production `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SECRET_KEY` in a local env file that is never committed (e.g. `.env.production.local`):
 
-1. **Auth → Users → Add user** (or "Invite"): enter the owner's email and a strong password; confirm the email.
+```bash
+node --env-file=.env.production.local scripts/create-super-admin.mjs --email owner@yourshop.com --name "Owner Full Name"
+```
+
+You are asked for the password (hidden input; minimum 12 characters with upper-case, lower-case and a digit). Then sign in at `/admin/login`. Additional staff are created from **/admin/staff**.
+
+Alternative without Node:
+
+1. **Auth → Users → Add user**: enter the owner's email and a strong password; confirm the email.
 2. In the **SQL Editor** (runs as a trusted role), run once, replacing the email and name:
 
 ```sql
@@ -89,7 +97,7 @@ select public.bootstrap_super_admin(
 );
 ```
 
-The function refuses to run again once an active Super Admin exists. All further staff are created from `/admin/staff` _(Phase 4)_.
+Both routes refuse to run once an active Super Admin exists.
 
 ## 4. Telegram bot _(Phase 6)_
 

@@ -12,8 +12,8 @@ Living tracker so work can continue across sessions. **Update this file at the e
 | 1 — Planning & foundation | ✅ Complete (2026-11-18) |
 | 2 — Customer storefront | ✅ Complete (2026-11-18) |
 | 3 — Checkout & bank transfer | ✅ Complete (2026-11-19) |
-| 4 — Admin dashboard | ⏭ Next (auth guards + RBAC SQL done + tested) |
-| 5 — Printing services | ⬜ Not started (DB functions done + tested) |
+| 4 — Admin dashboard | ✅ Complete (2026-11-19) |
+| 5 — Printing services | ⏭ Next (DB functions done + tested) |
 | 6 — Telegram integration | ⬜ Not started (outbox done + tested) |
 | 7 — Finalization & deployment | ⬜ Not started |
 
@@ -60,6 +60,24 @@ Verified with `npm run test:smoke:checkout` (37 browser checks against local Sup
 - New error codes: `invalid_reference`, `upload_too_large`, `upload_invalid_type`, `upload_failed` (EN + AM).
 - Fixed: React 19 form reset cleared the tracking form; mobile overflow on the order page; missing terms link; lint failure in the Phase 2 smoke script (`.cjs` override).
 
+## Phase 4 — admin dashboard (verified)
+
+Verified with `npm run test:smoke:admin` (50 browser checks across Super Admin, Manager and Staff sessions), plus 161 SQL assertions, 97 unit tests and the storefront/checkout suites.
+
+- `/admin/login` (generic errors, rate-limited per IP + email, non-staff accounts signed straight out, `?next` restricted to same-site `/admin` paths), sign-out, `/admin/account` password change.
+- Shell: sidebar filtered by permission, order search, pending-payment badge, mobile menu. The layout is presentation only — every page calls `requirePermission()` and every action re-checks; RLS applies to all queries (user-session client).
+- Dashboard: `admin_dashboard_stats()` (migration 0012) — revenue only with `analytics.view`, staff counts only assigned orders; 14-day bar chart (validated `--chart-1` colour, tooltips, screen-reader table); recent orders.
+- Orders: list (status filter, search by order no./phone/name, pagination), detail with receipts via 5-minute signed URLs, verify/reject, state-machine buttons, cancel with reason (+ paid-order warning), assignment, internal notes, merged history.
+- Payments queue: to verify / verified / rejected, receipt preview, flags reused transaction references.
+- Products: list/filter, create/edit (EN + AM), images (browser → Storage, server verifies content, main image), archive/restore, delete only if never ordered.
+- Categories, Inventory (adjust with reason, low/out filter, movement history), Customers (list/search, detail with orders & addresses).
+- Staff: create accounts with one-time temporary password, change role, remove access (immediate), reset password; profile grant via `admin_create_staff_profile()` (migration 0013, audited).
+- Settings: business/contact/hours/social, logo & hero image, homepage texts, delivery (pickup/delivery toggles, free-delivery threshold, payment window, cities & fees), bank accounts (Super Admin only), printing settings.
+- `npm run admin:create -- --email … --name "…"` creates the first Super Admin (hidden prompt / ADMIN_PASSWORD / generated once).
+- Fixed along the way: React form auto-reset wiping admin input on validation errors; success toast lost when the action removed its own form; `db:types` script silently writing an empty file; mobile overflow on the dashboard.
+
+Local dev admin: `owner@abiye.local` / `LocalDevOwner2026` (local Docker database only — never used anywhere else).
+
 ## Decisions made (change if you disagree)
 
 1. Customers are guests (no accounts). Staff are the only Supabase Auth users; public sign-ups disabled.
@@ -93,9 +111,9 @@ Verified with `npm run test:smoke:checkout` (37 browser checks against local Sup
 - Orphaned receipt uploads (signed URL issued but never submitted) are not yet cleaned up; add a storage sweep to the cron in Phase 7.
 - No customer notification channel yet (SMS/Telegram to customers) — customers check the order page or /track-order.
 
-## Next session: start Phase 4 (admin dashboard)
+## Next session: start Phase 5 (printing services)
 
 1. Read `AGENTS.md` (Next.js 16 rules), this file, and `docs/ARCHITECTURE.md`.
-2. Run `npm run dev:up` — starts Docker if the sandbox restarted, then local Supabase, then checks the API (data persists in Docker volumes). A "cannot connect to Docker" / curl exit 7 at session start just means this hasn't run yet. If the DB was reset: `npm run dev:sample-images` (needs `NODE_PATH=$(npm root -g)`).
-3. Build `/admin/login` (safe `next` redirect), admin layout + navigation from `ADMIN_ROUTES`, dashboard, products/images, categories, inventory, orders (status, assign, notes), payments review (signed receipt URLs), customers, staff, settings (business, banks, delivery zones, homepage), and a `create-super-admin` script.
-4. Browser tests: `npm run test:smoke` and `npm run test:smoke:checkout` (app on :3100, `NODE_PATH=$(npm root -g)`), plus `npm run check` and `npm run test:db`; update this file.
+2. Run `npm run dev:up` — starts Docker if the sandbox restarted, then local Supabase, then checks the API (data persists in Docker volumes). A "cannot connect to Docker" / curl exit 7 at session start just means this hasn't run yet. If the DB was reset: `npm run dev:sample-images` and `ADMIN_PASSWORD=LocalDevOwner2026 npm run admin:create -- --email owner@abiye.local --name "Abiye Owner"`.
+3. Build `/printing` ordering (signed upload to `printing-files/jobs/<id>/`, server-side PDF page count with pdf-lib, options + live estimate, `create_printing_job`, job link with token, add to basket as a printing item), `/admin/printing` (jobs list, secure downloads, quotes, statuses), printing price rules editor, retention cron; add `/admin/printing` to `ADMIN_ROUTES`.
+4. Tests: `npm run check`, `npm run test:db`, then with the app on :3100 (`npx next start -p 3100`) and `NODE_PATH=$(npm root -g)`: `npm run test:smoke`, `npm run test:smoke:checkout`, `npm run test:smoke:admin`. Update this file.

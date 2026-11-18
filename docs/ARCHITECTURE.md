@@ -206,7 +206,7 @@ Errors are raised as stable codes (e.g. `out_of_stock`) that the app maps to tra
 
 ### Admin (`/admin/*`, all server-guarded)
 
-`/admin/login`, `/admin` (dashboard), `/admin/products` (+ `/new`, `/[id]/edit`), `/admin/categories`, `/admin/inventory`, `/admin/orders` (+ `/[id]`), `/admin/payments`, `/admin/printing`, `/admin/customers`, `/admin/analytics`, `/admin/promotions`, `/admin/staff`, `/admin/settings`. Navigation and required permissions: `ADMIN_ROUTES` in `src/lib/auth/permissions.ts`.
+`/admin/login`, `/admin` (dashboard), `/admin/products` (+ `/new`, `/[id]/edit`), `/admin/categories`, `/admin/inventory`, `/admin/orders` (+ `/[id]`), `/admin/payments`, `/admin/printing`, `/admin/customers`, `/admin/analytics`, `/admin/promotions`, `/admin/staff`, `/admin/settings`. Navigation and required permissions: `ADMIN_ROUTES` in `src/lib/auth/permissions.ts`. Admin reads/writes use the signed-in user's Supabase session (RLS enforced); the secret-key client is used only for creating staff auth accounts and listing staff emails, after `requirePermission('staff.manage')`. Dashboard aggregates come from `admin_dashboard_stats()` (permission-scoped). `/admin/account` lets staff change their password.
 
 ### Server endpoints
 

@@ -2,13 +2,24 @@
  * Storefront smoke test (browser). Requires: local Supabase (`npx supabase start`
  * + `npm run dev:sample-images`) and the app on BASE_URL (default :3100).
  *   NODE_PATH=$(npm root -g) node tests/e2e/storefront.smoke.cjs
- * Replaced by a proper Playwright suite in Phase 7.
+ * Replaced by a proper Playwright suite in Phase 7. Run with --env-file=.env.local.
  */
 const { chromium } = require('playwright');
 const B = process.env.BASE_URL ?? 'http://localhost:3100';
 const results = [];
 const check = (ok, msg) => { results.push(`${ok ? 'ok  ' : 'FAIL'} - ${msg}`); };
+// Repeatable runs: other suites reserve sample stock, so restore the seeded levels (LOCAL database only).
+function resetSampleStock() {
+  if (!/127\.0\.0\.1|localhost/.test(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")) throw new Error("Local Supabase only");
+  require("child_process").execSync(`psql -Atq -v ON_ERROR_STOP=1 "postgresql://postgres:postgres@127.0.0.1:54322/postgres"`, {
+    input: `update products p set stock_quantity = v.q from (values ('SMP-PF-001',15),('SMP-PF-002',40),('SMP-SK-001',3),('SMP-MK-001',60),
+      ('SMP-HC-001',0),('SMP-PH-001',5),('SMP-CH-001',80),('SMP-EP-001',25),('SMP-PB-001',12),('SMP-CB-001',200)) v(sku,q) where p.sku = v.sku;
+      delete from rate_limits;`,
+  });
+}
+
 (async () => {
+  resetSampleStock();
   const b = await chromium.launch();
   const ctx = await b.newContext({ viewport: { width: 1280, height: 900 } });
   const p = await ctx.newPage();
