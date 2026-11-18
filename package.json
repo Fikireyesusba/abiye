@@ -15,7 +15,8 @@
     "db:types": "supabase gen types typescript --schema public > src/lib/supabase/database.types.ts",
     "dev:sample-images": "node --env-file=.env.local scripts/dev-sample-images.mjs",
     "test:smoke": "node tests/e2e/storefront.smoke.cjs",
-    "test:smoke:checkout": "node --env-file=.env.local tests/e2e/checkout.smoke.cjs"
+    "test:smoke:checkout": "node --env-file=.env.local tests/e2e/checkout.smoke.cjs",
+    "dev:up": "bash scripts/dev-up.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

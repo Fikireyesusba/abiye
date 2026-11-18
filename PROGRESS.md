@@ -96,6 +96,6 @@ Verified with `npm run test:smoke:checkout` (37 browser checks against local Sup
 ## Next session: start Phase 4 (admin dashboard)
 
 1. Read `AGENTS.md` (Next.js 16 rules), this file, and `docs/ARCHITECTURE.md`.
-2. In the cloud sandbox Docker may be stopped: run `dockerd &`, then `npx supabase start` (data persists in Docker volumes). If the DB was reset: `npm run dev:sample-images` (needs `NODE_PATH=$(npm root -g)`).
+2. Run `npm run dev:up` — starts Docker if the sandbox restarted, then local Supabase, then checks the API (data persists in Docker volumes). A "cannot connect to Docker" / curl exit 7 at session start just means this hasn't run yet. If the DB was reset: `npm run dev:sample-images` (needs `NODE_PATH=$(npm root -g)`).
 3. Build `/admin/login` (safe `next` redirect), admin layout + navigation from `ADMIN_ROUTES`, dashboard, products/images, categories, inventory, orders (status, assign, notes), payments review (signed receipt URLs), customers, staff, settings (business, banks, delivery zones, homepage), and a `create-super-admin` script.
 4. Browser tests: `npm run test:smoke` and `npm run test:smoke:checkout` (app on :3100, `NODE_PATH=$(npm root -g)`), plus `npm run check` and `npm run test:db`; update this file.

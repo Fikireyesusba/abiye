@@ -14,10 +14,10 @@ npm ci
 cp .env.example .env.local
 ```
 
-Option A — local Supabase (Docker):
+Option A — local Supabase (Docker). Starts Docker if needed, then Supabase, then checks the API:
 
 ```bash
-npx supabase start
+npm run dev:up
 ```
 
 `supabase start` applies `supabase/migrations/*` and `supabase/seed.sql` and prints the local URL and keys; copy them into `.env.local`. Then add labelled sample product images (local projects only):
