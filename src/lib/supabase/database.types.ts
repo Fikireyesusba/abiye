@@ -574,6 +574,11 @@ isOneToOne: false
 "admin_create_staff_profile":
 { Args: { "p_full_name": string,"p_role_key": string,"p_user_id": string }; Returns: undefined
                            },
+"admin_customer_accounts":
+{ Args: { "p_limit"?: number,"p_search"?: string,"p_user_id"?: string }; Returns: {
+              "created_at": string,"email": string,"email_confirmed_at": string,"full_name": string,"id": string,"is_staff": boolean,"last_order_at": string,"last_sign_in_at": string,"order_count": number,"phone": string
+            }[]
+                           },
 "admin_dashboard_stats":
 { Args: { "p_days"?: number }; Returns: Json
                            },

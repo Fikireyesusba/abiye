@@ -175,7 +175,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
               <div><dt className="text-muted-foreground">Fulfillment</dt><dd>{order.fulfillment_method === "pickup" ? "Pickup at shop" : `Delivery · ${order.city}`}</dd></div>
               {order.address_line && <div><dt className="text-muted-foreground">Address</dt><dd>{order.address_line}</dd></div>}
               {order.delivery_instructions && <div><dt className="text-muted-foreground">Instructions</dt><dd>{order.delivery_instructions}</dd></div>}
-              {can("customers.view") && <Link href={`/admin/customers/${order.customer_id}`} className="inline-block pt-1 text-primary hover:underline">Customer history →</Link>}
+              {can("customers.view") && order.user_id && <Link href={`/admin/customers/${order.user_id}`} className="inline-block pt-1 text-primary hover:underline">Customer account & history →</Link>}
             </dl>
           </Panel>
 

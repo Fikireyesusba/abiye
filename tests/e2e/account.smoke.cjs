@@ -200,6 +200,22 @@ async function emailLink(to, subjectPart) {
   await a.fill("#password", OWNER.password);
   await a.click("button[type=submit]");
   await a.waitForURL((u) => u.pathname === "/admin");
+  // Customers page lists registered accounts (even without orders), incl. unconfirmed sign-ups
+  const pending = `pending-${RUN}@example.com`;
+  await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/signup`, {
+    method: "POST", headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, "content-type": "application/json" },
+    body: JSON.stringify({ email: pending, password: "Pending2026x", data: { full_name: "Pending Person" } }),
+  });
+  await a.goto(`${B}/admin/customers?q=${encodeURIComponent(pending)}`);
+  check((await a.locator(`tr:has-text("${pending}"):has-text("Not confirmed")`).count()) === 1, "new sign-up without orders appears under Customers as 'Not confirmed'");
+  await a.goto(`${B}/admin/customers?q=${encodeURIComponent(strangerEmail)}`);
+  check((await a.locator(`tr:has-text("${strangerEmail}"):has-text("Confirmed")`).count()) === 1, "confirmed account with no orders is listed");
+  await a.goto(`${B}/admin/customers?q=${encodeURIComponent(email)}`);
+  await a.locator(`tr:has-text("${email}") a`).first().click();
+  await a.waitForURL(/\/admin\/customers\/[0-9a-f-]{36}$/);
+  check((await a.locator(`a[href="/admin/orders/${orderId}"]`).count()) === 1 && (await a.locator(`text=${email}`).count()) >= 1,
+    "customer page shows their email and orders");
+
   const original = sql("select json_build_object('contact', (select value from website_settings where key='contact'), 'social', (select value from website_settings where key='social'), 'legal', (select value from website_settings where key='legal'))::text");
   await a.goto(`${B}/admin/settings?tab=general`);
   const contact = a.locator("form:has(input[name=whatsapp])");
