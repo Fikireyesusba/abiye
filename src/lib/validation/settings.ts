@@ -6,6 +6,7 @@ import { z } from "zod";
  * crash the public site (falls back to defaults).
  */
 const localized = z.object({ en: z.string().max(500), am: z.string().max(500) });
+const longText = z.object({ en: z.string().max(30000), am: z.string().max(30000) });
 const optionalUrl = z.url({ protocol: /^https$/ }).nullable();
 
 export const settingsSchemas = {
@@ -37,6 +38,7 @@ export const settingsSchemas = {
     max_copies: z.int().min(1).max(1000),
     retention_days: z.int().min(1).max(365),
   }),
+  legal: z.object({ terms: longText, privacy: longText, approved: z.boolean() }),
   homepage: z.object({
     hero_title: localized,
     hero_subtitle: localized,

@@ -31,3 +31,11 @@ describe("admin order search parsing", () => {
     expect(parseOrderSearch("*")).toBeNull();
   });
 });
+
+import { safeNext } from "@/lib/account/session";
+
+describe("customer sign-in redirect", () => {
+  it.each(["/account", "/checkout", "/printing/jobs/abc", "/order-success/x?y=1"])("allows %s", (p) => expect(safeNext(p)).toBe(p));
+  it.each(["//evil.com", "/\\evil.com", "https://evil.com", "/admin", "/admin/orders", "/a/../admin", "javascript:x", undefined])("rejects %s", (p) =>
+    expect(safeNext(p)).toBe("/account"));
+});

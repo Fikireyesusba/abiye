@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import { publicImageUrl } from "@/lib/storage";
 import type { Locale } from "@/i18n/config";
-import { CartButton, DesktopNav, LanguageSwitcher, MobileNav } from "./header-client";
+import { AccountButton, CartButton, DesktopNav, LanguageSwitcher, MobileNav } from "./header-client";
 
 export async function SearchForm({ defaultValue, className }: { defaultValue?: string; className?: string }) {
   const t = await getTranslations();
@@ -41,6 +41,7 @@ export async function SiteHeader() {
     { href: "/printing", label: t("nav.printing") },
   ];
   const secondary = [
+    { href: "/account", label: t("account.title") },
     { href: "/track-order", label: t("nav.trackOrder") },
     { href: "/about", label: t("nav.about") },
     { href: "/contact", label: t("nav.contact") },
@@ -67,6 +68,7 @@ export async function SiteHeader() {
         <SearchForm className="ml-auto hidden w-full max-w-xs md:block" />
         <div className="ml-auto flex items-center gap-1 md:ml-0">
           <LanguageSwitcher className="hidden sm:inline-flex" />
+          <AccountButton />
           <CartButton />
         </div>
       </div>

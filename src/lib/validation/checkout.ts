@@ -30,7 +30,8 @@ export const cartItemSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("printing"),
     printingJobId: z.guid(),
-    accessToken: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+    // Optional: a signed-in owner may pay for their job without the private-link token.
+    accessToken: z.string().regex(/^[A-Za-z0-9_-]{43}$/).optional(),
   }),
 ]);
 
@@ -45,6 +46,7 @@ export const checkoutSchema = z
     addressLine: cleanText(3, 300).optional(),
     instructions: cleanText(0, 500).optional(),
     items: z.array(cartItemSchema).min(1).max(MAX_CART_LINES),
+    acceptTerms: z.literal(true, { message: "terms_required" }),
   })
   .superRefine((v, ctx) => {
     if (v.fulfillment === "delivery") {
@@ -57,7 +59,7 @@ export type CheckoutInput = z.infer<typeof checkoutSchema>;
 
 export const paymentSubmissionSchema = z.object({
   orderId: z.guid(),
-  accessToken: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+  accessToken: z.string().regex(/^[A-Za-z0-9_-]{43}$/).optional(),
   transactionReference: z
     .string()
     .trim()

@@ -1,5 +1,6 @@
 "use server";
 import { z } from "zod";
+import { getCustomerUser } from "@/lib/account/session";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import { toAppError, type AppErrorCode } from "@/lib/errors";
 import { clientIpKey, rateLimitAll } from "@/lib/security/rate-limit";
@@ -26,6 +27,7 @@ async function maxBytes() {
 
 /** Step 1: signed upload URLs for a NEW job folder (jobs/<jobId>/<uuid>.<ext>). */
 export async function preparePrintUpload(input: { files: unknown }): Promise<{ ok: true; jobId: string; uploads: { path: string; token: string }[] } | Fail> {
+  if (!(await getCustomerUser())) return { ok: false, error: "login_required" };
   const files = z
     .array(z.object({ mime: z.string(), size: z.number().int().positive() }))
     .min(1)
@@ -68,6 +70,8 @@ export type SubmitPrintResult = { ok: true; jobId: string } | (Fail & { field?: 
 
 /** Step 2: verify every uploaded file by content, count pages, create the job (priced or awaiting quote). */
 export async function submitPrintJob(input: unknown): Promise<SubmitPrintResult> {
+  const user = await getCustomerUser();
+  if (!user) return { ok: false, error: "login_required" };
   const parsed = jobSchema.safeParse(input);
   if (!parsed.success) {
     const field = String(parsed.error.issues[0]?.path[0] ?? "");
@@ -119,7 +123,8 @@ export async function submitPrintJob(input: unknown): Promise<SubmitPrintResult>
   }
 
   const token = generateAccessToken();
-  const { error } = await db.rpc("create_printing_job", {
+  const { error } = await db.rpc("create_printing_job_for_user", {
+    p_user_id: user.id,
     p_input: {
       id: v.jobId, access_token_hash: sha256Hex(token), customer: { full_name: v.fullName, phone: v.phone },
       color_mode: v.colorMode, paper_size: v.paperSize, sides: v.sides, copies: v.copies,

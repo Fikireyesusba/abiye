@@ -46,9 +46,11 @@ export interface CustomerPrintJob {
   order: { order_number: string; status: string } | null;
 }
 
-export async function getJobForCustomer(jobId: string, token: string): Promise<CustomerPrintJob | null> {
-  if (!isGuid(jobId) || !isAccessToken(token)) return null;
-  const { data, error } = await getSupabaseAdmin()
+/** By private-link token, or because the signed-in user owns the job. */
+export async function getJobForCustomer(jobId: string, token: string | null, userId?: string | null): Promise<CustomerPrintJob | null> {
+  if (!isGuid(jobId)) return null;
+  if (!(token && isAccessToken(token)) && !(userId && isGuid(userId))) return null;
+  let q = getSupabaseAdmin()
     .from("printing_jobs")
     .select(
       `id, job_number, status, customer_name, customer_phone, color_mode, paper_size, sides, copies, page_count,
@@ -57,9 +59,9 @@ export async function getJobForCustomer(jobId: string, token: string): Promise<C
        history:printing_job_history ( to_status, created_at, note ),
        order:orders ( order_number, status )`,
     )
-    .eq("id", jobId)
-    .eq("access_token_hash", sha256Hex(token))
-    .maybeSingle();
+    .eq("id", jobId);
+  q = token && isAccessToken(token) ? q.eq("access_token_hash", sha256Hex(token)) : q.eq("user_id", userId!);
+  const { data, error } = await q.maybeSingle();
   if (error) {
     console.error("[printing] job load failed:", error.message);
     return null;
@@ -70,16 +72,16 @@ export async function getJobForCustomer(jobId: string, token: string): Promise<C
   return job;
 }
 
-/** Minimal, token-verified job info for the basket. */
-export async function getJobsForCart(items: { id: string; token: string }[]) {
-  const valid = items.filter((i) => isGuid(i.id) && isAccessToken(i.token)).slice(0, 10);
+/** Minimal job info for the basket: token-verified, or owned by the signed-in user. */
+export async function getJobsForCart(items: { id: string; token?: string }[], userId?: string | null) {
+  const valid = items.filter((i) => isGuid(i.id)).slice(0, 10);
   if (!valid.length) return [];
   const { data } = await getSupabaseAdmin()
     .from("printing_jobs")
-    .select("id, job_number, status, total_etb, order_id, color_mode, paper_size, sides, copies, page_count, access_token_hash")
+    .select("id, job_number, status, total_etb, order_id, color_mode, paper_size, sides, copies, page_count, access_token_hash, user_id")
     .in("id", valid.map((i) => i.id));
-  const hashes = new Map(valid.map((i) => [i.id, sha256Hex(i.token)]));
+  const hashes = new Map(valid.map((i) => [i.id, i.token && isAccessToken(i.token) ? sha256Hex(i.token) : null]));
   return (data ?? [])
-    .filter((j) => hashes.get(j.id) === j.access_token_hash)
-    .map((j) => ({ ...j, access_token_hash: undefined }));
+    .filter((j) => hashes.get(j.id) === j.access_token_hash || (!!userId && j.user_id === userId))
+    .map((j) => ({ ...j, access_token_hash: undefined, user_id: undefined }));
 }

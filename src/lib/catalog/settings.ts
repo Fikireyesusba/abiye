@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { getSupabasePublic } from "@/lib/supabase/public";
+import { privacy, terms, toLegalText } from "@/content/legal";
 import { settingsSchemas, type Settings, type SettingsKey } from "@/lib/validation/settings";
 
 const DEFAULTS: { [K in SettingsKey]: Settings<K> } = {
@@ -10,6 +11,11 @@ const DEFAULTS: { [K in SettingsKey]: Settings<K> } = {
   social: { facebook: null, instagram: null, tiktok: null, telegram: null },
   delivery: { pickup_enabled: true, delivery_enabled: true, free_delivery_threshold_etb: null, payment_window_hours: 24 },
   printing: { service_charge_etb: 0, max_file_mb: 25, max_copies: 500, retention_days: 30 },
+  legal: {
+    terms: { en: toLegalText(terms.en), am: toLegalText(terms.am) },
+    privacy: { en: toLegalText(privacy.en), am: toLegalText(privacy.am) },
+    approved: false,
+  },
   homepage: { hero_title: { en: "", am: "" }, hero_subtitle: { en: "", am: "" }, hero_image_path: null, why_us: [] },
 };
 

@@ -5,7 +5,7 @@ import { Check, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cart, useCart } from "@/lib/cart/store";
 
-export function AddPrintingToCart({ jobId, accessToken }: { jobId: string; accessToken: string }) {
+export function AddPrintingToCart({ jobId, accessToken }: { jobId: string; accessToken: string | null }) {
   const t = useTranslations("printJob");
   const inCart = useCart().some((i) => i.type === "printing" && i.printingJobId === jobId);
   if (inCart) {

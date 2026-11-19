@@ -9,6 +9,7 @@ const base = {
   deliveryZoneId: "40000000-0000-0000-0000-000000000001",
   addressLine: "Bole, House 123",
   items: [{ type: "product", productId: "20000000-0000-0000-0000-000000000001", quantity: 2 }],
+  acceptTerms: true,
 };
 
 describe("checkout validation", () => {
@@ -37,6 +38,8 @@ describe("checkout validation", () => {
     ["bad product id", { items: [{ ...base.items[0], productId: "1 or 1=1" }] }],
     ["one-letter name", { fullName: "A" }],
     ["bad idempotency key", { idempotencyKey: "abc" }],
+    ["terms not accepted", { acceptTerms: false }],
+    ["terms missing", { acceptTerms: undefined }],
   ])("rejects %s", (_, patch) => {
     expect(checkoutSchema.safeParse({ ...base, ...patch }).success).toBe(false);
   });
@@ -54,6 +57,7 @@ describe("payment submission validation", () => {
   });
   it("rejects malformed tokens and references", () => {
     expect(paymentSubmissionSchema.safeParse({ ...ok, accessToken: "short" }).success).toBe(false);
+    expect(paymentSubmissionSchema.safeParse({ orderId: ok.orderId }).success).toBe(true); // owner access (no token)
     expect(paymentSubmissionSchema.safeParse({ ...ok, transactionReference: "<script>" }).success).toBe(false);
   });
 });

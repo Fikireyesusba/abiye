@@ -12,8 +12,8 @@ if ! docker info >/dev/null 2>&1; then
   docker info >/dev/null 2>&1 || { echo "Docker is not running. Start Docker Desktop (or the docker service) and retry."; exit 1; }
 fi
 
-# Skip services this project does not use, to save memory and startup time.
-npx supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,inbucket,mailpit,realtime >/dev/null
+# Skip services this project does not use (the local mail catcher stays on for sign-up emails).
+npx supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,realtime >/dev/null
 
 KEY="${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-$(grep -E '^NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=' .env.local 2>/dev/null | cut -d= -f2)}"
 code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:54321/rest/v1/products?select=id&limit=1" -H "apikey: ${KEY}")

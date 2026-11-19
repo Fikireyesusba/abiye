@@ -88,7 +88,8 @@ erDiagram
 
 | Area | Tables | Notes |
 |---|---|---|
-| Staff & RBAC | `profiles`, `admin_roles`, `admin_permissions`, `role_permissions` | Customers have **no** accounts (guest checkout). Roles → permissions are data, editable without code changes. |
+| Staff & RBAC | `profiles`, `admin_roles`, `admin_permissions`, `role_permissions` | Staff = users with a `profiles` row. Roles → permissions are data, editable without code changes. |
+| Customer accounts | `customer_accounts` (1:1 `auth.users`, auto-created on sign-up) | Email + password, email confirmation required. **Ordering requires a confirmed account** — enforced in the DB (`create_order_for_user` / `create_printing_job_for_user` wrappers + BEFORE INSERT trigger); customers read only their own orders/jobs (RLS). Signing up never grants admin access. |
 | Catalog | `categories` (department + parent), `products` (incl. generated `effective_price_etb`), `product_images`, `inventory_movements` | Products are archived, not deleted, once ordered (FK `RESTRICT`). `stock_quantity` can only change via functions — the column is excluded from the `UPDATE` grant. |
 | Customers | `customers` (unique normalized phone), `addresses` | Upserted at checkout. |
 | Orders | `orders`, `order_items`, `order_status_history`, `order_notes` | Items snapshot name/SKU/unit price. Order snapshots bank details (`bank_snapshot`) so history survives bank edits. CHECK `total = subtotal + delivery − discount`. |
@@ -200,10 +201,12 @@ Errors are raised as stable codes (e.g. `out_of_stock`) that the app maps to tra
 | `/printing/jobs/[jobId]?t=token` | Job status, price or quote, add to basket | token-verified lookup |
 | `/products/[slug]` | Gallery, bilingual description, stock, quantity | `products`, `product_images` |
 | `/cart` | Basket (localStorage), totals preview | display mirror `src/lib/pricing/cart.ts` |
-| `/checkout` | Contact, fulfillment, review → creates order | `create_order` |
+| `/checkout` | Signed-in customers only: contact (prefilled), fulfillment, accept terms → creates order | `create_order_for_user` |
+| `/account`, `/account/login`, `/account/signup`, `/account/forgot-password`, `/account/reset-password` | Customer accounts, my orders & printing jobs | Supabase Auth, RLS |
+| `/auth/confirm` | Email links (confirm sign-up, reset password) via `token_hash` | `verifyOtp` |
 | `/order-success/[orderId]?t=token` | Bank instructions, copy button, receipt upload, tracking code | `submit_payment` |
 | `/track-order` | Order number + tracking code → status | rate-limited lookup |
-| `/about`, `/contact`, `/privacy`, `/terms` | Content | `website_settings` |
+| `/about`, `/contact`, `/privacy`, `/terms` | Content; contact shows phone, email, WhatsApp, Telegram, Instagram, TikTok, Facebook and the bank accounts to pay into; terms/privacy edited in admin | `website_settings`, active `bank_accounts` (safe columns, server-side) |
 
 ### Admin (`/admin/*`, all server-guarded)
 

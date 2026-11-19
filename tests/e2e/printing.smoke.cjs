@@ -6,6 +6,7 @@
 const { chromium } = require("playwright");
 const { execSync } = require("child_process");
 const { PDFDocument } = require("pdf-lib");
+const { ensureCustomer, loginCustomer } = require("./_customer.cjs");
 
 const B = process.env.BASE_URL ?? "http://localhost:3100";
 const DB = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
@@ -34,6 +35,8 @@ async function fillContact(p, name, phone) {
   const b = await chromium.launch();
   const ctx = await b.newContext({ viewport: { width: 1280, height: 1000 } });
   const p = await ctx.newPage();
+  await ensureCustomer("printing-e2e@example.com", "Printing2026e2e");
+  await loginCustomer(p, B, "printing-e2e@example.com", "Printing2026e2e");
   const errors = [];
   p.on("pageerror", (e) => errors.push(e.message));
 
@@ -97,6 +100,7 @@ async function fillContact(p, name, phone) {
   check((await p.locator("dl div:has(dt:text-is('Total')) dd").textContent()) === "310 ETB", "basket total: 60 printing + 250 cable");
   await p.goto(`${B}/checkout`);
   await p.waitForSelector("text=Order summary");
+  await p.check("label:has-text('I agree') input[type=checkbox]");
   await p.fill("#fullName", "Meron Print");
   await p.fill("#phone", "0911556677");
   await p.click("button[type=submit]");

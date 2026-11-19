@@ -70,6 +70,36 @@ export interface CustomerOrder {
   history: { to_status: string; created_at: string }[];
 }
 
+const ORDER_FIELDS = `id, order_number, status, payment_status, customer_name, customer_phone, fulfillment_method, city, address_line,
+       delivery_instructions, subtotal_etb, delivery_fee_etb, discount_etb, total_etb, bank_snapshot, payment_due_at, created_at,
+       items:order_items ( id, name_en, name_am, quantity, unit_price_etb, line_total_etb ),
+       submissions:payment_submissions ( status, review_note, submitted_at, transaction_reference ),
+       history:order_status_history ( to_status, created_at )`;
+
+/**
+ * Authorize customer access to an order: by private-link token, OR because the
+ * signed-in user placed it. Returns the order plus its stored token hash (used
+ * server-side for submit_payment) — never send the hash to the browser.
+ */
+export async function authorizeCustomerOrder(
+  orderId: string,
+  opts: { token?: string | null; userId?: string | null },
+): Promise<{ order: CustomerOrder; accessTokenHash: string } | null> {
+  if (!isGuid(orderId)) return null;
+  let q = getSupabaseAdmin().from("orders").select(`${ORDER_FIELDS}, access_token_hash, user_id`).eq("id", orderId);
+  if (opts.token && isAccessToken(opts.token)) q = q.eq("access_token_hash", sha256Hex(opts.token));
+  else if (opts.userId && isGuid(opts.userId)) q = q.eq("user_id", opts.userId);
+  else return null;
+  const { data, error } = await q.maybeSingle();
+  if (error || !data) return null;
+  const { access_token_hash, user_id: _u, ...rest } = data as unknown as CustomerOrder & { access_token_hash: string; user_id: string };
+  void _u;
+  const order = rest as CustomerOrder;
+  order.submissions.sort((a, b) => b.submitted_at.localeCompare(a.submitted_at));
+  order.history.sort((a, b) => a.created_at.localeCompare(b.created_at));
+  return { order, accessTokenHash: access_token_hash };
+}
+
 /** Load an order for its customer. Returns null for a wrong id OR token (indistinguishable). */
 export async function getOrderForCustomer(orderId: string, accessToken: string): Promise<CustomerOrder | null> {
   if (!isGuid(orderId) || !isAccessToken(accessToken)) return null;

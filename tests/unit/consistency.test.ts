@@ -59,3 +59,31 @@ describe("admin context parsing", () => {
     expect(parseAdminContext(null)).toBeNull();
   });
 });
+
+import { parseLegalText, privacy, terms, toLegalText } from "@/content/legal";
+
+describe("legal text format", () => {
+  it("round-trips the default sections", () => {
+    const parsed = parseLegalText(toLegalText(terms.en));
+    expect(parsed.map((s) => s.heading)).toEqual(terms.en.map((s) => s.heading));
+    expect(parseLegalText(toLegalText(privacy.am))).toHaveLength(privacy.am.length);
+  });
+  it("treats markup as plain text and keeps intro paragraphs", () => {
+    const parsed = parseLegalText("Intro line\n\n## Heading <script>x</script>\n\nBody <b>bold</b>");
+    expect(parsed[0]).toEqual({ heading: null, paragraphs: ["Intro line"] });
+    expect(parsed[1].heading).toBe("Heading <script>x</script>"); // rendered as text by React, never as HTML
+  });
+});
+
+import { handleFromUrl } from "@/components/shop/social-links";
+
+describe("social handles", () => {
+  it.each([
+    ["https://instagram.com/abiyeshop", "@abiyeshop"],
+    ["https://www.tiktok.com/@abiye.shop", "@abiye.shop"],
+    ["https://facebook.com/abiyeshop/", "@abiyeshop"],
+    ["https://t.me/abiyeshop", "@abiyeshop"],
+    ["https://facebook.com/profile.php?id=123", "Facebook"],
+    ["not a url", "Facebook"],
+  ])("%s → %s", (url, expected) => expect(handleFromUrl(url, "Facebook")).toBe(expected));
+});

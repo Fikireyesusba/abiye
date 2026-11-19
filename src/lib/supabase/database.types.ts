@@ -101,6 +101,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"customer_accounts": {
+                  Row: {
+                    "accepted_terms_at": string | null,"created_at": string,"full_name": string | null,"id": string,"phone": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "accepted_terms_at"?: string | null,"created_at"?: string,"full_name"?: string | null,"id": string,"phone"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "accepted_terms_at"?: string | null,"created_at"?: string,"full_name"?: string | null,"id"?: string,"phone"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"customers": {
                   Row: {
                     "created_at": string,"email": string | null,"full_name": string,"id": string,"last_order_at": string | null,"order_count": number,"phone": string,"updated_at": string
@@ -257,14 +271,14 @@ isOneToOne: false
                   ]
                 },"orders": {
                   Row: {
-                    "access_token_hash": string,"address_line": string | null,"assigned_to": string | null,"bank_account_id": string | null,"bank_snapshot": NonNullable<Json>,"cancelled_at": string | null,"city": string | null,"created_at": string,"currency": string,"customer_id": string,"customer_name": string,"customer_phone": string,"delivery_fee_etb": number,"delivery_instructions": string | null,"delivery_zone_id": string | null,"discount_etb": number,"fulfillment_method": Database["public"]['Enums']["fulfillment_method"],"id": string,"idempotency_key": string,"locale": string,"order_number": string,"payment_due_at": string,"payment_status": Database["public"]['Enums']["payment_status"],"payment_verified_at": string | null,"payment_verified_by": string | null,"promotion_id": string | null,"status": Database["public"]['Enums']["order_status"],"subtotal_etb": number,"total_etb": number,"tracking_code_hash": string,"updated_at": string
+                    "access_token_hash": string,"address_line": string | null,"assigned_to": string | null,"bank_account_id": string | null,"bank_snapshot": NonNullable<Json>,"cancelled_at": string | null,"city": string | null,"created_at": string,"currency": string,"customer_id": string,"customer_name": string,"customer_phone": string,"delivery_fee_etb": number,"delivery_instructions": string | null,"delivery_zone_id": string | null,"discount_etb": number,"fulfillment_method": Database["public"]['Enums']["fulfillment_method"],"id": string,"idempotency_key": string,"locale": string,"order_number": string,"payment_due_at": string,"payment_status": Database["public"]['Enums']["payment_status"],"payment_verified_at": string | null,"payment_verified_by": string | null,"promotion_id": string | null,"status": Database["public"]['Enums']["order_status"],"subtotal_etb": number,"total_etb": number,"tracking_code_hash": string,"updated_at": string,"user_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "access_token_hash": string,"address_line"?: string | null,"assigned_to"?: string | null,"bank_account_id"?: string | null,"bank_snapshot": NonNullable<Json>,"cancelled_at"?: string | null,"city"?: string | null,"created_at"?: string,"currency"?: string,"customer_id": string,"customer_name": string,"customer_phone": string,"delivery_fee_etb"?: number,"delivery_instructions"?: string | null,"delivery_zone_id"?: string | null,"discount_etb"?: number,"fulfillment_method": Database["public"]['Enums']["fulfillment_method"],"id"?: string,"idempotency_key": string,"locale"?: string,"order_number"?: string,"payment_due_at": string,"payment_status"?: Database["public"]['Enums']["payment_status"],"payment_verified_at"?: string | null,"payment_verified_by"?: string | null,"promotion_id"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"subtotal_etb": number,"total_etb": number,"tracking_code_hash": string,"updated_at"?: string
+                    "access_token_hash": string,"address_line"?: string | null,"assigned_to"?: string | null,"bank_account_id"?: string | null,"bank_snapshot": NonNullable<Json>,"cancelled_at"?: string | null,"city"?: string | null,"created_at"?: string,"currency"?: string,"customer_id": string,"customer_name": string,"customer_phone": string,"delivery_fee_etb"?: number,"delivery_instructions"?: string | null,"delivery_zone_id"?: string | null,"discount_etb"?: number,"fulfillment_method": Database["public"]['Enums']["fulfillment_method"],"id"?: string,"idempotency_key": string,"locale"?: string,"order_number"?: string,"payment_due_at": string,"payment_status"?: Database["public"]['Enums']["payment_status"],"payment_verified_at"?: string | null,"payment_verified_by"?: string | null,"promotion_id"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"subtotal_etb": number,"total_etb": number,"tracking_code_hash": string,"updated_at"?: string,"user_id"?: string | null
                   }
                   Update: {
-                    "access_token_hash"?: string,"address_line"?: string | null,"assigned_to"?: string | null,"bank_account_id"?: string | null,"bank_snapshot"?: NonNullable<Json>,"cancelled_at"?: string | null,"city"?: string | null,"created_at"?: string,"currency"?: string,"customer_id"?: string,"customer_name"?: string,"customer_phone"?: string,"delivery_fee_etb"?: number,"delivery_instructions"?: string | null,"delivery_zone_id"?: string | null,"discount_etb"?: number,"fulfillment_method"?: Database["public"]['Enums']["fulfillment_method"],"id"?: string,"idempotency_key"?: string,"locale"?: string,"order_number"?: string,"payment_due_at"?: string,"payment_status"?: Database["public"]['Enums']["payment_status"],"payment_verified_at"?: string | null,"payment_verified_by"?: string | null,"promotion_id"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"subtotal_etb"?: number,"total_etb"?: number,"tracking_code_hash"?: string,"updated_at"?: string
+                    "access_token_hash"?: string,"address_line"?: string | null,"assigned_to"?: string | null,"bank_account_id"?: string | null,"bank_snapshot"?: NonNullable<Json>,"cancelled_at"?: string | null,"city"?: string | null,"created_at"?: string,"currency"?: string,"customer_id"?: string,"customer_name"?: string,"customer_phone"?: string,"delivery_fee_etb"?: number,"delivery_instructions"?: string | null,"delivery_zone_id"?: string | null,"discount_etb"?: number,"fulfillment_method"?: Database["public"]['Enums']["fulfillment_method"],"id"?: string,"idempotency_key"?: string,"locale"?: string,"order_number"?: string,"payment_due_at"?: string,"payment_status"?: Database["public"]['Enums']["payment_status"],"payment_verified_at"?: string | null,"payment_verified_by"?: string | null,"promotion_id"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"subtotal_etb"?: number,"total_etb"?: number,"tracking_code_hash"?: string,"updated_at"?: string,"user_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -361,14 +375,14 @@ isOneToOne: false
                   ]
                 },"printing_jobs": {
                   Row: {
-                    "access_token_hash": string,"assigned_to": string | null,"color_mode": Database["public"]['Enums']["print_color_mode"],"copies": number,"created_at": string,"customer_id": string | null,"customer_name": string,"customer_notes": string | null,"customer_phone": string,"estimated_total_etb": number | null,"files_delete_after": string,"files_deleted_at": string | null,"fulfillment_method": Database["public"]['Enums']["fulfillment_method"],"id": string,"job_number": string,"order_id": string | null,"page_count": number | null,"page_count_source": string | null,"paper_size": string,"price_per_page_etb": number | null,"quoted_at": string | null,"quoted_by": string | null,"service_charge_etb": number,"sides": Database["public"]['Enums']["print_sides"],"status": Database["public"]['Enums']["print_job_status"],"total_etb": number | null,"updated_at": string
+                    "access_token_hash": string,"assigned_to": string | null,"color_mode": Database["public"]['Enums']["print_color_mode"],"copies": number,"created_at": string,"customer_id": string | null,"customer_name": string,"customer_notes": string | null,"customer_phone": string,"estimated_total_etb": number | null,"files_delete_after": string,"files_deleted_at": string | null,"fulfillment_method": Database["public"]['Enums']["fulfillment_method"],"id": string,"job_number": string,"order_id": string | null,"page_count": number | null,"page_count_source": string | null,"paper_size": string,"price_per_page_etb": number | null,"quoted_at": string | null,"quoted_by": string | null,"service_charge_etb": number,"sides": Database["public"]['Enums']["print_sides"],"status": Database["public"]['Enums']["print_job_status"],"total_etb": number | null,"updated_at": string,"user_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "access_token_hash": string,"assigned_to"?: string | null,"color_mode": Database["public"]['Enums']["print_color_mode"],"copies": number,"created_at"?: string,"customer_id"?: string | null,"customer_name": string,"customer_notes"?: string | null,"customer_phone": string,"estimated_total_etb"?: number | null,"files_delete_after"?: string,"files_deleted_at"?: string | null,"fulfillment_method"?: Database["public"]['Enums']["fulfillment_method"],"id"?: string,"job_number"?: string,"order_id"?: string | null,"page_count"?: number | null,"page_count_source"?: string | null,"paper_size": string,"price_per_page_etb"?: number | null,"quoted_at"?: string | null,"quoted_by"?: string | null,"service_charge_etb"?: number,"sides": Database["public"]['Enums']["print_sides"],"status"?: Database["public"]['Enums']["print_job_status"],"total_etb"?: number | null,"updated_at"?: string
+                    "access_token_hash": string,"assigned_to"?: string | null,"color_mode": Database["public"]['Enums']["print_color_mode"],"copies": number,"created_at"?: string,"customer_id"?: string | null,"customer_name": string,"customer_notes"?: string | null,"customer_phone": string,"estimated_total_etb"?: number | null,"files_delete_after"?: string,"files_deleted_at"?: string | null,"fulfillment_method"?: Database["public"]['Enums']["fulfillment_method"],"id"?: string,"job_number"?: string,"order_id"?: string | null,"page_count"?: number | null,"page_count_source"?: string | null,"paper_size": string,"price_per_page_etb"?: number | null,"quoted_at"?: string | null,"quoted_by"?: string | null,"service_charge_etb"?: number,"sides": Database["public"]['Enums']["print_sides"],"status"?: Database["public"]['Enums']["print_job_status"],"total_etb"?: number | null,"updated_at"?: string,"user_id"?: string | null
                   }
                   Update: {
-                    "access_token_hash"?: string,"assigned_to"?: string | null,"color_mode"?: Database["public"]['Enums']["print_color_mode"],"copies"?: number,"created_at"?: string,"customer_id"?: string | null,"customer_name"?: string,"customer_notes"?: string | null,"customer_phone"?: string,"estimated_total_etb"?: number | null,"files_delete_after"?: string,"files_deleted_at"?: string | null,"fulfillment_method"?: Database["public"]['Enums']["fulfillment_method"],"id"?: string,"job_number"?: string,"order_id"?: string | null,"page_count"?: number | null,"page_count_source"?: string | null,"paper_size"?: string,"price_per_page_etb"?: number | null,"quoted_at"?: string | null,"quoted_by"?: string | null,"service_charge_etb"?: number,"sides"?: Database["public"]['Enums']["print_sides"],"status"?: Database["public"]['Enums']["print_job_status"],"total_etb"?: number | null,"updated_at"?: string
+                    "access_token_hash"?: string,"assigned_to"?: string | null,"color_mode"?: Database["public"]['Enums']["print_color_mode"],"copies"?: number,"created_at"?: string,"customer_id"?: string | null,"customer_name"?: string,"customer_notes"?: string | null,"customer_phone"?: string,"estimated_total_etb"?: number | null,"files_delete_after"?: string,"files_deleted_at"?: string | null,"fulfillment_method"?: Database["public"]['Enums']["fulfillment_method"],"id"?: string,"job_number"?: string,"order_id"?: string | null,"page_count"?: number | null,"page_count_source"?: string | null,"paper_size"?: string,"price_per_page_etb"?: number | null,"quoted_at"?: string | null,"quoted_by"?: string | null,"service_charge_etb"?: number,"sides"?: Database["public"]['Enums']["print_sides"],"status"?: Database["public"]['Enums']["print_job_status"],"total_etb"?: number | null,"updated_at"?: string,"user_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -628,8 +642,14 @@ isOneToOne: false
 "create_order":
 { Args: { "p_input": Json }; Returns: Json
                            },
+"create_order_for_user":
+{ Args: { "p_input": Json,"p_user_id": string }; Returns: Json
+                           },
 "create_printing_job":
 { Args: { "p_input": Json }; Returns: Json
+                           },
+"create_printing_job_for_user":
+{ Args: { "p_input": Json,"p_user_id": string }; Returns: Json
                            },
 "expire_unpaid_orders":
 { Args: Record<PropertyKey, never>; Returns: number

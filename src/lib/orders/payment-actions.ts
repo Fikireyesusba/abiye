@@ -6,7 +6,8 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { dispatchSoon } from "@/lib/telegram/dispatch";
 import { paymentSubmissionSchema } from "@/lib/validation/checkout";
 import { RECEIPT_MAX_BYTES, RECEIPT_TYPES, validateUpload } from "@/lib/validation/upload";
-import { getOrderForCustomer, isAccessToken, isGuid } from "./access";
+import { getCustomerUser } from "@/lib/account/session";
+import { authorizeCustomerOrder, isAccessToken, isGuid } from "./access";
 
 const BUCKET = "payment-receipts";
 const EXT_BY_MIME: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "application/pdf": "pdf" };
@@ -27,7 +28,7 @@ export async function prepareReceiptUpload(input: {
   size: unknown;
 }): Promise<{ ok: true; path: string; uploadToken: string } | Fail> {
   const { orderId, accessToken, mimeType, size } = input;
-  if (!isGuid(orderId) || !isAccessToken(accessToken)) return { ok: false, error: "order_not_found" };
+  if (!isGuid(orderId)) return { ok: false, error: "order_not_found" };
   if (typeof mimeType !== "string" || !(mimeType in EXT_BY_MIME)) return { ok: false, error: "upload_invalid_type" };
   if (typeof size !== "number" || !Number.isInteger(size) || size <= 0) return { ok: false, error: "upload_failed" };
   if (size > RECEIPT_MAX_BYTES) return { ok: false, error: "upload_too_large" };
@@ -37,8 +38,12 @@ export async function prepareReceiptUpload(input: {
     return { ok: false, error: "rate_limited" };
   }
 
-  const order = await getOrderForCustomer(orderId, accessToken);
-  if (!order) return { ok: false, error: "order_not_found" };
+  const auth = await authorizeCustomerOrder(orderId, {
+    token: isAccessToken(accessToken) ? accessToken : null,
+    userId: (await getCustomerUser())?.id,
+  });
+  if (!auth) return { ok: false, error: "order_not_found" };
+  const order = auth.order;
   if (!PAYABLE.has(order.status)) return { ok: false, error: "payment_not_allowed" };
   if (new Date(order.payment_due_at) < new Date()) return { ok: false, error: "order_expired" };
 
@@ -64,7 +69,7 @@ export async function submitPaymentProof(input: {
 }): Promise<{ ok: true } | Fail> {
   const parsed = paymentSubmissionSchema.safeParse({
     orderId: input.orderId,
-    accessToken: input.accessToken,
+    accessToken: isAccessToken(input.accessToken) ? input.accessToken : undefined,
     transactionReference: input.transactionReference ?? "",
   });
   if (!parsed.success) {
@@ -78,8 +83,8 @@ export async function submitPaymentProof(input: {
 
   if (!(await rateLimitAll([[`payment:order:${orderId}`, 10, 3600]]))) return { ok: false, error: "rate_limited" };
 
-  const order = await getOrderForCustomer(orderId, accessToken);
-  if (!order) return { ok: false, error: "order_not_found" };
+  const auth = await authorizeCustomerOrder(orderId, { token: accessToken ?? null, userId: (await getCustomerUser())?.id });
+  if (!auth) return { ok: false, error: "order_not_found" };
 
   const storage = getSupabaseAdmin().storage.from(BUCKET);
   const discard = async () => {
@@ -100,7 +105,8 @@ export async function submitPaymentProof(input: {
   const { error } = await getSupabaseAdmin().rpc("submit_payment", {
     p_input: {
       order_id: orderId,
-      access_token_hash: sha256Hex(accessToken),
+      // The caller is already authorized (token or account owner); pass the order's capability hash.
+      access_token_hash: auth.accessTokenHash,
       transaction_reference: transactionReference ?? null,
       receipt: { path, mime: check.type, size: bytes.length, original_name: originalName, sha256: sha256Hex(bytes) },
     },

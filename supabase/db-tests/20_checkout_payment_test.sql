@@ -4,7 +4,7 @@ set role service_role;
 
 -- ----------------------------------------------------------- order creation
 -- A malicious client adds its own "price" fields: they must be ignored.
-select public.create_order(pg_temp.order_payload('b0000000-0000-0000-0000-000000000001', jsonb_build_array(
+select public.create_order_for_user('cccccccc-0000-0000-0000-000000000001', pg_temp.order_payload('b0000000-0000-0000-0000-000000000001', jsonb_build_array(
   jsonb_build_object('type', 'product', 'product_id', :perfume, 'quantity', 2, 'price', 1, 'unit_price_etb', 1),
   jsonb_build_object('type', 'product', 'product_id', :charger, 'quantity', 1))));
 create temp table t_o1 as select * from public.orders where idempotency_key = 'b0000000-0000-0000-0000-000000000001';
@@ -32,49 +32,49 @@ select pg_temp.ok((select line_total_etb from public.order_items where order_id 
 update public.products set sale_price_etb = 2850 where id = :perfume;
 
 -- Idempotent replay (double-click / network retry)
-select pg_temp.ok((public.create_order(pg_temp.order_payload('b0000000-0000-0000-0000-000000000001', jsonb_build_array(
+select pg_temp.ok((public.create_order_for_user('cccccccc-0000-0000-0000-000000000001', pg_temp.order_payload('b0000000-0000-0000-0000-000000000001', jsonb_build_array(
   jsonb_build_object('type', 'product', 'product_id', :perfume, 'quantity', 2)))) ->> 'replayed')::boolean,
   'retrying the same checkout returns the existing order');
 select pg_temp.ok((select stock_quantity from public.products where id = :perfume) = 13, 'replay does not reserve stock twice');
 select pg_temp.ok((select count(*) from public.orders) = 1, 'replay does not create a second order');
 
 -- Validation
-select pg_temp.throws(format($$select public.create_order(%L)$$, pg_temp.order_payload(gen_random_uuid(),
+select pg_temp.throws(format($$select public.create_order_for_user('cccccccc-0000-0000-0000-000000000001', %L)$$, pg_temp.order_payload(gen_random_uuid(),
   jsonb_build_array(jsonb_build_object('type','product','product_id','20000000-0000-0000-0000-000000000005','quantity',1)))),
   'out_of_stock', 'cannot buy out-of-stock product');
-select pg_temp.throws(format($$select public.create_order(%L)$$, pg_temp.order_payload(gen_random_uuid(),
+select pg_temp.throws(format($$select public.create_order_for_user('cccccccc-0000-0000-0000-000000000001', %L)$$, pg_temp.order_payload(gen_random_uuid(),
   jsonb_build_array(jsonb_build_object('type','product','product_id','20000000-0000-0000-0000-000000000006','quantity',6)))),
   'out_of_stock', 'cannot buy more than available stock');
-select pg_temp.throws(format($$select public.create_order(%L)$$, pg_temp.order_payload(gen_random_uuid(),
+select pg_temp.throws(format($$select public.create_order_for_user('cccccccc-0000-0000-0000-000000000001', %L)$$, pg_temp.order_payload(gen_random_uuid(),
   jsonb_build_array(jsonb_build_object('type','product','product_id','20000000-0000-0000-0000-000000000011','quantity',1)))),
   'product_unavailable', 'cannot buy draft product');
-select pg_temp.throws(format($$select public.create_order(%L)$$, pg_temp.order_payload(gen_random_uuid(),
+select pg_temp.throws(format($$select public.create_order_for_user('cccccccc-0000-0000-0000-000000000001', %L)$$, pg_temp.order_payload(gen_random_uuid(),
   jsonb_build_array(jsonb_build_object('type','product','product_id','20000000-0000-0000-0000-000000000007','quantity',-3)))),
   'invalid_cart', 'negative quantity rejected');
-select pg_temp.throws(format($$select public.create_order(%L)$$, pg_temp.order_payload(gen_random_uuid(),
+select pg_temp.throws(format($$select public.create_order_for_user('cccccccc-0000-0000-0000-000000000001', %L)$$, pg_temp.order_payload(gen_random_uuid(),
   jsonb_build_array(jsonb_build_object('type','product','product_id','20000000-0000-0000-0000-000000000007','quantity',0)))),
   'invalid_cart', 'zero quantity rejected');
-select pg_temp.throws(format($$select public.create_order(%L)$$, pg_temp.order_payload(gen_random_uuid(), '[]'::jsonb)),
+select pg_temp.throws(format($$select public.create_order_for_user('cccccccc-0000-0000-0000-000000000001', %L)$$, pg_temp.order_payload(gen_random_uuid(), '[]'::jsonb)),
   'invalid_cart', 'empty cart rejected');
-select pg_temp.throws(format($$select public.create_order(%L)$$, pg_temp.order_payload(gen_random_uuid(),
+select pg_temp.throws(format($$select public.create_order_for_user('cccccccc-0000-0000-0000-000000000001', %L)$$, pg_temp.order_payload(gen_random_uuid(),
   jsonb_build_array(jsonb_build_object('type','product','product_id','20000000-0000-0000-0000-000000000007','quantity',1)),
   'delivery', '0911223344')), 'invalid_phone', 'non-normalized phone rejected');
-select pg_temp.throws(format($$select public.create_order(%L)$$,
+select pg_temp.throws(format($$select public.create_order_for_user('cccccccc-0000-0000-0000-000000000001', %L)$$,
   jsonb_set(pg_temp.order_payload(gen_random_uuid(), jsonb_build_array(jsonb_build_object('type','product','product_id','20000000-0000-0000-0000-000000000007','quantity',1))),
             '{fulfillment,delivery_zone_id}', '"40000000-0000-0000-0000-00000000dead"')),
   'invalid_delivery_zone', 'unknown delivery zone rejected');
 select pg_temp.ok((select stock_quantity from public.products where id = :charger) = 79, 'failed checkouts reserved nothing');
 
 -- Pickup: no delivery fee, no address stored
-select public.create_order(pg_temp.order_payload('b0000000-0000-0000-0000-000000000002', jsonb_build_array(
+select public.create_order_for_user('cccccccc-0000-0000-0000-000000000001', pg_temp.order_payload('b0000000-0000-0000-0000-000000000002', jsonb_build_array(
   jsonb_build_object('type', 'product', 'product_id', :charger, 'quantity', 2)), 'pickup', '+251722334455'));
 select pg_temp.ok((select delivery_fee_etb = 0 and address_line is null and total_etb = 1700 from public.orders
                     where idempotency_key = 'b0000000-0000-0000-0000-000000000002'), 'pickup orders have no delivery fee');
 
 -- Oversell protection: last units
-select public.create_order(pg_temp.order_payload('b0000000-0000-0000-0000-000000000003', jsonb_build_array(
+select public.create_order_for_user('cccccccc-0000-0000-0000-000000000001', pg_temp.order_payload('b0000000-0000-0000-0000-000000000003', jsonb_build_array(
   jsonb_build_object('type', 'product', 'product_id', '20000000-0000-0000-0000-000000000003', 'quantity', 3))));
-select pg_temp.throws(format($$select public.create_order(%L)$$, pg_temp.order_payload(gen_random_uuid(),
+select pg_temp.throws(format($$select public.create_order_for_user('cccccccc-0000-0000-0000-000000000001', %L)$$, pg_temp.order_payload(gen_random_uuid(),
   jsonb_build_array(jsonb_build_object('type','product','product_id','20000000-0000-0000-0000-000000000003','quantity',1)))),
   'out_of_stock', 'second buyer of the last unit is refused');
 

@@ -34,6 +34,10 @@ function build(key: SettingsKey, f: Record<string, string>, current: Record<stri
       };
     case "printing":
       return { service_charge_etb: Number(f.service_charge_etb), max_file_mb: Number(f.max_file_mb), max_copies: Number(f.max_copies), retention_days: Number(f.retention_days) };
+    case "legal": {
+      const long = (k: string) => ({ en: (f[`${k}_en`] ?? "").trim(), am: (f[`${k}_am`] ?? "").trim() });
+      return { terms: long("terms"), privacy: long("privacy"), approved: f.approved === "on" };
+    }
     case "homepage":
       return {
         hero_title: pair(f, "hero_title"), hero_subtitle: pair(f, "hero_subtitle"), hero_image_path: current.hero_image_path ?? null,

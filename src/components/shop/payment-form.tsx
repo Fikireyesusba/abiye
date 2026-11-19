@@ -15,7 +15,7 @@ const TYPES = ["image/jpeg", "image/png", "application/pdf"];
 
 type Phase = "idle" | "uploading" | "verifying" | "done";
 
-export function PaymentForm({ orderId, accessToken }: { orderId: string; accessToken: string }) {
+export function PaymentForm({ orderId, accessToken }: { orderId: string; accessToken: string | null }) {
   const t = useTranslations();
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);

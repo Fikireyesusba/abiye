@@ -16,7 +16,8 @@ export interface CartProductItem {
 export interface CartPrintingItem {
   type: "printing";
   printingJobId: string;
-  accessToken: string;
+  /** Absent when added by the signed-in owner (ownership is checked on the server). */
+  accessToken?: string;
 }
 export type CartItem = CartProductItem | CartPrintingItem;
 export const itemKey = (i: CartItem) => (i.type === "product" ? i.productId : i.printingJobId);
@@ -44,8 +45,9 @@ function sanitize(value: unknown): CartItem[] {
     if (!v || typeof v !== "object") continue;
     const r = v as Record<string, unknown>;
     if (r.type === "printing") {
-      if (typeof r.printingJobId === "string" && GUID.test(r.printingJobId) && typeof r.accessToken === "string" && TOKEN.test(r.accessToken)) {
-        seen.set(r.printingJobId, { type: "printing", printingJobId: r.printingJobId, accessToken: r.accessToken });
+      if (typeof r.printingJobId === "string" && GUID.test(r.printingJobId)) {
+        const token = typeof r.accessToken === "string" && TOKEN.test(r.accessToken) ? r.accessToken : undefined;
+        seen.set(r.printingJobId, { type: "printing", printingJobId: r.printingJobId, ...(token ? { accessToken: token } : {}) });
       }
       continue;
     }
@@ -109,8 +111,8 @@ export const cart = {
   add(productId: string, quantity = 1) {
     write(sanitize([...read(), { type: "product", productId, quantity }]));
   },
-  addPrinting(printingJobId: string, accessToken: string) {
-    write(sanitize([...read(), { type: "printing", printingJobId, accessToken }]));
+  addPrinting(printingJobId: string, accessToken?: string | null) {
+    write(sanitize([...read(), { type: "printing", printingJobId, ...(accessToken ? { accessToken } : {}) }]));
   },
   setQuantity(productId: string, quantity: number) {
     const q = Math.max(1, Math.min(MAX_LINE_QUANTITY, Math.trunc(quantity)));

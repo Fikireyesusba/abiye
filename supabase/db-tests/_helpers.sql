@@ -48,6 +48,14 @@ create function pg_temp.order_payload(p_key uuid, p_items jsonb, p_method text d
     'items', p_items)
 $$;
 
+create function pg_temp.job_payload(p_id uuid, p_pages integer, p_size text default 'A4') returns jsonb language sql as $$
+  select jsonb_build_object('id', p_id, 'access_token_hash', pg_temp.hash('job-' || p_id),
+    'customer', jsonb_build_object('full_name', 'Print Customer', 'phone', '+251933445566'),
+    'color_mode', 'bw', 'paper_size', p_size, 'sides', 'single', 'copies', 2, 'fulfillment_method', 'pickup',
+    'files', jsonb_build_array(jsonb_build_object('path', 'jobs/' || p_id || '/doc.pdf', 'original_name', 'thesis.pdf',
+      'mime', 'application/pdf', 'size', 2048, 'sha256', repeat('d', 64), 'page_count', p_pages)))
+$$;
+
 -- Test users
 insert into auth.users (id, email) values
   ('aaaaaaaa-0000-0000-0000-000000000001', 'super@test.local'),
@@ -55,10 +63,16 @@ insert into auth.users (id, email) values
   ('aaaaaaaa-0000-0000-0000-000000000003', 'staff@test.local'),
   ('aaaaaaaa-0000-0000-0000-000000000004', 'staff2@test.local'),
   ('aaaaaaaa-0000-0000-0000-000000000005', 'random-signup@test.local');
-select public.bootstrap_super_admin('aaaaaaaa-0000-0000-0000-000000000001', 'Test Super');
+insert into auth.users (id, email, email_confirmed_at, raw_user_meta_data) values
+  ('cccccccc-0000-0000-0000-000000000001', 'customer@test.local', now(), '{"full_name":"Test Customer","accepted_terms":"true"}'),
+  ('cccccccc-0000-0000-0000-000000000002', 'customer2@test.local', now(), '{}'),
+  ('cccccccc-0000-0000-0000-000000000003', 'unconfirmed@test.local', null, '{}');
+-- Direct insert (not bootstrap_super_admin) so the suite also runs on a database
+-- that already has a real Super Admin. Bootstrap itself is tested in 10_*.
 insert into public.profiles (id, full_name, role_id)
 select u.id, u.email, r.id from (values
-  ('aaaaaaaa-0000-0000-0000-000000000002'::uuid, 'manager@test.local', 'manager'),
+  ('aaaaaaaa-0000-0000-0000-000000000001'::uuid, 'Test Super', 'super_admin'),
+  ('aaaaaaaa-0000-0000-0000-000000000002', 'manager@test.local', 'manager'),
   ('aaaaaaaa-0000-0000-0000-000000000003'::uuid, 'staff@test.local', 'staff'),
   ('aaaaaaaa-0000-0000-0000-000000000004'::uuid, 'staff2@test.local', 'staff')) u(id, email, role)
 join public.admin_roles r on r.key = u.role;
@@ -68,6 +82,8 @@ join public.admin_roles r on r.key = u.role;
 \set staff   '''aaaaaaaa-0000-0000-0000-000000000003'''
 \set staff2  '''aaaaaaaa-0000-0000-0000-000000000004'''
 \set outsider '''aaaaaaaa-0000-0000-0000-000000000005'''
+\set customer '''cccccccc-0000-0000-0000-000000000001'''
+\set customer2 '''cccccccc-0000-0000-0000-000000000002'''
 \set perfume '''20000000-0000-0000-0000-000000000001'''
 \set charger '''20000000-0000-0000-0000-000000000007'''
 \set hairoil '''20000000-0000-0000-0000-000000000005'''

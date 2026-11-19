@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDateTime } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
 import { isAccessToken } from "@/lib/orders/access";
+import { getCustomerUser } from "@/lib/account/session";
 import { getJobForCustomer, readJobAccess } from "@/lib/printing/access";
 import { formatEthiopianPhone } from "@/lib/validation/phone";
 import type { Locale } from "@/i18n/config";
@@ -22,13 +23,19 @@ export default async function PrintJobPage({ params, searchParams }: PageProps<"
   const [t, locale] = await Promise.all([getTranslations(), getLocale() as Promise<Locale>]);
   const cookieToken = await readJobAccess(jobId);
   const queryToken = typeof q === "string" && isAccessToken(q) ? q : null;
-  let token = cookieToken;
+  let token: string | null = cookieToken;
   let job = token ? await getJobForCustomer(jobId, token) : null;
   if (!job && queryToken) {
     token = queryToken;
     job = await getJobForCustomer(jobId, queryToken);
   }
-  if (!job || !token) {
+  if (!job) {
+    // The signed-in owner can open their job from any device.
+    const user = await getCustomerUser();
+    job = user ? await getJobForCustomer(jobId, null, user.id) : null;
+    token = null;
+  }
+  if (!job) {
     return (
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-4 py-24 text-center">
         <XCircle className="size-10 text-muted-foreground" aria-hidden />
@@ -41,7 +48,7 @@ export default async function PrintJobPage({ params, searchParams }: PageProps<"
   const etb = (n: number) => formatETB(toSantim(n), locale);
   const payable = job.status === "awaiting_payment" && !job.order_id && job.total_etb !== null;
   const appUrl = process.env.APP_URL ?? "";
-  const link = `${appUrl}/printing/jobs/${job.id}?t=${token}`;
+  const link = token ? `${appUrl}/printing/jobs/${job.id}?t=${token}` : null;
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8">
@@ -107,7 +114,7 @@ export default async function PrintJobPage({ params, searchParams }: PageProps<"
             </CardContent>
           </Card>
 
-          {appUrl && (
+          {appUrl && link && (
             <Card>
               <CardContent className="space-y-1">
                 <p className="text-sm font-medium">{t("printJob.privateLink")}</p>

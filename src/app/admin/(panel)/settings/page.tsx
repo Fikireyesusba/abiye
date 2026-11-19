@@ -34,7 +34,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
   const tabs = [
     ...(canSettings ? [{ k: "general", l: "Business & contact" }, { k: "homepage", l: "Homepage" }, { k: "delivery", l: "Delivery" }] : []),
     ...(canBanks ? [{ k: "banks", l: "Bank accounts" }] : []),
-    ...(canSettings ? [{ k: "printing", l: "Printing" }] : []),
+    ...(canSettings ? [{ k: "legal", l: "Terms & privacy" }, { k: "printing", l: "Printing" }] : []),
   ];
   const requested = first((await searchParams).tab);
   const tab = tabs.find((t) => t.k === requested)?.k ?? tabs[0].k;
@@ -66,9 +66,9 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
             <ActionForm action={saveSettings} hidden={{ key: "contact" }} submitLabel="Save contact details">
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field label="Phone"><Input name="phone" defaultValue={s.contact.phone} maxLength={30} /></Field>
-                <Field label="Email"><Input name="email" type="email" defaultValue={s.contact.email ?? ""} maxLength={254} /></Field>
+                <Field label="Email (e.g. yourshop@gmail.com)"><Input name="email" type="email" defaultValue={s.contact.email ?? ""} maxLength={254} /></Field>
                 <Field label="Telegram username" hint="Without @"><Input name="telegram" defaultValue={s.contact.telegram ?? ""} maxLength={100} /></Field>
-                <Field label="WhatsApp number"><Input name="whatsapp" defaultValue={s.contact.whatsapp ?? ""} maxLength={30} /></Field>
+                <Field label="WhatsApp number" hint="Ethiopian mobile number, e.g. 0911 22 33 44"><Input name="whatsapp" defaultValue={s.contact.whatsapp ?? ""} maxLength={30} /></Field>
               </div>
               <Bilingual name="address" label="Address" en={s.contact.address.en} am={s.contact.address.am} />
               <Field label="Map link (https)"><Input name="map_url" type="url" defaultValue={s.contact.map_url ?? ""} /></Field>
@@ -82,8 +82,9 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
           <Panel title="Social media">
             <ActionForm action={saveSettings} hidden={{ key: "social" }} submitLabel="Save links">
               <div className="grid gap-3 sm:grid-cols-2">
-                {(["facebook", "instagram", "tiktok", "telegram"] as const).map((n) => (
-                  <Field key={n} label={`${n[0].toUpperCase()}${n.slice(1)} URL`}><Input name={n} type="url" placeholder="https://" defaultValue={s.social[n] ?? ""} /></Field>
+                {([["instagram", "Instagram", "https://instagram.com/yourshop"], ["tiktok", "TikTok", "https://www.tiktok.com/@yourshop"],
+                  ["facebook", "Facebook", "https://facebook.com/yourshop"], ["telegram", "Telegram channel", "https://t.me/yourshop"]] as const).map(([n, label, ph]) => (
+                  <Field key={n} label={`${label} link`}><Input name={n} type="url" placeholder={ph} defaultValue={s.social[n] ?? ""} /></Field>
                 ))}
               </div>
             </ActionForm>
@@ -108,6 +109,31 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
         </Panel>
       )}
 
+      {tab === "legal" && (
+        <Panel title="Terms & conditions and privacy policy">
+          <ActionForm action={saveSettings} hidden={{ key: "legal" }} submitLabel="Save legal texts">
+            <p className="text-sm text-muted-foreground">
+              Start a section with a line beginning <code className="rounded bg-muted px-1">## </code> (e.g. <code className="rounded bg-muted px-1">## Payment</code>);
+              leave a blank line between paragraphs. <code className="rounded bg-muted px-1">{"{name}"}</code> is replaced with your business name.
+              Customers must accept the terms when they sign up and at checkout.
+            </p>
+            {(["terms", "privacy"] as const).map((doc) => (
+              <div key={doc} className="grid gap-3 lg:grid-cols-2">
+                <Field label={`${doc === "terms" ? "Terms & conditions" : "Privacy policy"} (English)`}>
+                  <Textarea name={`${doc}_en`} rows={14} maxLength={30000} defaultValue={s.legal[doc].en} className="font-mono text-xs" />
+                </Field>
+                <Field label={`${doc === "terms" ? "Terms & conditions" : "Privacy policy"} (Amharic)`}>
+                  <Textarea name={`${doc}_am`} rows={14} maxLength={30000} defaultValue={s.legal[doc].am} lang="am" className="font-mono text-xs" />
+                </Field>
+              </div>
+            ))}
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="approved" defaultChecked={s.legal.approved} className="size-4 accent-[var(--primary)]" />
+              Reviewed and approved for publication (removes the “Draft” notice on the website)
+            </label>
+          </ActionForm>
+        </Panel>
+      )}
       {tab === "delivery" && <DeliveryTab s={s} supabase={supabase} />}
       {tab === "banks" && <BanksTab supabase={supabase} />}
       {tab === "printing" && (

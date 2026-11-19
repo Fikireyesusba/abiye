@@ -1,15 +1,18 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { Clock, Mail, MapPin, Phone } from "lucide-react";
+import { Clock, Landmark, Mail, MapPin, Phone } from "lucide-react";
+import { getPublicBankAccounts } from "@/lib/catalog/bank-info";
+import { socialLinks, SocialIconRow } from "./social-links";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import { formatEthiopianPhone, normalizeEthiopianPhone } from "@/lib/validation/phone";
 import type { Locale } from "@/i18n/config";
 
 export async function SiteFooter() {
-  const [s, t, locale] = await Promise.all([getSiteSettings(), getTranslations(), getLocale() as Promise<Locale>]);
+  const [s, t, locale, banks] = await Promise.all([getSiteSettings(), getTranslations(), getLocale() as Promise<Locale>, getPublicBankAccounts()]);
   const name = s.business.name[locale] || s.business.name.en;
   const phone = normalizeEthiopianPhone(s.contact.phone);
-  const social = Object.entries(s.social).filter(([, url]) => !!url) as [string, string][];
+  const links = socialLinks(s);
+  const primaryBank = banks[0];
 
   return (
     <footer className="mt-16 border-t bg-sidebar text-sidebar-foreground">
@@ -18,6 +21,13 @@ export async function SiteFooter() {
           <p className="text-lg font-semibold">{name}</p>
           <p className="text-sm opacity-80">{s.business.tagline[locale] || s.business.tagline.en}</p>
           <p className="text-xs opacity-70">{t("footer.payments")}</p>
+          {primaryBank && (
+            <p className="flex items-start gap-2 text-xs opacity-85">
+              <Landmark className="mt-0.5 size-4 shrink-0" aria-hidden />
+              <span>{primaryBank.bank_name} · <span className="font-mono">{primaryBank.account_number}</span><br />{primaryBank.account_holder}</span>
+            </p>
+          )}
+          <SocialIconRow links={links.filter((l) => l.external)} className="pt-1" />
         </div>
         <nav className="space-y-3 text-sm" aria-label={t("footer.shop")}>
           <p className="font-semibold">{t("footer.shop")}</p>
@@ -71,15 +81,6 @@ export async function SiteFooter() {
               </li>
             )}
           </ul>
-          {social.length > 0 && (
-            <div className="flex flex-wrap gap-3 pt-2">
-              {social.map(([network, url]) => (
-                <a key={network} href={url} target="_blank" rel="noopener noreferrer" className="text-xs capitalize underline-offset-4 opacity-85 hover:underline">
-                  {network}
-                </a>
-              ))}
-            </div>
-          )}
         </div>
       </div>
       <div className="border-t border-white/10 py-5 text-center text-xs opacity-70">

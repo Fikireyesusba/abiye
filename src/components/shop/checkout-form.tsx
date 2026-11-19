@@ -36,13 +36,22 @@ function idempotencyKey(): string {
 
 type FieldErrors = Partial<Record<"fullName" | "phone" | "deliveryZoneId" | "addressLine" | "instructions", AppErrorCode>>;
 
-export function CheckoutForm({ shopAddress }: { shopAddress: string }) {
+export function CheckoutForm({
+  shopAddress,
+  email,
+  defaults,
+}: {
+  shopAddress: string;
+  email: string;
+  defaults: { fullName: string; phone: string };
+}) {
   const t = useTranslations();
   const locale = useLocale() as Locale;
   const router = useRouter();
   const { items, productItems, details, error: loadError, refresh } = useCartDetails();
   const [prefs, setPrefs] = useState<FulfillmentPrefs>(() => readFulfillmentPrefs());
-  const [form, setForm] = useState({ fullName: "", phone: "", addressLine: "", instructions: "" });
+  const [form, setForm] = useState({ fullName: defaults.fullName, phone: defaults.phone, addressLine: "", instructions: "" });
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<AppErrorCode | null>(null);
   const [pending, startTransition] = useTransition();
@@ -121,6 +130,7 @@ export function CheckoutForm({ shopAddress }: { shopAddress: string }) {
         deliveryZoneId: view.method === "delivery" ? (view.zone?.id ?? undefined) : undefined,
         addressLine: view.method === "delivery" ? form.addressLine || undefined : undefined,
         instructions: form.instructions || undefined,
+        acceptTerms,
         items: items.map((i) =>
           i.type === "product"
             ? { type: "product" as const, productId: i.productId, quantity: i.quantity }
@@ -134,6 +144,10 @@ export function CheckoutForm({ shopAddress }: { shopAddress: string }) {
           sessionStorage.removeItem(IDEM_KEY);
         } catch {}
         router.replace(`/order-success/${result.orderId}`);
+        return;
+      }
+      if (result.error === "login_required") {
+        router.push("/account/login?next=/checkout");
         return;
       }
       if (result.error === "idempotency_conflict") {
@@ -158,6 +172,7 @@ export function CheckoutForm({ shopAddress }: { shopAddress: string }) {
         <Card>
           <CardHeader>
             <CardTitle>{t("checkoutPage.contact")}</CardTitle>
+            <p className="text-sm text-muted-foreground">{t("account.orderAs", { email })}</p>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
@@ -291,19 +306,19 @@ export function CheckoutForm({ shopAddress }: { shopAddress: string }) {
           )}
 
           <p className="text-xs text-muted-foreground">{t("checkoutPage.nextStep")}</p>
-          <Button type="submit" size="lg" className="w-full" disabled={pending || view.problem}>
+          <label className="flex items-start gap-2 text-sm">
+            <input type="checkbox" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} required
+              className="mt-0.5 size-4 shrink-0 accent-[var(--primary)]" aria-describedby={error === "terms_required" ? "terms-error" : undefined} />
+            <span>
+              {t.rich("checkoutPage.acceptTerms", {
+                terms: (chunks) => <Link href="/terms" className="underline" target="_blank">{chunks}</Link>,
+              })}
+            </span>
+          </label>
+          <Button type="submit" size="lg" className="w-full" disabled={pending || view.problem || !acceptTerms}>
             {pending ? <Loader2 className="animate-spin" /> : <Lock />}
             {pending ? t("checkoutPage.placing") : t("checkout.placeOrder")}
           </Button>
-          <p className="text-center text-xs text-muted-foreground">
-            {t.rich("checkoutPage.agree", {
-              terms: (chunks) => (
-                <Link href="/terms" className="underline" target="_blank">
-                  {chunks}
-                </Link>
-              ),
-            })}
-          </p>
         </CardContent>
       </Card>
     </form>

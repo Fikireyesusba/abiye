@@ -14,11 +14,11 @@ select pg_temp.throws('select * from public.payment_submissions', '%permission d
 select pg_temp.throws('select * from public.notifications_outbox', '%permission denied%', 'anon cannot read outbox');
 select pg_temp.throws('select * from public.audit_logs', '%permission denied%', 'anon cannot read audit log');
 select pg_temp.throws('update public.products set price_etb = 1', '%permission denied%', 'anon cannot update products');
-select pg_temp.throws($$select public.create_order('{}'::jsonb)$$, '%permission denied%', 'anon cannot call create_order directly');
+select pg_temp.throws($$select public.create_order_for_user('cccccccc-0000-0000-0000-000000000001', '{}'::jsonb)$$, '%permission denied%', 'anon cannot call create_order directly');
 select pg_temp.throws($$select public.submit_payment('{}'::jsonb)$$, '%permission denied%', 'anon cannot call submit_payment directly');
 select pg_temp.throws($$select public.admin_review_payment(gen_random_uuid(), 'verified')$$, '%permission denied%', 'anon cannot call admin RPCs');
 select pg_temp.throws($$select public.bootstrap_super_admin(gen_random_uuid(), 'x')$$, '%permission denied%', 'anon cannot bootstrap super admin');
-select pg_temp.ok((select count(*) from public.website_settings) = 7, 'anon reads public website settings');
+select pg_temp.ok((select count(*) from public.website_settings) = 8, 'anon reads public website settings');
 select pg_temp.ok((select count(*) from public.delivery_zones) = 4, 'anon reads active delivery zones');
 select pg_temp.ok((select count(*) from storage.objects where bucket_id in ('payment-receipts','printing-files')) = 0,
   'anon sees no private storage objects');

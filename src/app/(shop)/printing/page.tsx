@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Printer } from "lucide-react";
+import Link from "next/link";
 import { PrintForm } from "@/components/shop/print-form";
+import { Button } from "@/components/ui/button";
+import { getCustomerAccount, getCustomerUser } from "@/lib/account/session";
+import { formatEthiopianPhone } from "@/lib/validation/phone";
 import { getPrintingPrices } from "@/lib/catalog/queries";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import { formatETB, toSantim } from "@/lib/money";
@@ -16,6 +20,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function PrintingPage() {
   const [t, locale, prices, s] = await Promise.all([getTranslations(), getLocale() as Promise<Locale>, getPrintingPrices(), getSiteSettings()]);
   const charge = s.printing.service_charge_etb;
+  const user = await getCustomerUser();
+  const account = user ? await getCustomerAccount(user.id) : null;
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:py-12">
@@ -68,7 +74,9 @@ export default async function PrintingPage() {
             </li>
           ))}
         </ol>
+        {user ? (
         <PrintForm
+          defaults={{ fullName: account?.full_name ?? "", phone: account?.phone ? formatEthiopianPhone(account.phone) : "" }}
           rules={prices}
           serviceCharge={charge}
           maxMb={Math.min(25, s.printing.max_file_mb)}
@@ -76,6 +84,15 @@ export default async function PrintingPage() {
           pickupEnabled={s.delivery.pickup_enabled}
           deliveryEnabled={s.delivery.delivery_enabled}
         />
+        ) : (
+          <div className="flex flex-col items-start gap-4 rounded-xl border border-dashed p-6 sm:flex-row sm:items-center">
+            <p className="flex-1 text-sm">{t("account.signInToPrint")}</p>
+            <div className="flex gap-2">
+              <Button asChild><Link href="/account/login?next=/printing">{t("account.signIn")}</Link></Button>
+              <Button variant="outline" asChild><Link href="/account/signup?next=/printing">{t("account.signUp")}</Link></Button>
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );

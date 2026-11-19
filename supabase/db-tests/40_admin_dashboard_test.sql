@@ -1,9 +1,9 @@
 -- Dashboard aggregates respect permissions
 \ir _helpers.sql
 set role service_role;
-select public.create_order(pg_temp.order_payload('d0000000-0000-0000-0000-000000000001', jsonb_build_array(
+select public.create_order_for_user('cccccccc-0000-0000-0000-000000000001', pg_temp.order_payload('d0000000-0000-0000-0000-000000000001', jsonb_build_array(
   jsonb_build_object('type', 'product', 'product_id', :charger, 'quantity', 2))));
-select public.create_order(pg_temp.order_payload('d0000000-0000-0000-0000-000000000002', jsonb_build_array(
+select public.create_order_for_user('cccccccc-0000-0000-0000-000000000001', pg_temp.order_payload('d0000000-0000-0000-0000-000000000002', jsonb_build_array(
   jsonb_build_object('type', 'product', 'product_id', :charger, 'quantity', 1)), 'pickup', '+251722000111'));
 select public.submit_payment(jsonb_build_object('order_id', (select id from public.orders where idempotency_key = 'd0000000-0000-0000-0000-000000000001'),
   'access_token_hash', pg_temp.hash('tok-d0000000-0000-0000-0000-000000000001'),

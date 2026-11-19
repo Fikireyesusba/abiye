@@ -102,9 +102,22 @@ Verified with `npm run test:smoke:telegram` (31 checks against a mock Telegram B
 - `/admin/notifications` (settings.manage): configured status, send test message, recent queue with errors, Retry for failed/dead (migration 0015: `admin_notifications`, `admin_retry_notification`, `admin_queue_test_notification`).
 - Verified: alert arrives without cron; photo + caption content; HTML injection escaped; outage → retry with backoff → delivered once; 429 handling; 3 parallel workers send 6 messages exactly once; admin test/retry; rejection & cancellation alerts; token never in DB or logs.
 
+## Pre-launch additions (requested 2026-11-19) — verified
+
+Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/reset emails via the local mail catcher) and all other suites updated for sign-in (storefront 40, checkout 37, admin 50, printing 37, Telegram 31), 199 SQL assertions, 129 unit tests.
+
+- **Customer accounts (email + password, confirmed by email)** — owner's choice. Pages: `/account` (my orders, my printing jobs, name/phone), `/account/login`, `/account/signup` (must accept terms & privacy), `/account/forgot-password`, `/account/reset-password`; `/auth/confirm` handles email links (token_hash, works cross-device). Header account icon.
+- **Only signed-in customers can order**: checkout and printing require sign-in (redirect with safe `next`); enforced in the server actions AND the database (migration 0016: `create_order_for_user` / `create_printing_job_for_user`, base functions revoked from service_role, BEFORE INSERT trigger refuses orders/jobs without a confirmed user). Orders/jobs record `user_id`; customers read only their own (RLS); owners can open/pay their orders from any device.
+- Checkout: prefilled from the account, "I agree to the terms" required (also checked server-side), phone/name saved back to the account.
+- **Bank details on the shop**: Contact page "How to pay" (all active accounts, copy buttons) + primary account in the footer — from admin Settings → Bank accounts.
+- **Social / contact links**: phone, email (e.g. Gmail), WhatsApp, Telegram, Instagram, TikTok, Facebook — brand icons in the footer and cards on Contact; edited in admin Settings (https-only links).
+- **Terms & privacy editable in admin** (Settings → Terms & privacy, EN + AM, "approved" switch hides the draft banner); rendered as plain text only.
+- Local dev: sign-ups + email confirmation on, local mail catcher on :54324 (dev:up no longer excludes it).
+- **Production TODO for the owner**: configure SMTP + email templates + URL configuration in Supabase (docs/DEPLOYMENT.md §2b).
+
 ## Decisions made (change if you disagree)
 
-1. Customers are guests (no accounts). Staff are the only Supabase Auth users; public sign-ups disabled.
+1. ~~Customers are guests~~ → **changed 2026-11-19 at the owner's request: customers must sign up (email + password, email confirmed) to order.** Admin access still requires a Super Admin-created staff profile.
 2. Stock is **reserved at order creation** and released on cancel/expiry (default payment window 24 h, editable in settings).
 3. Managers may verify payments (see permission matrix note in ARCHITECTURE.md §3).
 4. Order tracking = private link token, or order number + 10-char tracking code (rate-limited).
@@ -141,4 +154,4 @@ Verified with `npm run test:smoke:telegram` (31 checks against a mock Telegram B
 1. Read `AGENTS.md` (Next.js 16 rules), this file, and `docs/ARCHITECTURE.md`.
 2. Run `npm run dev:up` — starts Docker if the sandbox restarted, then local Supabase, then checks the API (data persists in Docker volumes). A "cannot connect to Docker" / curl exit 7 at session start just means this hasn't run yet. If the DB was reset: `npm run dev:sample-images` and `ADMIN_PASSWORD=LocalDevOwner2026 npm run admin:create -- --email owner@abiye.local --name "Abiye Owner"`.
 3. Phase 7 scope: promotions + homepage banners admin (`/admin/promotions`), analytics page (`/admin/analytics`: daily/weekly/monthly sales, by category, best sellers, status distribution, inventory status — real queries), Content-Security-Policy (nonce), orphaned-upload sweep in a cron, security review (`/security-review`), accessibility + mobile pass, convert smoke scripts to a Playwright test project if desired, production deployment checklist, and owner hand-off notes.
-4. Tests: `npm run check`, `npm run test:db`, then with the app on :3100 (`npx next start -p 3100`) and `NODE_PATH=$(npm root -g)`: `npm run test:smoke`, `test:smoke:checkout`, `test:smoke:admin`, `test:smoke:printing`; and `npm run test:smoke:telegram` (starts its own app on :3101). Update this file.
+4. Tests: `npm run check`, `npm run test:db`, then with the app on :3100 (`npx next start -p 3100`) and `NODE_PATH=$(npm root -g)`: `npm run test:smoke`, `test:smoke:checkout`, `test:smoke:admin`, `test:smoke:printing`, `test:smoke:account`; and `npm run test:smoke:telegram` (starts its own app on :3101). Clear `rate_limits` between runs if needed. Update this file.

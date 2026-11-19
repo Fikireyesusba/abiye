@@ -3,7 +3,7 @@ import { useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Languages, Menu, ShoppingBag } from "lucide-react";
+import { Languages, Menu, ShoppingBag, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { setLocale } from "@/i18n/actions";
@@ -22,6 +22,17 @@ export function CartButton() {
             {count > 99 ? "99+" : count}
           </span>
         )}
+      </Link>
+    </Button>
+  );
+}
+
+export function AccountButton() {
+  const t = useTranslations("account");
+  return (
+    <Button variant="ghost" size="icon" asChild>
+      <Link href="/account" aria-label={t("accountLink")}>
+        <UserRound className="size-5" />
       </Link>
     </Button>
   );

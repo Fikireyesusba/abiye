@@ -15,15 +15,8 @@ select pg_temp.ok((public.quote_printing('bw', 'A4', 'single', 10, 3) ->> 'total
 update public.website_settings set value = jsonb_set(value, '{service_charge_etb}', '0') where key = 'printing';
 
 -- ----------------------------------------------------------- printing jobs
-create function pg_temp.job_payload(p_id uuid, p_pages integer, p_size text default 'A4') returns jsonb language sql as $$
-  select jsonb_build_object('id', p_id, 'access_token_hash', pg_temp.hash('job-' || p_id),
-    'customer', jsonb_build_object('full_name', 'Print Customer', 'phone', '+251933445566'),
-    'color_mode', 'bw', 'paper_size', p_size, 'sides', 'single', 'copies', 2, 'fulfillment_method', 'pickup',
-    'files', jsonb_build_array(jsonb_build_object('path', 'jobs/' || p_id || '/doc.pdf', 'original_name', 'thesis.pdf',
-      'mime', 'application/pdf', 'size', 2048, 'sha256', repeat('d', 64), 'page_count', p_pages)))
-$$;
 
-select public.create_printing_job(pg_temp.job_payload('c0000000-0000-0000-0000-000000000001', 20));
+select public.create_printing_job_for_user('cccccccc-0000-0000-0000-000000000001', pg_temp.job_payload('c0000000-0000-0000-0000-000000000001', 20));
 select pg_temp.ok((select status = 'awaiting_payment' and total_etb = 120 and page_count_source = 'auto'
                    from public.printing_jobs where id = 'c0000000-0000-0000-0000-000000000001'),
   'PDF with counted pages is priced automatically (20 × 2 × 3 = 120)');
@@ -33,15 +26,15 @@ select pg_temp.ok((select array_agg(to_status::text order by id) from public.pri
 select pg_temp.ok(exists (select 1 from public.notifications_outbox where dedupe_key = 'printing_job:c0000000-0000-0000-0000-000000000001'),
   'new printing request notification queued');
 
-select public.create_printing_job(pg_temp.job_payload('c0000000-0000-0000-0000-000000000002', null));
+select public.create_printing_job_for_user('cccccccc-0000-0000-0000-000000000001', pg_temp.job_payload('c0000000-0000-0000-0000-000000000002', null));
 select pg_temp.ok((select status = 'awaiting_quote' and total_etb is null
                    from public.printing_jobs where id = 'c0000000-0000-0000-0000-000000000002'),
   'document without page count requires admin quote');
-select pg_temp.throws(format($$select public.create_order(%L)$$, pg_temp.order_payload(gen_random_uuid(), jsonb_build_array(
+select pg_temp.throws(format($$select public.create_order_for_user('cccccccc-0000-0000-0000-000000000001', %L)$$, pg_temp.order_payload(gen_random_uuid(), jsonb_build_array(
   jsonb_build_object('type', 'printing', 'printing_job_id', 'c0000000-0000-0000-0000-000000000002',
                      'access_token_hash', pg_temp.hash('job-c0000000-0000-0000-0000-000000000002'))), 'pickup')),
   'printing_job_not_payable', 'unquoted printing job cannot be paid');
-select pg_temp.throws(format($$select public.create_printing_job(%L)$$, jsonb_set(pg_temp.job_payload('c0000000-0000-0000-0000-000000000003', 3),
+select pg_temp.throws(format($$select public.create_printing_job_for_user('cccccccc-0000-0000-0000-000000000001', %L)$$, jsonb_set(pg_temp.job_payload('c0000000-0000-0000-0000-000000000003', 3),
   '{files,0,path}', '"jobs/someone-else/doc.pdf"')), 'invalid_files', 'files must live under the job''s own folder');
 reset role;
 
@@ -56,11 +49,11 @@ reset role;
 select pg_temp.ok((select min(price_per_page_etb) from public.printing_price_rules) = 2.5, 'staff cannot change printing prices');
 
 set role service_role;
-select pg_temp.throws(format($$select public.create_order(%L)$$, pg_temp.order_payload(gen_random_uuid(), jsonb_build_array(
+select pg_temp.throws(format($$select public.create_order_for_user('cccccccc-0000-0000-0000-000000000001', %L)$$, pg_temp.order_payload(gen_random_uuid(), jsonb_build_array(
   jsonb_build_object('type', 'printing', 'printing_job_id', 'c0000000-0000-0000-0000-000000000001',
                      'access_token_hash', pg_temp.hash('stolen'))), 'pickup')),
   'printing_job_not_found', 'cannot pay for someone else''s printing job');
-select public.create_order(pg_temp.order_payload('b1000000-0000-0000-0000-000000000001', jsonb_build_array(
+select public.create_order_for_user('cccccccc-0000-0000-0000-000000000001', pg_temp.order_payload('b1000000-0000-0000-0000-000000000001', jsonb_build_array(
   jsonb_build_object('type', 'printing', 'printing_job_id', 'c0000000-0000-0000-0000-000000000001',
                      'access_token_hash', pg_temp.hash('job-c0000000-0000-0000-0000-000000000001')),
   jsonb_build_object('type', 'product', 'product_id', :charger, 'quantity', 1)), 'pickup'));
@@ -105,7 +98,7 @@ reset role;
 
 -- ----------------------------------------------------------- file retention
 set role service_role;
-select public.create_printing_job(pg_temp.job_payload('c0000000-0000-0000-0000-000000000009', 4));
+select public.create_printing_job_for_user('cccccccc-0000-0000-0000-000000000001', pg_temp.job_payload('c0000000-0000-0000-0000-000000000009', 4));
 update public.printing_jobs set files_delete_after = now() - interval '1 day'
  where id in ('c0000000-0000-0000-0000-000000000009', 'c0000000-0000-0000-0000-000000000001');
 select pg_temp.ok((select array_agg(job_id::text) from public.printing_files_due_for_deletion(100)) = array['c0000000-0000-0000-0000-000000000009'],

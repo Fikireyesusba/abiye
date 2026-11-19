@@ -10,7 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { formatDateTime } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
-import { getOrderForCustomer, isAccessToken, readOrderAccess } from "@/lib/orders/access";
+import { getCustomerUser } from "@/lib/account/session";
+import { authorizeCustomerOrder, getOrderForCustomer, isAccessToken, readOrderAccess } from "@/lib/orders/access";
 import { formatEthiopianPhone } from "@/lib/validation/phone";
 import { localized, type Locale } from "@/i18n/config";
 
@@ -26,13 +27,20 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
   const queryToken = typeof query.t === "string" && isAccessToken(query.t) ? query.t : null;
   const token = fromCookie?.token ?? queryToken;
   let order = token ? await getOrderForCustomer(orderId, token) : null;
-  let accessToken = token;
+  let accessToken: string | null = token;
   if (!order && queryToken && queryToken !== token) {
     order = await getOrderForCustomer(orderId, queryToken);
     accessToken = queryToken;
   }
+  // Signed-in customers can always open their own orders (e.g. from "My account" on another device).
+  if (!order) {
+    const user = await getCustomerUser();
+    const owned = user ? await authorizeCustomerOrder(orderId, { userId: user.id }) : null;
+    order = owned?.order ?? null;
+    accessToken = null;
+  }
 
-  if (!order || !accessToken) {
+  if (!order) {
     return (
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-4 py-24 text-center">
         <XCircle className="size-10 text-muted-foreground" aria-hidden />
@@ -48,7 +56,7 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
   const lastRejection = order.status === "payment_rejected" ? order.submissions.find((s) => s.status === "rejected") : null;
   const bank = order.bank_snapshot;
   const appUrl = process.env.APP_URL ?? "";
-  const privateLink = `${appUrl}/order-success/${order.id}?t=${accessToken}`;
+  const privateLink = accessToken ? `${appUrl}/order-success/${order.id}?t=${accessToken}` : null;
   const trackingCode = fromCookie?.token === accessToken ? fromCookie.trackingCode : null;
 
   return (
@@ -114,7 +122,7 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
             </Card>
           )}
 
-          {(trackingCode || canPay) && (
+          {(trackingCode || (canPay && privateLink)) && (
             <Card>
               <CardContent className="space-y-4">
                 {trackingCode && (
@@ -127,7 +135,7 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
                     <p className="text-xs text-muted-foreground">{t("order.trackingHint")}</p>
                   </div>
                 )}
-                {appUrl && (
+                {appUrl && privateLink && (
                   <div className="space-y-1">
                     <p className="text-sm font-medium">{t("order.privateLink")}</p>
                     <div className="flex items-center gap-3">

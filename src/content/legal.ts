@@ -1,4 +1,8 @@
 /**
+ * Default (fallback) legal content — the live text is edited in
+ * /admin/settings → Legal and stored in website_settings.legal.
+ * Format: "## Heading" lines start a section; other lines are plain text.
+ *
  * DRAFT legal content (English + Amharic). Must be reviewed by the business
  * owner / a legal advisor before launch. {name} is replaced with the business name.
  */
@@ -46,3 +50,24 @@ export const terms: Record<"en" | "am", LegalSection[]> = {
     { heading: "ያግኙን", body: "ስለ እነዚህ ውሎች ጥያቄዎች ካሉዎት በ«ያግኙን» ገጻችን ላይ ባሉት አድራሻዎች {name}ን ያግኙ።" },
   ],
 };
+
+export function toLegalText(sections: LegalSection[]): string {
+  return sections.map((x) => `## ${x.heading}\n\n${x.body}`).join("\n\n");
+}
+
+/** Parse the admin-edited text into headings + paragraphs. Rendered as plain text (no HTML). */
+export function parseLegalText(text: string): { heading: string | null; paragraphs: string[] }[] {
+  const sections: { heading: string | null; paragraphs: string[] }[] = [];
+  let current: { heading: string | null; paragraphs: string[] } = { heading: null, paragraphs: [] };
+  for (const block of text.replace(/\r\n/g, "\n").split(/\n\s*\n/)) {
+    const trimmed = block.trim();
+    if (!trimmed) continue;
+    if (trimmed.startsWith("## ")) {
+      if (current.heading !== null || current.paragraphs.length) sections.push(current);
+      const [first, ...rest] = trimmed.split("\n");
+      current = { heading: first.slice(3).trim(), paragraphs: rest.length ? [rest.join("\n")] : [] };
+    } else current.paragraphs.push(trimmed);
+  }
+  if (current.heading !== null || current.paragraphs.length) sections.push(current);
+  return sections;
+}

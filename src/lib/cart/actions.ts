@@ -2,6 +2,7 @@
 import { z } from "zod";
 import { getDeliveryZones, getProductsByIds, type DeliveryZone } from "@/lib/catalog/queries";
 import { getSiteSettings } from "@/lib/catalog/settings";
+import { getCustomerUser } from "@/lib/account/session";
 import { getJobsForCart } from "@/lib/printing/access";
 import { publicImageUrl } from "@/lib/storage";
 
@@ -37,7 +38,7 @@ export interface CartDetails {
 
 const inputSchema = z.object({
   productIds: z.array(z.guid()).max(50),
-  printing: z.array(z.object({ id: z.guid(), token: z.string().regex(/^[A-Za-z0-9_-]{43}$/) })).max(10).default([]),
+  printing: z.array(z.object({ id: z.guid(), token: z.string().regex(/^[A-Za-z0-9_-]{43}$/).optional() })).max(10).default([]),
 });
 
 /** Fresh catalog data for the cart page. Read-only; anything missing is no longer for sale. */
@@ -47,7 +48,7 @@ export async function getCartDetails(input: unknown): Promise<CartDetails> {
     getProductsByIds([...new Set(ids)]),
     getDeliveryZones(),
     getSiteSettings(),
-    getJobsForCart(printing),
+    getCustomerUser().then((u) => getJobsForCart(printing, u?.id)),
   ]);
   return {
     printing: jobs.map((j) => ({

@@ -51,7 +51,7 @@ npm run test:db
 ## 2. Supabase project
 
 1. Create a project at supabase.com (region closest to Ethiopia, e.g. EU Central / Frankfurt).
-2. **Auth → Providers → Email**: keep email/password enabled. **Auth → Settings**: disable "Allow new users to sign up" (customers never sign up; staff are invited). Set minimum password length ≥ 12.
+2. **Authentication → Sign In / Providers → Email**: email enabled, **Confirm email = ON**, **Allow new users to sign up = ON** (customers create accounts to order; this never grants admin access). Password: minimum length 8, "letters and digits" (staff passwords are held to 12+ characters by the app).
 3. Apply the schema from your machine:
 
 ```bash
@@ -74,6 +74,20 @@ npx supabase db push
 ```bash
 npx supabase gen types typescript --project-id YOUR_PROJECT_REF > src/lib/supabase/database.types.ts
 ```
+
+## 2b. Customer accounts: emails (required before launch)
+
+Customers must confirm their email before they can order, and "forgot password" works by email. Supabase's built-in sender only delivers to your own team's addresses (a few per hour), so production needs an email-sending service:
+
+1. Pick a sender (all have free tiers): **Brevo** (300 emails/day), **Resend** (100/day), or **Gmail** with an *App Password* (Google account → Security → 2-Step Verification → App passwords; host `smtp.gmail.com`, port `465`).
+2. Supabase → **Authentication → Emails → SMTP Settings**: enable custom SMTP, enter host, port, username, password (stored by Supabase, never in this repo), sender name "Abiye", sender email (e.g. `no-reply@yourshop.com` or your Gmail address).
+3. **Authentication → URL Configuration**: Site URL `https://yourshop.com`; Redirect URLs `https://yourshop.com/**`.
+4. **Authentication → Emails → Templates**:
+   - *Confirm signup*: subject “Confirm your Abiye account / መለያዎን ያረጋግጡ”, body = contents of `supabase/templates/confirm.html`.
+   - *Reset password*: subject “Reset your Abiye password / የይለፍ ቃልዎን ይቀይሩ”, body = contents of `supabase/templates/recovery.html`.
+
+   These links (`/auth/confirm?token_hash=…`) work even when the customer opens the email on a different phone or computer.
+5. Test: create an account on the live site with your own email, confirm it, place a small test order, then use "Forgot password".
 
 ## 3. First Super Admin (secure bootstrap)
 

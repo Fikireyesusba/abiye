@@ -5,6 +5,7 @@
  * Mutates the local database. Never point it at production.
  */
 const { chromium } = require("playwright");
+const { ensureCustomer } = require("./_customer.cjs");
 const { execSync } = require("child_process");
 const fs = require("fs");
 const os = require("os");
@@ -19,11 +20,12 @@ const results = [];
 const check = (ok, msg) => results.push(`${ok ? "ok  " : "FAIL"} - ${msg}`);
 const RUN = Date.now().toString(36);
 const CHARGER = "20000000-0000-0000-0000-000000000007";
+let CUSTOMER_ID = null; // confirmed test customer that "places" SQL-created orders
 
 /** Create an order (+ optional payment submission) exactly like the storefront server does. */
 function makeOrder(tag, { pay = false, qty = 1 } = {}) {
   const key = sql("select gen_random_uuid()");
-  sql(`set role service_role; select public.create_order(jsonb_build_object(
+  sql(`set role service_role; select public.create_order_for_user('${CUSTOMER_ID}', jsonb_build_object(
     'idempotency_key','${key}','access_token_hash',encode(sha256('tok-${key}'::bytea),'hex'),'tracking_code_hash',encode(sha256('trk-${key}'::bytea),'hex'),
     'customer',jsonb_build_object('full_name','E2E ${tag}','phone','+2519${String(Math.floor(Math.random() * 1e8)).padStart(8, "0")}'),
     'fulfillment',jsonb_build_object('method','delivery','delivery_zone_id','40000000-0000-0000-0000-000000000001','address_line','Bole test'),
@@ -52,6 +54,7 @@ async function toast(page, text) {
 
 (async () => {
   sql("delete from rate_limits");
+  CUSTOMER_ID = await ensureCustomer("admin-e2e-buyer@example.com", "AdminBuyer2026");
   // Leftovers from earlier (possibly aborted) runs must not interfere.
   sql("update profiles set is_active = false where full_name like 'Selam Staff%' or full_name like 'Dawit Manager%'");
   const pngPath = path.join(os.tmpdir(), `p-${RUN}.png`);

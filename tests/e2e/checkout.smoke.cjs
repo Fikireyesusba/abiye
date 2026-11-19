@@ -5,6 +5,7 @@
  * Mutates the local database (creates orders). Never point it at production.
  */
 const { chromium } = require("playwright");
+const { ensureCustomer, loginCustomer } = require("./_customer.cjs");
 const { execSync } = require("child_process");
 const fs = require("fs");
 const os = require("os");
@@ -48,6 +49,9 @@ function resetSampleStock() {
   const b = await chromium.launch();
   const ctx = await b.newContext({ viewport: { width: 1280, height: 1000 } });
   const p = await ctx.newPage();
+  const CUSTOMER = { email: "checkout-e2e@example.com", password: "Checkout2026e2e" };
+  await ensureCustomer(CUSTOMER.email, CUSTOMER.password);
+  await loginCustomer(p, B, CUSTOMER.email, CUSTOMER.password);
   const errors = [];
   p.on("pageerror", (e) => errors.push(e.message));
 
@@ -61,6 +65,7 @@ function resetSampleStock() {
   await p.waitForSelector("text=Order summary");
   check((await p.locator("dl div:has(dt:text-is('Total')) dd").textContent()) === "6,700 ETB", "checkout summary total 6,700 ETB");
 
+  await p.check("label:has-text('I agree') input[type=checkbox]");
   await p.fill("#fullName", "Abebe Kebede");
   await p.fill("#phone", "12345");
   await p.fill("#addressLine", "Bole, House 12");
@@ -155,6 +160,7 @@ function resetSampleStock() {
   await p.evaluate((c) => localStorage.setItem("cart:v1", JSON.stringify([{ type: "product", productId: c, quantity: 1 }])), CHARGER);
   await p.goto(B + "/checkout");
   await p.waitForSelector("text=Order summary");
+  await p.check("label:has-text('I agree') input[type=checkbox]");
   await p.fill("#fullName", "Test Pickup");
   await p.fill("#phone", "0722334455");
   await p.check("input[type=radio] >> nth=1");
@@ -173,9 +179,7 @@ function resetSampleStock() {
 
   // ---- Mobile layout of checkout + order page
   const m = await b.newPage({ viewport: { width: 390, height: 844 } });
-  await m.goto(`${B}/order-success/${orderId}?t=${"x"}`); // harmless invalid token
-  const mctx = m.context();
-  await mctx.addCookies((await ctx.cookies()).filter((c) => c.name.startsWith("ord_")));
+  await m.context().addCookies(await ctx.cookies()); // same signed-in customer + order cookies
   await m.goto(`${B}/order-success/${order2}`);
   check(!(await m.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)), "order page has no horizontal overflow on mobile");
   await m.evaluate((c) => localStorage.setItem("cart:v1", JSON.stringify([{ type: "product", productId: c, quantity: 1 }])), CHARGER);

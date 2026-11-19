@@ -37,8 +37,9 @@ async function estimatePages(file: File): Promise<number | null> {
 }
 
 export function PrintForm({
-  rules, serviceCharge, maxMb, maxCopies, pickupEnabled, deliveryEnabled,
+  rules, serviceCharge, maxMb, maxCopies, pickupEnabled, deliveryEnabled, defaults,
 }: {
+  defaults: { fullName: string; phone: string };
   rules: { color_mode: "bw" | "color"; paper_size: string; sides: "single" | "double"; price_per_page_etb: number }[];
   serviceCharge: number; maxMb: number; maxCopies: number; pickupEnabled: boolean; deliveryEnabled: boolean;
 }) {
@@ -51,7 +52,7 @@ export function PrintForm({
     colorMode: rules[0]?.color_mode ?? "bw", paperSize: sizes[0] ?? "A4", sides: rules[0]?.sides ?? "single",
     copies: 1, fulfillment: pickupEnabled ? "pickup" : "delivery",
   });
-  const [contact, setContact] = useState({ fullName: "", phone: "", notes: "" });
+  const [contact, setContact] = useState({ fullName: defaults.fullName, phone: defaults.phone, notes: "" });
   const [phase, setPhase] = useState<"idle" | "uploading" | "checking">("idle");
   const [error, setError] = useState<{ code: AppErrorCode; detail?: string } | null>(null);
 
@@ -82,6 +83,7 @@ export function PrintForm({
     setPhase("uploading");
     try {
       const prep = await preparePrintUpload({ files: files.map((f) => ({ mime: f.file.type, size: f.file.size })) });
+      if (!prep.ok && prep.error === "login_required") return router.push("/account/login?next=/printing");
       if (!prep.ok) throw { code: prep.error };
       const supabase = createSupabaseBrowserClient();
       for (let i = 0; i < files.length; i++) {
@@ -94,6 +96,7 @@ export function PrintForm({
         jobId: prep.jobId, ...contact, ...opts,
         files: files.map((f, i) => ({ path: prep.uploads[i].path, name: f.file.name })),
       });
+      if (!res.ok && res.error === "login_required") return router.push("/account/login?next=/printing");
       if (!res.ok) throw { code: res.error, detail: res.detail };
       router.push(`/printing/jobs/${res.jobId}`);
     } catch (err) {

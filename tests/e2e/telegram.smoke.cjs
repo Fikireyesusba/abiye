@@ -8,6 +8,7 @@ const http = require("http");
 const { spawn, execSync } = require("child_process");
 const { chromium } = require("playwright");
 const { PDFDocument } = require("pdf-lib");
+const { ensureCustomer, loginCustomer } = require("./_customer.cjs");
 
 if (!/127\.0\.0\.1|localhost/.test(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")) throw new Error("Local Supabase only");
 const DB = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
@@ -75,6 +76,8 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
   const b = await chromium.launch();
   try {
     const p = await (await b.newContext()).newPage();
+    await ensureCustomer("telegram-e2e@example.com", "Telegram2026e2e");
+    await loginCustomer(p, B, "telegram-e2e@example.com", "Telegram2026e2e");
 
     // ---- 1. New order + receipt → photo with caption, sent immediately (no cron)
     await p.goto(B);
@@ -84,6 +87,7 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
     });
     await p.goto(`${B}/checkout`);
     await p.waitForSelector("text=Order summary");
+    await p.check("label:has-text('I agree') input[type=checkbox]");
     await p.fill("#fullName", '<a href="https://phish.example">Click</a> & Co');
     await p.fill("#phone", "0911 76 54 32");
     await p.fill("#addressLine", "Bole, near Edna Mall");
