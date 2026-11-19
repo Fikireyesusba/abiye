@@ -8,7 +8,8 @@
 insert into public.categories (id, department, slug, name_en, name_am, sort_order) values
   ('10000000-0000-0000-0000-000000000001', 'cosmetics',   'cosmetics',   'Cosmetics',   'የውበት ምርቶች', 1),
   ('10000000-0000-0000-0000-000000000002', 'electronics', 'electronics', 'Electronics', 'ኤሌክትሮኒክስ', 2),
-  ('10000000-0000-0000-0000-000000000003', 'printing',    'printing',    'Printing',    'ህትመት',      3);
+  ('10000000-0000-0000-0000-000000000003', 'printing',    'printing',    'Printing',    'ህትመት',      3)
+on conflict do nothing; -- already present if supabase/starter.sql was run
 
 insert into public.categories (id, parent_id, department, slug, name_en, name_am, sort_order) values
   ('11000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'cosmetics', 'perfumes',           'Perfumes',           'ሽቶዎች', 1),
@@ -21,7 +22,8 @@ insert into public.categories (id, parent_id, department, slug, name_en, name_am
   ('12000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000002', 'electronics', 'earphones',        'Earphones',          'የጆሮ ማዳመጫዎች', 3),
   ('12000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000002', 'electronics', 'power-banks',      'Power banks',        'ፓወር ባንኮች', 4),
   ('12000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000002', 'electronics', 'cables',           'Cables',             'ኬብሎች', 5),
-  ('12000000-0000-0000-0000-000000000006', '10000000-0000-0000-0000-000000000002', 'electronics', 'accessories',      'Electronic accessories', 'የኤሌክትሮኒክስ መለዋወጫዎች', 6);
+  ('12000000-0000-0000-0000-000000000006', '10000000-0000-0000-0000-000000000002', 'electronics', 'accessories',      'Electronic accessories', 'የኤሌክትሮኒክስ መለዋወጫዎች', 6)
+on conflict do nothing;
 
 insert into public.products (id, slug, sku, name_en, name_am, description_en, description_am, brand,
                              category_id, price_etb, sale_price_etb, stock_quantity, status, is_featured) values

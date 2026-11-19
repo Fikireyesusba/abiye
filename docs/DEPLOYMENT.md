@@ -67,6 +67,7 @@ npx supabase db push
 ```
 
    `db push` applies migrations only — it does **not** load `seed.sql` (sample data) into production.
+   Then create the department/category structure once: Supabase → **SQL Editor** → paste `supabase/starter.sql` → **Run** (no sample products or bank details; safe to re-run).
 4. Storage buckets and their policies are created by migration `20261118000009_storage.sql`. Verify in **Storage** that `payment-receipts` and `printing-files` are **private** and `product-images`, `site-assets` are public.
 5. **Project Settings → API Keys**: copy the publishable key (`sb_publishable_…`) and a secret key (`sb_secret_…`).
 6. Generate TypeScript types (from Phase 2 on):

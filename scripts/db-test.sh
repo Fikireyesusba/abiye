@@ -24,6 +24,7 @@ run() { echo "  → $(basename "$1")"; "${PSQL[@]}" -d app -f "$1" >/dev/null; }
 
 echo "Supabase emulation"; run "$ROOT/supabase/db-tests/00_supabase_stub.sql"
 echo "Migrations";        for f in "$ROOT"/supabase/migrations/*.sql; do run "$f"; done
+echo "Starter (twice: idempotent)"; run "$ROOT/supabase/starter.sql"; run "$ROOT/supabase/starter.sql"
 echo "Seed";              run "$ROOT/supabase/seed.sql"
 echo "Tests"
 for f in "$ROOT"/supabase/db-tests/[1-9]*.sql; do
