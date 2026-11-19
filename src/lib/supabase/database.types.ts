@@ -495,14 +495,14 @@ isOneToOne: false
                   ]
                 },"promotions": {
                   Row: {
-                    "category_id": string | null,"code": string | null,"created_at": string,"description_am": string,"description_en": string,"discount_type": string,"discount_value": number,"ends_at": string | null,"id": string,"is_active": boolean,"min_order_etb": number,"product_id": string | null,"show_on_homepage": boolean,"starts_at": string | null,"title_am": string,"title_en": string,"updated_at": string
+                    "category_id": string | null,"code": string | null,"created_at": string,"description_am": string,"description_en": string,"discount_type": string,"discount_value": number,"ends_at": string | null,"id": string,"is_active": boolean,"max_redemptions": number | null,"min_order_etb": number,"once_per_customer": boolean,"product_id": string | null,"show_on_homepage": boolean,"starts_at": string | null,"title_am": string,"title_en": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "category_id"?: string | null,"code"?: string | null,"created_at"?: string,"description_am"?: string,"description_en"?: string,"discount_type": string,"discount_value": number,"ends_at"?: string | null,"id"?: string,"is_active"?: boolean,"min_order_etb"?: number,"product_id"?: string | null,"show_on_homepage"?: boolean,"starts_at"?: string | null,"title_am": string,"title_en": string,"updated_at"?: string
+                    "category_id"?: string | null,"code"?: string | null,"created_at"?: string,"description_am"?: string,"description_en"?: string,"discount_type": string,"discount_value": number,"ends_at"?: string | null,"id"?: string,"is_active"?: boolean,"max_redemptions"?: number | null,"min_order_etb"?: number,"once_per_customer"?: boolean,"product_id"?: string | null,"show_on_homepage"?: boolean,"starts_at"?: string | null,"title_am": string,"title_en": string,"updated_at"?: string
                   }
                   Update: {
-                    "category_id"?: string | null,"code"?: string | null,"created_at"?: string,"description_am"?: string,"description_en"?: string,"discount_type"?: string,"discount_value"?: number,"ends_at"?: string | null,"id"?: string,"is_active"?: boolean,"min_order_etb"?: number,"product_id"?: string | null,"show_on_homepage"?: boolean,"starts_at"?: string | null,"title_am"?: string,"title_en"?: string,"updated_at"?: string
+                    "category_id"?: string | null,"code"?: string | null,"created_at"?: string,"description_am"?: string,"description_en"?: string,"discount_type"?: string,"discount_value"?: number,"ends_at"?: string | null,"id"?: string,"is_active"?: boolean,"max_redemptions"?: number | null,"min_order_etb"?: number,"once_per_customer"?: boolean,"product_id"?: string | null,"show_on_homepage"?: boolean,"starts_at"?: string | null,"title_am"?: string,"title_en"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -586,6 +586,9 @@ isOneToOne: false
                            },
 "admin_adjust_stock":
 { Args: { "p_change": number,"p_note"?: string,"p_product_id": string,"p_reason": Database["public"]['Enums']["inventory_reason"] }; Returns: number
+                           },
+"admin_analytics":
+{ Args: { "p_bucket"?: string,"p_from": string,"p_to": string }; Returns: Json
                            },
 "admin_assign_order":
 { Args: { "p_assignee": string,"p_order_id": string }; Returns: undefined
@@ -710,6 +713,14 @@ isOneToOne: false
                            },
 "quote_printing":
 { Args: { "p_color": Database["public"]['Enums']["print_color_mode"],"p_copies": number,"p_page_count": number,"p_paper_size": string,"p_sides": Database["public"]['Enums']["print_sides"] }; Returns: Json
+                           },
+"quote_promotion":
+{ Args: { "p_code": string,"p_items": Json,"p_user_id": string }; Returns: Json
+                           },
+"storage_orphans":
+{ Args: { "p_limit"?: number,"p_min_age"?: string }; Returns: {
+              "bucket": string,"name": string
+            }[]
                            },
 "submit_payment":
 { Args: { "p_input": Json }; Returns: Json

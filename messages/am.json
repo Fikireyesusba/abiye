@@ -188,7 +188,12 @@
     "terms_required": "እባክዎ ውሎችን እና ሁኔታዎችን ይቀበሉ።",
     "account_deactivated": "ይህ መለያ ታግዷል። እባክዎ ለእርዳታ ያግኙን።",
     "cannot_manage_staff": "የሰራተኛ መለያዎች የሚተዳደሩት በ«ሰራተኞች» ክፍል ነው።",
-    "has_orders": "ይህ መለያ ትዕዛዞች ስላሉት ሊሰረዝ አይችልም። በምትኩ ያግዱት።"
+    "has_orders": "ይህ መለያ ትዕዛዞች ስላሉት ሊሰረዝ አይችልም። በምትኩ ያግዱት።",
+    "invalid_promo_code": "ይህ የቅናሽ ኮድ ትክክል አይደለም ወይም ጊዜው አልፎበታል።",
+    "promo_min_order": "ትዕዛዝዎ ለዚህ የቅናሽ ኮድ ከሚያስፈልገው ዝቅተኛ መጠን በታች ነው።",
+    "promo_not_applicable": "ይህ የቅናሽ ኮድ በጋሪዎ ውስጥ ላሉት ዕቃዎች አይሰራም።",
+    "promo_limit_reached": "ይህ የቅናሽ ኮድ የአጠቃቀም ገደቡ ላይ ደርሷል።",
+    "promo_already_used": "ይህን የቅናሽ ኮድ አስቀድመው ተጠቅመውበታል።"
   },
   "header": {
     "menu": "ማውጫ",
@@ -315,7 +320,13 @@
     "nextStep": "ቀጥሎ የባንክ ሂሳባችንን ዝርዝር ያያሉ። በባንክ ዝውውር ይክፈሉ፣ ከዚያ ደረሰኝዎን ይጫኑ።",
     "fixCart": "በቅርጫትዎ ያሉ አንዳንድ ዕቃዎች ተቀይረዋል። እባክዎ ቅርጫትዎን ይገምግሙ።",
     "pickupInfo": "ትዕዛዝዎን ከሱቃችን ይውሰዱ፦ {address}",
-    "acceptTerms": "በ<terms>ውሎች እና ሁኔታዎች</terms> እስማማለሁ።"
+    "acceptTerms": "በ<terms>ውሎች እና ሁኔታዎች</terms> እስማማለሁ።",
+    "promoCode": "የቅናሽ ኮድ",
+    "promoApply": "ተግብር",
+    "promoApplied": "{title} — ኮድ {code} ተተግብሯል",
+    "promoRemove": "አስወግድ",
+    "discount": "ቅናሽ",
+    "promoMinOrder": "ለዚህ ኮድ ዝቅተኛው የትዕዛዝ መጠን፦ {amount}።"
   },
   "order": {
     "title": "ትዕዛዝ {number}",

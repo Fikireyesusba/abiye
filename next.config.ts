@@ -13,9 +13,8 @@ const supabaseUrl = (() => {
 const isLocalSupabase = !!supabaseUrl && ["127.0.0.1", "localhost"].includes(supabaseUrl.hostname);
 
 /**
- * Baseline security headers for every response. A nonce-based
- * Content-Security-Policy is added in Phase 7 once all third-party
- * origins are final.
+ * Baseline security headers for every response. The nonce-based
+ * Content-Security-Policy is set per request in src/proxy.ts.
  */
 const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },

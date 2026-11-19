@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { actionLabel, describeChanges, waitingFor } from "@/lib/admin/activity";
+import { fromAddisInput, toAddisInput } from "@/lib/datetime";
 
 describe("activity labels", () => {
   it("labels known actions and falls back to readable text", () => {
@@ -30,5 +31,14 @@ describe("waitingFor", () => {
     expect(waitingFor("2026-11-19T11:30:00Z", now)).toBe("30 min");
     expect(waitingFor("2026-11-19T09:00:00Z", now)).toBe("3 h");
     expect(waitingFor("2026-11-15T12:00:00Z", now)).toBe("4 d");
+  });
+});
+
+describe("Addis Ababa datetime inputs", () => {
+  it("round-trips through UTC+3", () => {
+    expect(fromAddisInput("2026-11-20T09:00")).toBe("2026-11-20T06:00:00.000Z");
+    expect(toAddisInput("2026-11-20T06:00:00.000Z")).toBe("2026-11-20T09:00");
+    expect(fromAddisInput("")).toBeNull();
+    expect(fromAddisInput("nonsense")).toBeNull();
   });
 });

@@ -1,0 +1,172 @@
+import type { Metadata } from "next";
+import Image from "next/image";
+import { ActionForm } from "@/components/admin/action-form";
+import { BannerForm } from "@/components/admin/banner-form";
+import { Field, PageHeader, Panel, fieldClass } from "@/components/admin/ui";
+import { Badge } from "@/components/ui/badge";
+import { deleteBanner, deletePromotion, savePromotion } from "@/lib/admin/promotion-actions";
+import { requirePermission } from "@/lib/auth/guards";
+import { formatDateTime, toAddisInput } from "@/lib/datetime";
+import { formatETB, toSantim } from "@/lib/money";
+import { publicImageUrl } from "@/lib/storage";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = { title: "Promotions" };
+
+type Promo = {
+  id: string; title_en: string; title_am: string; description_en: string; description_am: string; code: string | null;
+  discount_type: string; discount_value: number; min_order_etb: number; category_id: string | null; product_id: string | null;
+  starts_at: string | null; ends_at: string | null; max_redemptions: number | null; once_per_customer: boolean;
+  is_active: boolean; show_on_homepage: boolean;
+};
+type Option = { id: string; name: string };
+
+function PromotionFields({ p, categories, products }: { p?: Promo; categories: Option[]; products: Option[] }) {
+  const id = p?.id ?? "new";
+  const scope = p?.product_id ? "product" : p?.category_id ? "category" : "all";
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <Field label="Title (English)" htmlFor={`pt-en-${id}`}><input id={`pt-en-${id}`} name="title_en" required maxLength={120} defaultValue={p?.title_en} className={fieldClass} /></Field>
+      <Field label="Title (Amharic)" htmlFor={`pt-am-${id}`}><input id={`pt-am-${id}`} name="title_am" required maxLength={120} defaultValue={p?.title_am} lang="am" className={fieldClass} /></Field>
+      <Field label="Promo code" htmlFor={`pc-${id}`} hint="Customers type this at checkout. Empty = announcement only.">
+        <input id={`pc-${id}`} name="code" maxLength={30} defaultValue={p?.code ?? ""} placeholder="e.g. WELCOME10" className={`${fieldClass} uppercase`} />
+      </Field>
+      <Field label="Description (English)" htmlFor={`pd-en-${id}`} className="sm:col-span-2 lg:col-span-1"><input id={`pd-en-${id}`} name="description_en" maxLength={500} defaultValue={p?.description_en} className={fieldClass} /></Field>
+      <Field label="Description (Amharic)" htmlFor={`pd-am-${id}`} className="sm:col-span-2 lg:col-span-1"><input id={`pd-am-${id}`} name="description_am" maxLength={500} defaultValue={p?.description_am} lang="am" className={fieldClass} /></Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Discount" htmlFor={`pdt-${id}`}>
+          <select id={`pdt-${id}`} name="discount_type" defaultValue={p?.discount_type ?? "percent"} className={fieldClass}>
+            <option value="percent">% off</option><option value="fixed">ETB off</option>
+          </select>
+        </Field>
+        <Field label="Amount" htmlFor={`pdv-${id}`}><input id={`pdv-${id}`} name="discount_value" type="number" required min={0.01} step="0.01" defaultValue={p?.discount_value} className={fieldClass} /></Field>
+      </div>
+      <Field label="Applies to" htmlFor={`ps-${id}`}>
+        <select id={`ps-${id}`} name="scope" defaultValue={scope} className={fieldClass}>
+          <option value="all">All products</option><option value="category">One category</option><option value="product">One product</option>
+        </select>
+      </Field>
+      <Field label="Category (if “one category”)" htmlFor={`pcat-${id}`}>
+        <select id={`pcat-${id}`} name="category_id" defaultValue={p?.category_id ?? ""} className={fieldClass}>
+          <option value="">—</option>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+      </Field>
+      <Field label="Product (if “one product”)" htmlFor={`pprod-${id}`}>
+        <select id={`pprod-${id}`} name="product_id" defaultValue={p?.product_id ?? ""} className={fieldClass}>
+          <option value="">—</option>{products.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+      </Field>
+      <Field label="Minimum order (ETB)" htmlFor={`pmin-${id}`} hint="Basket subtotal before delivery"><input id={`pmin-${id}`} name="min_order_etb" type="number" min={0} step="0.01" defaultValue={p?.min_order_etb ?? 0} className={fieldClass} /></Field>
+      <Field label="Usage limit (optional)" htmlFor={`pmax-${id}`} hint="Total orders that can use the code"><input id={`pmax-${id}`} name="max_redemptions" type="number" min={1} defaultValue={p?.max_redemptions ?? ""} className={fieldClass} /></Field>
+      <Field label="Starts (optional)" htmlFor={`pst-${id}`}><input id={`pst-${id}`} name="starts_at" type="datetime-local" defaultValue={toAddisInput(p?.starts_at)} className={fieldClass} /></Field>
+      <Field label="Ends (optional)" htmlFor={`pen-${id}`}><input id={`pen-${id}`} name="ends_at" type="datetime-local" defaultValue={toAddisInput(p?.ends_at)} className={fieldClass} /></Field>
+      <div className="space-y-2 text-sm sm:col-span-2 lg:col-span-3">
+        <label className="flex items-center gap-2"><input type="checkbox" name="is_active" defaultChecked={p?.is_active ?? true} className="size-4 accent-[var(--primary)]" /> Active</label>
+        <label className="flex items-center gap-2"><input type="checkbox" name="once_per_customer" defaultChecked={p?.once_per_customer ?? true} className="size-4 accent-[var(--primary)]" /> One use per customer account</label>
+        <label className="flex items-center gap-2"><input type="checkbox" name="show_on_homepage" defaultChecked={p?.show_on_homepage ?? false} className="size-4 accent-[var(--primary)]" /> Show on the homepage (makes the code public)</label>
+      </div>
+    </div>
+  );
+}
+
+function timeWindow(start: string | null, end: string | null) {
+  if (!start && !end) return "Always";
+  return `${start ? formatDateTime(start, "en") : "now"} → ${end ? formatDateTime(end, "en") : "no end"}`;
+}
+
+export default async function PromotionsPage() {
+  await requirePermission("promotions.manage");
+  const supabase = await createSupabaseServerClient();
+  const [{ data: promos }, { data: banners }, { data: cats }, { data: prods }, { data: used }] = await Promise.all([
+    supabase.from("promotions").select("*").order("created_at", { ascending: false }),
+    supabase.from("homepage_banners").select("*").order("sort_order"),
+    supabase.from("categories").select("id, name_en, parent_id").order("sort_order"),
+    supabase.from("products").select("id, name_en, sku").neq("status", "archived").order("name_en").limit(1000),
+    supabase.from("orders").select("promotion_id, status").not("promotion_id", "is", null).limit(10000),
+  ]);
+  const categories: Option[] = (cats ?? []).map((c) => ({ id: c.id, name: c.parent_id ? `— ${c.name_en}` : c.name_en }));
+  const products: Option[] = (prods ?? []).map((p) => ({ id: p.id, name: `${p.name_en} (${p.sku})` }));
+  const uses = new Map<string, number>();
+  for (const o of used ?? []) if (o.promotion_id && !["expired", "cancelled"].includes(o.status)) uses.set(o.promotion_id, (uses.get(o.promotion_id) ?? 0) + 1);
+  const now = new Date().getTime();
+  const live = (p: { is_active: boolean; starts_at: string | null; ends_at: string | null }) =>
+    p.is_active && (!p.starts_at || Date.parse(p.starts_at) <= now) && (!p.ends_at || Date.parse(p.ends_at) > now);
+  const nameOf = (list: Option[], id: string | null) => list.find((x) => x.id === id)?.name.replace(/^— /, "") ?? "—";
+
+  return (
+    <>
+      <PageHeader title="Promotions & banners" description="Promo codes customers can use at checkout, offers on the homepage, and homepage banners. Times are Addis Ababa time." />
+
+      <section className="mb-10 space-y-4">
+        <h2 className="text-lg font-semibold">Promotions</h2>
+        <details className="rounded-lg border bg-card p-4">
+          <summary className="cursor-pointer text-sm font-medium">New promotion</summary>
+          <div className="mt-4"><ActionForm action={savePromotion} hidden={{ id: "" }} submitLabel="Create promotion" resetOnSuccess><PromotionFields categories={categories} products={products} /></ActionForm></div>
+        </details>
+        {(promos ?? []).length === 0 && <p className="text-sm text-muted-foreground">No promotions yet.</p>}
+        <ul className="space-y-3">
+          {((promos ?? []) as Promo[]).map((p) => (
+            <li key={p.id} className="rounded-lg border bg-card p-4">
+              <details>
+                <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2">
+                  <span className="font-medium">{p.title_en}</span>
+                  {p.code && <Badge variant="outline" className="font-mono">{p.code}</Badge>}
+                  <span className="text-sm text-muted-foreground">
+                    {p.discount_type === "percent" ? `${p.discount_value}% off` : `${formatETB(toSantim(p.discount_value))} off`}
+                    {" · "}{p.product_id ? nameOf(products, p.product_id) : p.category_id ? nameOf(categories, p.category_id) : "all products"}
+                    {Number(p.min_order_etb) > 0 && ` · min ${formatETB(toSantim(p.min_order_etb))}`}
+                    {" · "}used {uses.get(p.id) ?? 0}{p.max_redemptions ? ` / ${p.max_redemptions}` : ""}
+                  </span>
+                  {live(p) ? <Badge variant="success">Live</Badge> : <Badge variant="secondary">{p.is_active ? "Scheduled / ended" : "Off"}</Badge>}
+                  {p.show_on_homepage && <Badge variant="info">Homepage</Badge>}
+                  <span className="ml-auto text-xs text-primary">Edit</span>
+                </summary>
+                <p className="mt-2 text-xs text-muted-foreground">{timeWindow(p.starts_at, p.ends_at)}</p>
+                <div className="mt-3 space-y-3 rounded-lg bg-muted/40 p-3">
+                  <ActionForm action={savePromotion} hidden={{ id: p.id }} submitLabel="Save"><PromotionFields p={p} categories={categories} products={products} /></ActionForm>
+                  <ActionForm action={deletePromotion} hidden={{ id: p.id }} submitLabel="Delete" variant="outline" size="sm" confirm={`Delete “${p.title_en}”?`} />
+                </div>
+              </details>
+            </li>
+          ))}
+        </ul>
+        <p className="text-xs text-muted-foreground">
+          The discount is calculated by the system at checkout from current prices (never by the customer’s browser). Printing jobs are not discounted.
+          For a simple price cut on one product, you can also set a sale price on the product.
+        </p>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold">Homepage banners</h2>
+        <Panel title="New banner"><BannerForm /></Panel>
+        {(banners ?? []).length === 0 && <p className="text-sm text-muted-foreground">No banners yet.</p>}
+        <ul className="grid gap-4 lg:grid-cols-2">
+          {(banners ?? []).map((b) => {
+            const img = publicImageUrl("site-assets", b.image_path);
+            return (
+              <li key={b.id} className="overflow-hidden rounded-lg border bg-card">
+                <div className="relative aspect-[16/7] bg-muted">
+                  {img && <Image src={img} alt="" fill sizes="(min-width: 1024px) 40vw, 90vw" className="object-cover" />}
+                </div>
+                <div className="space-y-2 p-4">
+                  <p className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium">{b.title_en}</span>
+                    {live(b) ? <Badge variant="success">Showing</Badge> : <Badge variant="secondary">{b.is_active ? "Scheduled / ended" : "Hidden"}</Badge>}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{timeWindow(b.starts_at, b.ends_at)}{b.link_href ? ` · links to ${b.link_href}` : ""} · order {b.sort_order}</p>
+                  <details>
+                    <summary className="cursor-pointer text-sm text-primary">Edit</summary>
+                    <div className="mt-3 space-y-3">
+                      <BannerForm b={{ ...b, starts: toAddisInput(b.starts_at), ends: toAddisInput(b.ends_at) }} />
+                      <ActionForm action={deleteBanner} hidden={{ id: b.id }} submitLabel="Delete banner" variant="outline" size="sm" confirm="Delete this banner?" />
+                    </div>
+                  </details>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    </>
+  );
+}

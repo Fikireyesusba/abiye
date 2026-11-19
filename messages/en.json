@@ -188,7 +188,12 @@
     "terms_required": "Please accept the terms and conditions.",
     "account_deactivated": "This account has been deactivated. Please contact us for help.",
     "cannot_manage_staff": "Staff accounts are managed under Staff.",
-    "has_orders": "This account has orders, so it cannot be deleted. Deactivate it instead."
+    "has_orders": "This account has orders, so it cannot be deleted. Deactivate it instead.",
+    "invalid_promo_code": "This promo code is not valid or has expired.",
+    "promo_min_order": "Your order is below the minimum amount for this promo code.",
+    "promo_not_applicable": "This promo code does not apply to the items in your cart.",
+    "promo_limit_reached": "This promo code has reached its usage limit.",
+    "promo_already_used": "You have already used this promo code."
   },
   "header": {
     "menu": "Menu",
@@ -315,7 +320,13 @@
     "nextStep": "Next you will see our bank account details. Pay by bank transfer, then upload your receipt.",
     "fixCart": "Some items in your basket changed. Please review your basket.",
     "pickupInfo": "Collect your order at our shop: {address}",
-    "acceptTerms": "I agree to the <terms>terms and conditions</terms>."
+    "acceptTerms": "I agree to the <terms>terms and conditions</terms>.",
+    "promoCode": "Promo code",
+    "promoApply": "Apply",
+    "promoApplied": "{title} — code {code} applied",
+    "promoRemove": "Remove",
+    "discount": "Discount",
+    "promoMinOrder": "Minimum order for this code: {amount}."
   },
   "order": {
     "title": "Order {number}",

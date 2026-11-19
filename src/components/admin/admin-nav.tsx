@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Bell, Boxes, Clock, History, CreditCard, FolderTree, LayoutDashboard, Menu, Package, Printer, Settings, ShoppingCart, UserCog, Users,
+  BarChart3, Bell, Boxes, Clock, History, Megaphone, CreditCard, FolderTree, LayoutDashboard, Menu, Package, Printer, Settings, ShoppingCart, UserCog, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
@@ -21,6 +21,8 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/admin/notifications": Bell,
   "/admin/settings": Settings,
   "/admin/follow-up": Clock,
+  "/admin/promotions": Megaphone,
+  "/admin/analytics": BarChart3,
   "/admin/activity": History,
 };
 

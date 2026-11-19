@@ -5,12 +5,57 @@ import { clientIpKey, rateLimitAll } from "@/lib/security/rate-limit";
 import { generateAccessToken, generateTrackingCode, sha256Hex } from "@/lib/security/tokens";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { checkoutSchema } from "@/lib/validation/checkout";
+import { checkoutSchema, promotionCodeSchema } from "@/lib/validation/checkout";
+import { z } from "zod";
 import { rememberOrderAccess } from "./access";
 
 export type PlaceOrderResult =
   | { ok: true; orderId: string; orderNumber: string }
   | { ok: false; error: AppErrorCode; detail?: string; fieldErrors?: Partial<Record<CheckoutField, AppErrorCode>> };
+
+export type PromoPreview =
+  | { ok: true; code: string; discountEtb: number; title: { en: string; am: string } }
+  | { ok: false; error: AppErrorCode; detail?: string };
+
+const previewItems = z
+  .array(
+    z.discriminatedUnion("type", [
+      z.object({ type: z.literal("product"), productId: z.guid(), quantity: z.number().int().min(1).max(100) }),
+      z.object({ type: z.literal("printing"), printingJobId: z.guid() }),
+    ]),
+  )
+  .min(1)
+  .max(60);
+
+/**
+ * Checkout preview of a promo code. Display only: placeOrder() has the
+ * database recompute the discount when the order is created.
+ */
+export async function previewPromotion(code: unknown, items: unknown): Promise<PromoPreview> {
+  const user = await getCustomerUser();
+  if (!user) return { ok: false, error: "login_required" };
+  const c = promotionCodeSchema.safeParse(code);
+  const i = previewItems.safeParse(items);
+  if (!c.success) return { ok: false, error: "invalid_promo_code" };
+  if (!i.success) return { ok: false, error: "invalid_cart" };
+  const ip = await clientIpKey();
+  if (!(await rateLimitAll([[`promo:user:${user.id}`, 15, 600], [`promo:ip:${ip}`, 30, 600]]))) {
+    return { ok: false, error: "rate_limited" };
+  }
+  const { data, error } = await getSupabaseAdmin().rpc("quote_promotion", {
+    p_code: c.data,
+    p_user_id: user.id,
+    p_items: i.data.map((x) =>
+      x.type === "product" ? { type: "product", product_id: x.productId, quantity: x.quantity } : { type: "printing", printing_job_id: x.printingJobId },
+    ),
+  });
+  if (error || !data) {
+    const e = toAppError(error);
+    return { ok: false, error: e.code, detail: e.detail };
+  }
+  const q = data as { discount_etb: number; title_en: string; title_am: string };
+  return { ok: true, code: c.data.toUpperCase(), discountEtb: Number(q.discount_etb), title: { en: q.title_en, am: q.title_am } };
+}
 
 type CheckoutField = "fullName" | "phone" | "deliveryZoneId" | "addressLine" | "instructions" | "items" | "acceptTerms";
 
@@ -89,6 +134,7 @@ export async function placeOrder(input: unknown): Promise<PlaceOrderResult> {
         instructions: v.instructions || null,
       },
       items,
+      ...(v.promotionCode ? { promotion_code: v.promotionCode } : {}),
     },
   });
 

@@ -3,7 +3,7 @@ import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { AlertTriangle, Loader2, Lock } from "lucide-react";
+import { AlertTriangle, Loader2, Lock, Tag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,8 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { cart, readFulfillmentPrefs, saveFulfillmentPrefs, type FulfillmentPrefs } from "@/lib/cart/store";
 import { useCartDetails } from "@/lib/cart/use-cart-details";
 import type { AppErrorCode } from "@/lib/errors";
-import { formatETB, toSantim } from "@/lib/money";
-import { placeOrder } from "@/lib/orders/checkout-action";
+import { formatETB, santim, toSantim } from "@/lib/money";
+import { placeOrder, previewPromotion, type PromoPreview } from "@/lib/orders/checkout-action";
 import { computeCartTotals } from "@/lib/pricing/cart";
 import { localized, type Locale } from "@/i18n/config";
 
@@ -55,6 +55,10 @@ export function CheckoutForm({
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<AppErrorCode | null>(null);
   const [pending, startTransition] = useTransition();
+  const [promoInput, setPromoInput] = useState("");
+  const [applied, setPromo] = useState<(Extract<PromoPreview, { ok: true }> & { basket: string }) | null>(null);
+  const [promoError, setPromoError] = useState<{ code: AppErrorCode; detail?: string } | null>(null);
+  const [promoPending, startPromo] = useTransition();
 
   const view = useMemo(() => {
     if (!details) return null;
@@ -81,6 +85,35 @@ export function CheckoutForm({
     );
     return { lines, printLines, problem, method, zone, totals };
   }, [details, items, productItems, prefs]);
+
+  // The previewed discount depends on the basket: it is dropped after any change.
+  const basketKey = JSON.stringify(items);
+  const promo = applied && applied.basket === basketKey ? applied : null;
+
+  const cartLines = () =>
+    items.map((i) =>
+      i.type === "product"
+        ? { type: "product" as const, productId: i.productId, quantity: i.quantity }
+        : { type: "printing" as const, printingJobId: i.printingJobId, accessToken: i.accessToken },
+    );
+  const applyPromo = () => {
+    const code = promoInput.trim();
+    if (!code) return;
+    setPromoError(null);
+    startPromo(async () => {
+      const res = await previewPromotion(
+        code,
+        cartLines().map((l) => (l.type === "product" ? l : { type: l.type, printingJobId: l.printingJobId })),
+      ).catch(() => ({ ok: false as const, error: "unexpected" as AppErrorCode }));
+      if (res.ok) {
+        setPromo({ ...res, basket: basketKey });
+        setPromoInput("");
+      } else {
+        setPromo(null);
+        setPromoError({ code: res.error, detail: "detail" in res ? res.detail : undefined });
+      }
+    });
+  };
 
   const updatePrefs = (p: FulfillmentPrefs) => {
     setPrefs(p);
@@ -131,11 +164,8 @@ export function CheckoutForm({
         addressLine: view.method === "delivery" ? form.addressLine || undefined : undefined,
         instructions: form.instructions || undefined,
         acceptTerms,
-        items: items.map((i) =>
-          i.type === "product"
-            ? { type: "product" as const, productId: i.productId, quantity: i.quantity }
-            : { type: "printing" as const, printingJobId: i.printingJobId, accessToken: i.accessToken },
-        ),
+        promotionCode: promo?.code,
+        items: cartLines(),
       }).catch(() => ({ ok: false as const, error: "unexpected" as AppErrorCode }));
 
       if (result.ok) {
@@ -158,7 +188,10 @@ export function CheckoutForm({
       if ("fieldErrors" in result && result.fieldErrors && Object.keys(result.fieldErrors).length) {
         setFieldErrors(result.fieldErrors);
       }
-      setError(result.error);
+      if (result.error.startsWith("promo_") || result.error === "invalid_promo_code") {
+        setPromo(null);
+        setPromoError({ code: result.error, detail: "detail" in result ? result.detail : undefined });
+      } else setError(result.error);
       if (["out_of_stock", "product_unavailable", "printing_job_not_payable", "printing_job_not_found"].includes(result.error)) refresh();
     });
   };
@@ -283,12 +316,49 @@ export function CheckoutForm({
                 {view.method === "pickup" || view.totals.freeDeliveryApplied ? t("cart.freeDelivery") : view.zone ? formatETB(view.totals.deliveryFee, locale) : "—"}
               </dd>
             </div>
+            {promo && (
+              <div className="flex justify-between text-success">
+                <dt>{t("checkoutPage.discount")} ({promo.code})</dt>
+                <dd className="tabular-nums">−{formatETB(santim(Math.min(toSantim(promo.discountEtb), view.totals.total - 100)), locale)}</dd>
+              </div>
+            )}
             <Separator />
             <div className="flex justify-between text-base font-semibold">
               <dt>{t("cart.total")}</dt>
-              <dd className="tabular-nums">{formatETB(view.totals.total, locale)}</dd>
+              <dd className="tabular-nums">
+                {formatETB(promo ? santim(Math.max(100, view.totals.total - toSantim(promo.discountEtb))) : view.totals.total, locale)}
+              </dd>
             </div>
           </dl>
+
+          <div className="space-y-2">
+            {promo ? (
+              <p className="flex items-center justify-between gap-2 rounded-md bg-success/10 p-2 text-sm text-success">
+                <span className="flex items-center gap-1.5"><Tag className="size-4 shrink-0" aria-hidden />
+                  {t("checkoutPage.promoApplied", { title: promo.title[locale] || promo.title.en, code: promo.code })}</span>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setPromo(null)} aria-label={t("checkoutPage.promoRemove")}>
+                  <X className="size-4" />
+                </Button>
+              </p>
+            ) : (
+              <div className="flex gap-2">
+                <Label htmlFor="promo" className="sr-only">{t("checkoutPage.promoCode")}</Label>
+                <Input id="promo" value={promoInput} onChange={(e) => setPromoInput(e.target.value)} placeholder={t("checkoutPage.promoCode")}
+                  maxLength={30} autoComplete="off" autoCapitalize="characters" className="uppercase placeholder:normal-case"
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyPromo(); } }}
+                  aria-invalid={!!promoError} aria-describedby={promoError ? "promo-error" : undefined} />
+                <Button type="button" variant="outline" onClick={applyPromo} disabled={promoPending || !promoInput.trim()}>
+                  {promoPending && <Loader2 className="animate-spin" />} {t("checkoutPage.promoApply")}
+                </Button>
+              </div>
+            )}
+            {promoError && (
+              <p id="promo-error" role="alert" className="text-sm text-destructive">
+                {t(`errors.${promoError.code}`)}
+                {promoError.code === "promo_min_order" && promoError.detail && ` ${t("checkoutPage.promoMinOrder", { amount: formatETB(toSantim(Number(promoError.detail)), locale) })}`}
+              </p>
+            )}
+          </div>
 
           {stockError && (
             <p className="flex gap-2 rounded-md bg-destructive/5 p-3 text-sm text-destructive">

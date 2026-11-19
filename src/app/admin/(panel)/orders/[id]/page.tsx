@@ -121,6 +121,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
             <dl className="mt-3 space-y-1 border-t pt-3 text-sm">
               <div className="flex justify-between"><dt className="text-muted-foreground">Subtotal</dt><dd>{etb(order.subtotal_etb)}</dd></div>
               <div className="flex justify-between"><dt className="text-muted-foreground">Delivery</dt><dd>{etb(order.delivery_fee_etb)}</dd></div>
+              {Number(order.discount_etb) > 0 && <div className="flex justify-between text-success"><dt>Promo discount</dt><dd>−{etb(order.discount_etb)}</dd></div>}
               <div className="flex justify-between font-semibold"><dt>Total</dt><dd>{etb(order.total_etb)}</dd></div>
             </dl>
           </Panel>

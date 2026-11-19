@@ -180,6 +180,7 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
             <dl className="space-y-2">
               <div className="flex justify-between"><dt className="text-muted-foreground">{t("cart.subtotal")}</dt><dd className="tabular-nums">{formatETB(toSantim(order.subtotal_etb), locale)}</dd></div>
               <div className="flex justify-between"><dt className="text-muted-foreground">{t("cart.delivery")}</dt><dd className="tabular-nums">{order.delivery_fee_etb > 0 ? formatETB(toSantim(order.delivery_fee_etb), locale) : t("cart.freeDelivery")}</dd></div>
+              {order.discount_etb > 0 && <div className="flex justify-between text-success"><dt>{t("checkoutPage.discount")}</dt><dd className="tabular-nums">−{formatETB(toSantim(order.discount_etb), locale)}</dd></div>}
               <div className="flex justify-between text-base font-semibold"><dt>{t("cart.total")}</dt><dd className="tabular-nums">{amount}</dd></div>
             </dl>
             <Separator />

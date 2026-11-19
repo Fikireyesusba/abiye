@@ -35,6 +35,9 @@ export const cartItemSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
+/** Promo code as typed by the customer (validity and discount are decided by the database). */
+export const promotionCodeSchema = z.string().trim().regex(/^[A-Za-z0-9_-]{3,30}$/);
+
 export const checkoutSchema = z
   .object({
     idempotencyKey: z.guid(),
@@ -47,6 +50,7 @@ export const checkoutSchema = z
     instructions: cleanText(0, 500).optional(),
     items: z.array(cartItemSchema).min(1).max(MAX_CART_LINES),
     acceptTerms: z.literal(true, { message: "terms_required" }),
+    promotionCode: promotionCodeSchema.optional(),
   })
   .superRefine((v, ctx) => {
     if (v.fulfillment === "delivery") {
