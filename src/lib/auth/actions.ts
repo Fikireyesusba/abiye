@@ -26,11 +26,16 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
-  if (error) return { error: GENERIC, email };
+  if (error) {
+    // Visitors get one generic message; the server log keeps the real reason (never the password).
+    console.warn(`[admin-login] failed: ${error.code ?? "unknown"} (status ${error.status ?? "?"})`);
+    return { error: GENERIC, email };
+  }
 
   // Valid Supabase user but not an active staff member: sign straight back out.
   const { data } = await supabase.rpc("my_admin_context");
   if (!parseAdminContext(data)) {
+    console.warn("[admin-login] signed in but no active staff profile (run bootstrap_super_admin / add in /admin/staff)");
     await supabase.auth.signOut();
     return { error: "This account does not have access to the admin dashboard.", email };
   }

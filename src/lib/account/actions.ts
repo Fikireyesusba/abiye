@@ -56,7 +56,10 @@ export async function signInCustomer(_prev: AccountState, fd: FormData): Promise
   }
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword({ email: addr, password: pw });
-  if (error) return { email: addr, error: /not confirmed/i.test(error.message) ? "notConfirmed" : "invalidLogin" };
+  if (error) {
+    console.warn(`[customer-login] failed: ${error.code ?? "unknown"} (status ${error.status ?? "?"})`);
+    return { email: addr, error: /not confirmed/i.test(error.message) ? "notConfirmed" : "invalidLogin" };
+  }
   redirect(safeNext(fd.get("next")));
 }
 
