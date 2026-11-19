@@ -122,6 +122,7 @@ Migration **0023**. Verified with `npm run test:smoke:push` (10 checks: own app 
 - `push_subscriptions` (own rows via RLS; endpoints restricted to real push services — prevents server-side requests elsewhere; max 10 devices). Every customer event also queues an outbox row `channel='push'` (only if the customer has a device). `push_targets()` for the worker.
 - `src/lib/push/` (`web-push`): short bilingual texts per device language, VAPID, TTL 1 day, 404/410 → device removed, 429/5xx retried, stale rows dropped. Sent with `dispatchSoon()` and by the crons.
 - UI: `PushToggle` on My account and the order page (signed-in, order in progress); iPhone outside the installed app → install first; blocked/unsupported explained. Service worker shows notifications and opens the order on tap (`sw.js` v2).
+- Optional integration settings (Telegram, Resend, VAPID) are trimmed (spaces/quotes) and, if invalid, switched off and reported instead of breaking the site (`optionalEnvProblems()`); the phone panel lists exactly which VAPID variable is missing/invalid.
 - Admin → Notifications: status for customer emails + phone notifications; **VAPID key generator in the owner's browser** (WebCrypto; private key never leaves the browser). Config `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (DEPLOYMENT §10).
 
 ## Installable app — PWA for Android and iPhone (requested 2026-11-19) — verified

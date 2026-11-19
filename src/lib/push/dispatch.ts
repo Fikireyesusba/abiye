@@ -1,12 +1,20 @@
 import "server-only";
 import webpush from "web-push";
 import { getSiteSettings } from "@/lib/catalog/settings";
-import { getServerEnv } from "@/lib/env";
+import { getServerEnv, optionalEnvProblems } from "@/lib/env";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { buildPush } from "./templates";
 
 /** Notifications not sent within a day are dropped instead of arriving late. */
 const MAX_AGE_MS = 24 * 3600 * 1000;
+
+/** For the admin panel: which of the three settings are missing or invalid. */
+export function pushSetupProblems(): string[] {
+  const env = getServerEnv();
+  const bad = optionalEnvProblems();
+  return (["VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "VAPID_SUBJECT"] as const).flatMap((k) =>
+    bad[k] ? [`${k} is not valid (${bad[k]})`] : env[k] ? [] : [`${k} is missing`]);
+}
 
 export function pushConfigured(): boolean {
   const env = getServerEnv();

@@ -9,7 +9,7 @@ import { formatDateTime } from "@/lib/datetime";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { telegramConfig } from "@/lib/telegram/dispatch";
 import { emailConfigured } from "@/lib/email/dispatch";
-import { pushConfigured } from "@/lib/push/dispatch";
+import { pushConfigured, pushSetupProblems } from "@/lib/push/dispatch";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import { VapidKeyGenerator } from "@/components/admin/vapid-keys";
 
@@ -26,6 +26,7 @@ export default async function NotificationsPage() {
   const configured = !!telegramConfig();
   const emailOn = emailConfigured();
   const pushOn = pushConfigured();
+  const pushProblems = pushSetupProblems();
   const settings = await getSiteSettings();
   const supabase = await createSupabaseServerClient();
   const { data: rows } = await supabase.rpc("admin_notifications", { p_limit: 100 });
@@ -46,6 +47,17 @@ export default async function NotificationsPage() {
             {pushOn ? <CheckCircle2 className="size-5 text-success" aria-hidden /> : <XCircle className="size-5 text-destructive" aria-hidden />}
             {pushOn ? "Configured. Customers can turn them on in My account and on their order page." : "Not configured yet. Create the keys below and add them to Vercel."}
           </p>
+          {!pushOn && (
+            <div className="mb-3 space-y-1 rounded-md bg-muted/60 p-3 text-sm">
+              <p className="font-medium">What the website sees right now:</p>
+              <ul className="list-disc space-y-0.5 pl-5 text-destructive">{pushProblems.map((p) => <li key={p}>{p}</li>)}</ul>
+              <p className="text-muted-foreground">
+                {pushProblems.length === 3
+                  ? "If you already added them in Vercel: make sure “Production” is ticked for each, then Deployments → ⋯ → Redeploy."
+                  : "Fix the listed variable in Vercel (Production), then Redeploy."}
+              </p>
+            </div>
+          )}
           {!pushOn && <VapidKeyGenerator suggestedSubject={`mailto:${settings.contact.email || "orders@example.com"}`} />}
         </Panel>
       </div>

@@ -50,9 +50,20 @@ export type ServerEnv = z.infer<typeof serverEnvSchema>;
 
 let cached: ServerEnv | undefined;
 
+const OPTIONAL = new Set([
+  "TELEGRAM_BOT_TOKEN", "TELEGRAM_ADMIN_CHAT_ID", "RESEND_API_KEY", "EMAIL_FROM", "VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "VAPID_SUBJECT",
+]);
+const optionalProblems: Record<string, string> = {};
+
+/** Optional settings that were present but invalid (name → reason; never the value). */
+export function optionalEnvProblems(): Readonly<Record<string, string>> {
+  getServerEnv();
+  return optionalProblems;
+}
+
 export function getServerEnv(): ServerEnv {
   if (cached) return cached;
-  const parsed = serverEnvSchema.safeParse({
+  const values: Record<string, string | undefined> = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     // Supabase's new key names, with fallback to the legacy anon/service_role names.
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
@@ -70,7 +81,24 @@ export function getServerEnv(): ServerEnv {
     VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY || undefined,
     VAPID_SUBJECT: process.env.VAPID_SUBJECT || undefined,
     PUSH_TEST_ENDPOINT_BASE: process.env.PUSH_TEST_ENDPOINT_BASE || undefined,
-  });
+  };
+  // Optional integrations: tolerate pasting slips (spaces, quotes), and never let a bad
+  // value take the whole site down — that feature is switched off and reported instead.
+  for (const k of OPTIONAL) {
+    const v = values[k]?.trim().replace(/^(["'])(.*)\1$/, "$2").trim();
+    values[k] = v || undefined;
+  }
+  let parsed = serverEnvSchema.safeParse(values);
+  const bad = parsed.success ? [] : parsed.error.issues.map((i) => String(i.path[0]));
+  if (!parsed.success && bad.every((k) => OPTIONAL.has(k))) {
+    for (const issue of parsed.error.issues) {
+      const k = String(issue.path[0]);
+      optionalProblems[k] = issue.message;
+      values[k] = undefined;
+    }
+    console.error(`[env] ignoring invalid optional settings: ${Object.keys(optionalProblems).join(", ")}`);
+    parsed = serverEnvSchema.safeParse(values);
+  }
   if (!parsed.success) {
     // Report variable NAMES only — never values.
     const problems = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
