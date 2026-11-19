@@ -24,6 +24,7 @@
     "test:smoke:account": "node --env-file=.env.local tests/e2e/account.smoke.cjs",
     "test:smoke:customers": "node --env-file=.env.local tests/e2e/customer-admin.smoke.cjs",
     "test:smoke:phase7": "node --env-file=.env.local tests/e2e/phase7.smoke.cjs",
+    "test:smoke:personal-promo": "node --env-file=.env.local tests/e2e/personal-promo.smoke.cjs",
     "db:bundle": "node scripts/build-production-sql.mjs",
     "test:db:bundle": "BUNDLE=1 bash scripts/db-test.sh"
   },

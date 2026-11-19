@@ -493,16 +493,36 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"promotions": {
+                },"promotion_customers": {
                   Row: {
-                    "category_id": string | null,"code": string | null,"created_at": string,"description_am": string,"description_en": string,"discount_type": string,"discount_value": number,"ends_at": string | null,"id": string,"is_active": boolean,"max_redemptions": number | null,"min_order_etb": number,"once_per_customer": boolean,"product_id": string | null,"show_on_homepage": boolean,"starts_at": string | null,"title_am": string,"title_en": string,"updated_at": string
+                    "created_at": string,"created_by": string | null,"promotion_id": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "category_id"?: string | null,"code"?: string | null,"created_at"?: string,"description_am"?: string,"description_en"?: string,"discount_type": string,"discount_value": number,"ends_at"?: string | null,"id"?: string,"is_active"?: boolean,"max_redemptions"?: number | null,"min_order_etb"?: number,"once_per_customer"?: boolean,"product_id"?: string | null,"show_on_homepage"?: boolean,"starts_at"?: string | null,"title_am": string,"title_en": string,"updated_at"?: string
+                    "created_at"?: string,"created_by"?: string | null,"promotion_id": string,"user_id": string
                   }
                   Update: {
-                    "category_id"?: string | null,"code"?: string | null,"created_at"?: string,"description_am"?: string,"description_en"?: string,"discount_type"?: string,"discount_value"?: number,"ends_at"?: string | null,"id"?: string,"is_active"?: boolean,"max_redemptions"?: number | null,"min_order_etb"?: number,"once_per_customer"?: boolean,"product_id"?: string | null,"show_on_homepage"?: boolean,"starts_at"?: string | null,"title_am"?: string,"title_en"?: string,"updated_at"?: string
+                    "created_at"?: string,"created_by"?: string | null,"promotion_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "promotion_customers_promotion_id_fkey"
+      columns: ["promotion_id"]
+isOneToOne: false
+      referencedRelation: "promotions"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"promotions": {
+                  Row: {
+                    "category_id": string | null,"code": string | null,"created_at": string,"description_am": string,"description_en": string,"discount_type": string,"discount_value": number,"ends_at": string | null,"id": string,"is_active": boolean,"max_redemptions": number | null,"min_order_etb": number,"once_per_customer": boolean,"product_id": string | null,"restricted": boolean,"show_on_homepage": boolean,"starts_at": string | null,"title_am": string,"title_en": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category_id"?: string | null,"code"?: string | null,"created_at"?: string,"description_am"?: string,"description_en"?: string,"discount_type": string,"discount_value": number,"ends_at"?: string | null,"id"?: string,"is_active"?: boolean,"max_redemptions"?: number | null,"min_order_etb"?: number,"once_per_customer"?: boolean,"product_id"?: string | null,"restricted"?: boolean,"show_on_homepage"?: boolean,"starts_at"?: string | null,"title_am": string,"title_en": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "category_id"?: string | null,"code"?: string | null,"created_at"?: string,"description_am"?: string,"description_en"?: string,"discount_type"?: string,"discount_value"?: number,"ends_at"?: string | null,"id"?: string,"is_active"?: boolean,"max_redemptions"?: number | null,"min_order_etb"?: number,"once_per_customer"?: boolean,"product_id"?: string | null,"restricted"?: boolean,"show_on_homepage"?: boolean,"starts_at"?: string | null,"title_am"?: string,"title_en"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -593,6 +613,9 @@ isOneToOne: false
 "admin_assign_order":
 { Args: { "p_assignee": string,"p_order_id": string }; Returns: undefined
                            },
+"admin_assign_promotion":
+{ Args: { "p_emails": (string)[],"p_promotion_id": string }; Returns: Json
+                           },
 "admin_create_staff_profile":
 { Args: { "p_full_name": string,"p_role_key": string,"p_user_id": string }; Returns: undefined
                            },
@@ -622,6 +645,11 @@ isOneToOne: false
                            },
 "admin_prepare_customer_delete":
 { Args: { "p_user_id": string }; Returns: Json
+                           },
+"admin_promotion_customers":
+{ Args: { "p_promotion_id"?: string,"p_user_id"?: string }; Returns: {
+              "assigned_at": string,"code": string,"email": string,"full_name": string,"promotion_id": string,"title_en": string,"used": boolean,"user_id": string
+            }[]
                            },
 "admin_queue_test_notification":
 { Args: Record<PropertyKey, never>; Returns: undefined
@@ -705,6 +733,11 @@ isOneToOne: false
                            },
 "my_admin_context":
 { Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"my_offers":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "code": string,"description_am": string,"description_en": string,"discount_type": string,"discount_value": number,"ends_at": string,"min_order_etb": number,"title_am": string,"title_en": string
+            }[]
                            },
 "printing_files_due_for_deletion":
 { Args: { "p_limit"?: number }; Returns: {

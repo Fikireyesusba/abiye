@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { ActionForm } from "@/components/admin/action-form";
 import { BannerForm } from "@/components/admin/banner-form";
 import { Field, PageHeader, Panel, fieldClass } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
-import { deleteBanner, deletePromotion, savePromotion } from "@/lib/admin/promotion-actions";
+import { assignPromotion, deleteBanner, deletePromotion, savePromotion, unassignPromotion } from "@/lib/admin/promotion-actions";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime, toAddisInput } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
@@ -17,7 +18,7 @@ type Promo = {
   id: string; title_en: string; title_am: string; description_en: string; description_am: string; code: string | null;
   discount_type: string; discount_value: number; min_order_etb: number; category_id: string | null; product_id: string | null;
   starts_at: string | null; ends_at: string | null; max_redemptions: number | null; once_per_customer: boolean;
-  is_active: boolean; show_on_homepage: boolean;
+  is_active: boolean; show_on_homepage: boolean; restricted: boolean;
 };
 type Option = { id: string; name: string };
 
@@ -63,6 +64,7 @@ function PromotionFields({ p, categories, products }: { p?: Promo; categories: O
       <div className="space-y-2 text-sm sm:col-span-2 lg:col-span-3">
         <label className="flex items-center gap-2"><input type="checkbox" name="is_active" defaultChecked={p?.is_active ?? true} className="size-4 accent-[var(--primary)]" /> Active</label>
         <label className="flex items-center gap-2"><input type="checkbox" name="once_per_customer" defaultChecked={p?.once_per_customer ?? true} className="size-4 accent-[var(--primary)]" /> One use per customer account</label>
+        <label className="flex items-center gap-2"><input type="checkbox" name="restricted" defaultChecked={p?.restricted ?? false} className="size-4 accent-[var(--primary)]" /> Only for selected customers (personal code — choose the customers after saving)</label>
         <label className="flex items-center gap-2"><input type="checkbox" name="show_on_homepage" defaultChecked={p?.show_on_homepage ?? false} className="size-4 accent-[var(--primary)]" /> Show on the homepage (makes the code public)</label>
       </div>
     </div>
@@ -77,13 +79,15 @@ function timeWindow(start: string | null, end: string | null) {
 export default async function PromotionsPage() {
   await requirePermission("promotions.manage");
   const supabase = await createSupabaseServerClient();
-  const [{ data: promos }, { data: banners }, { data: cats }, { data: prods }, { data: used }] = await Promise.all([
+  const [{ data: promos }, { data: banners }, { data: cats }, { data: prods }, { data: used }, { data: holders }] = await Promise.all([
     supabase.from("promotions").select("*").order("created_at", { ascending: false }),
     supabase.from("homepage_banners").select("*").order("sort_order"),
     supabase.from("categories").select("id, name_en, parent_id").order("sort_order"),
     supabase.from("products").select("id, name_en, sku").neq("status", "archived").order("name_en").limit(1000),
     supabase.from("orders").select("promotion_id, status").not("promotion_id", "is", null).limit(10000),
+    supabase.rpc("admin_promotion_customers", {}),
   ]);
+  const holdersOf = (id: string) => (holders ?? []).filter((h) => h.promotion_id === id);
   const categories: Option[] = (cats ?? []).map((c) => ({ id: c.id, name: c.parent_id ? `— ${c.name_en}` : c.name_en }));
   const products: Option[] = (prods ?? []).map((p) => ({ id: p.id, name: `${p.name_en} (${p.sku})` }));
   const uses = new Map<string, number>();
@@ -119,11 +123,34 @@ export default async function PromotionsPage() {
                   </span>
                   {live(p) ? <Badge variant="success">Live</Badge> : <Badge variant="secondary">{p.is_active ? "Scheduled / ended" : "Off"}</Badge>}
                   {p.show_on_homepage && <Badge variant="info">Homepage</Badge>}
+                  {p.restricted && <Badge variant="accent">Personal · {holdersOf(p.id).length} customer(s)</Badge>}
                   <span className="ml-auto text-xs text-primary">Edit</span>
                 </summary>
                 <p className="mt-2 text-xs text-muted-foreground">{timeWindow(p.starts_at, p.ends_at)}</p>
                 <div className="mt-3 space-y-3 rounded-lg bg-muted/40 p-3">
                   <ActionForm action={savePromotion} hidden={{ id: p.id }} submitLabel="Save"><PromotionFields p={p} categories={categories} products={products} /></ActionForm>
+                  {p.restricted && (
+                    <div className="space-y-3 rounded-lg border bg-card p-3">
+                      <p className="text-sm font-medium">Customers who can use {p.code}</p>
+                      {holdersOf(p.id).length === 0 ? <p className="text-sm text-muted-foreground">Nobody yet.</p> : (
+                        <ul className="divide-y text-sm">
+                          {holdersOf(p.id).map((h) => (
+                            <li key={h.user_id} className="flex flex-wrap items-center gap-2 py-2">
+                              <Link href={`/admin/customers/${h.user_id}`} className="text-primary underline underline-offset-2">{h.full_name || h.email}</Link>
+                              <span className="text-xs break-all text-muted-foreground">{h.email}</span>
+                              {h.used && <Badge variant="success">used</Badge>}
+                              <ActionForm action={unassignPromotion} hidden={{ promotionId: p.id, userId: h.user_id }} submitLabel="Remove" variant="outline" size="sm" className="ml-auto space-y-0" />
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      <ActionForm action={assignPromotion} hidden={{ promotionId: p.id }} submitLabel="Give code" size="sm" resetOnSuccess keepSuccess>
+                        <Field label="Add customers by email" htmlFor={`pe-${p.id}`} hint="One per line, or separated by commas. They must have an account. They will see the code under “My account”.">
+                          <textarea id={`pe-${p.id}`} name="emails" rows={2} className={fieldClass} placeholder="customer@gmail.com" />
+                        </Field>
+                      </ActionForm>
+                    </div>
+                  )}
                   <ActionForm action={deletePromotion} hidden={{ id: p.id }} submitLabel="Delete" variant="outline" size="sm" confirm={`Delete “${p.title_en}”?`} />
                 </div>
               </details>

@@ -8,6 +8,8 @@ const ACTION_LABELS: Record<string, string> = {
   password_reset_sent: "Password reset email sent",
   invite_sent: "Invitation sent",
   profile_updated: "Profile updated",
+  promo_assigned: "Personal promo code given",
+  promo_unassigned: "Personal promo code removed",
   // Supabase Auth events
   login: "Signed in",
   logout: "Signed out",

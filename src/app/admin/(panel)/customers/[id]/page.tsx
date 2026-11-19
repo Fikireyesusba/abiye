@@ -8,6 +8,7 @@ import { StatusBadge } from "@/components/status/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { actionLabel, describeChanges } from "@/lib/admin/activity";
 import { deleteCustomer, resendCustomerInvite, sendCustomerPasswordReset, setCustomerActive } from "@/lib/admin/customer-actions";
+import { assignPromotion, unassignPromotion } from "@/lib/admin/promotion-actions";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
@@ -32,6 +33,14 @@ export default async function CustomerPage({ params }: PageProps<"/admin/custome
   if (!c) notFound();
   const verified = (orders ?? []).filter((o) => o.payment_status === "verified").reduce((s, o) => s + Number(o.total_etb), 0);
   const canManage = ctx.permissions.has("customers.manage");
+  const canPromo = ctx.permissions.has("promotions.manage") && !c.deactivated_at;
+  const [{ data: codes }, { data: personal }] = canPromo
+    ? await Promise.all([
+        supabase.rpc("admin_promotion_customers", { p_user_id: id }),
+        supabase.from("promotions").select("id, title_en, code").eq("restricted", true).eq("is_active", true).order("created_at", { ascending: false }),
+      ])
+    : [{ data: null }, { data: null }];
+  const giveable = (personal ?? []).filter((p) => !(codes ?? []).some((x) => x.promotion_id === p.id));
   const hidden = { userId: c.id };
   const addresses = [...new Set((orders ?? []).filter((o) => o.address_line).map((o) => `${o.city} — ${o.address_line}`))];
 
@@ -80,6 +89,7 @@ export default async function CustomerPage({ params }: PageProps<"/admin/custome
                   typeof d.amount_etb === "number" || typeof d.amount_etb === "string" ? formatETB(toSantim(Number(d.amount_etb))) : null,
                   d.from && d.to ? `${String(d.from).replaceAll("_", " ")} → ${String(d.to).replaceAll("_", " ")}` : null,
                   typeof meta.reason === "string" && meta.reason ? `Reason: ${meta.reason}` : null,
+                  typeof meta.code === "string" ? `Code: ${meta.code}` : null,
                   typeof d.note === "string" ? `Note: ${d.note}` : null,
                 ].filter(Boolean);
                 return (
@@ -137,6 +147,34 @@ export default async function CustomerPage({ params }: PageProps<"/admin/custome
                   )}
                 </div>
               )}
+            </Panel>
+          )}
+          {canPromo && (
+            <Panel title="Personal promo codes">
+              <div className="space-y-3">
+                {(codes ?? []).length === 0 ? <p className="text-sm text-muted-foreground">None.</p> : (
+                  <ul className="divide-y text-sm">
+                    {(codes ?? []).map((x) => (
+                      <li key={x.promotion_id} className="flex flex-wrap items-center gap-2 py-2">
+                        <span className="font-mono">{x.code}</span>
+                        <span className="text-xs text-muted-foreground">{x.title_en}</span>
+                        {x.used && <Badge variant="success">used</Badge>}
+                        <ActionForm action={unassignPromotion} hidden={{ promotionId: x.promotion_id, userId: c.id }} submitLabel="Remove" variant="outline" size="sm" className="ml-auto space-y-0" />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {giveable.length > 0 ? (
+                  <ActionForm action={assignPromotion} hidden={{ emails: c.email }} submitLabel="Give code" size="sm">
+                    <label htmlFor="give-promo" className="text-sm font-medium">Give a personal code</label>
+                    <select id="give-promo" name="promotionId" required className={fieldClass}>
+                      {giveable.map((p) => <option key={p.id} value={p.id}>{p.code} — {p.title_en}</option>)}
+                    </select>
+                  </ActionForm>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Create a promotion with “Only for selected customers” under <Link href="/admin/promotions" className="text-primary underline">Promotions</Link> to give codes here.</p>
+                )}
+              </div>
             </Panel>
           )}
           <Panel title="Contact">

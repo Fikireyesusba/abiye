@@ -31,11 +31,13 @@ const promotionSchema = z
     once_per_customer: checkbox,
     is_active: checkbox,
     show_on_homepage: checkbox,
+    restricted: checkbox,
   })
   .superRefine((v, ctx) => {
     if (v.discount_type === "percent" && v.discount_value > 90) ctx.addIssue({ code: "custom", path: ["discount_value"], message: "A percentage discount can be at most 90%." });
     if (v.scope === "category" && !v.category_id) ctx.addIssue({ code: "custom", path: ["category_id"], message: "Choose a category." });
     if (v.scope === "product" && !v.product_id) ctx.addIssue({ code: "custom", path: ["product_id"], message: "Choose a product." });
+    if (v.restricted && !v.code) ctx.addIssue({ code: "custom", path: ["code"], message: "A personal promotion needs a promo code." });
   });
 
 export async function savePromotion(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
@@ -52,7 +54,9 @@ export async function savePromotion(_prev: ActionResult | null, fd: FormData): P
     category_id: v.scope === "category" ? v.category_id : null,
     product_id: v.scope === "product" ? v.product_id : null,
     starts_at: starts, ends_at: ends, max_redemptions: v.max_redemptions, once_per_customer: v.once_per_customer,
-    is_active: v.is_active, show_on_homepage: v.show_on_homepage,
+    is_active: v.is_active, restricted: v.restricted,
+    // Personal codes are never advertised publicly.
+    show_on_homepage: v.restricted ? false : v.show_on_homepage,
   };
   const supabase = await createSupabaseServerClient();
   const { error } = v.id ? await supabase.from("promotions").update(row).eq("id", v.id) : await supabase.from("promotions").insert(row);
@@ -142,4 +146,42 @@ export async function deleteBanner(_prev: ActionResult | null, fd: FormData): Pr
   revalidatePath("/admin/promotions");
   revalidatePath("/", "layout");
   return ok("Banner deleted.");
+}
+
+// ---------------------------------------------------------------- personal codes
+/** Give a personal promotion to customers, by email (one per line, or separated by commas/spaces). */
+export async function assignPromotion(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("promotions.manage");
+  const id = z.guid().safeParse(fd.get("promotionId"));
+  const emails = [...new Set(String(fd.get("emails") ?? "").split(/[\s,;]+/).map((e) => e.trim().toLowerCase()).filter(Boolean))];
+  if (!id.success) return fail("Choose a promotion.");
+  if (!emails.length) return fail("Enter at least one email address.");
+  if (emails.length > 200) return fail("At most 200 emails at a time.");
+  const bad = emails.filter((e) => !z.email().safeParse(e).success);
+  if (bad.length) return fail(`Not an email address: ${bad.slice(0, 3).join(", ")}`);
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("admin_assign_promotion", { p_promotion_id: id.data, p_emails: emails });
+  if (error) return error.message === "invalid_request" ? fail("Tick “Only for selected customers” on this promotion first.") : dbError(error);
+  const r = data as { added: string[]; already: string[]; not_found: string[] };
+  revalidatePath("/admin/promotions");
+  revalidatePath("/admin/customers", "layout");
+  const parts = [
+    r.added.length ? `Given to ${r.added.length} customer(s).` : null,
+    r.already.length ? `Already had it: ${r.already.join(", ")}.` : null,
+    r.not_found.length ? `No account with: ${r.not_found.join(", ")} (they must sign up first).` : null,
+  ].filter(Boolean);
+  return r.added.length || r.already.length ? ok(parts.join("\n")) : fail(parts.join("\n") || "Nothing changed.");
+}
+
+export async function unassignPromotion(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("promotions.manage");
+  const parsed = z.object({ promotionId: z.guid(), userId: z.guid() }).safeParse(formObject(fd));
+  if (!parsed.success) return fail("Invalid request.");
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.from("promotion_customers").delete()
+    .eq("promotion_id", parsed.data.promotionId).eq("user_id", parsed.data.userId);
+  if (error) return dbError(error);
+  revalidatePath("/admin/promotions");
+  revalidatePath("/admin/customers", "layout");
+  return ok("Code removed from this customer.");
 }

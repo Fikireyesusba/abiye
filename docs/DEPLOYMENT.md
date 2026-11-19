@@ -144,7 +144,7 @@ It refuses to run again once an active Super Admin exists. (Developers can inste
 
 ## 6. Database updates after launch (browser only)
 
-`production-setup.sql` is run once. Each later change is a single new file in `supabase/migrations/` — paste it into the Supabase SQL Editor and Run, in filename order, once. Already published after the first setup: `…0017_admin_customer_accounts.sql`, `…0018_customer_account_management.sql`, `…0019_finalization.sql`. PROGRESS.md records which ones production has.
+`production-setup.sql` is run once. Each later change is a single new file in `supabase/migrations/` — paste it into the Supabase SQL Editor and Run, in filename order, once. Already published after the first setup: `…0017_admin_customer_accounts.sql`, `…0018_customer_account_management.sql`, `…0019_finalization.sql`, `…0020_personal_promotions.sql`. PROGRESS.md records which ones production has.
 
 ## 7. Security headers
 

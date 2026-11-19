@@ -411,6 +411,10 @@
     "pricedByTeam": "Price set by our team"
   },
   "account": {
+    "offers": "My offers",
+    "offersHint": "Personal promo codes for your account. Enter the code at checkout — it only works when you are signed in.",
+    "offerMin": "Minimum order: {amount}",
+    "offerUntil": "Valid until {date}",
     "title": "My account",
     "signIn": "Sign in",
     "signUp": "Create account",
