@@ -18,7 +18,13 @@ export const metadata: Metadata = {
   description: "Cosmetics, electronics and printing services in Ethiopia.",
   // Installed app (iPhone "Add to Home Screen"; Android uses app/manifest.ts).
   appleWebApp: { capable: true, title: "Abiye", statusBarStyle: "default" },
-  icons: { apple: "/icons/apple-touch-icon.png", icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }] },
+  icons: {
+    apple: "/app-icon/180",
+    icon: [
+      { url: "/app-icon/32", sizes: "32x32", type: "image/png" },
+      { url: "/app-icon/192", sizes: "192x192", type: "image/png" },
+    ],
+  },
 };
 
 export const viewport: Viewport = {

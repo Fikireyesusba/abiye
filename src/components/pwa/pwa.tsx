@@ -146,7 +146,7 @@ export function InstallBanner() {
     <>
       <div role="region" aria-label={t("bannerLabel")} className="fixed inset-x-3 bottom-3 z-50 flex items-center gap-3 rounded-2xl border bg-card p-3 shadow-lg sm:hidden">
         {/* eslint-disable-next-line @next/next/no-img-element -- tiny static icon */}
-        <img src="/icons/icon-192.png" alt="" width={44} height={44} className="rounded-xl" />
+        <img src="/app-icon/192" alt="" width={44} height={44} className="rounded-xl" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold">{t("bannerTitle")}</p>
           <p className="text-xs text-muted-foreground">{t("bannerText")}</p>

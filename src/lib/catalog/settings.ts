@@ -5,7 +5,7 @@ import { privacy, terms, toLegalText } from "@/content/legal";
 import { settingsSchemas, type Settings, type SettingsKey } from "@/lib/validation/settings";
 
 const DEFAULTS: { [K in SettingsKey]: Settings<K> } = {
-  business: { name: { en: "Abiye", am: "አብዬ" }, tagline: { en: "", am: "" }, logo_path: null },
+  business: { name: { en: "Abiye", am: "አብዬ" }, tagline: { en: "", am: "" }, logo_path: null, app_icon_path: null },
   contact: { phone: "", email: null, telegram: null, whatsapp: null, address: { en: "", am: "" }, map_url: null },
   hours: { en: "", am: "" },
   social: { facebook: null, instagram: null, tiktok: null, telegram: null },

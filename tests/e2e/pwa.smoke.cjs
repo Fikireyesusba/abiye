@@ -15,6 +15,29 @@ const check = (ok, msg) => results.push(`${ok ? "ok  " : "FAIL"} - ${msg}`);
     const man = await (await fetch(`${B}/manifest.webmanifest`)).json();
     check(man.display === "standalone" && man.icons.some((i) => i.purpose === "maskable") && man.start_url.startsWith("/"), "manifest: standalone app with maskable icon");
     for (const i of man.icons) check((await fetch(B + i.src)).ok, `icon ${i.src} served`);
+    // Icons come from the business's own images (Admin → Settings): app icon > logo > built-in icon.
+    const { execSync } = require("child_process");
+    const sql = (q) => execSync(`psql -Atq "postgresql://postgres:postgres@127.0.0.1:54322/postgres"`, { input: q }).toString().trim();
+    const before = sql("select value::text from website_settings where key = 'business'");
+    const builtIn = await fetch(`${B}/app-icon/512`, { redirect: "manual" });
+    const SUPA = process.env.NEXT_PUBLIC_SUPABASE_URL, KEY = process.env.SUPABASE_SECRET_KEY;
+    const png = await (await fetch(`${B}/icons/icon-512.png`)).arrayBuffer();
+    const path = "branding/0e2e0e2e-0000-4000-8000-000000000001.png";
+    await fetch(`${SUPA}/storage/v1/object/site-assets/${path}`, { method: "POST", headers: { apikey: KEY, authorization: `Bearer ${KEY}`, "content-type": "image/png", "x-upsert": "true" }, body: Buffer.from(png) });
+    try {
+      sql("update website_settings set value = value - 'app_icon_path' - 'logo_path' where key = 'business'");
+      const none = await fetch(`${B}/app-icon/512`, { redirect: "manual" });
+      check(none.status === 307 && /\/icons\/icon-512\.png$/.test(none.headers.get("location") ?? ""), "no logo uploaded: built-in brand icon");
+      sql(`update website_settings set value = value || '{"logo_path":"${path}"}' where key = 'business'`);
+      const fromLogo = await fetch(`${B}/app-icon/512`);
+      check(fromLogo.ok && fromLogo.headers.get("content-type") === "image/png", "logo uploaded: icon drawn from the logo");
+      sql(`update website_settings set value = value || '{"app_icon_path":"${path}"}' where key = 'business'`);
+      const fromIcon = await fetch(`${B}/app-icon/180`);
+      check(fromIcon.ok && fromIcon.headers.get("content-type") === "image/png", "app icon uploaded: used for the iPhone icon");
+    } finally {
+      sql(`update website_settings set value = '${before.replace(/'/g, "''")}'::jsonb where key = 'business'`);
+    }
+    void builtIn;
     const sw = await fetch(`${B}/sw.js`);
     check(sw.ok && /no-cache/.test(sw.headers.get("cache-control") ?? ""), "service worker served without caching");
 
@@ -46,7 +69,7 @@ const check = (ok, msg) => results.push(`${ok ? "ok  " : "FAIL"} - ${msg}`);
     await ip.reload();
     await ip.waitForTimeout(800);
     check(await banner.count() === 0, "banner stays hidden after “Not now”");
-    check((await ip.locator("link[rel='apple-touch-icon']").getAttribute("href")) === "/icons/apple-touch-icon.png", "iPhone home-screen icon");
+    check((await ip.locator("link[rel='apple-touch-icon']").getAttribute("href")) === "/app-icon/180", "iPhone home-screen icon");
     await ip.goto(`${B}/help`);
     check(await ip.locator("#install-title").count() === 1, "Help page explains installing the app");
 

@@ -21,15 +21,16 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     theme_color: "#14523f",
     lang: "en",
     categories: ["shopping"],
+    // Drawn from the business's own app icon / logo (Admin → Settings), see app/app-icon/[variant].
     icons: [
-      { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/app-icon/192", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/app-icon/512", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/app-icon/maskable-512", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
     shortcuts: [
-      { name: "Shop", url: "/shop", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
-      { name: "Printing", url: "/printing", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
-      { name: "My orders", url: "/account", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
+      { name: "Shop", url: "/shop", icons: [{ src: "/app-icon/192", sizes: "192x192" }] },
+      { name: "Printing", url: "/printing", icons: [{ src: "/app-icon/192", sizes: "192x192" }] },
+      { name: "My orders", url: "/account", icons: [{ src: "/app-icon/192", sizes: "192x192" }] },
     ],
   };
 }

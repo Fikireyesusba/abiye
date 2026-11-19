@@ -42,7 +42,7 @@ export default async function HelpPage() {
 
       <section aria-labelledby="install-title" className="mb-6 flex flex-col gap-4 rounded-xl border border-primary/20 bg-primary/5 p-4 sm:flex-row sm:items-center">
         {/* eslint-disable-next-line @next/next/no-img-element -- tiny static icon */}
-        <img src="/icons/icon-192.png" alt="" width={56} height={56} className="rounded-2xl" />
+        <img src="/app-icon/192" alt="" width={56} height={56} className="rounded-2xl" />
         <div className="flex-1 space-y-1">
           <h2 id="install-title" className="font-semibold">{tp("helpTitle")}</h2>
           <p className="text-sm text-muted-foreground">{tp("helpText")}</p>

@@ -18,7 +18,7 @@ const pair = (f: Record<string, string>, k: string) => ({ en: s(f[`${k}_en`]), a
 function build(key: SettingsKey, f: Record<string, string>, current: Record<string, unknown>): unknown {
   switch (key) {
     case "business":
-      return { name: pair(f, "name"), tagline: pair(f, "tagline"), logo_path: current.logo_path ?? null };
+      return { name: pair(f, "name"), tagline: pair(f, "tagline"), logo_path: current.logo_path ?? null, app_icon_path: current.app_icon_path ?? null };
     case "contact": {
       const phone = normalizeEthiopianPhone(s(f.phone)) ?? s(f.phone);
       return { phone, email: nullable(f.email), telegram: nullable(f.telegram), whatsapp: nullable(f.whatsapp), address: pair(f, "address"), map_url: nullable(f.map_url) };
@@ -68,42 +68,51 @@ export async function saveSettings(_prev: ActionResult | null, fd: FormData): Pr
   return ok("Settings saved — live on the website now.");
 }
 
-/** Logo / hero image: browser uploads to site-assets/branding/<uuid>.<ext>; we verify content, then link it. */
+const SLOTS = {
+  logo: { key: "business", field: "logo_path", done: "Logo updated." },
+  appIcon: { key: "business", field: "app_icon_path", done: "App icon updated." },
+  hero: { key: "homepage", field: "hero_image_path", done: "Homepage image updated." },
+} as const;
+const slotSchema = z.enum(["logo", "appIcon", "hero"]);
+
+/** Logo / app icon / hero image: browser uploads to site-assets/branding/<uuid>.<ext>; we verify content, then link it. */
 export async function setBrandImage(input: { slot: unknown; path: unknown }): Promise<ActionResult> {
   await requirePermission("settings.manage");
-  const slot = z.enum(["logo", "hero"]).safeParse(input.slot);
+  const slot = slotSchema.safeParse(input.slot);
   const path = typeof input.path === "string" ? input.path : "";
   const m = path.match(/^branding\/[0-9a-f-]{36}\.(jpg|png|webp)$/);
   if (!slot.success || !m) return fail("Invalid upload.");
   const supabase = await createSupabaseServerClient();
   const bucket = supabase.storage.from("site-assets");
   const { data: blob } = await bucket.download(path);
-  const check = blob ? validateUpload(new Uint8Array(await blob.arrayBuffer()), { allowed: PRODUCT_IMAGE_TYPES, maxBytes: 5 * 1024 * 1024 }) : null;
+  // The app icon is drawn by the server image renderer, which reads PNG and JPG (not WebP).
+  const allowed = slot.data === "appIcon" ? PRODUCT_IMAGE_TYPES.filter((t) => t !== "image/webp") : PRODUCT_IMAGE_TYPES;
+  const check = blob ? validateUpload(new Uint8Array(await blob.arrayBuffer()), { allowed, maxBytes: 5 * 1024 * 1024 }) : null;
   if (!check?.ok) {
     await bucket.remove([path]);
-    return fail("That file is not a valid JPG, PNG or WebP image (max 5 MB).");
+    return fail(slot.data === "appIcon" ? "Use a PNG or JPG image (max 5 MB) for the app icon." : "That file is not a valid JPG, PNG or WebP image (max 5 MB).");
   }
-  const key = slot.data === "logo" ? "business" : "homepage";
-  const field = slot.data === "logo" ? "logo_path" : "hero_image_path";
+  const { key, field, done } = SLOTS[slot.data];
   const { data: row } = await supabase.from("website_settings").select("value").eq("key", key).single();
   const value = { ...(row?.value as Record<string, Json>), [field]: path };
   const { error } = await supabase.from("website_settings").update({ value }).eq("key", key);
   if (error) return dbError(error);
   revalidatePath("/", "layout");
-  return ok(slot.data === "logo" ? "Logo updated." : "Homepage image updated.");
+  revalidatePath("/manifest.webmanifest");
+  return ok(done);
 }
 
 export async function clearBrandImage(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   await requirePermission("settings.manage");
-  const slot = z.enum(["logo", "hero"]).safeParse(fd.get("slot"));
+  const slot = slotSchema.safeParse(fd.get("slot"));
   if (!slot.success) return fail("Invalid request.");
-  const key = slot.data === "logo" ? "business" : "homepage";
-  const field = slot.data === "logo" ? "logo_path" : "hero_image_path";
+  const { key, field } = SLOTS[slot.data];
   const supabase = await createSupabaseServerClient();
   const { data: row } = await supabase.from("website_settings").select("value").eq("key", key).single();
   const { error } = await supabase.from("website_settings").update({ value: { ...(row?.value as Record<string, Json>), [field]: null } }).eq("key", key);
   if (error) return dbError(error);
   revalidatePath("/", "layout");
+  revalidatePath("/manifest.webmanifest");
   return ok("Image removed.");
 }
 

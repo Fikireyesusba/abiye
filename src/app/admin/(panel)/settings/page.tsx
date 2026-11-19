@@ -56,6 +56,9 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
           <Panel title="Business">
             <div className="space-y-5">
               <BrandImage slot="logo" label="Logo (shown in the header)" url={publicImageUrl("site-assets", s.business.logo_path)} />
+              <BrandImage slot="appIcon" label="App icon (phone home screen and browser tab)"
+                hint="Square PNG or JPG, at least 512×512 pixels, with your logo filling most of it. If empty, your logo is used on a white square."
+                url={publicImageUrl("site-assets", s.business.app_icon_path)} />
               <ActionForm action={saveSettings} hidden={{ key: "business" }} submitLabel="Save business details">
                 <Bilingual name="name" label="Business name" en={s.business.name.en} am={s.business.name.am} />
                 <Bilingual name="tagline" label="Tagline" en={s.business.tagline.en} am={s.business.tagline.am} />
