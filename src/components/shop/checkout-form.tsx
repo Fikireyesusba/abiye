@@ -374,7 +374,10 @@ export function CheckoutForm({
             </p>
           )}
 
-          <p className="text-xs text-muted-foreground">{t("checkoutPage.nextStep")}</p>
+          <p className="text-xs text-muted-foreground">
+            {t("checkoutPage.nextStep")}{" "}
+            <Link href="/help#paying" target="_blank" className="text-primary underline">{t("help.howToPay")}</Link>
+          </p>
           <label className="flex items-start gap-2 text-sm">
             <input type="checkbox" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} required
               className="mt-0.5 size-4 shrink-0 accent-[var(--primary)]" aria-describedby={error === "terms_required" ? "terms-error" : undefined} />

@@ -12,6 +12,7 @@ import { formatDateTime } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
 import { isAccessToken, isGuid } from "@/lib/orders/access";
 import { getCustomerUser } from "@/lib/account/session";
+import { OtherAccountNotice } from "@/components/account/other-account";
 import { getJobForCustomer, readJobAccess } from "@/lib/printing/access";
 import { formatEthiopianPhone } from "@/lib/validation/phone";
 import type { Locale } from "@/i18n/config";
@@ -30,14 +31,17 @@ export default async function PrintJobPage({ params, searchParams }: PageProps<"
     token = queryToken;
     job = await getJobForCustomer(jobId, queryToken);
   }
+  let signedInAs: string | null = null;
   if (!job) {
     // The signed-in owner can open their job from any device.
     const user = await getCustomerUser();
+    signedInAs = user?.email ?? null;
     // Email links may open in a signed-out browser: sign in, then come back here.
     if (!user && isGuid(jobId)) redirect(`/account/login?next=${encodeURIComponent(`/printing/jobs/${jobId}`)}`);
     job = user ? await getJobForCustomer(jobId, null, user.id) : null;
     token = null;
   }
+  if (!job && signedInAs && isGuid(jobId)) return <OtherAccountNotice email={signedInAs} next={`/printing/jobs/${jobId}`} />;
   if (!job) {
     return (
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-4 py-24 text-center">

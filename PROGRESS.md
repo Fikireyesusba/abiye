@@ -115,6 +115,13 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - Local dev: sign-ups + email confirmation on, local mail catcher on :54324 (dev:up no longer excludes it).
 - **Production TODO for the owner**: configure SMTP + email templates + URL configuration in Supabase (docs/DEPLOYMENT.md §2b).
 
+## Customer Help guide + email-link fixes (requested 2026-11-19) — verified
+
+`npm run test:smoke:help` (9), account/checkout/printing/emails suites updated, full regression green; axe scan of /help (desktop EN + phone AM): 0 violations.
+
+- **/help** "Help & how to order" (EN/AM, `src/content/help.ts`): what we offer, create account, shopping, checkout, paying by bank transfer + receipt, after payment (every order status with its badge), tracking, printing, offers/promo codes, cancellations/returns, FAQ. Live values from settings (payment window, file limits, retention, business name). Linked in header, footer, checkout ("How do I pay?") and the order page.
+- Email links (order / printing job): signed-out visitors are sent to sign in and returned to the page; signed in with a **different** account → clear notice + "Sign in with another account" (`switchCustomerAccount`) instead of "Order not found".
+
 ## Customer email notifications (requested 2026-11-19) — verified
 
 Migration **0022**. Verified with `npm run test:smoke:emails` (12 checks, own app on :3102 + mock Resend API), SQL `96_*`, unit tests for the templates, and every other suite re-run (all pass).
@@ -216,4 +223,4 @@ Owner progress so far: Resend domain `fantaf.xyz` + Supabase SMTP + URL configur
 1. Read `AGENTS.md` (Next.js 16 rules), this file, and `docs/ARCHITECTURE.md`.
 2. Run `npm run dev:up` — starts Docker if the sandbox restarted, then local Supabase, then checks the API (data persists in Docker volumes). If the DB was reset: `npm run dev:sample-images` and `ADMIN_PASSWORD=LocalDevOwner2026 npm run admin:create -- --email owner@abiye.local --name "Abiye Owner"`.
 3. All 7 phases are complete. Ask the owner which migrations production has (update the line above), then work on their requests. Ideas: customer notifications (SMS/Telegram/email when an order is confirmed or a printing quote is ready), Vercel Pro hourly crons, convert the smoke scripts into a Playwright test project.
-4. Tests: `npm run check`, `npm run test:db`, then with the app on :3100 (`npx next start -p 3100` after `npm run build`) and `NODE_PATH=$(npm root -g)`: `npm run test:smoke`, `test:smoke:checkout`, `test:smoke:admin`, `test:smoke:printing`, `test:smoke:account`, `test:smoke:customers`, `test:smoke:phase7`, `test:smoke:personal-promo`, `test:smoke:mfa`, `test:smoke:emails` (own app on :3102); and `npm run test:smoke:telegram` (starts its own app on :3101). Clear `rate_limits` between runs (`delete from rate_limits`) — repeated admin logins hit the login rate limit. Update this file.
+4. Tests: `npm run check`, `npm run test:db`, then with the app on :3100 (`npx next start -p 3100` after `npm run build`) and `NODE_PATH=$(npm root -g)`: `npm run test:smoke`, `test:smoke:checkout`, `test:smoke:admin`, `test:smoke:printing`, `test:smoke:account`, `test:smoke:customers`, `test:smoke:phase7`, `test:smoke:personal-promo`, `test:smoke:mfa`, `test:smoke:emails` (own app on :3102), `test:smoke:help`; and `npm run test:smoke:telegram` (starts its own app on :3101). Clear `rate_limits` between runs (`delete from rate_limits`) — repeated admin logins hit the login rate limit. Update this file.

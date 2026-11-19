@@ -129,6 +129,13 @@ export async function updateCustomerAccount(_prev: AccountState, fd: FormData): 
   return error ? { error: "generic" } : { ok: "saved" };
 }
 
+/** "This order belongs to another account": sign out, then sign in again and return to the page. */
+export async function switchCustomerAccount(fd: FormData): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+  await supabase.auth.signOut();
+  redirect(`/account/login?next=${encodeURIComponent(safeNext(fd.get("next")))}`);
+}
+
 export async function signOutCustomer(): Promise<void> {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();

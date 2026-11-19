@@ -29,7 +29,8 @@
     "about": "About",
     "contact": "Contact",
     "privacy": "Privacy",
-    "terms": "Terms"
+    "terms": "Terms",
+    "help": "Help"
   },
   "cart": {
     "title": "Your basket",
@@ -411,6 +412,9 @@
     "pricedByTeam": "Price set by our team"
   },
   "account": {
+    "otherAccountTitle": "This belongs to a different account",
+    "otherAccountText": "You are signed in as {email}. Sign in with the account you used for this order to see it.",
+    "otherAccountSwitch": "Sign in with another account",
     "offers": "My offers",
     "offersHint": "Personal promo codes for your account. Enter the code at checkout — it only works when you are signed in.",
     "offerMin": "Minimum order: {amount}",
@@ -482,5 +486,14 @@
     "follow": "Follow us",
     "reachUs": "Reach us",
     "whatsapp": "WhatsApp"
+  },
+  "help": {
+    "title": "Help & how to order",
+    "intro": "Everything about shopping with us: creating an account, placing an order, paying by bank transfer, delivery and printing.",
+    "contents": "Contents",
+    "stillNeedHelp": "Still need help?",
+    "stillNeedHelpText": "Call, WhatsApp or email us — we are happy to help.",
+    "contactUs": "Contact us",
+    "howToPay": "How do I pay?"
   }
 }

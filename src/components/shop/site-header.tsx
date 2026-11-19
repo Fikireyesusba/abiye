@@ -39,6 +39,7 @@ export async function SiteHeader() {
     { href: "/cosmetics", label: t("nav.cosmetics") },
     { href: "/electronics", label: t("nav.electronics") },
     { href: "/printing", label: t("nav.printing") },
+    { href: "/help", label: t("nav.help") },
   ];
   const secondary = [
     { href: "/account", label: t("account.title") },

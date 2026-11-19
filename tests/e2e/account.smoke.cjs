@@ -128,7 +128,7 @@ async function emailLink(to, subjectPart) {
   const stranger = await (await b.newContext()).newPage();
   await loginCustomer(stranger, B, strangerEmail, "Stranger2026x");
   await stranger.goto(`${B}/order-success/${orderId}`);
-  check((await stranger.locator("text=Order not found").count()) === 1, "another customer cannot open someone else's order");
+  check((await stranger.locator("text=different account").count()) === 1 && (await stranger.locator("#receipt").count()) === 0, "another customer cannot open someone else's order (told it belongs to another account)");
   await stranger.goto(`${B}/account`);
   check((await stranger.locator(`a[href="/order-success/${orderId}"]`).count()) === 0, "another customer's account does not list it");
   await stranger.goto(`${B}/admin/login`);
