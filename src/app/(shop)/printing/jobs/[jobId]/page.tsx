@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { CheckCircle2, Clock, FileText, XCircle } from "lucide-react";
 import { AddPrintingToCart } from "@/components/shop/add-printing-to-cart";
@@ -9,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDateTime } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
-import { isAccessToken } from "@/lib/orders/access";
+import { isAccessToken, isGuid } from "@/lib/orders/access";
 import { getCustomerUser } from "@/lib/account/session";
 import { getJobForCustomer, readJobAccess } from "@/lib/printing/access";
 import { formatEthiopianPhone } from "@/lib/validation/phone";
@@ -32,6 +33,8 @@ export default async function PrintJobPage({ params, searchParams }: PageProps<"
   if (!job) {
     // The signed-in owner can open their job from any device.
     const user = await getCustomerUser();
+    // Email links may open in a signed-out browser: sign in, then come back here.
+    if (!user && isGuid(jobId)) redirect(`/account/login?next=${encodeURIComponent(`/printing/jobs/${jobId}`)}`);
     job = user ? await getJobForCustomer(jobId, null, user.id) : null;
     token = null;
   }

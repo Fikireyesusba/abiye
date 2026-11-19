@@ -10,8 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { formatDateTime } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
+import { redirect } from "next/navigation";
 import { getCustomerUser } from "@/lib/account/session";
-import { authorizeCustomerOrder, getOrderForCustomer, isAccessToken, readOrderAccess } from "@/lib/orders/access";
+import { authorizeCustomerOrder, getOrderForCustomer, isAccessToken, isGuid, readOrderAccess } from "@/lib/orders/access";
 import { formatEthiopianPhone } from "@/lib/validation/phone";
 import { localized, type Locale } from "@/i18n/config";
 
@@ -35,6 +36,9 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
   // Signed-in customers can always open their own orders (e.g. from "My account" on another device).
   if (!order) {
     const user = await getCustomerUser();
+    // Links in our emails open in a browser that may not be signed in (e.g. Gmail's
+    // in-app browser): ask to sign in, then come straight back to this order.
+    if (!user && isGuid(orderId)) redirect(`/account/login?next=${encodeURIComponent(`/order-success/${orderId}`)}`);
     const owned = user ? await authorizeCustomerOrder(orderId, { userId: user.id }) : null;
     order = owned?.order ?? null;
     accessToken = null;

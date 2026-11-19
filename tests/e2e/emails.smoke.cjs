@@ -94,6 +94,17 @@ const asManager = (q) => {
     check(placed?.html.includes(`/order-success/${orderId}`) && placed?.html.includes("lang=\"am\"") && /CBE|Bank|ባንክ/.test(placed?.html ?? ""),
       "contains the order link, bank details and Amharic");
 
+    // ---- 1b. The email link opened in a signed-out browser (e.g. Gmail's in-app browser)
+    const link = placed.html.match(/href="([^"]*\/order-success\/[^"]+)"/)[1];
+    const fresh = await (await b.newContext()).newPage();
+    await fresh.goto(link);
+    check(new URL(fresh.url()).pathname === "/account/login", "email link in a signed-out browser asks to sign in");
+    await fresh.fill("#email", email);
+    await fresh.fill("#password", "EmailsE2E2026");
+    await fresh.click("form button[type=submit]");
+    await fresh.waitForURL((u) => u.pathname === `/order-success/${orderId}`, { timeout: 15000 });
+    check(await fresh.locator("#receipt").count() === 1, "after signing in the customer lands on the order with the receipt upload");
+
     // ---- 2. Payment rejected (with reason) then verified, via the admin UI
     const key = sql(`select access_token_hash from orders where id = '${orderId}'`);
     const submit = (n) => sql(`set role service_role; select public.submit_payment(jsonb_build_object('order_id','${orderId}','access_token_hash','${key}',

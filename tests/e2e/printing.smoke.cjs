@@ -174,7 +174,8 @@ async function fillContact(p, name, phone) {
   // ---- 8. Access control
   const o = await (await b.newContext()).newPage();
   await o.goto(`${B}/printing/jobs/${job2}`);
-  check((await o.locator("text=Printing job not found").count()) === 1, "another browser without the link cannot open the job");
+  check(new URL(o.url()).pathname === "/account/login" && (await o.locator("text=Yonas").count()) === 0,
+    "another browser without the link cannot open the job (asked to sign in)");
   const mgrPage = await (await b.newContext()).newPage();
   await mgrPage.goto(`${B}/admin/printing/prices`);
   check(mgrPage.url().includes("/admin/login"), "price editor requires sign-in");

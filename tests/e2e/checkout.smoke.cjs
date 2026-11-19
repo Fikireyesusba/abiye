@@ -131,10 +131,13 @@ function resetSampleStock() {
   const other = await b.newContext();
   const o = await other.newPage();
   await o.goto(`${B}/order-success/${orderId}`);
-  check((await o.locator("text=Order not found").count()) === 1, "other device without token: not found");
+  check(new URL(o.url()).pathname === "/account/login" && (await o.locator(`text=${orderNumber}`).count()) === 0,
+    "other device without token: asked to sign in, order not shown");
   await o.goto(`${B}/order-success/${orderId}?t=${"A".repeat(43)}`);
-  check((await o.locator("text=Order not found").count()) === 1, "wrong token: not found");
-  check((await o.goto(`${B}/order-success/${orderId}`)).headers()["referrer-policy"] === "no-referrer", "order page sends Referrer-Policy: no-referrer");
+  check(new URL(o.url()).pathname === "/account/login" && (await o.locator(`text=${orderNumber}`).count()) === 0,
+    "wrong token: asked to sign in, order not shown");
+  check((await fetch(`${B}/order-success/${orderId}?t=${"A".repeat(43)}`, { redirect: "manual" })).headers.get("referrer-policy") === "no-referrer",
+    "order page sends Referrer-Policy: no-referrer");
 
   // ---- Tracking (no personal data)
   await o.goto(B + "/track-order");
