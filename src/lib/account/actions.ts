@@ -95,8 +95,13 @@ export async function setNewPassword(_prev: AccountState, fd: FormData): Promise
   if (!user) return { error: "linkExpired" };
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.updateUser({ password: String(fd.get("password")) });
-  if (error) return { error: /reauthentic|recent/i.test(error.message) ? "linkExpired" : "generic" };
-  redirect("/account?passwordChanged=1");
+  if (error) {
+    if (error.code === "same_password" || /different from the old/i.test(error.message)) return { error: "samePassword" };
+    return { error: /reauthentic|recent/i.test(error.message) ? "linkExpired" : "generic" };
+  }
+  // Staff (same login system) go straight back to the admin dashboard.
+  const { data: staff } = await supabase.rpc("my_admin_context");
+  redirect(staff ? "/admin?passwordChanged=1" : "/account?passwordChanged=1");
 }
 
 export async function updateCustomerAccount(_prev: AccountState, fd: FormData): Promise<AccountState> {

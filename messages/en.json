@@ -449,7 +449,8 @@
       "notConfirmed": "Please confirm your email first — check your inbox (and spam folder).",
       "phone": "Please enter a valid Ethiopian mobile number.",
       "linkExpired": "Your reset link has expired. Please request a new one.",
-      "generic": "Something went wrong. Please try again."
+      "generic": "Something went wrong. Please try again.",
+      "samePassword": "Choose a password that is different from your current one."
     }
   },
   "payInfo": {

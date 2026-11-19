@@ -27,7 +27,7 @@ interface Stats {
 
 const etb = (n: number) => formatETB(toSantim(n));
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: PageProps<"/admin">) {
   const ctx = await requirePermission("dashboard.view");
   const supabase = await createSupabaseServerClient();
   const [{ data: raw, error }, { data: recent }] = await Promise.all([
@@ -44,8 +44,10 @@ export default async function DashboardPage() {
   // Axis shows the day of month only (fits phones); tooltip + table carry the full date.
   const dayLabel = (d: string) => String(new Date(`${d}T12:00:00Z`).getUTCDate());
 
+  const passwordChanged = !!(await searchParams).passwordChanged;
   return (
     <>
+      {passwordChanged && <p className="mb-4 rounded-md bg-success/10 p-3 text-sm text-success" role="status">Your password was changed.</p>}
       <PageHeader title={`Welcome, ${ctx.fullName.split(" ")[0]}`} description="Overview of orders, payments and stock." />
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4 [&>*]:min-w-0">
