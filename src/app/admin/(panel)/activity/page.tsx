@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PageHeader, Table, Td, fieldClass } from "@/components/admin/ui";
+import { PageHeader, Table, Td, fieldClass, DatabaseUpdateNeeded, isMissingDbFunction } from "@/components/admin/ui";
 import { Button } from "@/components/ui/button";
 import { ENTITY_LABELS, actionLabel, describeChanges, entityLabel } from "@/lib/admin/activity";
 import { requirePermission } from "@/lib/auth/guards";
@@ -39,6 +39,7 @@ export default async function ActivityPage({ searchParams }: PageProps<"/admin/a
     p_limit: PAGE,
     p_before_id: before,
   });
+  if (isMissingDbFunction(error)) return <DatabaseUpdateNeeded title="Activity log" migration="20261120000018_customer_account_management.sql" />;
   if (error) throw new Error("Could not load the activity log");
   const last = rows?.at(-1);
   const params = new URLSearchParams({ ...(entity ? { type: entity } : {}), ...(q ? { q } : {}) });

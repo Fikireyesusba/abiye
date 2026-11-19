@@ -88,3 +88,21 @@ export function Field({ label, htmlFor, hint, children, className }: { label: st
     </div>
   );
 }
+
+/** PostgREST "function not found": the page's database migration has not been applied yet. */
+export const isMissingDbFunction = (error: { code?: string } | null) => error?.code === "PGRST202" || error?.code === "42883";
+
+export function DatabaseUpdateNeeded({ title, migration }: { title: string; migration: string }) {
+  return (
+    <>
+      <PageHeader title={title} />
+      <div role="alert" className="max-w-2xl space-y-2 rounded-lg border border-warning/50 bg-warning/10 p-4 text-sm">
+        <p className="font-semibold">Database update needed</p>
+        <p>
+          This page needs a database update that has not been applied yet. In Supabase → SQL Editor, run the file{" "}
+          <code className="rounded bg-muted px-1 py-0.5 break-all">supabase/migrations/{migration}</code> (copy it from GitHub → Raw), then reload this page.
+        </p>
+      </div>
+    </>
+  );
+}

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BarChart } from "@/components/admin/bar-chart";
-import { PageHeader, Panel, StatCard, Table, Td, fieldClass } from "@/components/admin/ui";
+import { PageHeader, Panel, StatCard, Table, Td, fieldClass, DatabaseUpdateNeeded, isMissingDbFunction } from "@/components/admin/ui";
 import { StatusBadge } from "@/components/status/status-badge";
 import { Button } from "@/components/ui/button";
 import { requirePermission } from "@/lib/auth/guards";
@@ -64,6 +64,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/admin/
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("admin_analytics", { p_from: from, p_to: to, p_bucket: bucket });
+  if (isMissingDbFunction(error)) return <DatabaseUpdateNeeded title="Analytics" migration="20261120000019_finalization.sql" />;
   if (error || !data) throw new Error("Could not load analytics");
   const a = data as unknown as Analytics;
   const t = a.totals;

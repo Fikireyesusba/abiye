@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PageHeader, Table, Td } from "@/components/admin/ui";
+import { PageHeader, Table, Td, DatabaseUpdateNeeded, isMissingDbFunction } from "@/components/admin/ui";
 import { StatusBadge } from "@/components/status/status-badge";
 import { waitingFor } from "@/lib/admin/activity";
 import { requirePermission } from "@/lib/auth/guards";
@@ -42,6 +42,7 @@ export default async function FollowUpPage({ searchParams }: PageProps<"/admin/f
   const hours = (HOURS as readonly number[]).includes(h) ? h : 2;
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("admin_stalled_checkouts", { p_hours: hours });
+  if (isMissingDbFunction(error)) return <DatabaseUpdateNeeded title="Stalled checkouts" migration="20261120000018_customer_account_management.sql" />;
   if (error) throw new Error("Could not load stalled checkouts");
   const rows = (data ?? []) as Row[];
   const now = new Date();
