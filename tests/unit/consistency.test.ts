@@ -87,3 +87,20 @@ describe("social handles", () => {
     ["not a url", "Facebook"],
   ])("%s → %s", (url, expected) => expect(handleFromUrl(url, "Facebook")).toBe(expected));
 });
+
+describe("production setup bundle", () => {
+  it("contains every migration and the starter, unchanged (run `npm run db:bundle` after adding a migration)", () => {
+    const bundle = readFileSync(join(root, "supabase/production-setup.sql"), "utf8");
+    const files = readdirSync(join(root, "supabase/migrations")).filter((f) => f.endsWith(".sql")).sort();
+    let pos = 0;
+    for (const f of files) {
+      const body = readFileSync(join(root, "supabase/migrations", f), "utf8").trim();
+      const at = bundle.indexOf(body, pos);
+      expect(at, `${f} missing or out of order in production-setup.sql`).toBeGreaterThan(-1);
+      pos = at + body.length;
+      expect(bundle).toContain(`'${f.split("_")[0]}'`);
+    }
+    expect(bundle).toContain("'12000000-0000-0000-0000-000000000006'"); // starter categories
+    expect(bundle).not.toMatch(/SAMPLE|1000000000000/); // never sample data / fake bank details
+  });
+});

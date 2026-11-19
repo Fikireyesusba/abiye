@@ -23,8 +23,15 @@ PSQL=("${RUN_AS[@]}" psql -X -q -v ON_ERROR_STOP=1 -h "$WORK" -p "$PORT" -U post
 run() { echo "  → $(basename "$1")"; "${PSQL[@]}" -d app -f "$1" >/dev/null; }
 
 echo "Supabase emulation"; run "$ROOT/supabase/db-tests/00_supabase_stub.sql"
-echo "Migrations";        for f in "$ROOT"/supabase/migrations/*.sql; do run "$f"; done
-echo "Starter (twice: idempotent)"; run "$ROOT/supabase/starter.sql"; run "$ROOT/supabase/starter.sql"
+if [ "${BUNDLE:-0}" = "1" ]; then
+  echo "Production bundle";  run "$ROOT/supabase/production-setup.sql"
+  echo "Bundle re-run is refused without changes"
+  if "${PSQL[@]}" -d app -f "$ROOT/supabase/production-setup.sql" >/dev/null 2>"$WORK/rerun.err"; then echo "FAIL: bundle ran twice"; exit 1; fi
+  grep -q "already set up" "$WORK/rerun.err" || { cat "$WORK/rerun.err"; exit 1; }
+else
+  echo "Migrations";        for f in "$ROOT"/supabase/migrations/*.sql; do run "$f"; done
+  echo "Starter (twice: idempotent)"; run "$ROOT/supabase/starter.sql"; run "$ROOT/supabase/starter.sql"
+fi
 echo "Seed";              run "$ROOT/supabase/seed.sql"
 echo "Tests"
 for f in "$ROOT"/supabase/db-tests/[1-9]*.sql; do

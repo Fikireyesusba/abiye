@@ -48,33 +48,21 @@ npm run check
 npm run test:db
 ```
 
-## 2. Supabase project
+## 2. Supabase project (browser only — no terminal needed)
 
-1. Create a project at supabase.com (region closest to Ethiopia, e.g. EU Central / Frankfurt).
-2. **Authentication → Sign In / Providers → Email**: email enabled, **Confirm email = ON**, **Allow new users to sign up = ON** (customers create accounts to order; this never grants admin access). Password: minimum length 8, "letters and digits" (staff passwords are held to 12+ characters by the app).
-3. Apply the schema from your machine:
+The owner works only in the GitHub, Vercel, Resend and Supabase websites. Nothing is run from a personal computer.
 
-```bash
-npx supabase login
-```
+1. Create a project at supabase.com (region closest to Ethiopia, e.g. EU Central / Frankfurt). Save the database password in your password manager.
+2. **Create the database** — once:
+   - On GitHub open `supabase/production-setup.sql` and click **Copy raw file** (the copy icon above the file).
+   - Supabase → **SQL Editor → New query** → paste → **Run**.
+   - The result shows `cosmetics 6, electronics 7, printing 1`. It is one transaction: if anything fails, nothing is changed, and it refuses to run twice.
+   - It contains all migrations, the security rules, storage buckets, default settings (business name "Abiye") and the category structure — **no sample products, no fake bank details**.
+3. Check **Storage**: `payment-receipts` and `printing-files` are private; `product-images` and `site-assets` are public.
+4. **Authentication → Sign In / Providers → Email**: email enabled, **Confirm email = ON**, **Allow new users to sign up = ON**. Password: minimum 8, letters and digits.
+5. **Project Settings → API Keys**: you will copy the publishable key (`sb_publishable_…`) and a secret key (`sb_secret_…`) into Vercel (§5). Never anywhere else.
 
-```bash
-npx supabase link --project-ref YOUR_PROJECT_REF
-```
-
-```bash
-npx supabase db push
-```
-
-   `db push` applies migrations only — it does **not** load `seed.sql` (sample data) into production.
-   Then create the department/category structure once: Supabase → **SQL Editor** → paste `supabase/starter.sql` → **Run** (no sample products or bank details; safe to re-run).
-4. Storage buckets and their policies are created by migration `20261118000009_storage.sql`. Verify in **Storage** that `payment-receipts` and `printing-files` are **private** and `product-images`, `site-assets` are public.
-5. **Project Settings → API Keys**: copy the publishable key (`sb_publishable_…`) and a secret key (`sb_secret_…`).
-6. Generate TypeScript types (from Phase 2 on):
-
-```bash
-npx supabase gen types typescript --project-id YOUR_PROJECT_REF > src/lib/supabase/database.types.ts
-```
+**Later database changes.** Each new file in `supabase/migrations/` must be applied the same way: open it on GitHub → Copy raw file → SQL Editor → Run (in filename order). The developer tells you which file(s) after each change. (Alternatively, Supabase's GitHub integration can apply migrations automatically on merge — check whether your plan includes it.)
 
 ## 2b. Customer accounts: emails (required before launch)
 
@@ -112,20 +100,12 @@ Customers must confirm their email before they can order, and "forgot password" 
 
 Without a verified domain, Resend only delivers to your own Resend login email. That's fine for a first test, but customers won't receive anything.
 
-## 3. First Super Admin (secure bootstrap)
+## 3. First Super Admin (browser only)
 
-No admin passwords exist in code. From your machine, with the production `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SECRET_KEY` in a local env file that is never committed (e.g. `.env.production.local`):
+No admin passwords exist in code.
 
-```bash
-node --env-file=.env.production.local scripts/create-super-admin.mjs --email owner@yourshop.com --name "Owner Full Name"
-```
-
-You are asked for the password (hidden input; minimum 12 characters with upper-case, lower-case and a digit). Then sign in at `/admin/login`. Additional staff are created from **/admin/staff**.
-
-Alternative without Node:
-
-1. **Auth → Users → Add user**: enter the owner's email and a strong password; confirm the email.
-2. In the **SQL Editor** (runs as a trusted role), run once, replacing the email and name:
+1. Supabase → **Authentication → Users → Add user → Create new user**: your email + a strong password (12+ characters, upper/lower case and a number), tick **Auto Confirm User**.
+2. Supabase → **SQL Editor → New query**, replace the email and name, **Run** once:
 
 ```sql
 select public.bootstrap_super_admin(
@@ -134,7 +114,9 @@ select public.bootstrap_super_admin(
 );
 ```
 
-Both routes refuse to run once an active Super Admin exists.
+3. Sign in at `https://yourshop.com/admin/login`. All other staff are created from **/admin/staff** (role + one-time temporary password).
+
+It refuses to run again once an active Super Admin exists. (Developers can instead use `scripts/create-super-admin.mjs` from a terminal.)
 
 ## 4. Telegram bot
 
@@ -151,9 +133,9 @@ Both routes refuse to run once an active Super Admin exists.
 - on Vercel **Pro**, change its schedule to `*/15 * * * *`; or
 - use a free external scheduler (e.g. cron-job.org) to call `GET https://yourshop.com/api/cron/notifications` every 10–15 minutes with the header `Authorization: Bearer <CRON_SECRET>`.
 
-## 5. Vercel _(full checklist in Phase 7)_
+## 5. Vercel (browser only)
 
-1. Import the GitHub repository in Vercel (framework: Next.js).
+1. Vercel → **Add New → Project → Import** the GitHub repository `Fikireyesusba/abi` (framework: Next.js, settings auto-detected). Vercel deploys the repository's default branch (`phase-1-foundation` until a `main` branch is introduced) as Production; change it under Project → Settings → Git → Production Branch.
 2. Set every variable from `.env.example` for **Production** (and Preview with a separate Supabase project). Mark secrets as Sensitive.
 3. Set `APP_URL=https://yourshop.com`.
 4. **Domains**: add `yourshop.com` and `www.yourshop.com`, follow the DNS instructions (A/CNAME at your registrar), redirect `www` → apex.
