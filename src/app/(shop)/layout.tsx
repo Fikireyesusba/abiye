@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
+import { InstallBanner } from "@/components/pwa/pwa";
 import { CartSync } from "@/components/shop/cart-sync";
 import { SiteFooter } from "@/components/shop/site-footer";
 import { SiteHeader } from "@/components/shop/site-header";
@@ -28,6 +29,7 @@ export default function ShopLayout({ children }: LayoutProps<"/">) {
       <SiteFooter />
       <Toaster />
       <CartSync />
+      <InstallBanner />
     </>
   );
 }

@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import {
   ArrowRight, Banknote, CircleHelp, ClipboardList, Lightbulb, Printer, RefreshCw, Search, ShieldCheck, ShoppingCart, Store, Tag, Truck, UserRound,
 } from "lucide-react";
+import { InstallAppButton } from "@/components/pwa/pwa";
 import { StatusBadge } from "@/components/status/status-badge";
 import { Button } from "@/components/ui/button";
 import { HELP, type HelpSection } from "@/content/help";
@@ -22,7 +23,7 @@ const ICONS: Record<HelpSection["icon"], React.ComponentType<{ className?: strin
 };
 
 export default async function HelpPage() {
-  const [t, locale, s] = await Promise.all([getTranslations("help"), getLocale() as Promise<Locale>, getSiteSettings()]);
+  const [t, tp, locale, s] = await Promise.all([getTranslations("help"), getTranslations("pwa"), getLocale() as Promise<Locale>, getSiteSettings()]);
   const vars: Record<string, string> = {
     name: s.business.name[locale] || s.business.name.en,
     hours: String(s.delivery.payment_window_hours),
@@ -38,6 +39,16 @@ export default async function HelpPage() {
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t("title")}</h1>
         <p className="text-muted-foreground">{t("intro")}</p>
       </header>
+
+      <section aria-labelledby="install-title" className="mb-6 flex flex-col gap-4 rounded-xl border border-primary/20 bg-primary/5 p-4 sm:flex-row sm:items-center">
+        {/* eslint-disable-next-line @next/next/no-img-element -- tiny static icon */}
+        <img src="/icons/icon-192.png" alt="" width={56} height={56} className="rounded-2xl" />
+        <div className="flex-1 space-y-1">
+          <h2 id="install-title" className="font-semibold">{tp("helpTitle")}</h2>
+          <p className="text-sm text-muted-foreground">{tp("helpText")}</p>
+        </div>
+        <InstallAppButton variant="default" />
+      </section>
 
       <nav aria-labelledby="help-contents" className="mb-10 rounded-xl border bg-card p-4">
         <h2 id="help-contents" className="mb-3 text-sm font-semibold">{t("contents")}</h2>

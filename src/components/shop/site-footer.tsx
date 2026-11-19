@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Clock, Landmark, Mail, MapPin, Phone } from "lucide-react";
 import { getPublicBankAccounts } from "@/lib/catalog/bank-info";
+import { InstallAppButton } from "@/components/pwa/pwa";
 import { socialLinks, SocialIconRow } from "./social-links";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import { formatEthiopianPhone, normalizeEthiopianPhone } from "@/lib/validation/phone";
@@ -81,6 +82,10 @@ export async function SiteFooter() {
               </li>
             )}
           </ul>
+          <div className="space-y-2 pt-2">
+            <p className="font-semibold">{t("pwa.helpTitle")}</p>
+            <InstallAppButton variant="default" className="bg-accent text-accent-foreground hover:bg-accent/90 [&:is(p)]:bg-transparent [&:is(p)]:text-current [&:is(p)]:opacity-85" />
+          </div>
         </div>
       </div>
       <div className="border-t border-white/10 py-5 text-center text-xs opacity-70">

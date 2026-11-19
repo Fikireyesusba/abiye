@@ -28,6 +28,7 @@
     "test:smoke:mfa": "node --env-file=.env.local tests/e2e/mfa.smoke.cjs",
     "test:smoke:emails": "node --env-file=.env.local tests/e2e/emails.smoke.cjs",
     "test:smoke:help": "node --env-file=.env.local tests/e2e/help.smoke.cjs",
+    "test:smoke:pwa": "node --env-file=.env.local tests/e2e/pwa.smoke.cjs",
     "db:bundle": "node scripts/build-production-sql.mjs",
     "test:db:bundle": "BUNDLE=1 bash scripts/db-test.sh"
   },

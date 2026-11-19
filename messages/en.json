@@ -495,5 +495,23 @@
     "stillNeedHelpText": "Call, WhatsApp or email us — we are happy to help.",
     "contactUs": "Contact us",
     "howToPay": "How do I pay?"
+  },
+  "pwa": {
+    "install": "Install app",
+    "bannerLabel": "Install the app",
+    "bannerTitle": "Get the app",
+    "bannerText": "Faster shopping from your home screen.",
+    "dismiss": "Not now",
+    "close": "Close",
+    "alreadyInstalled": "The app is installed on this device. ✓",
+    "androidMenuHint": "To install: open the browser menu (⋮) and tap “Install app” or “Add to Home screen”.",
+    "otherHint": "Open this website on your phone (Chrome on Android, Safari on iPhone) to install the app.",
+    "iosTitle": "Add to your iPhone home screen",
+    "iosIntro": "Three quick steps in Safari:",
+    "iosStep1": "Tap the Share button (square with an arrow) at the bottom or top of the screen.",
+    "iosStep2": "Scroll down and tap “Add to Home Screen”.",
+    "iosStep3": "Tap “Add”. The app icon appears on your home screen.",
+    "helpTitle": "Install the app",
+    "helpText": "Add our shop to your phone’s home screen: it opens full-screen like an app and is always up to date — no app store needed."
   }
 }

@@ -495,5 +495,23 @@
     "stillNeedHelpText": "ይደውሉልን፣ በዋትስአፕ ወይም በኢሜይል ያግኙን — ለመርዳት ዝግጁ ነን።",
     "contactUs": "ያግኙን",
     "howToPay": "እንዴት እከፍላለሁ?"
+  },
+  "pwa": {
+    "install": "መተግበሪያውን ይጫኑ",
+    "bannerLabel": "መተግበሪያውን ይጫኑ",
+    "bannerTitle": "መተግበሪያውን ያግኙ",
+    "bannerText": "ከስልክዎ መነሻ ገጽ በፍጥነት ይግዙ።",
+    "dismiss": "አሁን አይደለም",
+    "close": "ዝጋ",
+    "alreadyInstalled": "መተግበሪያው በዚህ መሣሪያ ላይ ተጭኗል። ✓",
+    "androidMenuHint": "ለመጫን፦ የአሳሹን ምናሌ (⋮) ይክፈቱ እና «Install app» ወይም «Add to Home screen»ን ይንኩ።",
+    "otherHint": "መተግበሪያውን ለመጫን ይህን ድረ-ገጽ በስልክዎ ይክፈቱ (በAndroid Chrome፣ በiPhone Safari)።",
+    "iosTitle": "ወደ iPhone መነሻ ገጽዎ ያክሉ",
+    "iosIntro": "በSafari ውስጥ ሶስት ቀላል ደረጃዎች፦",
+    "iosStep1": "ከማያ ገጹ ታች ወይም ላይ ያለውን የማጋሪያ (Share) ቁልፍ (ቀስት ያለው ካሬ) ይንኩ።",
+    "iosStep2": "ወደ ታች ይሸብልሉ እና «Add to Home Screen»ን ይንኩ።",
+    "iosStep3": "«Add»ን ይንኩ። የመተግበሪያው ምልክት በመነሻ ገጽዎ ላይ ይታያል።",
+    "helpTitle": "መተግበሪያውን ይጫኑ",
+    "helpText": "ሱቃችንን ወደ ስልክዎ መነሻ ገጽ ያክሉ፦ እንደ መተግበሪያ ሙሉ ማያ ገጽ ይከፈታል፣ ሁልጊዜም የቅርብ ጊዜው ነው — የመተግበሪያ መደብር አያስፈልግም።"
   }
 }
