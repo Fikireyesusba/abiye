@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAuthorizedCron } from "@/lib/security/cron";
 import { dispatchCustomerEmails } from "@/lib/email/dispatch";
+import { dispatchCustomerPush } from "@/lib/push/dispatch";
 import { dispatchNotifications } from "@/lib/telegram/dispatch";
 
 export const maxDuration = 60;
@@ -30,5 +31,13 @@ export async function GET(request: Request) {
     emails.failed += r.failed;
     if (!r.configured || r.sent + r.failed < 20) break;
   }
-  return NextResponse.json({ configured, sent, failed, emails });
+  const push = { configured: true, sent: 0, failed: 0 };
+  for (let round = 0; round < 5; round++) {
+    const r = await dispatchCustomerPush(20);
+    push.configured = r.configured;
+    push.sent += r.sent;
+    push.failed += r.failed;
+    if (!r.configured || r.sent + r.failed < 20) break;
+  }
+  return NextResponse.json({ configured, sent, failed, emails, push });
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { AlertTriangle, CheckCircle2, Clock, Landmark, XCircle } from "lucide-react";
+import { AlertTriangle, Bell, CheckCircle2, Clock, Landmark, XCircle } from "lucide-react";
 import { CopyButton } from "@/components/shop/copy-button";
 import { PaymentForm } from "@/components/shop/payment-form";
 import { StatusBadge } from "@/components/status/status-badge";
@@ -12,6 +12,8 @@ import { formatDateTime } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
 import { redirect } from "next/navigation";
 import { getCustomerUser } from "@/lib/account/session";
+import { PushToggle } from "@/components/pwa/push";
+import { getServerEnv } from "@/lib/env";
 import { OtherAccountNotice } from "@/components/account/other-account";
 import { authorizeCustomerOrder, getOrderForCustomer, isAccessToken, isGuid, readOrderAccess } from "@/lib/orders/access";
 import { formatEthiopianPhone } from "@/lib/validation/phone";
@@ -59,6 +61,10 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
   }
 
   const amount = formatETB(toSantim(order.total_etb), locale);
+  // Phone notifications: offered to the signed-in customer while the order is still in progress.
+  const env = getServerEnv();
+  const vapid = env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY && env.VAPID_SUBJECT ? env.VAPID_PUBLIC_KEY : null;
+  const viewer = vapid && !["completed", "cancelled", "expired"].includes(order.status) ? await getCustomerUser() : null;
   const expired = order.status === "expired" || (["awaiting_payment", "payment_rejected"].includes(order.status) && new Date(order.payment_due_at) < new Date());
   const canPay = ["awaiting_payment", "payment_rejected"].includes(order.status) && !expired;
   const lastRejection = order.status === "payment_rejected" ? order.submissions.find((s) => s.status === "rejected") : null;
@@ -97,6 +103,12 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
             <Banner tone="success" icon={<CheckCircle2 className="size-5" />} title={t("order.confirmedTitle")} />
           )}
 
+          {viewer && vapid && (
+            <div className="flex items-start gap-3 rounded-xl border bg-card p-4">
+              <Bell className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
+              <PushToggle vapidPublicKey={vapid} hint={t("push.orderHint")} className="flex-1" />
+            </div>
+          )}
           {canPay && (
             <Card>
               <CardHeader>

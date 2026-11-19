@@ -30,6 +30,15 @@ const serverEnvSchema = z.object({
     .string()
     .regex(/^[^<>\r\n]{1,80} <[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+>$|^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/, "EMAIL_FROM must look like: Abiye <orders@yourdomain.com>")
     .optional(),
+  // Customer phone notifications (Web Push / VAPID). Optional: without them, none are sent.
+  VAPID_PUBLIC_KEY: z.string().regex(/^[A-Za-z0-9_-]{80,90}$/, "Invalid VAPID public key").optional(),
+  VAPID_PRIVATE_KEY: z.string().regex(/^[A-Za-z0-9_-]{40,45}$/, "Invalid VAPID private key").optional(),
+  VAPID_SUBJECT: z.string().regex(/^(mailto:[^\s@]+@[^\s@]+|https:\/\/\S+)$/, "VAPID_SUBJECT must be mailto:you@domain or an https URL").optional(),
+  // Only for tests: send push messages to a local mock instead of the push service.
+  PUSH_TEST_ENDPOINT_BASE: z
+    .url()
+    .refine((u) => /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(u), "Local addresses only")
+    .optional(),
   // Only for tests (a local mock of the Resend API).
   EMAIL_API_BASE: z
     .url()
@@ -57,6 +66,10 @@ export function getServerEnv(): ServerEnv {
     RESEND_API_KEY: process.env.RESEND_API_KEY || undefined,
     EMAIL_FROM: process.env.EMAIL_FROM || undefined,
     EMAIL_API_BASE: process.env.EMAIL_API_BASE || undefined,
+    VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY || undefined,
+    VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY || undefined,
+    VAPID_SUBJECT: process.env.VAPID_SUBJECT || undefined,
+    PUSH_TEST_ENDPOINT_BASE: process.env.PUSH_TEST_ENDPOINT_BASE || undefined,
   });
   if (!parsed.success) {
     // Report variable NAMES only — never values.

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAuthorizedCron } from "@/lib/security/cron";
 import { dispatchCustomerEmails } from "@/lib/email/dispatch";
+import { dispatchCustomerPush } from "@/lib/push/dispatch";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 /** Expires unpaid orders past their payment window and releases reserved stock. */
@@ -15,5 +16,6 @@ export async function GET(request: Request) {
   }
   // Customer emails for the expired orders.
   const emails = Number(data) > 0 ? await dispatchCustomerEmails(50) : null;
-  return NextResponse.json({ expired: data, emails });
+  const push = Number(data) > 0 ? await dispatchCustomerPush(50) : null;
+  return NextResponse.json({ expired: data, emails, push });
 }

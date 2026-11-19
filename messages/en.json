@@ -513,5 +513,19 @@
     "iosStep3": "Tap “Add”. The app icon appears on your home screen.",
     "helpTitle": "Install the app",
     "helpText": "Add our shop to your phone’s home screen: it opens full-screen like an app and is always up to date — no app store needed."
+  },
+  "push": {
+    "title": "Phone notifications",
+    "text": "Get a notification on this phone when your payment is verified and when your order is ready or on its way.",
+    "orderHint": "Get a notification on this phone when we verify your payment.",
+    "turnOn": "Turn on notifications",
+    "turnOff": "Turn off",
+    "on": "Notifications are on for this device",
+    "turnedOn": "Notifications turned on.",
+    "turnedOff": "Notifications turned off.",
+    "failed": "Could not turn on notifications. Please try again.",
+    "blocked": "Notifications are blocked for this website. Allow them in your browser or phone settings, then come back.",
+    "unsupported": "This browser cannot show notifications. Use Chrome on Android, or install the app on iPhone.",
+    "iosInstallFirst": "On iPhone, notifications work in the installed app: add it to your home screen, open it from there and tap “Turn on notifications”."
   }
 }

@@ -29,6 +29,7 @@
     "test:smoke:emails": "node --env-file=.env.local tests/e2e/emails.smoke.cjs",
     "test:smoke:help": "node --env-file=.env.local tests/e2e/help.smoke.cjs",
     "test:smoke:pwa": "node --env-file=.env.local tests/e2e/pwa.smoke.cjs",
+    "test:smoke:push": "NODE_PATH=$(npm root -g):$(pwd)/node_modules node --env-file=.env.local tests/e2e/push.smoke.cjs",
     "db:bundle": "node scripts/build-production-sql.mjs",
     "test:db:bundle": "BUNDLE=1 bash scripts/db-test.sh"
   },
@@ -48,6 +49,7 @@
     "simple-icons": "^16.38.0",
     "sonner": "^2.0.8",
     "tailwind-merge": "^3.7.0",
+    "web-push": "^3.6.7",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -56,6 +58,7 @@
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "pg": "^8.23.1",

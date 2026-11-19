@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { LogOut, Tag } from "lucide-react";
+import { Bell, LogOut, Tag } from "lucide-react";
 import { ProfileForm } from "@/components/account/auth-forms";
+import { PushToggle } from "@/components/pwa/push";
+import { getServerEnv } from "@/lib/env";
 import { CopyButton } from "@/components/shop/copy-button";
 import { StatusBadge } from "@/components/status/status-badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function AccountPage({ searchParams }: PageProps<"/account">) {
   const user = await requireCustomer("/account");
+  const vapid = getServerEnv().VAPID_PRIVATE_KEY && getServerEnv().VAPID_SUBJECT ? (getServerEnv().VAPID_PUBLIC_KEY ?? null) : null;
   const sp = await searchParams;
   const [t, locale, account] = await Promise.all([getTranslations(), getLocale() as Promise<Locale>, getCustomerAccount(user.id)]);
   // RLS: a customer can only read their own orders and printing jobs.
@@ -80,6 +83,15 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
                 ))}
               </ul>
             </CardContent>
+          </Card>
+        )}
+        {vapid && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Bell className="size-5" aria-hidden /> {t("push.title")}</CardTitle>
+              <p className="text-sm text-muted-foreground">{t("push.text")}</p>
+            </CardHeader>
+            <CardContent><PushToggle vapidPublicKey={vapid} /></CardContent>
           </Card>
         )}
         <Card>

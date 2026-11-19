@@ -539,6 +539,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"push_subscriptions": {
+                  Row: {
+                    "auth": string,"created_at": string,"endpoint": string,"id": string,"last_used_at": string | null,"locale": string,"p256dh": string,"user_agent": string | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "auth": string,"created_at"?: string,"endpoint": string,"id"?: string,"last_used_at"?: string | null,"locale"?: string,"p256dh": string,"user_agent"?: string | null,"user_id"?: string
+                  }
+                  Update: {
+                    "auth"?: string,"created_at"?: string,"endpoint"?: string,"id"?: string,"last_used_at"?: string | null,"locale"?: string,"p256dh"?: string,"user_agent"?: string | null,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"rate_limits": {
                   Row: {
                     "hits": number,"key": string,"window_start": string
@@ -774,6 +788,11 @@ isOneToOne: false
 "printing_files_due_for_deletion":
 { Args: { "p_limit"?: number }; Returns: {
               "file_id": string,"job_id": string,"storage_path": string
+            }[]
+                           },
+"push_targets":
+{ Args: { "p_user_id": string }; Returns: {
+              "auth": string,"endpoint": string,"id": string,"locale": string,"p256dh": string
             }[]
                            },
 "quote_printing":

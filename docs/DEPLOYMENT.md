@@ -144,7 +144,7 @@ It refuses to run again once an active Super Admin exists. (Developers can inste
 
 ## 6. Database updates after launch (browser only)
 
-`production-setup.sql` is run once. Each later change is a single new file in `supabase/migrations/` — paste it into the Supabase SQL Editor and Run, in filename order, once. Already published after the first setup: `…0017_admin_customer_accounts.sql`, `…0018_customer_account_management.sql`, `…0019_finalization.sql`, `…0020_personal_promotions.sql`, `…0021_admin_mfa.sql`, `…0022_customer_emails.sql`. PROGRESS.md records which ones production has.
+`production-setup.sql` is run once. Each later change is a single new file in `supabase/migrations/` — paste it into the Supabase SQL Editor and Run, in filename order, once. Already published after the first setup: `…0017_admin_customer_accounts.sql`, `…0018_customer_account_management.sql`, `…0019_finalization.sql`, `…0020_personal_promotions.sql`, `…0021_admin_mfa.sql`, `…0022_customer_emails.sql`, `…0023_customer_push.sql`. PROGRESS.md records which ones production has.
 
 ## 7. Security headers
 
@@ -176,3 +176,14 @@ Customers get an email (English + Amharic) when: the order is placed (amount, ba
 4. Database: run `supabase/migrations/20261120000022_customer_emails.sql` in the SQL Editor.
 
 Emails use the same reliable queue as the Telegram alerts: they are queued in the same database transaction as the change, sent right after, retried with backoff if Resend is down, and visible in Admin → Notifications (event types starting with `customer_`). Emails that could not be sent within 2 days are dropped instead of arriving late. Without the two variables nothing is sent (the shop works normally).
+
+## 10. Customer phone notifications (Web Push)
+
+Customers who turn them on (My account, or their order page) get a phone notification for the same events as the emails, in the language of their device setting at sign-up of the device (EN/AM). Android: Chrome, installed or not. iPhone: only inside the installed app (iOS 16.4+; the site guides them).
+
+1. Admin → **Notifications** → "Customer phone notifications" → **Create notification keys**. The keys are created in your browser; nothing is sent anywhere.
+2. Copy the three values into Vercel → Settings → **Environment Variables** (Production): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (`mailto:` + your email).
+3. **Redeploy.** The panel then shows "Configured".
+4. Database: run `supabase/migrations/20261120000023_customer_push.sql` in the SQL Editor.
+
+Keep the keys: if you replace them later, every customer must turn notifications on again. Never paste the private key into chats or emails.

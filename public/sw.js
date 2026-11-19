@@ -5,7 +5,7 @@
  *  - build assets (/_next/static, immutable) and app icons are cached for speed;
  *  - nothing private (orders, account, admin, receipts) is ever stored.
  */
-const VERSION = "v1";
+const VERSION = "v2";
 const STATIC = `abiye-static-${VERSION}`;
 const PAGES = `abiye-pages-${VERSION}`;
 const OFFLINE_URL = "/offline";
@@ -56,4 +56,35 @@ self.addEventListener("fetch", (event) => {
       }),
     );
   }
+});
+
+/* ------------------------------------------------------------------ phone notifications */
+self.addEventListener("push", (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch { data = { title: "Abiye", body: event.data ? event.data.text() : "" }; }
+  const url = typeof data.url === "string" && data.url.startsWith("/") ? data.url : "/account";
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Abiye", {
+      body: data.body || "",
+      icon: data.icon || "/app-icon/192",
+      badge: "/app-icon/192",
+      tag: data.tag,
+      renotify: !!data.tag,
+      data: { url },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = new URL(event.notification.data?.url || "/account", self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
+      const same = wins.find((w) => w.url === url);
+      if (same) return same.focus();
+      const any = wins.find((w) => new URL(w.url).origin === self.location.origin);
+      if (any) return any.navigate(url).then((w) => w && w.focus());
+      return self.clients.openWindow(url);
+    }),
+  );
 });

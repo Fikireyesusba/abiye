@@ -8,6 +8,10 @@ import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/datetime";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { telegramConfig } from "@/lib/telegram/dispatch";
+import { emailConfigured } from "@/lib/email/dispatch";
+import { pushConfigured } from "@/lib/push/dispatch";
+import { getSiteSettings } from "@/lib/catalog/settings";
+import { VapidKeyGenerator } from "@/components/admin/vapid-keys";
 
 export const metadata: Metadata = { title: "Notifications" };
 
@@ -20,13 +24,32 @@ const TONE = { sent: "success", pending: "secondary", processing: "info", failed
 export default async function NotificationsPage() {
   await requirePermission("settings.manage");
   const configured = !!telegramConfig();
+  const emailOn = emailConfigured();
+  const pushOn = pushConfigured();
+  const settings = await getSiteSettings();
   const supabase = await createSupabaseServerClient();
   const { data: rows } = await supabase.rpc("admin_notifications", { p_limit: 100 });
   const problems = (rows ?? []).filter((r) => r.status === "failed" || r.status === "dead").length;
 
   return (
     <>
-      <PageHeader title="Telegram notifications" description="Staff alerts are queued with every order event and sent to your private Telegram chat. Orders are never affected if Telegram is down." />
+      <PageHeader title="Notifications" description="Staff alerts go to your private Telegram chat; customers get emails and (if they turn them on) phone notifications. Orders are never affected if a service is down." />
+      <div className="mb-6 grid gap-4 md:grid-cols-2">
+        <Panel title="Customer emails">
+          <p className="flex items-center gap-2 text-sm">
+            {emailOn ? <CheckCircle2 className="size-5 text-success" aria-hidden /> : <XCircle className="size-5 text-destructive" aria-hidden />}
+            {emailOn ? "Configured (Resend). Customers get an email at every order step." : "Not configured — set RESEND_API_KEY and EMAIL_FROM in Vercel (docs/DEPLOYMENT.md §9)."}
+          </p>
+        </Panel>
+        <Panel title="Customer phone notifications">
+          <p className="mb-3 flex items-center gap-2 text-sm">
+            {pushOn ? <CheckCircle2 className="size-5 text-success" aria-hidden /> : <XCircle className="size-5 text-destructive" aria-hidden />}
+            {pushOn ? "Configured. Customers can turn them on in My account and on their order page." : "Not configured yet. Create the keys below and add them to Vercel."}
+          </p>
+          {!pushOn && <VapidKeyGenerator suggestedSubject={`mailto:${settings.contact.email || "orders@example.com"}`} />}
+        </Panel>
+      </div>
+      <h2 className="mb-3 text-base font-semibold">Staff Telegram alerts</h2>
       <div className="mb-6 grid gap-4 md:grid-cols-2">
         <Panel title="Connection">
           <p className="mb-3 flex items-center gap-2 text-sm">

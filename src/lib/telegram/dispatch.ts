@@ -2,6 +2,7 @@ import "server-only";
 import { after } from "next/server";
 import { getServerEnv } from "@/lib/env";
 import { dispatchCustomerEmails } from "@/lib/email/dispatch";
+import { dispatchCustomerPush } from "@/lib/push/dispatch";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendMedia, sendMessage, type SendResult, type TelegramConfig } from "./client";
 import { buildMessage, CAPTION_LIMIT, MESSAGE_LIMIT, truncate, type OutboxRow } from "./format";
@@ -68,11 +69,12 @@ export async function dispatchNotifications(limit = 20): Promise<DispatchSummary
   return summary;
 }
 
-/** Send queued notifications (staff Telegram + customer emails) right after the current response (does not delay the user). */
+/** Send queued notifications (staff Telegram + customer emails + phone notifications) right after the current response (does not delay the user). */
 export function dispatchSoon() {
   after(async () => {
-    const [tg, mail] = await Promise.allSettled([dispatchNotifications(), dispatchCustomerEmails()]);
+    const [tg, mail, push] = await Promise.allSettled([dispatchNotifications(), dispatchCustomerEmails(), dispatchCustomerPush()]);
     if (tg.status === "rejected") console.error("[telegram] dispatch failed:", (tg.reason as Error).message);
     if (mail.status === "rejected") console.error("[email] dispatch failed:", (mail.reason as Error).message);
+    if (push.status === "rejected") console.error("[push] dispatch failed:", (push.reason as Error).message);
   });
 }
