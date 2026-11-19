@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Bell, Boxes, CreditCard, FolderTree, LayoutDashboard, Menu, Package, Printer, Settings, ShoppingCart, UserCog, Users,
+  Bell, Boxes, Clock, History, CreditCard, FolderTree, LayoutDashboard, Menu, Package, Printer, Settings, ShoppingCart, UserCog, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
@@ -20,6 +20,8 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/admin/staff": UserCog,
   "/admin/notifications": Bell,
   "/admin/settings": Settings,
+  "/admin/follow-up": Clock,
+  "/admin/activity": History,
 };
 
 export interface NavItem {

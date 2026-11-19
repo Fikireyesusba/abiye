@@ -19,6 +19,7 @@ export const PERMISSIONS = [
   "printing.manage",
   "printing.pricing",
   "customers.view",
+  "customers.manage",
   "reports.operational",
   "analytics.view",
   "promotions.manage",
@@ -74,8 +75,10 @@ export const ADMIN_ROUTES: ReadonlyArray<{ href: string; label: string; anyOf: r
   { href: "/admin/categories", label: "Categories", anyOf: ["categories.manage"] },
   { href: "/admin/inventory", label: "Inventory", anyOf: ["inventory.manage"] },
   { href: "/admin/customers", label: "Customers", anyOf: ["customers.view"] },
+  { href: "/admin/follow-up", label: "Stalled checkouts", anyOf: ["customers.view"] },
   { href: "/admin/staff", label: "Staff", anyOf: ["staff.manage"] },
   { href: "/admin/notifications", label: "Notifications", anyOf: ["settings.manage"] },
   { href: "/admin/settings", label: "Settings", anyOf: ["settings.manage", "bank_accounts.manage"] },
+  { href: "/admin/activity", label: "Activity log", anyOf: ["audit.view"] },
   // Added in Phase 7: /admin/promotions, /admin/analytics.
 ];

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getLocale } from "next-intl/server";
+import { CartSync } from "@/components/shop/cart-sync";
 import { SiteFooter } from "@/components/shop/site-footer";
 import { SiteHeader } from "@/components/shop/site-header";
 import { Toaster } from "@/components/ui/sonner";
@@ -26,6 +27,7 @@ export default function ShopLayout({ children }: LayoutProps<"/">) {
       </main>
       <SiteFooter />
       <Toaster />
+      <CartSync />
     </>
   );
 }

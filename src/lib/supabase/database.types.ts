@@ -103,14 +103,28 @@ isOneToOne: false
                   ]
                 },"customer_accounts": {
                   Row: {
-                    "accepted_terms_at": string | null,"created_at": string,"full_name": string | null,"id": string,"phone": string | null,"updated_at": string
+                    "accepted_terms_at": string | null,"created_at": string,"deactivated_at": string | null,"deactivated_by": string | null,"deactivation_reason": string | null,"full_name": string | null,"id": string,"phone": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "accepted_terms_at"?: string | null,"created_at"?: string,"full_name"?: string | null,"id": string,"phone"?: string | null,"updated_at"?: string
+                    "accepted_terms_at"?: string | null,"created_at"?: string,"deactivated_at"?: string | null,"deactivated_by"?: string | null,"deactivation_reason"?: string | null,"full_name"?: string | null,"id": string,"phone"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "accepted_terms_at"?: string | null,"created_at"?: string,"full_name"?: string | null,"id"?: string,"phone"?: string | null,"updated_at"?: string
+                    "accepted_terms_at"?: string | null,"created_at"?: string,"deactivated_at"?: string | null,"deactivated_by"?: string | null,"deactivation_reason"?: string | null,"full_name"?: string | null,"id"?: string,"phone"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"customer_carts": {
+                  Row: {
+                    "item_count": number,"items": NonNullable<Json>,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "item_count"?: number,"items"?: NonNullable<Json>,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "item_count"?: number,"items"?: NonNullable<Json>,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     
@@ -565,7 +579,12 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "admin_adjust_stock":
+            "admin_activity_log":
+{ Args: { "p_before_id"?: number,"p_entity_type"?: string,"p_limit"?: number,"p_search"?: string }; Returns: {
+              "action": string,"actor_id": string,"actor_name": string,"actor_role": string,"after_data": Json,"before_data": Json,"created_at": string,"entity_id": string,"entity_label": string,"entity_type": string,"id": number,"metadata": Json
+            }[]
+                           },
+"admin_adjust_stock":
 { Args: { "p_change": number,"p_note"?: string,"p_product_id": string,"p_reason": Database["public"]['Enums']["inventory_reason"] }; Returns: number
                            },
 "admin_assign_order":
@@ -576,11 +595,19 @@ isOneToOne: false
                            },
 "admin_customer_accounts":
 { Args: { "p_limit"?: number,"p_search"?: string,"p_user_id"?: string }; Returns: {
-              "created_at": string,"email": string,"email_confirmed_at": string,"full_name": string,"id": string,"is_staff": boolean,"last_order_at": string,"last_sign_in_at": string,"order_count": number,"phone": string
+              "created_at": string,"deactivated_at": string,"deactivated_by_name": string,"deactivation_reason": string,"email": string,"email_confirmed_at": string,"full_name": string,"id": string,"is_staff": boolean,"last_order_at": string,"last_sign_in_at": string,"order_count": number,"phone": string
+            }[]
+                           },
+"admin_customer_activity":
+{ Args: { "p_limit"?: number,"p_user_id": string }; Returns: {
+              "action": string,"actor_name": string,"at": string,"details": Json,"kind": string,"reference": string
             }[]
                            },
 "admin_dashboard_stats":
 { Args: { "p_days"?: number }; Returns: Json
+                           },
+"admin_log_customer_action":
+{ Args: { "p_action": string,"p_metadata"?: Json,"p_user_id": string }; Returns: undefined
                            },
 "admin_mark_printing_files_deleted":
 { Args: { "p_job_id": string }; Returns: number
@@ -589,6 +616,9 @@ isOneToOne: false
 { Args: { "p_limit"?: number }; Returns: {
               "attempts": number,"created_at": string,"event_type": string,"id": number,"last_error": string,"max_attempts": number,"next_attempt_at": string,"reference": string,"sent_at": string,"status": Database["public"]['Enums']["notification_status"]
             }[]
+                           },
+"admin_prepare_customer_delete":
+{ Args: { "p_user_id": string }; Returns: Json
                            },
 "admin_queue_test_notification":
 { Args: Record<PropertyKey, never>; Returns: undefined
@@ -602,8 +632,16 @@ isOneToOne: false
 "admin_review_payment":
 { Args: { "p_decision": string,"p_note"?: string,"p_submission_id": string }; Returns: undefined
                            },
+"admin_set_customer_active":
+{ Args: { "p_active": boolean,"p_reason"?: string,"p_user_id": string }; Returns: undefined
+                           },
 "admin_set_staff_role":
 { Args: { "p_is_active": boolean,"p_role_key": string,"p_user_id": string }; Returns: undefined
+                           },
+"admin_stalled_checkouts":
+{ Args: { "p_hours"?: number }; Returns: {
+              "amount_etb": number,"email": string,"entity_id": string,"full_name": string,"item_count": number,"items": Json,"kind": string,"phone": string,"reference": string,"since": string,"status": string,"user_id": string
+            }[]
                            },
 "admin_update_order_status":
 { Args: { "p_note"?: string,"p_order_id": string,"p_status": Database["public"]['Enums']["order_status"] }; Returns: undefined

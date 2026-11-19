@@ -55,9 +55,18 @@ export async function signInCustomer(_prev: AccountState, fd: FormData): Promise
     return { email: addr, error: "rateLimited" };
   }
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.signInWithPassword({ email: addr, password: pw });
+  const { data: signedIn, error } = await supabase.auth.signInWithPassword({ email: addr, password: pw });
+  if (!error && signedIn.user) {
+    // Belt and braces: the Supabase ban normally refuses the sign-in already.
+    const { data: account } = await supabase.from("customer_accounts").select("deactivated_at").eq("id", signedIn.user.id).maybeSingle();
+    if (account?.deactivated_at) {
+      await supabase.auth.signOut({ scope: "local" });
+      return { email: addr, error: "deactivated" };
+    }
+  }
   if (error) {
     console.warn(`[customer-login] failed: ${error.code ?? "unknown"} (status ${error.status ?? "?"})`);
+    if (error.code === "user_banned") return { email: addr, error: "deactivated" };
     return { email: addr, error: /not confirmed/i.test(error.message) ? "notConfirmed" : "invalidLogin" };
   }
   redirect(safeNext(fd.get("next")));

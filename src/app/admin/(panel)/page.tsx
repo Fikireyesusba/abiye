@@ -30,13 +30,15 @@ const etb = (n: number) => formatETB(toSantim(n));
 export default async function DashboardPage({ searchParams }: PageProps<"/admin">) {
   const ctx = await requirePermission("dashboard.view");
   const supabase = await createSupabaseServerClient();
-  const [{ data: raw, error }, { data: recent }] = await Promise.all([
+  const canFollowUp = ctx.permissions.has("customers.view");
+  const [{ data: raw, error }, { data: recent }, { data: stalled }] = await Promise.all([
     supabase.rpc("admin_dashboard_stats", { p_days: 14 }),
     supabase
       .from("orders")
       .select("id, order_number, customer_name, total_etb, status, payment_status, created_at")
       .order("created_at", { ascending: false })
       .limit(8),
+    canFollowUp ? supabase.rpc("admin_stalled_checkouts", { p_hours: 2 }) : Promise.resolve({ data: null }),
   ]);
   if (error || !raw) throw new Error("Could not load dashboard");
   const s = raw as unknown as Stats;
@@ -64,6 +66,10 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
             tone={(s.out_of_stock ?? 0) > 0 ? "danger" : (s.low_stock ?? 0) > 0 ? "warning" : undefined} />
         )}
         {s.printing_open !== null && <StatCard label="Open printing jobs" value={s.printing_open} />}
+        {stalled && (
+          <StatCard label="Stalled checkouts (2h+)" value={stalled.length} href="/admin/follow-up" hint="Not paid or basket left"
+            tone={stalled.length > 0 ? "warning" : undefined} />
+        )}
       </div>
 
       <div className="grid items-start gap-6 xl:grid-cols-[1.4fr_1fr] [&>*]:min-w-0">

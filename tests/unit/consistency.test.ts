@@ -17,8 +17,9 @@ const keysOf = (o: object, prefix = ""): string[] =>
 
 describe("TypeScript ↔ SQL consistency", () => {
   it("permission list matches public.admin_permissions", () => {
-    const block = sql.split("insert into public.admin_permissions")[1].split(";")[0];
-    const dbPerms = [...block.matchAll(/\('([a-z_]+\.[a-z_]+)'/g)].map((m) => m[1]).sort();
+    // Every "insert into public.admin_permissions" across all migrations.
+    const blocks = sql.split("insert into public.admin_permissions").slice(1).map((b) => b.split(";")[0]);
+    const dbPerms = blocks.flatMap((b) => [...b.matchAll(/\('([a-z_]+\.[a-z_]+)'/g)].map((m) => m[1])).sort();
     expect([...PERMISSIONS].sort()).toEqual(dbPerms);
   });
 

@@ -185,7 +185,10 @@
     "upload_invalid_type": "Please upload a JPG, PNG or PDF file.",
     "upload_failed": "The upload failed. Please check your connection and try again.",
     "login_required": "Please sign in to your account to place an order.",
-    "terms_required": "Please accept the terms and conditions."
+    "terms_required": "Please accept the terms and conditions.",
+    "account_deactivated": "This account has been deactivated. Please contact us for help.",
+    "cannot_manage_staff": "Staff accounts are managed under Staff.",
+    "has_orders": "This account has orders, so it cannot be deleted. Deactivate it instead."
   },
   "header": {
     "menu": "Menu",
@@ -447,6 +450,7 @@
       "rateLimited": "Too many attempts. Please wait a while and try again.",
       "invalidLogin": "Incorrect email or password.",
       "notConfirmed": "Please confirm your email first — check your inbox (and spam folder).",
+      "deactivated": "This account has been deactivated. Please contact us if you think this is a mistake.",
       "phone": "Please enter a valid Ethiopian mobile number.",
       "linkExpired": "Your reset link has expired. Please request a new one.",
       "generic": "Something went wrong. Please try again.",

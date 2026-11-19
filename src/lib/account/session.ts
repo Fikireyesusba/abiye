@@ -14,6 +14,10 @@ export const getCustomerUser = cache(async (): Promise<CustomerUser | null> => {
   const { data, error } = await supabase.auth.getClaims();
   const sub = data?.claims?.sub;
   if (error || typeof sub !== "string") return null;
+  // A deactivated account keeps a valid JWT until it expires (the Supabase ban
+  // only stops new sign-ins/refreshes), so check the account on every request.
+  const { data: account } = await supabase.from("customer_accounts").select("deactivated_at").eq("id", sub).maybeSingle();
+  if (account?.deactivated_at) return null;
   const emailClaim = data?.claims?.email;
   return { id: sub, email: typeof emailClaim === "string" ? emailClaim : "" };
 });
