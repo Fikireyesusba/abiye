@@ -12,7 +12,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
-    "db:types": "npx supabase gen types typescript --schema public > /tmp/db-types.ts && test -s /tmp/db-types.ts && grep -q 'public:' /tmp/db-types.ts && mv /tmp/db-types.ts src/lib/supabase/database.types.ts || (echo 'db:types failed: is local Supabase running?' && exit 1)",
+    "db:types": "npx supabase gen types typescript --schema public > /tmp/db-types.ts && test -s /tmp/db-types.ts && grep -q 'Tables' /tmp/db-types.ts && mv /tmp/db-types.ts src/lib/supabase/database.types.ts || (echo 'db:types failed: is local Supabase running?' && exit 1)",
     "dev:sample-images": "node --env-file=.env.local scripts/dev-sample-images.mjs",
     "test:smoke": "node --env-file=.env.local tests/e2e/storefront.smoke.cjs",
     "test:smoke:checkout": "node --env-file=.env.local tests/e2e/checkout.smoke.cjs",
@@ -26,6 +26,7 @@
     "test:smoke:phase7": "node --env-file=.env.local tests/e2e/phase7.smoke.cjs",
     "test:smoke:personal-promo": "node --env-file=.env.local tests/e2e/personal-promo.smoke.cjs",
     "test:smoke:mfa": "node --env-file=.env.local tests/e2e/mfa.smoke.cjs",
+    "test:smoke:emails": "node --env-file=.env.local tests/e2e/emails.smoke.cjs",
     "db:bundle": "node scripts/build-production-sql.mjs",
     "test:db:bundle": "BUNDLE=1 bash scripts/db-test.sh"
   },

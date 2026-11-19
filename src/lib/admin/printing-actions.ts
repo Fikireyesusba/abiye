@@ -1,5 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { dispatchSoon } from "@/lib/telegram/dispatch";
 import { z } from "zod";
 import { requirePermission } from "@/lib/auth/guards";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -30,6 +31,7 @@ export async function quotePrintingJob(_prev: ActionResult | null, fd: FormData)
     if (error.message === "no_price_rule") return fail("No active price for these options — enter a total price manually.");
     return dbError(error);
   }
+  dispatchSoon(); // customer email: price ready
   revalidatePath(`/admin/printing/${jobId}`);
   revalidatePath("/admin/printing");
   return ok(`Quote saved: ${(data as { total_etb: number }).total_etb} ETB. The customer can now pay from their job page.`);
@@ -49,6 +51,7 @@ export async function updatePrintingStatus(_prev: ActionResult | null, fd: FormD
     if (error.message === "cancel_order_instead") return fail("This job belongs to an active order — cancel the order instead.");
     return dbError(error);
   }
+  dispatchSoon(); // customer email: ready
   revalidatePath(`/admin/printing/${parsed.data.jobId}`);
   revalidatePath("/admin/printing");
   return ok("Job status updated.");

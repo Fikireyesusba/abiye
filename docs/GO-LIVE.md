@@ -10,6 +10,7 @@ Paste each file's full contents (GitHub → file → **Raw** → copy) into a ne
 2. `supabase/migrations/20261120000019_finalization.sql`
 3. `supabase/migrations/20261120000020_personal_promotions.sql`
 4. `supabase/migrations/20261120000021_admin_mfa.sql`
+5. `supabase/migrations/20261120000022_customer_emails.sql`
 
 Each should say "Success. No rows returned". If Supabase warns about RLS, choose "Run without RLS" (the files enable it themselves).
 
@@ -28,6 +29,7 @@ Each should say "Success. No rows returned". If Supabase warns about RLS, choose
 - [ ] **Contact & social**: phone, email, WhatsApp, Telegram, Instagram, TikTok, Facebook, map link, opening hours.
 - [ ] **Printing**: prices per page (B/W / colour, A4 / A3, single / double), service charge, max file size, file retention days.
 - [ ] **Terms & privacy**: read both (English and Amharic), edit to match how you really work, then tick **Approved** (removes the "draft" notice).
+- [ ] **Customer emails**: `RESEND_API_KEY` and `EMAIL_FROM` set in Vercel (docs/DEPLOYMENT.md §9); place a test order and check the email arrives.
 - [ ] **Telegram** (Admin → Notifications): bot token + chat set in Vercel, "Send test message" arrives (docs/DEPLOYMENT.md §4).
 
 ## 4. Catalog

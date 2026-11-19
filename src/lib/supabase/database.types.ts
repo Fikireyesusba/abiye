@@ -199,14 +199,14 @@ isOneToOne: false
                   ]
                 },"notifications_outbox": {
                   Row: {
-                    "attachment_bucket": string | null,"attachment_path": string | null,"attempts": number,"channel": string,"created_at": string,"dedupe_key": string,"event_type": string,"id": number,"last_error": string | null,"locked_until": string | null,"max_attempts": number,"next_attempt_at": string,"payload": NonNullable<Json>,"sent_at": string | null,"status": Database["public"]['Enums']["notification_status"]
+                    "attachment_bucket": string | null,"attachment_path": string | null,"attempts": number,"channel": string,"created_at": string,"dedupe_key": string,"event_type": string,"id": number,"last_error": string | null,"locked_until": string | null,"max_attempts": number,"next_attempt_at": string,"payload": NonNullable<Json>,"recipient_user_id": string | null,"sent_at": string | null,"status": Database["public"]['Enums']["notification_status"]
                   }
                   ComputedFields: never
                   Insert: {
-                    "attachment_bucket"?: string | null,"attachment_path"?: string | null,"attempts"?: number,"channel"?: string,"created_at"?: string,"dedupe_key": string,"event_type": string,"id"?: never,"last_error"?: string | null,"locked_until"?: string | null,"max_attempts"?: number,"next_attempt_at"?: string,"payload": NonNullable<Json>,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["notification_status"]
+                    "attachment_bucket"?: string | null,"attachment_path"?: string | null,"attempts"?: number,"channel"?: string,"created_at"?: string,"dedupe_key": string,"event_type": string,"id"?: never,"last_error"?: string | null,"locked_until"?: string | null,"max_attempts"?: number,"next_attempt_at"?: string,"payload": NonNullable<Json>,"recipient_user_id"?: string | null,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["notification_status"]
                   }
                   Update: {
-                    "attachment_bucket"?: string | null,"attachment_path"?: string | null,"attempts"?: number,"channel"?: string,"created_at"?: string,"dedupe_key"?: string,"event_type"?: string,"id"?: never,"last_error"?: string | null,"locked_until"?: string | null,"max_attempts"?: number,"next_attempt_at"?: string,"payload"?: NonNullable<Json>,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["notification_status"]
+                    "attachment_bucket"?: string | null,"attachment_path"?: string | null,"attempts"?: number,"channel"?: string,"created_at"?: string,"dedupe_key"?: string,"event_type"?: string,"id"?: never,"last_error"?: string | null,"locked_until"?: string | null,"max_attempts"?: number,"next_attempt_at"?: string,"payload"?: NonNullable<Json>,"recipient_user_id"?: string | null,"sent_at"?: string | null,"status"?: Database["public"]['Enums']["notification_status"]
                   }
                   Relationships: [
                     
@@ -704,6 +704,32 @@ isOneToOne: false
 "max_attempts": number,
 "next_attempt_at": string,
 "payload": NonNullable<Json>,
+"recipient_user_id": string | null,
+"sent_at": string | null,
+"status": Database["public"]['Enums']["notification_status"]
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "notifications_outbox"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
+"claim_outbox":
+{ Args: { "p_channel": string,"p_limit"?: number }; Returns: {
+              "attachment_bucket": string | null,
+"attachment_path": string | null,
+"attempts": number,
+"channel": string,
+"created_at": string,
+"dedupe_key": string,
+"event_type": string,
+"id": number,
+"last_error": string | null,
+"locked_until": string | null,
+"max_attempts": number,
+"next_attempt_at": string,
+"payload": NonNullable<Json>,
+"recipient_user_id": string | null,
 "sent_at": string | null,
 "status": Database["public"]['Enums']["notification_status"]
             }[]

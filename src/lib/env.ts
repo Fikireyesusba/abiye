@@ -24,6 +24,17 @@ const serverEnvSchema = z.object({
     .url()
     .refine((u) => u.startsWith("https://") || /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(u), "Must be https (or http on localhost)")
     .optional(),
+  // Customer emails (Resend API). Optional: without them, customer emails are not sent.
+  RESEND_API_KEY: z.string().regex(/^re_[A-Za-z0-9_]{10,}$/, "Invalid Resend API key format").optional(),
+  EMAIL_FROM: z
+    .string()
+    .regex(/^[^<>\r\n]{1,80} <[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+>$|^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/, "EMAIL_FROM must look like: Abiye <orders@yourdomain.com>")
+    .optional(),
+  // Only for tests (a local mock of the Resend API).
+  EMAIL_API_BASE: z
+    .url()
+    .refine((u) => u.startsWith("https://") || /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(u), "Must be https (or http on localhost)")
+    .optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
@@ -43,6 +54,9 @@ export function getServerEnv(): ServerEnv {
     TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || undefined,
     TELEGRAM_ADMIN_CHAT_ID: process.env.TELEGRAM_ADMIN_CHAT_ID || undefined,
     TELEGRAM_API_BASE: process.env.TELEGRAM_API_BASE || undefined,
+    RESEND_API_KEY: process.env.RESEND_API_KEY || undefined,
+    EMAIL_FROM: process.env.EMAIL_FROM || undefined,
+    EMAIL_API_BASE: process.env.EMAIL_API_BASE || undefined,
   });
   if (!parsed.success) {
     // Report variable NAMES only — never values.

@@ -35,7 +35,7 @@ export async function updateOrderStatus(_prev: ActionResult | null, fd: FormData
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc("admin_update_order_status", { p_order_id: orderId, p_status: status, p_note: n });
   if (error) return dbError(error);
-  if (status === "cancelled") dispatchSoon();
+  dispatchSoon(); // staff alert on cancellation + customer email for status changes
   revalidatePath(`/admin/orders/${orderId}`);
   revalidatePath("/admin/orders");
   return ok("Order status updated.");

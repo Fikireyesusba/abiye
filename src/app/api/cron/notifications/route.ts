@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { isAuthorizedCron } from "@/lib/security/cron";
+import { dispatchCustomerEmails } from "@/lib/email/dispatch";
 import { dispatchNotifications } from "@/lib/telegram/dispatch";
 
 export const maxDuration = 60;
 
 /**
- * Safety net for Telegram alerts: retries failed sends and delivers anything
+ * Safety net for Telegram alerts and customer emails: retries failed sends and delivers anything
  * queued while Telegram was unreachable. (New events are also sent immediately
  * after the request that created them.)
  */
@@ -21,5 +22,13 @@ export async function GET(request: Request) {
     failed += r.failed;
     if (!r.configured || r.sent + r.failed < 20) break;
   }
-  return NextResponse.json({ configured, sent, failed });
+  const emails = { configured: true, sent: 0, failed: 0 };
+  for (let round = 0; round < 5; round++) {
+    const r = await dispatchCustomerEmails(20);
+    emails.configured = r.configured;
+    emails.sent += r.sent;
+    emails.failed += r.failed;
+    if (!r.configured || r.sent + r.failed < 20) break;
+  }
+  return NextResponse.json({ configured, sent, failed, emails });
 }

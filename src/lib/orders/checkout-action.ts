@@ -8,6 +8,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { checkoutSchema, promotionCodeSchema } from "@/lib/validation/checkout";
 import { z } from "zod";
 import { rememberOrderAccess } from "./access";
+import { dispatchSoon } from "@/lib/telegram/dispatch";
 
 export type PlaceOrderResult =
   | { ok: true; orderId: string; orderNumber: string }
@@ -150,5 +151,6 @@ export async function placeOrder(input: unknown): Promise<PlaceOrderResult> {
   await supabase.from("customer_accounts").update({ full_name: v.fullName, phone: v.phone }).eq("id", user.id);
   // On an idempotent replay the DB rotated the hashes to these new tokens, so they are valid either way.
   await rememberOrderAccess(result.order_id, accessToken, trackingCode);
+  dispatchSoon(); // customer email: order placed, how to pay
   return { ok: true, orderId: result.order_id, orderNumber: result.order_number };
 }

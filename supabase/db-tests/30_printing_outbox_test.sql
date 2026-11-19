@@ -107,7 +107,7 @@ select pg_temp.ok((select array_agg(job_id::text) from public.printing_files_due
 set role service_role;
 create temp table t_claim as select * from public.claim_notifications(50);
 grant select on t_claim to authenticated;
-select pg_temp.ok((select count(*) from t_claim) = (select count(*) from public.notifications_outbox),
+select pg_temp.ok((select count(*) from t_claim) = (select count(*) from public.notifications_outbox where channel = 'telegram'),
   'worker claims all due notifications');
 select pg_temp.ok((select count(*) from public.claim_notifications(50)) = 0, 'claimed rows are locked from other workers');
 select public.complete_notification((select min(id) from t_claim), true);
