@@ -255,6 +255,10 @@ otp_expiry = 3600
 subject = "Confirm your Abiye account / መለያዎን ያረጋግጡ"
 content_path = "./supabase/templates/confirm.html"
 
+[auth.email.template.invite]
+subject = "You've been invited to Abiye / ወደ አብዬ ተጋብዘዋል"
+content_path = "./supabase/templates/invite.html"
+
 [auth.email.template.recovery]
 subject = "Reset your Abiye password / የይለፍ ቃልዎን ይቀይሩ"
 content_path = "./supabase/templates/recovery.html"

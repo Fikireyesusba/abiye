@@ -16,5 +16,10 @@ fi
 npx supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,realtime >/dev/null
 
 KEY="${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-$(grep -E '^NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=' .env.local 2>/dev/null | cut -d= -f2)}"
-code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:54321/rest/v1/products?select=id&limit=1" -H "apikey: ${KEY}")
+# The API can answer 503 for a few seconds after (re)starting: retry for up to ~90 s.
+for _ in $(seq 1 30); do
+  code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:54321/rest/v1/products?select=id&limit=1" -H "apikey: ${KEY}")
+  [ "$code" = "200" ] && break
+  sleep 3
+done
 [ "$code" = "200" ] && echo "Local Supabase is ready." || { echo "Supabase API check failed (HTTP $code)"; exit 1; }

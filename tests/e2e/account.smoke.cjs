@@ -165,6 +165,34 @@ async function emailLink(to, subjectPart) {
   await r2.waitForSelector("text=a reset link is on its way");
   check(true, "unknown email gets the same answer (no account enumeration)");
 
+  // ---- 5b. Invitation (Supabase dashboard "Send invitation") → choose a password
+  const invitee = `invitee-${RUN}@example.com`;
+  const inv = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/invite`, {
+    method: "POST",
+    headers: { apikey: process.env.SUPABASE_SECRET_KEY, authorization: `Bearer ${process.env.SUPABASE_SECRET_KEY}`, "content-type": "application/json" },
+    body: JSON.stringify({ email: invitee }),
+  });
+  check(inv.ok, `invitation sent (${inv.status})`);
+  const invMsg = await (async () => {
+    for (let i = 0; i < 40; i++) {
+      const found = await (await fetch(`${MAIL}/api/v1/search?query=${encodeURIComponent(`to:"${invitee}"`)}`)).json();
+      if (found.messages?.length) return (await fetch(`${MAIL}/api/v1/message/${found.messages[0].ID}`)).json();
+      await sleep(500);
+    }
+  })();
+  check(invMsg?.HTML.includes("ወደ አብዬ ተጋብዘዋል") && invMsg.HTML.includes("You've been invited to Abiye"), "invitation email is bilingual (English + Amharic)");
+  const invLink = invMsg.HTML.match(/href="([^"]*\/auth\/confirm[^"]*type=invite[^"]*)"/)?.[1]?.replace(/&amp;/g, "&");
+  const ip = await (await b.newContext()).newPage();
+  await ip.goto(invLink);
+  await ip.waitForURL(/\/account\/reset-password/);
+  await ip.fill("#password", "Invited2026pass");
+  await ip.fill("#confirm", "Invited2026pass");
+  await ip.click("form button[type=submit]");
+  await ip.waitForURL(/\/account\?passwordChanged=1/);
+  check(true, "invitation link lets the person choose a password and signs them in");
+  check(sql(`select count(*) from public.profiles p join auth.users u on u.id = p.id where u.email = '${invitee}'`) === "0",
+    "an invitation does not grant admin access");
+
   // ---- 6. Admin manages contact, social, terms → visible to customers
   const a = await (await b.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
   await a.goto(`${B}/admin/login`);

@@ -85,6 +85,7 @@ Customers must confirm their email before they can order, and "forgot password" 
 4. **Authentication → Emails → Templates**:
    - *Confirm signup*: subject “Confirm your Abiye account / መለያዎን ያረጋግጡ”, body = contents of `supabase/templates/confirm.html`.
    - *Reset password*: subject “Reset your Abiye password / የይለፍ ቃልዎን ይቀይሩ”, body = contents of `supabase/templates/recovery.html`.
+   - *Invite user*: subject “You've been invited to Abiye / ወደ አብዬ ተጋብዘዋል”, body = contents of `supabase/templates/invite.html` (used when you invite someone from Supabase → Authentication → Users; they choose a password and get a normal customer account — never admin access).
 
    These links (`/auth/confirm?token_hash=…`) work even when the customer opens the email on a different phone or computer.
 5. Test: create an account on the live site with your own email, confirm it, place a small test order, then use "Forgot password".

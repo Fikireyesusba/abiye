@@ -3,10 +3,12 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import { safeNext } from "@/lib/account/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-const TYPES: EmailOtpType[] = ["email", "signup", "recovery", "email_change"];
+const TYPES: EmailOtpType[] = ["email", "signup", "recovery", "invite", "email_change"];
+// Invited users have no password yet; like a reset, they choose one first.
+const SET_PASSWORD: EmailOtpType[] = ["recovery", "invite"];
 
 /**
- * Email links (confirm sign-up, reset password) land here. token_hash links
+ * Email links (confirm sign-up, reset password, invitation) land here. token_hash links
  * work on any device; the session cookie is set by verifyOtp.
  */
 export async function GET(request: NextRequest) {
@@ -20,6 +22,6 @@ export async function GET(request: NextRequest) {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
   if (error) return fail;
-  const dest = type === "recovery" ? "/account/reset-password" : next;
-  return NextResponse.redirect(new URL(type === "recovery" ? dest : `${dest}${dest.includes("?") ? "&" : "?"}welcome=1`, request.url));
+  if (SET_PASSWORD.includes(type)) return NextResponse.redirect(new URL("/account/reset-password", request.url));
+  return NextResponse.redirect(new URL(`${next}${next.includes("?") ? "&" : "?"}welcome=1`, request.url));
 }
