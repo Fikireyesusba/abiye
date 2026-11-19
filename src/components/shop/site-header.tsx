@@ -54,7 +54,7 @@ export async function SiteHeader() {
       </a>
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-4 sm:gap-4">
         <MobileNav links={[{ href: "/", label: t("nav.home") }, ...links]} secondary={secondary} title={name} />
-        <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold tracking-tight">
+        <Link href="/" aria-label={name} className="flex shrink-0 items-center gap-2 font-semibold tracking-tight">
           {logo ? (
             <Image src={logo} alt={name} width={120} height={36} className="h-9 w-auto" priority />
           ) : (

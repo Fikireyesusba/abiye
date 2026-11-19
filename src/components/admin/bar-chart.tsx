@@ -36,7 +36,7 @@ export function BarChart({ data, title, height = 180 }: { data: BarDatum[]; titl
             <span className="absolute -top-2.5 left-0 bg-card pr-1 text-[10px] text-muted-foreground tabular-nums">{t.f ? t.v.toLocaleString("en-US") : ""}</span>
           </div>
         ))}
-        <div className="absolute inset-0 flex items-end gap-[2px] pl-10" aria-hidden>
+        <div className="absolute inset-0 flex items-end gap-[2px] pl-10">
           {data.map((d, i) => (
             <button
               key={d.full}

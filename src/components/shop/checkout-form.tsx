@@ -322,8 +322,7 @@ export function CheckoutForm({
                 <dd className="tabular-nums">−{formatETB(santim(Math.min(toSantim(promo.discountEtb), view.totals.total - 100)), locale)}</dd>
               </div>
             )}
-            <Separator />
-            <div className="flex justify-between text-base font-semibold">
+            <div className="flex justify-between border-t pt-3 text-base font-semibold">
               <dt>{t("cart.total")}</dt>
               <dd className="tabular-nums">
                 {formatETB(promo ? santim(Math.max(100, view.totals.total - toSantim(promo.discountEtb))) : view.totals.total, locale)}

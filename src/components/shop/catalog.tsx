@@ -128,7 +128,10 @@ export async function Catalog({
           </Button>
         </div>
       ) : (
-        <ProductGrid products={products} priorityCount={4} />
+        <section aria-labelledby="catalog-results">
+          <h2 id="catalog-results" className="sr-only">{t("results", { count: total })}</h2>
+          <ProductGrid products={products} priorityCount={4} />
+        </section>
       )}
 
       {pageCount > 1 && (

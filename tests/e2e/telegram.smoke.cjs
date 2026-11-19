@@ -68,6 +68,7 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
   const app = spawn("npx", ["next", "start", "-p", String(PORT)], {
     env: { ...process.env, TELEGRAM_BOT_TOKEN: TOKEN, TELEGRAM_ADMIN_CHAT_ID: CHAT, TELEGRAM_API_BASE: `http://127.0.0.1:${MOCK_PORT}`, APP_URL: B },
     stdio: ["ignore", "pipe", "pipe"],
+    detached: true, // own process group, so the whole tree (npx -> next-server) can be stopped
   });
   app.stdout.on("data", (d) => logs.push(d.toString()));
   app.stderr.on("data", (d) => logs.push(d.toString()));
@@ -192,7 +193,7 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
     check(!logs.join("").includes(TOKEN.split(":")[1]), "bot token never written to server logs");
   } finally {
     await b.close();
-    app.kill("SIGTERM");
+    try { process.kill(-app.pid, "SIGTERM"); } catch { app.kill("SIGTERM"); }
     mock.close();
   }
   const filtered = results.filter((r) => !r.endsWith("- "));

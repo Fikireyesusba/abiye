@@ -31,7 +31,8 @@ export function Panel({ title, children, className, actions }: { title?: string;
 export function Table({ head, children, empty }: { head: React.ReactNode[]; children: React.ReactNode; empty?: string }) {
   const rows = Array.isArray(children) ? children.filter(Boolean) : children ? [children] : [];
   return (
-    <div className="overflow-x-auto rounded-xl border bg-card">
+    // Focusable so keyboard users can scroll wide tables on small screens.
+    <div className="overflow-x-auto rounded-xl border bg-card focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none" tabIndex={0}>
       <table className="w-full min-w-[640px] text-sm">
         <thead className="bg-muted/60 text-left text-xs tracking-wide text-muted-foreground uppercase">
           <tr>{head.map((h, i) => <th key={i} scope="col" className="px-4 py-2.5 font-medium">{h}</th>)}</tr>
@@ -65,11 +66,24 @@ export function StatCard({ label, value, hint, href, tone }: { label: string; va
 export const fieldClass =
   "h-10 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50";
 
+/**
+ * Labelled form control. With `htmlFor` the label points at that id; without
+ * it, the label wraps the control, so every input still has an accessible name.
+ */
 export function Field({ label, htmlFor, hint, children, className }: { label: string; htmlFor?: string; hint?: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={cn("space-y-1.5", className)}>
-      <label htmlFor={htmlFor} className="text-sm font-medium">{label}</label>
-      {children}
+      {htmlFor ? (
+        <>
+          <label htmlFor={htmlFor} className="text-sm font-medium">{label}</label>
+          {children}
+        </>
+      ) : (
+        <label className="block space-y-1.5">
+          <span className="block text-sm font-medium">{label}</span>
+          {children}
+        </label>
+      )}
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );

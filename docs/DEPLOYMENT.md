@@ -140,4 +140,12 @@ It refuses to run again once an active Super Admin exists. (Developers can inste
 3. Set `APP_URL=https://yourshop.com`.
 4. **Domains**: add `yourshop.com` and `www.yourshop.com`, follow the DNS instructions (A/CNAME at your registrar), redirect `www` → apex.
 5. In Supabase **Auth → URL Configuration**: Site URL `https://yourshop.com`, redirect URL `https://yourshop.com/admin/**`.
-6. Cron: `vercel.json` schedules `/api/cron/expire-orders`, `/api/cron/printing-retention` and `/api/cron/notifications` daily (Hobby plan limit). Vercel sends `Authorization: Bearer $CRON_SECRET` automatically once `CRON_SECRET` is set. On the Pro plan, change the schedule to hourly (e.g. `17 * * * *`).
+6. Cron: `vercel.json` schedules `/api/cron/expire-orders`, `/api/cron/printing-retention` (storage maintenance: expired printing files + abandoned uploads older than a day) and `/api/cron/notifications` daily (Hobby plan limit). Vercel sends `Authorization: Bearer $CRON_SECRET` automatically once `CRON_SECRET` is set. On the Pro plan, change the schedule to hourly (e.g. `17 * * * *`).
+
+## 6. Database updates after launch (browser only)
+
+`production-setup.sql` is run once. Each later change is a single new file in `supabase/migrations/` — paste it into the Supabase SQL Editor and Run, in filename order, once. Already published after the first setup: `…0017_admin_customer_accounts.sql`, `…0018_customer_account_management.sql`, `…0019_finalization.sql`. PROGRESS.md records which ones production has.
+
+## 7. Security headers
+
+Every page carries a nonce-based Content-Security-Policy (`src/proxy.ts`, `src/lib/security/csp.ts`): scripts only from this site with the per-request nonce, network/images only to this site and the Supabase project, no framing. If you ever add a third-party script, widget or analytics service, its domain must be added there or the browser will block it. See docs/GO-LIVE.md for the launch checklist.

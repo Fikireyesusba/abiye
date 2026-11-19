@@ -60,7 +60,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
                 {pending} payment{pending === 1 ? "" : "s"} to verify
               </Link>
             )}
-            <Link href="/admin/account" className="flex items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-secondary">
+            <Link href="/admin/account" aria-label={`My account: ${ctx.fullName}`} className="flex items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-secondary">
               <UserCircle className="size-5 text-muted-foreground" aria-hidden />
               <span className="hidden text-right leading-tight sm:block">
                 <span className="block font-medium">{ctx.fullName}</span>

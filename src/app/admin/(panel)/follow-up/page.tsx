@@ -23,13 +23,13 @@ function Contact({ r }: { r: Row }) {
   const wa = r.phone ? `https://wa.me/${r.phone.replace(/^\+/, "")}` : null;
   return (
     <>
-      {r.user_id ? <Link href={`/admin/customers/${r.user_id}`} className="font-medium text-primary hover:underline">{r.full_name || r.email || "Customer"}</Link>
+      {r.user_id ? <Link href={`/admin/customers/${r.user_id}`} className="font-medium text-primary underline underline-offset-2">{r.full_name || r.email || "Customer"}</Link>
         : <span className="font-medium">{r.full_name || "Guest"}</span>}
       {r.email && <span className="block text-xs break-all text-muted-foreground">{r.email}</span>}
       {r.phone && (
         <span className="block text-xs">
-          <a href={`tel:${r.phone}`} className="text-primary">{formatEthiopianPhone(r.phone)}</a>
-          {wa && <> · <a href={wa} target="_blank" rel="noopener noreferrer" className="text-primary">WhatsApp</a></>}
+          <a href={`tel:${r.phone}`} className="text-primary underline underline-offset-2">{formatEthiopianPhone(r.phone)}</a>
+          {wa && <> · <a href={wa} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">WhatsApp</a></>}
         </span>
       )}
     </>
@@ -71,7 +71,7 @@ export default async function FollowUpPage({ searchParams }: PageProps<"/admin/f
           {orders.map((r) => (
             <tr key={`o-${r.entity_id}`} className="align-top">
               <Td><Contact r={r} /></Td>
-              <Td>{canOpenOrders ? <Link href={`/admin/orders/${r.entity_id}`} className="text-primary hover:underline">{r.reference}</Link> : r.reference}
+              <Td>{canOpenOrders ? <Link href={`/admin/orders/${r.entity_id}`} className="text-primary underline underline-offset-2">{r.reference}</Link> : r.reference}
                 <span className="block text-xs text-muted-foreground">{r.item_count} item(s)</span></Td>
               <Td className="tabular-nums">{money(r.amount_etb)}</Td>
               <Td>{r.status && <StatusBadge kind="order" status={r.status} />}</Td>
@@ -106,7 +106,7 @@ export default async function FollowUpPage({ searchParams }: PageProps<"/admin/f
           {printing.map((r) => (
             <tr key={`p-${r.entity_id}`} className="align-top">
               <Td><Contact r={r} /></Td>
-              <Td>{canOpenPrinting ? <Link href={`/admin/printing/${r.entity_id}`} className="text-primary hover:underline">{r.reference}</Link> : r.reference}</Td>
+              <Td>{canOpenPrinting ? <Link href={`/admin/printing/${r.entity_id}`} className="text-primary underline underline-offset-2">{r.reference}</Link> : r.reference}</Td>
               <Td className="tabular-nums">{money(r.amount_etb)}</Td>
               <Td className="tabular-nums">{waitingFor(r.since, now)}</Td>
             </tr>
