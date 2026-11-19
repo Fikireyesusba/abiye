@@ -115,6 +115,10 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - Local dev: sign-ups + email confirmation on, local mail catcher on :54324 (dev:up no longer excludes it).
 - **Production TODO for the owner**: configure SMTP + email templates + URL configuration in Supabase (docs/DEPLOYMENT.md §2b).
 
+## Red "waiting for action" badges (requested 2026-11-19) — verified
+
+No migration. Red count bubbles in the admin menu (`src/lib/admin/badges.ts`, `src/components/admin/admin-badges.tsx`), per role (RLS applies): **Payments** = receipts waiting for verification; **Orders** = paid orders waiting to be processed (staff: only assigned); **Printing** = jobs waiting for a quote or paid and waiting to print; **Notifications** = Telegram messages that failed permanently. Header shows a red "N payments to verify" link; on phones the menu button shows the total. Counts refresh every minute while the tab is visible, when the admin returns to the tab, and immediately after any admin action that reloads the page.
+
 ## Personal promo codes (requested 2026-11-19) — verified
 
 Migration **0020**. Verified with `npm run test:smoke:personal-promo` (12 browser checks), SQL `90_*`, all other suites re-run (0 failures).

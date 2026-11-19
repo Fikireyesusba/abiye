@@ -5,6 +5,7 @@ import {
   BarChart3, Bell, Boxes, Clock, History, Megaphone, CreditCard, FolderTree, LayoutDashboard, Menu, Package, Printer, Settings, ShoppingCart, UserCog, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CountBadge, badgeTotal, useAdminBadges } from "./admin-badges";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
@@ -29,11 +30,18 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
 export interface NavItem {
   href: string;
   label: string;
-  badge?: number;
 }
+
+const BADGE_LABEL: Record<string, string> = {
+  "/admin/payments": "payments waiting for verification",
+  "/admin/orders": "paid orders waiting to be processed",
+  "/admin/printing": "printing jobs waiting for a quote or printing",
+  "/admin/notifications": "failed Telegram notifications",
+};
 
 function Links({ items, onNavigate }: { items: NavItem[]; onNavigate?: boolean }) {
   const pathname = usePathname();
+  const badges = useAdminBadges();
   return (
     <ul className="space-y-1">
       {items.map((item) => {
@@ -50,9 +58,7 @@ function Links({ items, onNavigate }: { items: NavItem[]; onNavigate?: boolean }
           >
             <Icon className="size-4" />
             <span className="flex-1">{item.label}</span>
-            {!!item.badge && (
-              <span className="rounded-full bg-accent px-2 text-xs font-semibold text-accent-foreground tabular-nums">{item.badge}</span>
-            )}
+            <CountBadge count={badges[item.href as keyof typeof badges] ?? 0} label={`${badges[item.href as keyof typeof badges]} ${BADGE_LABEL[item.href] ?? "waiting"}`} />
           </Link>
         );
         return <li key={item.href}>{onNavigate ? <SheetClose asChild>{link}</SheetClose> : link}</li>;
@@ -78,11 +84,13 @@ export function AdminSidebar({ items }: { items: NavItem[] }) {
 }
 
 export function AdminMobileNav({ items }: { items: NavItem[] }) {
+  const total = badgeTotal(useAdminBadges());
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open admin menu">
+        <Button variant="ghost" size="icon" className="relative lg:hidden" aria-label={total ? `Open admin menu (${total} waiting for action)` : "Open admin menu"}>
           <Menu className="size-5" />
+          <CountBadge count={total} label={`${total} waiting for action`} className="absolute -top-1 -right-1 min-w-4 px-1 text-[10px] leading-4" />
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="bg-sidebar text-sidebar-foreground" closeLabel="Close menu">

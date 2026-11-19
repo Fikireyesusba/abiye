@@ -7,7 +7,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { signOut } from "@/lib/auth/actions";
 import { requireAdmin } from "@/lib/auth/guards";
 import { ADMIN_ROUTES } from "@/lib/auth/permissions";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAdminBadges } from "@/lib/admin/badges";
+import { AdminBadgesProvider, PendingPaymentsLink } from "@/components/admin/admin-badges";
 
 export const metadata: Metadata = {
   title: { default: "Admin", template: "%s · Abiye Admin" },
@@ -23,24 +24,12 @@ const ROLE_LABEL = { super_admin: "Super Admin", manager: "Manager", staff: "Sta
  */
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   const ctx = await requireAdmin();
-  const supabase = await createSupabaseServerClient();
-  const [pending, quotes] = await Promise.all([
-    ctx.permissions.has("payments.view")
-      ? supabase.from("payment_submissions").select("id", { count: "exact", head: true }).eq("status", "pending").then((r) => r.count ?? 0)
-      : 0,
-    ctx.permissions.has("printing.view")
-      ? supabase.from("printing_jobs").select("id", { count: "exact", head: true }).in("status", ["awaiting_quote", "printing"]).then((r) => r.count ?? 0)
-      : 0,
-  ]);
-
-  const items: NavItem[] = ADMIN_ROUTES.filter((r) => r.anyOf.some((p) => ctx.permissions.has(p))).map((r) => ({
-    href: r.href,
-    label: r.label,
-    badge: r.href === "/admin/payments" ? pending : r.href === "/admin/printing" ? quotes : undefined,
-  }));
+  const badges = await getAdminBadges(ctx);
+  const items: NavItem[] = ADMIN_ROUTES.filter((r) => r.anyOf.some((p) => ctx.permissions.has(p))).map((r) => ({ href: r.href, label: r.label }));
   const canSearch = ctx.permissions.has("orders.view_all") || ctx.permissions.has("orders.view_assigned");
 
   return (
+    <AdminBadgesProvider initial={badges}>
     <div className="flex min-h-screen bg-muted/30">
       <AdminSidebar items={items} />
       <div className="flex min-w-0 flex-1 flex-col">
@@ -55,11 +44,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
             </form>
           )}
           <div className="ml-auto flex items-center gap-2">
-            {pending > 0 && (
-              <Link href="/admin/payments" className="hidden rounded-full bg-accent px-3 py-1 text-xs font-semibold text-accent-foreground sm:inline">
-                {pending} payment{pending === 1 ? "" : "s"} to verify
-              </Link>
-            )}
+            <PendingPaymentsLink />
             <Link href="/admin/account" aria-label={`My account: ${ctx.fullName}`} className="flex items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-secondary">
               <UserCircle className="size-5 text-muted-foreground" aria-hidden />
               <span className="hidden text-right leading-tight sm:block">
@@ -78,5 +63,6 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
       </div>
       <Toaster />
     </div>
+    </AdminBadgesProvider>
   );
 }
