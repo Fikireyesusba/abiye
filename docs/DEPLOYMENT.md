@@ -89,6 +89,27 @@ Customers must confirm their email before they can order, and "forgot password" 
    These links (`/auth/confirm?token_hash=…`) work even when the customer opens the email on a different phone or computer.
 5. Test: create an account on the live site with your own email, confirm it, place a small test order, then use "Forgot password".
 
+### Resend (recommended) — exact settings
+
+1. Create an account at resend.com.
+2. **Domains → Add domain**: use your shop domain (e.g. `yourshop.com`). Resend shows a few DNS records (SPF/MX on a `send` subdomain and a DKIM `resend._domainkey` TXT record). Add them at your domain registrar or DNS provider (e.g. Cloudflare, Namecheap), then click **Verify**. It usually takes minutes, sometimes a few hours.
+3. **API Keys → Create API key**: permission *Sending access*, restricted to your domain. Copy it once. Do not commit it or paste it in chat.
+4. Supabase → **Authentication → Emails → SMTP Settings** → enable **Custom SMTP**:
+
+   | Field | Value |
+   |---|---|
+   | Sender email | `no-reply@yourshop.com` (must be on the verified domain) |
+   | Sender name | `Abiye` |
+   | Host | `smtp.resend.com` |
+   | Port | `465` (or `587`) |
+   | Username | `resend` |
+   | Password | the Resend API key |
+
+5. Supabase → **Authentication → Rate Limits**: raise "emails sent per hour" (e.g. 100) so sign-up bursts aren't blocked. Resend's free plan allows 100 emails/day and 3,000/month.
+6. Finish steps 3–5 above (URL configuration, the two templates, test).
+
+Without a verified domain, Resend only delivers to your own Resend login email. That's fine for a first test, but customers won't receive anything.
+
 ## 3. First Super Admin (secure bootstrap)
 
 No admin passwords exist in code. From your machine, with the production `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SECRET_KEY` in a local env file that is never committed (e.g. `.env.production.local`):
