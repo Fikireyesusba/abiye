@@ -117,7 +117,7 @@ function resetSampleStock() {
   check(publicTry.status >= 400, `receipt not reachable via public URL (${publicTry.status})`);
 
   // ---- Admin rejects → customer resubmits
-  sql(`begin; set local role authenticated; select set_config('request.jwt.claims', '{"sub":"${MANAGER}","role":"authenticated"}', true);
+  sql(`begin; set local role authenticated; select set_config('request.jwt.claims', '{"sub":"${MANAGER}","role":"authenticated","aal":"aal2"}', true);
        select admin_review_payment((select id from payment_submissions where order_id = '${orderId}' and status = 'pending'), 'rejected', 'Amount not received'); commit;`);
   await p.reload();
   await p.waitForSelector("text=We could not verify your payment");

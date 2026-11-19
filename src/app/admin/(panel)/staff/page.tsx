@@ -3,7 +3,7 @@ import { ActionForm } from "@/components/admin/action-form";
 import { Field, PageHeader, Panel, Table, Td, fieldClass } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { inviteStaff, resetStaffPassword, updateStaff } from "@/lib/admin/staff-actions";
+import { inviteStaff, resetStaffMfa, resetStaffPassword, updateStaff } from "@/lib/admin/staff-actions";
 import { requirePermission } from "@/lib/auth/guards";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -23,12 +23,17 @@ export default async function StaffPage() {
   // Emails live in auth.users; read them server-side only, after the permission check above.
   const { data: users } = await getSupabaseAdmin().auth.admin.listUsers({ perPage: 1000 });
   const email = new Map((users?.users ?? []).map((u) => [u.id, u.email ?? ""]));
+  // Two-step login status per staff member (few accounts: one lookup each).
+  const twoStep = new Map(await Promise.all((profiles ?? []).map(async (p) => {
+    const { data } = await getSupabaseAdmin().auth.admin.mfa.listFactors({ userId: p.id });
+    return [p.id, (data?.factors ?? []).some((f) => f.status === "verified")] as const;
+  })));
 
   return (
     <>
       <PageHeader title="Staff" description="Who can sign in to this dashboard and what they can do." />
       <div className="grid items-start gap-6 xl:grid-cols-[1fr_22rem]">
-        <Table head={["Name", "Role", "Status", "Change", "Password"]}>
+        <Table head={["Name", "Role", "Status", "Change", "Password", "Two-step login"]}>
           {(profiles ?? []).map((p) => {
             const self = p.id === ctx.userId;
             const roleKey = (p.role as unknown as { key: string } | null)?.key ?? "staff";
@@ -53,6 +58,13 @@ export default async function StaffPage() {
                   {!self && (
                     <ActionForm action={resetStaffPassword} hidden={{ userId: p.id }} submitLabel="Reset" size="sm" variant="outline" keepSuccess
                       confirm={`Generate a new temporary password for ${p.full_name}?`} className="space-y-2" />
+                  )}
+                </Td>
+                <Td>
+                  {twoStep.get(p.id) ? <Badge variant="success">On</Badge> : <Badge variant="warning">Not set up</Badge>}
+                  {!self && twoStep.get(p.id) && (
+                    <ActionForm action={resetStaffMfa} hidden={{ userId: p.id }} submitLabel="Reset" size="sm" variant="outline" className="mt-2 space-y-2"
+                      confirm={`Reset two-step login for ${p.full_name}? They will set up their authenticator again at the next sign-in (use this if they lost their phone).`} />
                   )}
                 </Td>
               </tr>

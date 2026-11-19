@@ -6,6 +6,8 @@ set -euo pipefail
 if ! docker info >/dev/null 2>&1; then
   if command -v dockerd >/dev/null 2>&1 && [ "$(id -u)" = "0" ]; then
     echo "Docker daemon not running — starting it (sandbox/Linux root)…"
+    # A sandbox restart can leave a stale pid file behind, which makes dockerd refuse to start.
+    if [ -f /var/run/docker.pid ] && ! kill -0 "$(cat /var/run/docker.pid)" 2>/dev/null; then rm -f /var/run/docker.pid; fi
     nohup dockerd >/tmp/dockerd.log 2>&1 &
     for _ in $(seq 1 30); do docker info >/dev/null 2>&1 && break; sleep 1; done
   fi

@@ -1,4 +1,5 @@
 "use server";
+import { isStaffAccount } from "@/lib/auth/mfa";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getServerEnv } from "@/lib/env";
@@ -109,8 +110,7 @@ export async function setNewPassword(_prev: AccountState, fd: FormData): Promise
     return { error: /reauthentic|recent/i.test(error.message) ? "linkExpired" : "generic" };
   }
   // Staff (same login system) go straight back to the admin dashboard.
-  const { data: staff } = await supabase.rpc("my_admin_context");
-  redirect(staff ? "/admin?passwordChanged=1" : "/account?passwordChanged=1");
+  redirect((await isStaffAccount(supabase)) ? "/admin?passwordChanged=1" : "/account?passwordChanged=1");
 }
 
 export async function updateCustomerAccount(_prev: AccountState, fd: FormData): Promise<AccountState> {

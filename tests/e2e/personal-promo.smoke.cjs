@@ -5,6 +5,7 @@
  *   NODE_PATH=$(npm root -g) node --env-file=.env.local tests/e2e/personal-promo.smoke.cjs
  */
 const { chromium } = require("playwright");
+const { adminLogin } = require("./_admin.cjs");
 const { execSync } = require("child_process");
 const { ensureCustomer, loginCustomer } = require("./_customer.cjs");
 
@@ -42,11 +43,7 @@ async function tryCode(page, code) {
   const b = await chromium.launch();
   try {
     const op = await (await b.newContext()).newPage();
-    await op.goto(`${B}/admin/login`);
-    await op.fill("#email", OWNER.email);
-    await op.fill("#password", OWNER.password);
-    await op.click("button[type=submit]");
-    await op.waitForURL((u) => !u.pathname.startsWith("/admin/login"));
+    await adminLogin(op, B, OWNER.email, OWNER.password);
 
     // create two personal promotions
     for (const [code, title] of [[CODE, `VIP ${RUN}`], [CODE2, `Gift ${RUN}`]]) {

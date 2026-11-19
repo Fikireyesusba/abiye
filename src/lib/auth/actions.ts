@@ -4,7 +4,7 @@ import { z } from "zod";
 import { clientIpKey, rateLimitAll } from "@/lib/security/rate-limit";
 import { sha256Hex } from "@/lib/security/tokens";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { parseAdminContext } from "./permissions";
+import { isStaffAccount } from "./mfa";
 import { safeAdminRedirect } from "./safe-redirect";
 
 export type LoginState = { error?: string; email?: string };
@@ -33,13 +33,13 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
   }
 
   // Valid Supabase user but not an active staff member: sign straight back out.
-  const { data } = await supabase.rpc("my_admin_context");
-  if (!parseAdminContext(data)) {
+  if (!(await isStaffAccount(supabase))) {
     console.warn("[admin-login] signed in but no active staff profile (run bootstrap_super_admin / add in /admin/staff)");
     await supabase.auth.signOut();
     return { error: "This account does not have access to the admin dashboard.", email };
   }
-  redirect(safeAdminRedirect(formData.get("next")));
+  // Second step: the authenticator code (or setting one up on first sign-in).
+  redirect(`/admin/mfa?next=${encodeURIComponent(safeAdminRedirect(formData.get("next")))}`);
 }
 
 export async function signOut(): Promise<void> {

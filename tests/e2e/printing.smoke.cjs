@@ -4,6 +4,7 @@
  * Mutates the local database. Never point it at production.
  */
 const { chromium } = require("playwright");
+const { adminLogin } = require("./_admin.cjs");
 const { execSync } = require("child_process");
 const { PDFDocument } = require("pdf-lib");
 const { ensureCustomer, loginCustomer } = require("./_customer.cjs");
@@ -115,11 +116,7 @@ async function fillContact(p, name, phone) {
   // ---- 5. Admin: quote the Word job, pay + produce the PDF job
   const a = await (await b.newContext({ viewport: { width: 1280, height: 1000 } })).newPage();
   a.on("dialog", (d) => d.accept());
-  await a.goto(`${B}/admin/login`);
-  await a.fill("#email", OWNER.email);
-  await a.fill("#password", OWNER.password);
-  await a.click("button[type=submit]");
-  await a.waitForURL((u) => u.pathname === "/admin");
+  await adminLogin(a, B, OWNER.email, OWNER.password);
   await a.goto(`${B}/admin/printing`);
   check((await a.locator(`tr:has-text("Yonas Docx")`).count()) === 1, "Word job listed under Needs action");
   await a.goto(`${B}/admin/printing/${job2}`);

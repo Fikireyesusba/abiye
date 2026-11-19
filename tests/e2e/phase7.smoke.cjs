@@ -5,6 +5,7 @@
  * LOCAL Supabase + app on BASE_URL. Mutates the local database.
  */
 const { chromium } = require("playwright");
+const { adminLogin } = require("./_admin.cjs");
 const { execSync } = require("child_process");
 const fs = require("fs");
 const os = require("os");
@@ -61,11 +62,7 @@ async function watchCsp(context) {
     const octx = await b.newContext();
     await watchCsp(octx);
     const op = await octx.newPage();
-    await op.goto(`${B}/admin/login`);
-    await op.fill("#email", OWNER.email);
-    await op.fill("#password", OWNER.password);
-    await op.click("button[type=submit]");
-    await op.waitForURL((u) => !u.pathname.startsWith("/admin/login"));
+    await adminLogin(op, B, OWNER.email, OWNER.password);
 
     await op.goto(`${B}/admin/promotions`);
     await op.click("summary:has-text('New promotion')");
@@ -156,11 +153,7 @@ async function watchCsp(context) {
 
     const mctx = await b.newContext();
     const mp = await mctx.newPage();
-    await mp.goto(`${B}/admin/login`);
-    await mp.fill("#email", mEmail);
-    await mp.fill("#password", "PhaseSevenMgr2026");
-    await mp.click("button[type=submit]");
-    await mp.waitForURL((u) => !u.pathname.startsWith("/admin/login"));
+    await adminLogin(mp, B, mEmail, "PhaseSevenMgr2026");
     await mp.goto(`${B}/admin/analytics`);
     const mpage = (await mp.locator("main").innerText()).toLowerCase();
     check(mpage.includes("orders placed") && !mpage.includes("revenue (verified)"), "managers see counts without money");

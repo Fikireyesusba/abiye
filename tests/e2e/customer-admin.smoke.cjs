@@ -6,6 +6,7 @@
  * Mutates the local database. Never point it at production.
  */
 const { chromium } = require("playwright");
+const { adminLogin } = require("./_admin.cjs");
 const { execSync } = require("child_process");
 const { ensureCustomer, loginCustomer } = require("./_customer.cjs");
 
@@ -20,13 +21,6 @@ const RUN = Date.now().toString(36);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const CHARGER = "20000000-0000-0000-0000-000000000007";
 
-async function adminLogin(page, email, password) {
-  await page.goto(`${B}/admin/login`);
-  await page.fill("#email", email);
-  await page.fill("#password", password);
-  await page.click("button[type=submit]");
-  await page.waitForURL((u) => !u.pathname.startsWith("/admin/login"), { timeout: 15000 });
-}
 const toast = (page, text) => page.waitForSelector(`[data-sonner-toast]:has-text("${text}")`, { timeout: 15000 });
 async function mailCount(to, subjectPart) {
   const found = await (await fetch(`${MAIL}/api/v1/search?query=${encodeURIComponent(`to:"${to}"`)}`)).json();
@@ -88,7 +82,7 @@ async function waitFor(fn, tries = 30) {
 
     // ---------------------------------------------------------------- owner
     const op = await (await b.newContext()).newPage();
-    await adminLogin(op, OWNER.email, OWNER.password);
+    await adminLogin(op, B, OWNER.email, OWNER.password);
     check(await op.locator("a:has-text('Stalled checkouts (2h+)')").count() === 1, "dashboard shows stalled checkouts");
     await op.goto(`${B}/admin/follow-up`);
     const basketRow = op.locator("section:has(h2:has-text('Baskets')) tr", { hasText: aEmail });
@@ -177,7 +171,7 @@ async function waitFor(fn, tries = 30) {
 
     // manager: view only
     const mp = await (await b.newContext()).newPage();
-    await adminLogin(mp, mEmail, "Manager2026x");
+    await adminLogin(mp, B, mEmail, "Manager2026x");
     await mp.goto(`${B}/admin/customers/${A}`);
     check(await mp.locator("text=Manage account").count() === 0 && (await mp.locator("main").innerText()).includes("Signed in"),
       "managers see the timeline but cannot manage accounts");

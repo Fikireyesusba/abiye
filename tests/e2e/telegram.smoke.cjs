@@ -7,6 +7,7 @@
 const http = require("http");
 const { spawn, execSync } = require("child_process");
 const { chromium } = require("playwright");
+const { adminLogin } = require("./_admin.cjs");
 const { PDFDocument } = require("pdf-lib");
 const { ensureCustomer, loginCustomer } = require("./_customer.cjs");
 
@@ -154,11 +155,7 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
 
     // ---- 5. Admin: status, test message, retry
     const a = await (await b.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
-    await a.goto(`${B}/admin/login`);
-    await a.fill("#email", OWNER.email);
-    await a.fill("#password", OWNER.password);
-    await a.click("button[type=submit]");
-    await a.waitForURL((u) => u.pathname === "/admin");
+    await adminLogin(a, B, OWNER.email, OWNER.password);
     await a.goto(`${B}/admin/notifications`);
     check((await a.locator("text=Bot token and chat id are configured").count()) === 1, "admin sees Telegram is configured");
     const beforeTest = received.length;

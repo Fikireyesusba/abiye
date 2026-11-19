@@ -635,6 +635,9 @@ isOneToOne: false
 "admin_log_customer_action":
 { Args: { "p_action": string,"p_metadata"?: Json,"p_user_id": string }; Returns: undefined
                            },
+"admin_log_mfa_reset":
+{ Args: { "p_user_id": string }; Returns: undefined
+                           },
 "admin_mark_printing_files_deleted":
 { Args: { "p_job_id": string }; Returns: number
                            },
@@ -738,6 +741,9 @@ isOneToOne: false
 { Args: Record<PropertyKey, never>; Returns: {
               "code": string,"description_am": string,"description_en": string,"discount_type": string,"discount_value": number,"ends_at": string,"min_order_etb": number,"title_am": string,"title_en": string
             }[]
+                           },
+"my_staff_status":
+{ Args: Record<PropertyKey, never>; Returns: Json
                            },
 "printing_files_due_for_deletion":
 { Args: { "p_limit"?: number }; Returns: {

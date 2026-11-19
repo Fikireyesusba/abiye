@@ -13,6 +13,8 @@ export const getAdminContext = cache(async (): Promise<AdminContext | null> => {
   const supabase = await createSupabaseServerClient();
   const { data: claims, error } = await supabase.auth.getClaims();
   if (error || !claims?.claims?.sub) return null;
+  // Two-step login: admin access only after the authenticator code (also enforced in the database).
+  if (claims.claims.aal !== "aal2") return null;
   const { data, error: rpcError } = await supabase.rpc("my_admin_context");
   if (rpcError) return null;
   return parseAdminContext(data);
@@ -21,7 +23,12 @@ export const getAdminContext = cache(async (): Promise<AdminContext | null> => {
 /** Use at the top of every admin page / server action / route handler. */
 export async function requireAdmin(): Promise<AdminContext> {
   const ctx = await getAdminContext();
-  if (!ctx) redirect("/admin/login");
+  if (!ctx) {
+    // Signed in with the password only: ask for the authenticator code.
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase.auth.getClaims();
+    redirect(data?.claims?.sub ? "/admin/mfa" : "/admin/login");
+  }
   return ctx;
 }
 

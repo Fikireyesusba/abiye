@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { signOutCustomer } from "@/lib/account/actions";
 import { getCustomerAccount, requireCustomer } from "@/lib/account/session";
+import { isStaffAccount } from "@/lib/auth/mfa";
 import { formatDateTime } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -26,7 +27,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   const [t, locale, account] = await Promise.all([getTranslations(), getLocale() as Promise<Locale>, getCustomerAccount(user.id)]);
   // RLS: a customer can only read their own orders and printing jobs.
   const supabase = await createSupabaseServerClient();
-  const { data: staff } = await supabase.rpc("my_admin_context");
+  const staff = await isStaffAccount(supabase);
   const [{ data: orders }, { data: jobs }, { data: offers }] = await Promise.all([
     supabase.from("orders").select("id, order_number, status, payment_status, total_etb, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
     supabase.from("printing_jobs").select("id, job_number, status, total_etb, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),

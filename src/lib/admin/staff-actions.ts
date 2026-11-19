@@ -69,3 +69,25 @@ export async function resetStaffPassword(_prev: ActionResult | null, fd: FormDat
   if (error) return fail("Could not reset the password.");
   return ok(`New temporary password (shown once): ${password}`);
 }
+
+/** Lost phone: remove a staff member's authenticator; they set up a new one at the next sign-in. */
+export async function resetStaffMfa(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const ctx = await requirePermission("staff.manage");
+  const userId = z.guid().safeParse(fd.get("userId"));
+  if (!userId.success) return fail("Invalid request.");
+  if (userId.data === ctx.userId) return fail("You cannot reset your own two-step login.");
+  const supabase = await createSupabaseServerClient();
+  const { data: profile } = await supabase.from("profiles").select("id").eq("id", userId.data).maybeSingle();
+  if (!profile) return fail("Staff member not found.");
+  const admin = getSupabaseAdmin();
+  const { data: factors, error } = await admin.auth.admin.mfa.listFactors({ userId: userId.data });
+  if (error) return fail("Could not read their two-step login.");
+  for (const f of factors?.factors ?? []) {
+    const { error: delError } = await admin.auth.admin.mfa.deleteFactor({ id: f.id, userId: userId.data });
+    if (delError) return fail("Could not reset their two-step login.");
+  }
+  const { error: logError } = await supabase.rpc("admin_log_mfa_reset", { p_user_id: userId.data });
+  if (logError) console.error("[staff] mfa reset audit failed:", logError.message);
+  revalidatePath("/admin/staff");
+  return ok("Two-step login reset. They will set it up again at their next sign-in.");
+}

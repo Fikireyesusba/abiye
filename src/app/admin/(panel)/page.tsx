@@ -46,9 +46,12 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
   // Axis shows the day of month only (fits phones); tooltip + table carry the full date.
   const dayLabel = (d: string) => String(new Date(`${d}T12:00:00Z`).getUTCDate());
 
-  const passwordChanged = !!(await searchParams).passwordChanged;
+  const sp = await searchParams;
+  const passwordChanged = !!sp.passwordChanged;
+  const mfaEnabled = !!sp.mfaEnabled;
   return (
     <>
+      {mfaEnabled && <p className="mb-4 rounded-md bg-success/10 p-3 text-sm text-success" role="status">Two-step login is on. From now on you sign in with your password and a code from your authenticator app.</p>}
       {passwordChanged && <p className="mb-4 rounded-md bg-success/10 p-3 text-sm text-success" role="status">Your password was changed.</p>}
       <PageHeader title={`Welcome, ${ctx.fullName.split(" ")[0]}`} description="Overview of orders, payments and stock." />
 

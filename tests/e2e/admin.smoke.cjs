@@ -5,6 +5,7 @@
  * Mutates the local database. Never point it at production.
  */
 const { chromium } = require("playwright");
+const { adminLogin } = require("./_admin.cjs");
 const { ensureCustomer } = require("./_customer.cjs");
 const { execSync } = require("child_process");
 const fs = require("fs");
@@ -41,11 +42,7 @@ function submit(id, key, suffix) {
 }
 
 async function login(page, email, password, next = "") {
-  await page.goto(`${B}/admin/login${next ? `?next=${encodeURIComponent(next)}` : ""}`);
-  await page.fill("#email", email);
-  await page.fill("#password", password);
-  await page.click("button[type=submit]");
-  await page.waitForURL((u) => !u.pathname.startsWith("/admin/login"), { timeout: 15000 });
+  await adminLogin(page, B, email, password, next);
 }
 const submitIn = (page, locator) => locator.locator("button[type=submit]").click();
 async function toast(page, text) {
@@ -283,8 +280,9 @@ async function toast(page, text) {
   await submitIn(p, srow.locator("form:has(select[name=active])"));
   await toast(p, "Access removed");
   const after = await s.goto(`${B}/admin/orders`);
-  check(s.url().includes("/admin/login"), `deactivated staff lose access on their very next request (${after.status()})`);
-  check(sql(`set role authenticated; select set_config('request.jwt.claims', '{"sub":"${staffId}","role":"authenticated"}', false); select count(*) from orders;`) === "0",
+  check(/\/admin\/(login|mfa)/.test(s.url()) && (await s.locator("text=does not have access").count()) + (s.url().includes("/admin/login") ? 1 : 0) >= 1,
+    `deactivated staff lose access on their very next request (${after.status()} ${s.url()})`);
+  check(sql(`set role authenticated; select set_config('request.jwt.claims', '{"sub":"${staffId}","role":"authenticated","aal":"aal2"}', false); select count(*) from orders;`) === "0",
     "deactivated staff's still-valid token reads no orders (RLS)");
 
   // Super admin cannot demote themselves

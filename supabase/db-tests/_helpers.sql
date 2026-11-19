@@ -24,9 +24,10 @@ begin
   raise exception 'FAIL - % (statement succeeded, expected "%")', p_msg, p_like;
 end $$;
 
-create function pg_temp.login(p_user uuid) returns void language plpgsql as $$
+-- Signed-in session; admins pass the second login step (aal2) unless p_aal says otherwise.
+create function pg_temp.login(p_user uuid, p_aal text default 'aal2') returns void language plpgsql as $$
 begin
-  perform set_config('request.jwt.claims', json_build_object('sub', p_user, 'role', 'authenticated')::text, false);
+  perform set_config('request.jwt.claims', json_build_object('sub', p_user, 'role', 'authenticated', 'aal', p_aal)::text, false);
   set role authenticated;
 end $$;
 

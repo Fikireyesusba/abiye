@@ -4,6 +4,7 @@
  *   NODE_PATH=$(npm root -g) node --env-file=.env.local tests/e2e/account.smoke.cjs
  */
 const { chromium } = require("playwright");
+const { adminLogin } = require("./_admin.cjs");
 const { execSync } = require("child_process");
 const { ensureCustomer, loginCustomer } = require("./_customer.cjs");
 
@@ -195,11 +196,7 @@ async function emailLink(to, subjectPart) {
 
   // ---- 6. Admin manages contact, social, terms → visible to customers
   const a = await (await b.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
-  await a.goto(`${B}/admin/login`);
-  await a.fill("#email", OWNER.email);
-  await a.fill("#password", OWNER.password);
-  await a.click("button[type=submit]");
-  await a.waitForURL((u) => u.pathname === "/admin");
+  await adminLogin(a, B, OWNER.email, OWNER.password);
   // Customers page lists registered accounts (even without orders), incl. unconfirmed sign-ups
   const pending = `pending-${RUN}@example.com`;
   await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/signup`, {

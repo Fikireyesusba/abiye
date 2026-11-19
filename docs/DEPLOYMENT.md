@@ -144,8 +144,22 @@ It refuses to run again once an active Super Admin exists. (Developers can inste
 
 ## 6. Database updates after launch (browser only)
 
-`production-setup.sql` is run once. Each later change is a single new file in `supabase/migrations/` — paste it into the Supabase SQL Editor and Run, in filename order, once. Already published after the first setup: `…0017_admin_customer_accounts.sql`, `…0018_customer_account_management.sql`, `…0019_finalization.sql`, `…0020_personal_promotions.sql`. PROGRESS.md records which ones production has.
+`production-setup.sql` is run once. Each later change is a single new file in `supabase/migrations/` — paste it into the Supabase SQL Editor and Run, in filename order, once. Already published after the first setup: `…0017_admin_customer_accounts.sql`, `…0018_customer_account_management.sql`, `…0019_finalization.sql`, `…0020_personal_promotions.sql`, `…0021_admin_mfa.sql`. PROGRESS.md records which ones production has.
 
 ## 7. Security headers
 
 Every page carries a nonce-based Content-Security-Policy (`src/proxy.ts`, `src/lib/security/csp.ts`): scripts only from this site with the per-request nonce, network/images only to this site and the Supabase project, no framing. If you ever add a third-party script, widget or analytics service, its domain must be added there or the browser will block it. See docs/GO-LIVE.md for the launch checklist.
+
+## 8. Two-step login for admins (authenticator app)
+
+Every admin account (Super Admin, Manager, Staff) signs in with password **and** a 6-digit code from an authenticator app (Google Authenticator, Microsoft Authenticator, …). The first sign-in shows a QR code to set it up. Enforced in the app and in the database (migration 0021: admin permissions need an `aal2` session). Customers are not affected.
+
+- Supabase → Authentication → **Multi-Factor**: "Authenticator app (TOTP)" must be enabled (it is by default).
+- **Staff lost their phone:** Admin → Staff → "Two-step login" → **Reset**. They set it up again at the next sign-in.
+- **You (the only Super Admin) lost your phone:** Supabase → SQL Editor, run (with your admin email):
+
+  ```sql
+  delete from auth.mfa_factors where user_id = (select id from auth.users where email = 'you@example.com');
+  ```
+
+  Then sign in and set up the authenticator again. Tip: add a second Super Admin (a trusted person) so one can reset the other.

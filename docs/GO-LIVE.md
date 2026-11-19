@@ -8,6 +8,8 @@ Paste each file's full contents (GitHub → file → **Raw** → copy) into a ne
 
 1. `supabase/migrations/20261120000018_customer_account_management.sql`
 2. `supabase/migrations/20261120000019_finalization.sql`
+3. `supabase/migrations/20261120000020_personal_promotions.sql`
+4. `supabase/migrations/20261120000021_admin_mfa.sql`
 
 Each should say "Success. No rows returned". If Supabase warns about RLS, choose "Run without RLS" (the files enable it themselves).
 
@@ -16,7 +18,7 @@ Each should say "Success. No rows returned". If Supabase warns about RLS, choose
 - [ ] Supabase → Authentication → **URL Configuration**: Site URL `https://fantaf.xyz`.
 - [ ] Supabase → Authentication → **SMTP**: Resend settings saved (docs/DEPLOYMENT.md §2b); the 3 bilingual email templates pasted.
 - [ ] Test: sign up a customer with a real email, confirm, sign in, use "Forgot password".
-- [ ] Super Admin can sign in at `/admin`. Create staff under **Staff** (each person their own account; never share passwords).
+- [ ] Super Admin can sign in at `/admin` with password + authenticator code (two-step login, docs/DEPLOYMENT.md §8). Create staff under **Staff** (each person their own account; never share passwords).
 
 ## 3. Business settings (Admin → Settings)
 
