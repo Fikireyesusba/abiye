@@ -72,23 +72,23 @@ reset role;
 update public.orders set status = 'confirmed', payment_status = 'verified', payment_verified_at = now()
  where id = (select id from public.orders where user_id = :customer2 order by created_at desc limit 1);
 select pg_temp.login(:super);
-create temp table t_a as select public.admin_analytics(current_date - 7, current_date + 1, 'day') as a;
+create temp table t_a as select public.admin_analytics((now() at time zone 'Africa/Addis_Ababa')::date - 7, (now() at time zone 'Africa/Addis_Ababa')::date + 1, 'day') as a;
 select pg_temp.ok((select (a #>> '{totals,revenue}')::numeric >= 850 and (a ->> 'money')::boolean from t_a), 'super admin sees revenue');
 select pg_temp.ok((select jsonb_array_length(a -> 'series') = 9 from t_a), 'one point per day');
 select pg_temp.ok((select (a #>> '{best_sellers,0,qty}')::int >= 1 from t_a), 'best sellers');
 select pg_temp.ok((select (a #>> '{totals,orders_placed}')::int >= 6 from t_a), 'orders placed counted');
 select pg_temp.ok((select (a -> 'promotions') @> '[{"code":"SAVE10"}]' from t_a), 'promotion usage');
-select pg_temp.ok((select jsonb_array_length(public.admin_analytics(current_date - 90, current_date, 'month') -> 'series') between 3 and 5),
+select pg_temp.ok((select jsonb_array_length(public.admin_analytics((now() at time zone 'Africa/Addis_Ababa')::date - 90, (now() at time zone 'Africa/Addis_Ababa')::date, 'month') -> 'series') between 3 and 5),
   'monthly buckets');
-select pg_temp.throws($$select public.admin_analytics(current_date, current_date - 1)$$, 'invalid_request', 'invalid range');
+select pg_temp.throws($$select public.admin_analytics((now() at time zone 'Africa/Addis_Ababa')::date, (now() at time zone 'Africa/Addis_Ababa')::date - 1)$$, 'invalid_request', 'invalid range');
 reset role;
 select pg_temp.login(:manager);
-create temp table t_m as select public.admin_analytics(current_date - 7, current_date, 'week') as a;
+create temp table t_m as select public.admin_analytics((now() at time zone 'Africa/Addis_Ababa')::date - 7, (now() at time zone 'Africa/Addis_Ababa')::date, 'week') as a;
 select pg_temp.ok((select a #> '{totals,revenue}' = 'null'::jsonb and a #> '{inventory,stock_value}' = 'null'::jsonb
                      and (a #>> '{totals,orders_placed}')::int >= 1 from t_m), 'managers see counts but no money');
 reset role;
 select pg_temp.login(:staff);
-select pg_temp.throws($$select public.admin_analytics(current_date - 7, current_date)$$, 'forbidden', 'staff cannot see analytics');
+select pg_temp.throws($$select public.admin_analytics((now() at time zone 'Africa/Addis_Ababa')::date - 7, (now() at time zone 'Africa/Addis_Ababa')::date)$$, 'forbidden', 'staff cannot see analytics');
 reset role;
 
 -- ---------------------------------------------------------------------------

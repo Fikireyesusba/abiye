@@ -835,6 +835,9 @@ isOneToOne: false
 "admin_data_export_areas":
 { Args: Record<PropertyKey, never>; Returns: (string)[]
                            },
+"admin_is_staff_account":
+{ Args: { "p_user_id": string }; Returns: boolean
+                           },
 "admin_log_customer_action":
 { Args: { "p_action": string,"p_metadata"?: Json,"p_user_id": string }; Returns: undefined
                            },

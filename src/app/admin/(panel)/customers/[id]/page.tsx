@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
 import { PageHeader, Panel, Table, Td, fieldClass } from "@/components/admin/ui";
@@ -31,7 +31,12 @@ export default async function CustomerPage({ params }: PageProps<"/admin/custome
     supabase.rpc("admin_customer_activity", { p_user_id: id, p_limit: 200 }),
   ]);
   const c = rows?.[0];
-  if (!c) notFound();
+  if (!c) {
+    // Staff accounts are not customers: manage them under Staff.
+    const { data: staff } = await supabase.rpc("admin_is_staff_account", { p_user_id: id });
+    if (staff) redirect("/admin/staff");
+    notFound();
+  }
   const verified = (orders ?? []).filter((o) => o.payment_status === "verified").reduce((s, o) => s + Number(o.total_etb), 0);
   const canManage = ctx.permissions.has("customers.manage");
   const canPromo = ctx.permissions.has("promotions.manage") && !c.deactivated_at;

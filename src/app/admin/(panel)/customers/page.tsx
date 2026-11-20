@@ -25,7 +25,7 @@ export default async function CustomersPage({ searchParams }: PageProps<"/admin/
 
   return (
     <>
-      <PageHeader title="Customers" description={`${accounts?.length ?? 0} registered account(s)${unconfirmed ? ` · ${unconfirmed} not yet confirmed` : ""}${deactivated ? ` · ${deactivated} deactivated` : ""}. Newest first.`} />
+      <PageHeader title="Customers" description={`${accounts?.length ?? 0} registered account(s)${unconfirmed ? ` · ${unconfirmed} not yet confirmed` : ""}${deactivated ? ` · ${deactivated} deactivated` : ""}. Newest first. Staff accounts are managed under Staff.`} />
       {first(sp.deleted) && <p role="status" className="mb-4 rounded-md bg-success/10 p-3 text-sm text-success">The account was deleted. The deletion is recorded in the activity log.</p>}
       {ctx.permissions.has("customers.manage") && (
         <details className="mb-4 rounded-lg border bg-card p-4">
@@ -47,7 +47,6 @@ export default async function CustomersPage({ searchParams }: PageProps<"/admin/
             <Td>
               <Link href={`/admin/customers/${a.id}`} className="font-medium text-primary hover:underline">{a.full_name || "—"}</Link>
               <span className="block text-xs break-all text-muted-foreground">{a.email}</span>
-              {a.is_staff && <Badge variant="secondary" className="mt-1">staff</Badge>}
             </Td>
             <Td>{a.phone ? formatEthiopianPhone(a.phone) : "—"}</Td>
             <Td>{a.deactivated_at ? <Badge variant="destructive">Deactivated</Badge> : a.email_confirmed_at ? <Badge variant="success">Confirmed</Badge> : <Badge variant="warning">Not confirmed</Badge>}</Td>

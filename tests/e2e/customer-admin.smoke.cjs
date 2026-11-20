@@ -166,8 +166,9 @@ async function waitFor(fn, tries = 30) {
     check(await op.locator("button:has-text('Delete account')").count() === 0
       && await op.locator("text=Accounts with orders cannot be deleted").count() === 1, "accounts with orders cannot be deleted");
     await op.goto(`${B}/admin/customers/${M}`);
-    check(await op.locator("text=This is a staff account").count() === 1 && await op.locator("button:has-text('Deactivate account')").count() === 0,
-      "staff accounts are not managed here");
+    check(new URL(op.url()).pathname === "/admin/staff", "a staff account's customer link opens Staff instead");
+    await op.goto(`${B}/admin/customers`);
+    check(!(await op.locator("main").innerText()).includes("<staff>") && await op.locator(`a[href='/admin/customers/${M}']`).count() === 0, "staff are not listed under Customers");
 
     // manager: view only
     const mp = await (await b.newContext()).newPage();

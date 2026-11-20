@@ -10,7 +10,7 @@ create temp table t_acc as select * from public.admin_customer_accounts(null, 50
 select pg_temp.ok((select count(*) from t_acc where email = 'customer2@test.local') = 1, 'accounts without orders are listed');
 select pg_temp.ok((select order_count from t_acc where email = 'customer@test.local') = 1, 'order count per account');
 select pg_temp.ok((select email_confirmed_at is null from t_acc where email = 'unconfirmed@test.local'), 'unconfirmed sign-ups are visible as unconfirmed');
-select pg_temp.ok((select is_staff from t_acc where email = 'staff@test.local'), 'staff accounts are flagged');
+select pg_temp.ok(not exists (select 1 from t_acc where email = 'staff@test.local'), 'staff accounts are not listed (managed under Staff)');
 select pg_temp.ok((select count(*) from public.admin_customer_accounts('customer2', 10)) = 1, 'search by email');
 select pg_temp.ok((select count(*) from public.admin_customer_accounts('Test Customer', 10)) = 1, 'search by name');
 select pg_temp.ok((select count(*) from public.admin_customer_accounts($$%' or 1=1 --$$, 10)) = 0, 'search input is data, not SQL');
