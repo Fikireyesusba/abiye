@@ -29,14 +29,14 @@ export interface ExportMeta {
   generatedAt: Date;
 }
 
-const MONEY = '#,##0.00 "ETB"';
-const DATE = "yyyy-mm-dd hh:mm";
-const label = (s: string) => s.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase());
+export const MONEY = '#,##0.00 "ETB"';
+export const DATE = "yyyy-mm-dd hh:mm";
+export const label = (s: string) => s.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase());
 
 /** Excel shows the stored clock time: store Addis Ababa wall-clock time (UTC+3, no DST). */
-const addis = (iso: string | null) => (iso ? new Date(Date.parse(iso) + 3 * 3600 * 1000) : null);
+export const addis = (iso: string | null) => (iso ? new Date(Date.parse(iso) + 3 * 3600 * 1000) : null);
 
-function styleSheet(ws: ExcelJS.Worksheet, moneyCols: number[], dateCols: number[]) {
+export function styleSheet(ws: ExcelJS.Worksheet, moneyCols: number[], dateCols: number[]) {
   const header = ws.getRow(1);
   header.font = { bold: true, color: { argb: "FFFFFFFF" } };
   header.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF14523F" } };

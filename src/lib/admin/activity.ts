@@ -16,6 +16,7 @@ const ACTION_LABELS: Record<string, string> = {
   wallet_adjusted: "Wallet balance corrected",
   email_blocked: "Email blocked",
   export_activity: "Activity log exported to Excel",
+  export_payments: "Payments exported to Excel",
   audit_cleared: "Old activity entries cleared",
   email_unblocked: "Email unblocked",
   promo_unassigned: "Personal promo code removed",

@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Download, FileSpreadsheet } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
 import { ReceiptPreview } from "@/components/admin/receipt-preview";
-import { PageHeader } from "@/components/admin/ui";
+import { PageHeader, fieldClass } from "@/components/admin/ui";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { reviewPayment } from "@/lib/admin/order-actions";
 import { requirePermission } from "@/lib/auth/guards";
@@ -44,10 +45,39 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/admin/p
   );
   const urls = await Promise.all(subs.map(async (s) => (await supabase.storage.from("payment-receipts").createSignedUrl(s.receipt_path, 300)).data?.signedUrl ?? null));
   const canVerify = ctx.permissions.has("payments.verify");
+  const canTopups = ctx.permissions.has("wallet.manage");
+  const now = new Date().getTime() + 3 * 3600 * 1000; // Addis Ababa
+  const today = new Date(now).toISOString().slice(0, 10);
+  const monthStart = `${today.slice(0, 8)}01`;
 
   return (
     <>
       <PageHeader title="Payments" description="Check every transfer in the bank account before verifying. A screenshot alone is not proof of payment." />
+      <details className="mb-4 rounded-lg border bg-card p-4">
+        <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium"><FileSpreadsheet className="size-4 text-primary" aria-hidden /> Export verified &amp; rejected payments to Excel</summary>
+        <form method="get" action="/admin/payments/export" className="mt-3 flex flex-wrap items-end gap-3">
+          <label className="text-sm">Decided from<input type="date" name="from" required defaultValue={monthStart} max={today} className={`${fieldClass} mt-1 block`} /></label>
+          <label className="text-sm">To<input type="date" name="to" required defaultValue={today} max={today} className={`${fieldClass} mt-1 block`} /></label>
+          <label className="text-sm">Include
+            <select name="status" defaultValue="all" className={`${fieldClass} mt-1 block w-auto`}>
+              <option value="all">Verified and rejected</option>
+              <option value="verified">Verified only</option>
+              <option value="rejected">Rejected only</option>
+            </select>
+          </label>
+          {canTopups && (
+            <label className="flex items-center gap-2 pb-2 text-sm">
+              <input type="checkbox" name="topups" value="1" defaultChecked className="size-4 accent-[var(--primary)]" /> Include wallet top-ups
+            </label>
+          )}
+          <Button type="submit"><Download /> Download .xlsx</Button>
+        </form>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Sheets: Summary (counts and amounts), Order payments{canTopups ? " and Wallet top-ups" : ""}. Each row: result, when and by whom it was decided, the reason for rejections,
+          order, customer (name, phone, email), amount, bank account, bank reference, receipt and warnings (reused reference or receipt, amount mismatch).
+          Dates in Addis Ababa time. The file contains customer contact details — store it safely. Each export is recorded in the Activity log.
+        </p>
+      </details>
       <nav className="mb-5 flex gap-1 border-b" aria-label="Payment status">
         {TABS.map((t) => (
           <Link key={t.key} href={`/admin/payments?status=${t.key}`} aria-current={t.key === status ? "page" : undefined}

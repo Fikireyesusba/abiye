@@ -770,6 +770,11 @@ isOneToOne: false
               "attempts": number,"created_at": string,"event_type": string,"id": number,"last_error": string,"max_attempts": number,"next_attempt_at": string,"reference": string,"sent_at": string,"status": Database["public"]['Enums']["notification_status"]
             }[]
                            },
+"admin_payments_export":
+{ Args: { "p_from": string,"p_status"?: string,"p_to": string }; Returns: {
+              "account_number": string,"amount_expected_etb": number,"bank_name": string,"customer_email": string,"customer_name": string,"customer_phone": string,"id": string,"order_number": string,"order_status": string,"order_total_etb": number,"payment_method": string,"receipt_original_name": string,"receipt_sha256": string,"receipt_used_elsewhere": number,"reference_used_elsewhere": number,"review_note": string,"reviewed_at": string,"reviewed_by_name": string,"status": string,"submitted_at": string,"transaction_reference": string
+            }[]
+                           },
 "admin_prepare_customer_delete":
 { Args: { "p_user_id": string }; Returns: Json
                            },
@@ -821,6 +826,11 @@ isOneToOne: false
                            },
 "admin_system_health":
 { Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"admin_topups_export":
+{ Args: { "p_from": string,"p_status"?: string,"p_to": string }; Returns: {
+              "account_number": string,"amount_etb": number,"bank_name": string,"created_at": string,"customer_email": string,"customer_name": string,"id": string,"review_note": string,"reviewed_at": string,"reviewed_by_name": string,"status": string,"topup_number": string,"transaction_reference": string
+            }[]
                            },
 "admin_unblock_email":
 { Args: { "p_email": string }; Returns: Json
