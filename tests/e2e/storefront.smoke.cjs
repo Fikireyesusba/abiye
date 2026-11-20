@@ -77,7 +77,8 @@ function resetSampleStock() {
   await p.goto(B + '/products/sample-usb-c-fast-charger');
   await p.click('main button:has-text("Add to basket")');
   await p.goto(B + '/products/sample-argan-hair-oil');
-  check(await p.locator('main button:has-text("Out of stock")').isDisabled(), 'sold-out product cannot be added');
+  await p.waitForSelector('main a:has-text("Sign in to be notified")');
+  check(await p.locator('main button[aria-label="Increase quantity"]').count() === 0, 'sold-out product cannot be added (offers "notify me" instead)');
 
   // Cart totals: 2 × 2850 + 850 = 6550, + Addis 150 = 6700
   await p.goto(B + '/cart', { waitUntil: 'load' });
