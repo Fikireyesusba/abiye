@@ -1,4 +1,6 @@
 "use server";
+import { ACTIVE_COOKIE, SESSION_COOKIE } from "@/lib/security/idle";
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { isEmailBlocked, recordSecurityEvent } from "@/lib/security/events";
 import { isStaffAccount } from "@/lib/auth/mfa";
@@ -171,5 +173,8 @@ export async function switchCustomerAccount(fd: FormData): Promise<void> {
 export async function signOutCustomer(): Promise<void> {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
+  const jar = await cookies();
+  jar.delete(ACTIVE_COOKIE);
+  jar.delete(SESSION_COOKIE);
   redirect("/");
 }

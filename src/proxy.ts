@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { buildContentSecurityPolicy } from "@/lib/security/csp";
+import { ACTIVE_COOKIE, IDLE_MINUTES, SESSION_COOKIE } from "@/lib/security/idle";
 
 /** Paths that read the Supabase session (cookie refresh needed). */
 const SESSION_PATHS = [/^\/admin(\/|$)/, /^\/account(\/|$)/, /^\/checkout$/, /^\/order-success\//, /^\/printing(\/|$)/];
@@ -31,6 +32,8 @@ export async function proxy(request: NextRequest) {
   const cookiesToSet: { name: string; value: string; options?: Parameters<NextResponse["cookies"]["set"]>[2] }[] = [];
   const extraHeaders: Record<string, string> = {};
   let signedIn = false;
+  let sessionId: string | null = null;
+  let supabaseClient: ReturnType<typeof createServerClient> | null = null;
   if (needsSession && url && key) {
     const supabase = createServerClient(url, key, {
       cookies: {
@@ -47,6 +50,38 @@ export async function proxy(request: NextRequest) {
     });
     const { data } = await supabase.auth.getClaims();
     signedIn = !!data?.claims?.sub;
+    sessionId = typeof data?.claims?.session_id === "string" ? data.claims.session_id : null;
+    supabaseClient = supabase;
+  }
+
+  // Inactivity sign-out (server side; the browser timer does the same while a tab is open).
+  const isAnyLogin = isLogin || path === "/account/login";
+  const cookieOpts = { path: "/", sameSite: "lax" as const, secure: request.nextUrl.protocol === "https:", maxAge: 86400 };
+  if (needsSession && signedIn && sessionId && !isAnyLogin) {
+    const limitMs = (isAdmin ? IDLE_MINUTES.admin : IDLE_MINUTES.customer) * 60_000;
+    const last = Number(request.cookies.get(ACTIVE_COOKIE)?.value);
+    if (request.cookies.get(SESSION_COOKIE)?.value !== sessionId || !Number.isFinite(last) || last <= 0) {
+      // New sign-in (or first visit since): start counting now.
+      cookiesToSet.push({ name: SESSION_COOKIE, value: sessionId, options: { ...cookieOpts, httpOnly: true } });
+      cookiesToSet.push({ name: ACTIVE_COOKIE, value: String(Date.now()), options: { ...cookieOpts, httpOnly: false } });
+    } else if (Date.now() - last > limitMs) {
+      await supabaseClient?.auth.signOut({ scope: "local" });
+      cookiesToSet.push({ name: SESSION_COOKIE, value: "", options: { ...cookieOpts, maxAge: 0 } });
+      cookiesToSet.push({ name: ACTIVE_COOKIE, value: "", options: { ...cookieOpts, maxAge: 0 } });
+      const login = new URL(isAdmin ? "/admin/login" : "/account/login", request.url);
+      login.searchParams.set("reason", "idle");
+      if (!isAdmin) login.searchParams.set("next", path);
+      signedIn = false;
+      const response = NextResponse.redirect(login);
+      cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+      Object.entries(extraHeaders).forEach(([k, v]) => response.headers.set(k, v));
+      response.headers.set("Content-Security-Policy", csp);
+      response.headers.set("Cache-Control", "private, no-store");
+      return response;
+    }
+  } else if (needsSession && !signedIn && request.cookies.get(ACTIVE_COOKIE)) {
+    cookiesToSet.push({ name: ACTIVE_COOKIE, value: "", options: { ...cookieOpts, maxAge: 0 } });
+    cookiesToSet.push({ name: SESSION_COOKIE, value: "", options: { ...cookieOpts, maxAge: 0 } });
   }
 
   const finish = (response: NextResponse) => {

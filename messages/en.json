@@ -500,7 +500,10 @@
       "generic": "Something went wrong. Please try again.",
       "samePassword": "Choose a password that is different from your current one.",
       "address": "Enter an address of 3 to 300 characters, or leave it empty."
-    }
+    },
+    "idleWarning": "You will be signed out in 1 minute because of inactivity.",
+    "idleStay": "Stay signed in",
+    "idleSignedOut": "For your security you were signed out after {minutes} minutes of inactivity. Please sign in again."
   },
   "payInfo": {
     "title": "How to pay",

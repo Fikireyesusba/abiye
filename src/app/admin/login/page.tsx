@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
+import { IDLE_MINUTES } from "@/lib/security/idle";
 import { getAdminContext } from "@/lib/auth/guards";
 import { safeAdminRedirect } from "@/lib/auth/safe-redirect";
 import { LoginForm } from "./login-form";
@@ -8,7 +9,8 @@ import { LoginForm } from "./login-form";
 export const metadata: Metadata = { title: "Admin sign in", robots: { index: false, follow: false } };
 
 export default async function AdminLoginPage({ searchParams }: PageProps<"/admin/login">) {
-  const next = safeAdminRedirect((await searchParams).next);
+  const sp = await searchParams;
+  const next = safeAdminRedirect(sp.next);
   if (await getAdminContext()) redirect(next);
   return (
     <main className="flex min-h-screen items-center justify-center bg-sidebar px-4">
@@ -20,6 +22,7 @@ export default async function AdminLoginPage({ searchParams }: PageProps<"/admin
           <h1 className="text-xl font-semibold">Abiye Admin</h1>
           <p className="text-sm text-muted-foreground">Staff sign in</p>
         </div>
+        {sp.reason === "idle" && <p className="mb-4 rounded-md bg-muted p-3 text-sm" role="status">For security you were signed out after {IDLE_MINUTES.admin} minutes of inactivity. Please sign in again.</p>}
         <LoginForm next={next} />
       </div>
     </main>

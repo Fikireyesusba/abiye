@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { IdleSignOut } from "@/components/security/idle-sign-out";
+import { IDLE_MINUTES } from "@/lib/security/idle";
 import { InstallBanner } from "@/components/pwa/pwa";
 import { CartSync } from "@/components/shop/cart-sync";
 import { SiteFooter } from "@/components/shop/site-footer";
@@ -19,9 +21,11 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function ShopLayout({ children }: LayoutProps<"/">) {
+export default async function ShopLayout({ children }: LayoutProps<"/">) {
+  const t = await getTranslations("account");
   return (
     <>
+      <IdleSignOut minutes={IDLE_MINUTES.customer} kind="customer" warning={{ text: t("idleWarning"), stay: t("idleStay") }} />
       <SiteHeader />
       <main id="main" className="flex flex-1 flex-col">
         {children}

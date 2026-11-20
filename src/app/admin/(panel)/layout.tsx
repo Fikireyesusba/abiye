@@ -9,6 +9,8 @@ import { requireAdmin } from "@/lib/auth/guards";
 import { ADMIN_ROUTES } from "@/lib/auth/permissions";
 import { getAdminBadges } from "@/lib/admin/badges";
 import { AdminBadgesProvider, PendingPaymentsLink } from "@/components/admin/admin-badges";
+import { IdleSignOut } from "@/components/security/idle-sign-out";
+import { IDLE_MINUTES } from "@/lib/security/idle";
 
 export const metadata: Metadata = {
   title: { default: "Admin", template: "%s · Abiye Admin" },
@@ -62,6 +64,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
         <main className="mx-auto w-full max-w-7xl flex-1 p-4 sm:p-6 print:max-w-none print:p-0">{children}</main>
       </div>
       <Toaster />
+      <IdleSignOut minutes={IDLE_MINUTES.admin} kind="admin" warning={{ text: "You will be signed out in 1 minute because of inactivity.", stay: "Stay signed in" }} />
     </div>
     </AdminBadgesProvider>
   );

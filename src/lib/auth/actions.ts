@@ -1,4 +1,6 @@
 "use server";
+import { ACTIVE_COOKIE, SESSION_COOKIE } from "@/lib/security/idle";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { clientIpKey, rateLimitAll } from "@/lib/security/rate-limit";
@@ -51,6 +53,9 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
 export async function signOut(): Promise<void> {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
+  const jar = await cookies();
+  jar.delete(ACTIVE_COOKIE);
+  jar.delete(SESSION_COOKIE);
   redirect("/admin/login");
 }
 
