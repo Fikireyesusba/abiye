@@ -168,6 +168,22 @@ export const HELP: HelpSection[] = [
     ],
   },
   {
+    id: "wallet",
+    icon: "bank",
+    title: { en: "Account balance (shop credit)", am: "የመለያ ቀሪ ሂሳብ (የሱቅ ክሬዲት)" },
+    blocks: [
+      { kind: "steps", items: [
+        { en: "Open My account → My balance → Top up.", am: "የእኔ መለያ → የእኔ ቀሪ ሂሳብ → ገንዘብ ይሙሉን ይክፈቱ።" },
+        { en: "Transfer the amount to our bank account and write your email as the reason.", am: "መጠኑን ወደ ባንክ ሂሳባችን ያስተላልፉ እና ኢሜይልዎን በምክንያት ላይ ይጻፉ።" },
+        { en: "Enter the amount and upload the receipt. We add it to your balance after we see the money in our bank account (you get an email).", am: "መጠኑን ያስገቡ እና ደረሰኙን ይጫኑ። ገንዘቡን በባንክ ሂሳባችን ካየን በኋላ ወደ ቀሪ ሂሳብዎ እንጨምረዋለን (ኢሜይል ይደርስዎታል)።" },
+        { en: "At checkout choose “Pay with my balance” — the order is confirmed immediately.", am: "በክፍያ ጊዜ «በቀሪ ሂሳቤ ክፈል»ን ይምረጡ — ትዕዛዙ ወዲያውኑ ይረጋገጣል።" },
+      ] },
+      { kind: "tip", text: { en: "The balance can hold up to 10,000 ETB and pays only for a whole order. It is shop credit: it is not paid out as cash, and refunds of cancelled balance-paid orders return to it.",
+        am: "ቀሪ ሂሳቡ እስከ 10,000 ብር መያዝ ይችላል፣ የሚከፍለውም ሙሉ ትዕዛዝ ብቻ ነው። የሱቅ ክሬዲት ነው፦ በጥሬ ገንዘብ አይከፈልም፣ በቀሪ ሂሳብ የተከፈሉ የተሰረዙ ትዕዛዞች ተመላሽም ወደዚሁ ይመለሳል።" } },
+    ],
+    links: [{ href: "/account/wallet", label: { en: "My balance", am: "የእኔ ቀሪ ሂሳብ" } }],
+  },
+  {
     id: "returns",
     icon: "refresh",
     title: { en: "9. Cancellations, returns and contact", am: "9. ስረዛ፣ መመለስ እና ማግኘት" },

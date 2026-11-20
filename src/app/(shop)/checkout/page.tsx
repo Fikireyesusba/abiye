@@ -22,6 +22,7 @@ export default async function CheckoutPage() {
         shopAddress={s.contact.address[locale] || s.contact.address.en}
         email={user.email}
         defaults={{ fullName: account?.full_name ?? "", phone: account?.phone ? formatEthiopianPhone(account.phone) : "" }}
+        walletBalance={Number(account?.wallet_balance_etb ?? 0)}
       />
     </div>
   );

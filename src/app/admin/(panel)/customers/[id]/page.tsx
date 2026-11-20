@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { actionLabel, describeChanges } from "@/lib/admin/activity";
 import { deleteCustomer, resendCustomerInvite, sendCustomerPasswordReset, setCustomerActive } from "@/lib/admin/customer-actions";
 import { assignPromotion, unassignPromotion } from "@/lib/admin/promotion-actions";
+import { adjustWallet } from "@/lib/admin/wallet-actions";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
@@ -38,6 +39,13 @@ export default async function CustomerPage({ params }: PageProps<"/admin/custome
     ? await Promise.all([
         supabase.rpc("admin_promotion_customers", { p_user_id: id }),
         supabase.from("promotions").select("id, title_en, code").eq("restricted", true).eq("is_active", true).order("created_at", { ascending: false }),
+      ])
+    : [{ data: null }, { data: null }];
+  const canWallet = ctx.permissions.has("wallet.manage") && !c.is_staff;
+  const [{ data: acct }, { data: ledger }] = canWallet
+    ? await Promise.all([
+        supabase.from("customer_accounts").select("wallet_balance_etb").eq("id", id).maybeSingle(),
+        supabase.from("wallet_ledger").select("id, amount_etb, balance_after_etb, kind, note, created_at").eq("user_id", id).order("id", { ascending: false }).limit(10),
       ])
     : [{ data: null }, { data: null }];
   const giveable = (personal ?? []).filter((p) => !(codes ?? []).some((x) => x.promotion_id === p.id));
@@ -90,6 +98,8 @@ export default async function CustomerPage({ params }: PageProps<"/admin/custome
                   d.from && d.to ? `${String(d.from).replaceAll("_", " ")} → ${String(d.to).replaceAll("_", " ")}` : null,
                   typeof meta.reason === "string" && meta.reason ? `Reason: ${meta.reason}` : null,
                   typeof meta.code === "string" ? `Code: ${meta.code}` : null,
+                  typeof meta.topup_number === "string" ? `${meta.topup_number} · ${formatETB(toSantim(Number(meta.amount_etb)))}` : null,
+                  !meta.topup_number && meta.amount_etb !== undefined ? `${Number(meta.amount_etb) > 0 ? "+" : ""}${formatETB(toSantim(Number(meta.amount_etb)))}` : null,
                   typeof d.note === "string" ? `Note: ${d.note}` : null,
                 ].filter(Boolean);
                 return (
@@ -146,6 +156,31 @@ export default async function CustomerPage({ params }: PageProps<"/admin/custome
                     <p className="text-xs text-muted-foreground">Accounts with orders cannot be deleted (order history must be kept). Deactivate instead.</p>
                   )}
                 </div>
+              )}
+            </Panel>
+          )}
+          {canWallet && (
+            <Panel title="Wallet balance">
+              <p className="text-2xl font-semibold tabular-nums">{formatETB(toSantim(Number(acct?.wallet_balance_etb ?? 0)))}</p>
+              {(ledger ?? []).length > 0 && (
+                <ul className="mt-3 divide-y text-xs">
+                  {(ledger ?? []).map((l) => (
+                    <li key={l.id} className="flex flex-wrap justify-between gap-2 py-1.5">
+                      <span>{l.kind.replace("_", " ")}{l.note ? ` · ${l.note}` : ""}</span>
+                      <span className="tabular-nums">{Number(l.amount_etb) > 0 ? "+" : "−"}{formatETB(toSantim(Math.abs(Number(l.amount_etb))))} → {formatETB(toSantim(Number(l.balance_after_etb)))}</span>
+                      <span className="w-full text-muted-foreground">{formatDateTime(l.created_at, "en")}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {ctx.permissions.has("wallet.adjust") && (
+                <ActionForm action={adjustWallet} hidden={{ userId: c.id }} submitLabel="Correct balance" variant="outline" size="sm" className="mt-4"
+                  confirm="Change this customer's balance? This is recorded in the activity log.">
+                  <label htmlFor="adj-amount" className="text-sm font-medium">Amount (ETB, use − to subtract)</label>
+                  <input id="adj-amount" name="amount" inputMode="decimal" required placeholder="200 or -200" className={fieldClass} />
+                  <label htmlFor="adj-reason" className="text-sm font-medium">Reason</label>
+                  <input id="adj-reason" name="reason" required minLength={3} maxLength={500} className={fieldClass} />
+                </ActionForm>
               )}
             </Panel>
           )}

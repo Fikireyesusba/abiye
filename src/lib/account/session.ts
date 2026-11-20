@@ -48,6 +48,6 @@ export function safeNext(next: unknown, fallback = "/account"): string {
 
 export async function getCustomerAccount(userId: string) {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.from("customer_accounts").select("full_name, phone, accepted_terms_at").eq("id", userId).maybeSingle();
+  const { data } = await supabase.from("customer_accounts").select("full_name, phone, accepted_terms_at, wallet_balance_etb").eq("id", userId).maybeSingle();
   return data;
 }

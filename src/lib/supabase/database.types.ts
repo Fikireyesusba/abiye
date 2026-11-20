@@ -103,14 +103,14 @@ isOneToOne: false
                   ]
                 },"customer_accounts": {
                   Row: {
-                    "accepted_terms_at": string | null,"created_at": string,"deactivated_at": string | null,"deactivated_by": string | null,"deactivation_reason": string | null,"full_name": string | null,"id": string,"phone": string | null,"updated_at": string
+                    "accepted_terms_at": string | null,"created_at": string,"deactivated_at": string | null,"deactivated_by": string | null,"deactivation_reason": string | null,"full_name": string | null,"id": string,"phone": string | null,"updated_at": string,"wallet_balance_etb": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "accepted_terms_at"?: string | null,"created_at"?: string,"deactivated_at"?: string | null,"deactivated_by"?: string | null,"deactivation_reason"?: string | null,"full_name"?: string | null,"id": string,"phone"?: string | null,"updated_at"?: string
+                    "accepted_terms_at"?: string | null,"created_at"?: string,"deactivated_at"?: string | null,"deactivated_by"?: string | null,"deactivation_reason"?: string | null,"full_name"?: string | null,"id": string,"phone"?: string | null,"updated_at"?: string,"wallet_balance_etb"?: number
                   }
                   Update: {
-                    "accepted_terms_at"?: string | null,"created_at"?: string,"deactivated_at"?: string | null,"deactivated_by"?: string | null,"deactivation_reason"?: string | null,"full_name"?: string | null,"id"?: string,"phone"?: string | null,"updated_at"?: string
+                    "accepted_terms_at"?: string | null,"created_at"?: string,"deactivated_at"?: string | null,"deactivated_by"?: string | null,"deactivation_reason"?: string | null,"full_name"?: string | null,"id"?: string,"phone"?: string | null,"updated_at"?: string,"wallet_balance_etb"?: number
                   }
                   Relationships: [
                     
@@ -285,14 +285,14 @@ isOneToOne: false
                   ]
                 },"orders": {
                   Row: {
-                    "access_token_hash": string,"address_line": string | null,"assigned_to": string | null,"bank_account_id": string | null,"bank_snapshot": NonNullable<Json>,"cancelled_at": string | null,"city": string | null,"created_at": string,"currency": string,"customer_id": string,"customer_name": string,"customer_phone": string,"delivery_fee_etb": number,"delivery_instructions": string | null,"delivery_zone_id": string | null,"discount_etb": number,"fulfillment_method": Database["public"]['Enums']["fulfillment_method"],"id": string,"idempotency_key": string,"locale": string,"order_number": string,"payment_due_at": string,"payment_status": Database["public"]['Enums']["payment_status"],"payment_verified_at": string | null,"payment_verified_by": string | null,"promotion_id": string | null,"status": Database["public"]['Enums']["order_status"],"subtotal_etb": number,"total_etb": number,"tracking_code_hash": string,"updated_at": string,"user_id": string | null
+                    "access_token_hash": string,"address_line": string | null,"assigned_to": string | null,"bank_account_id": string | null,"bank_snapshot": NonNullable<Json>,"cancelled_at": string | null,"city": string | null,"created_at": string,"currency": string,"customer_id": string,"customer_name": string,"customer_phone": string,"delivery_fee_etb": number,"delivery_instructions": string | null,"delivery_zone_id": string | null,"discount_etb": number,"fulfillment_method": Database["public"]['Enums']["fulfillment_method"],"id": string,"idempotency_key": string,"locale": string,"order_number": string,"payment_due_at": string,"payment_method": string,"payment_status": Database["public"]['Enums']["payment_status"],"payment_verified_at": string | null,"payment_verified_by": string | null,"promotion_id": string | null,"status": Database["public"]['Enums']["order_status"],"subtotal_etb": number,"total_etb": number,"tracking_code_hash": string,"updated_at": string,"user_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "access_token_hash": string,"address_line"?: string | null,"assigned_to"?: string | null,"bank_account_id"?: string | null,"bank_snapshot": NonNullable<Json>,"cancelled_at"?: string | null,"city"?: string | null,"created_at"?: string,"currency"?: string,"customer_id": string,"customer_name": string,"customer_phone": string,"delivery_fee_etb"?: number,"delivery_instructions"?: string | null,"delivery_zone_id"?: string | null,"discount_etb"?: number,"fulfillment_method": Database["public"]['Enums']["fulfillment_method"],"id"?: string,"idempotency_key": string,"locale"?: string,"order_number"?: string,"payment_due_at": string,"payment_status"?: Database["public"]['Enums']["payment_status"],"payment_verified_at"?: string | null,"payment_verified_by"?: string | null,"promotion_id"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"subtotal_etb": number,"total_etb": number,"tracking_code_hash": string,"updated_at"?: string,"user_id"?: string | null
+                    "access_token_hash": string,"address_line"?: string | null,"assigned_to"?: string | null,"bank_account_id"?: string | null,"bank_snapshot": NonNullable<Json>,"cancelled_at"?: string | null,"city"?: string | null,"created_at"?: string,"currency"?: string,"customer_id": string,"customer_name": string,"customer_phone": string,"delivery_fee_etb"?: number,"delivery_instructions"?: string | null,"delivery_zone_id"?: string | null,"discount_etb"?: number,"fulfillment_method": Database["public"]['Enums']["fulfillment_method"],"id"?: string,"idempotency_key": string,"locale"?: string,"order_number"?: string,"payment_due_at": string,"payment_method"?: string,"payment_status"?: Database["public"]['Enums']["payment_status"],"payment_verified_at"?: string | null,"payment_verified_by"?: string | null,"promotion_id"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"subtotal_etb": number,"total_etb": number,"tracking_code_hash": string,"updated_at"?: string,"user_id"?: string | null
                   }
                   Update: {
-                    "access_token_hash"?: string,"address_line"?: string | null,"assigned_to"?: string | null,"bank_account_id"?: string | null,"bank_snapshot"?: NonNullable<Json>,"cancelled_at"?: string | null,"city"?: string | null,"created_at"?: string,"currency"?: string,"customer_id"?: string,"customer_name"?: string,"customer_phone"?: string,"delivery_fee_etb"?: number,"delivery_instructions"?: string | null,"delivery_zone_id"?: string | null,"discount_etb"?: number,"fulfillment_method"?: Database["public"]['Enums']["fulfillment_method"],"id"?: string,"idempotency_key"?: string,"locale"?: string,"order_number"?: string,"payment_due_at"?: string,"payment_status"?: Database["public"]['Enums']["payment_status"],"payment_verified_at"?: string | null,"payment_verified_by"?: string | null,"promotion_id"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"subtotal_etb"?: number,"total_etb"?: number,"tracking_code_hash"?: string,"updated_at"?: string,"user_id"?: string | null
+                    "access_token_hash"?: string,"address_line"?: string | null,"assigned_to"?: string | null,"bank_account_id"?: string | null,"bank_snapshot"?: NonNullable<Json>,"cancelled_at"?: string | null,"city"?: string | null,"created_at"?: string,"currency"?: string,"customer_id"?: string,"customer_name"?: string,"customer_phone"?: string,"delivery_fee_etb"?: number,"delivery_instructions"?: string | null,"delivery_zone_id"?: string | null,"discount_etb"?: number,"fulfillment_method"?: Database["public"]['Enums']["fulfillment_method"],"id"?: string,"idempotency_key"?: string,"locale"?: string,"order_number"?: string,"payment_due_at"?: string,"payment_method"?: string,"payment_status"?: Database["public"]['Enums']["payment_status"],"payment_verified_at"?: string | null,"payment_verified_by"?: string | null,"promotion_id"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"subtotal_etb"?: number,"total_etb"?: number,"tracking_code_hash"?: string,"updated_at"?: string,"user_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -593,6 +593,46 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"wallet_ledger": {
+                  Row: {
+                    "amount_etb": number,"balance_after_etb": number,"created_at": string,"created_by": string | null,"id": number,"kind": string,"note": string | null,"order_id": string | null,"topup_id": string | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "amount_etb": number,"balance_after_etb": number,"created_at"?: string,"created_by"?: string | null,"id"?: never,"kind": string,"note"?: string | null,"order_id"?: string | null,"topup_id"?: string | null,"user_id": string
+                  }
+                  Update: {
+                    "amount_etb"?: number,"balance_after_etb"?: number,"created_at"?: string,"created_by"?: string | null,"id"?: never,"kind"?: string,"note"?: string | null,"order_id"?: string | null,"topup_id"?: string | null,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "wallet_ledger_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "wallet_ledger_topup_id_fkey"
+      columns: ["topup_id"]
+isOneToOne: false
+      referencedRelation: "wallet_topups"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"wallet_topups": {
+                  Row: {
+                    "amount_etb": number,"bank_snapshot": Json | null,"created_at": string,"id": string,"receipt_mime": string,"receipt_path": string,"receipt_sha256": string,"receipt_size_bytes": number,"review_note": string | null,"reviewed_at": string | null,"reviewed_by": string | null,"status": string,"topup_number": string,"transaction_reference": string | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "amount_etb": number,"bank_snapshot"?: Json | null,"created_at"?: string,"id"?: string,"receipt_mime": string,"receipt_path": string,"receipt_sha256": string,"receipt_size_bytes": number,"review_note"?: string | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"status"?: string,"topup_number"?: string,"transaction_reference"?: string | null,"user_id": string
+                  }
+                  Update: {
+                    "amount_etb"?: number,"bank_snapshot"?: Json | null,"created_at"?: string,"id"?: string,"receipt_mime"?: string,"receipt_path"?: string,"receipt_sha256"?: string,"receipt_size_bytes"?: number,"review_note"?: string | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"status"?: string,"topup_number"?: string,"transaction_reference"?: string | null,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"website_settings": {
                   Row: {
                     "is_public": boolean,"key": string,"updated_at": string,"updated_by": string | null,"value": NonNullable<Json>
@@ -620,6 +660,9 @@ isOneToOne: false
                            },
 "admin_adjust_stock":
 { Args: { "p_change": number,"p_note"?: string,"p_product_id": string,"p_reason": Database["public"]['Enums']["inventory_reason"] }; Returns: number
+                           },
+"admin_adjust_wallet":
+{ Args: { "p_amount": number,"p_reason": string,"p_user_id": string }; Returns: Json
                            },
 "admin_analytics":
 { Args: { "p_bucket"?: string,"p_from": string,"p_to": string }; Returns: Json
@@ -683,6 +726,9 @@ isOneToOne: false
 "admin_review_payment":
 { Args: { "p_decision": string,"p_note"?: string,"p_submission_id": string }; Returns: undefined
                            },
+"admin_review_topup":
+{ Args: { "p_decision": string,"p_note"?: string,"p_topup_id": string }; Returns: Json
+                           },
 "admin_set_customer_active":
 { Args: { "p_active": boolean,"p_reason"?: string,"p_user_id": string }; Returns: undefined
                            },
@@ -699,6 +745,11 @@ isOneToOne: false
                            },
 "admin_update_printing_status":
 { Args: { "p_job_id": string,"p_note"?: string,"p_status": Database["public"]['Enums']["print_job_status"] }; Returns: undefined
+                           },
+"admin_wallet_balances":
+{ Args: { "p_limit"?: number,"p_search"?: string }; Returns: {
+              "balance_etb": number,"email": string,"full_name": string,"last_activity": string,"user_id": string
+            }[]
                            },
 "bootstrap_super_admin":
 { Args: { "p_full_name": string,"p_user_id": string }; Returns: undefined
@@ -811,6 +862,9 @@ isOneToOne: false
                            },
 "submit_payment":
 { Args: { "p_input": Json }; Returns: Json
+                           },
+"submit_wallet_topup":
+{ Args: { "p_input": Json,"p_user_id": string }; Returns: Json
                            }
           }
           Enums: {

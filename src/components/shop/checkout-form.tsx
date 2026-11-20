@@ -18,6 +18,7 @@ import { formatETB, santim, toSantim } from "@/lib/money";
 import { placeOrder, previewPromotion, type PromoPreview } from "@/lib/orders/checkout-action";
 import { computeCartTotals } from "@/lib/pricing/cart";
 import { localized, type Locale } from "@/i18n/config";
+import { cn } from "@/lib/utils";
 
 const IDEM_KEY = "checkout:idempotency:v1";
 
@@ -40,10 +41,12 @@ export function CheckoutForm({
   shopAddress,
   email,
   defaults,
+  walletBalance = 0,
 }: {
   shopAddress: string;
   email: string;
   defaults: { fullName: string; phone: string };
+  walletBalance?: number;
 }) {
   const t = useTranslations();
   const locale = useLocale() as Locale;
@@ -59,6 +62,7 @@ export function CheckoutForm({
   const [applied, setPromo] = useState<(Extract<PromoPreview, { ok: true }> & { basket: string }) | null>(null);
   const [promoError, setPromoError] = useState<{ code: AppErrorCode; detail?: string } | null>(null);
   const [promoPending, startPromo] = useTransition();
+  const [payMethod, setPayMethod] = useState<"bank_transfer" | "wallet">("bank_transfer");
 
   const view = useMemo(() => {
     if (!details) return null;
@@ -165,6 +169,7 @@ export function CheckoutForm({
         instructions: form.instructions || undefined,
         acceptTerms,
         promotionCode: promo?.code,
+        paymentMethod: useWallet ? "wallet" : "bank_transfer",
         items: cartLines(),
       }).catch(() => ({ ok: false as const, error: "unexpected" as AppErrorCode }));
 
@@ -195,6 +200,10 @@ export function CheckoutForm({
       if (["out_of_stock", "product_unavailable", "printing_job_not_payable", "printing_job_not_found"].includes(result.error)) refresh();
     });
   };
+
+  const shownTotal = promo ? Math.max(100, view.totals.total - toSantim(promo.discountEtb)) : view.totals.total;
+  const walletCovers = walletBalance > 0 && toSantim(walletBalance) >= shownTotal;
+  const useWallet = payMethod === "wallet" && walletCovers;
 
   const stockError =
     error === "out_of_stock" || error === "product_unavailable" || error === "printing_job_not_payable" || error === "printing_job_not_found" || view.problem;
@@ -374,6 +383,24 @@ export function CheckoutForm({
             </p>
           )}
 
+          {walletBalance > 0 && (
+            <fieldset className="space-y-2">
+              <legend className="mb-1 text-sm font-medium">{t("checkout.paymentMethod")}</legend>
+              <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                <input type="radio" name="pay" className="mt-0.5 accent-[var(--primary)]" checked={!useWallet} onChange={() => setPayMethod("bank_transfer")} />
+                {t("wallet.bankTransfer")}
+              </label>
+              <label className={cn("flex items-start gap-2 rounded-md border p-3 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5", walletCovers ? "cursor-pointer" : "opacity-60")}>
+                <input type="radio" name="pay" className="mt-0.5 accent-[var(--primary)]" checked={useWallet} disabled={!walletCovers} onChange={() => setPayMethod("wallet")} />
+                <span>
+                  <span className="block font-medium">{t("wallet.payWith")}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {walletCovers ? t("wallet.payWithHint", { amount: formatETB(toSantim(walletBalance), locale) }) : t("wallet.notEnough", { amount: formatETB(toSantim(walletBalance), locale) })}
+                  </span>
+                </span>
+              </label>
+            </fieldset>
+          )}
           <p className="text-xs text-muted-foreground">
             {t("checkoutPage.nextStep")}{" "}
             <Link href="/help#paying" target="_blank" className="text-primary underline">{t("help.howToPay")}</Link>

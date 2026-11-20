@@ -54,6 +54,7 @@ export interface CustomerOrder {
   subtotal_etb: number;
   delivery_fee_etb: number;
   discount_etb: number;
+  payment_method?: string;
   total_etb: number;
   bank_snapshot: {
     bank_name: string;
@@ -71,7 +72,7 @@ export interface CustomerOrder {
 }
 
 const ORDER_FIELDS = `id, order_number, status, payment_status, customer_name, customer_phone, fulfillment_method, city, address_line,
-       delivery_instructions, subtotal_etb, delivery_fee_etb, discount_etb, total_etb, bank_snapshot, payment_due_at, created_at,
+       delivery_instructions, subtotal_etb, delivery_fee_etb, discount_etb, total_etb, payment_method, bank_snapshot, payment_due_at, created_at,
        items:order_items ( id, name_en, name_am, quantity, unit_price_etb, line_total_etb ),
        submissions:payment_submissions ( status, review_note, submitted_at, transaction_reference ),
        history:order_status_history ( to_status, created_at )`;
@@ -107,7 +108,7 @@ export async function getOrderForCustomer(orderId: string, accessToken: string):
     .from("orders")
     .select(
       `id, order_number, status, payment_status, customer_name, customer_phone, fulfillment_method, city, address_line,
-       delivery_instructions, subtotal_etb, delivery_fee_etb, discount_etb, total_etb, bank_snapshot, payment_due_at, created_at,
+       delivery_instructions, subtotal_etb, delivery_fee_etb, discount_etb, total_etb, payment_method, bank_snapshot, payment_due_at, created_at,
        items:order_items ( id, name_en, name_am, quantity, unit_price_etb, line_total_etb ),
        submissions:payment_submissions ( status, review_note, submitted_at, transaction_reference ),
        history:order_status_history ( to_status, created_at )`,

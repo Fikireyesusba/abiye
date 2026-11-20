@@ -136,6 +136,8 @@ export async function placeOrder(input: unknown): Promise<PlaceOrderResult> {
       },
       items,
       ...(v.promotionCode ? { promotion_code: v.promotionCode } : {}),
+      // Pay with the account balance: the database charges it only if it covers the whole total.
+      payment_method: v.paymentMethod,
     },
   });
 

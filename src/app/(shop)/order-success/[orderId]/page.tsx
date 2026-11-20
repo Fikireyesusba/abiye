@@ -100,7 +100,7 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
               text={`${lastRejection.review_note ? t("order.rejectedReason", { reason: lastRejection.review_note }) + " " : ""}${t("order.rejectedHelp")}`} />
           )}
           {["confirmed", "processing", "ready_for_pickup", "out_for_delivery", "completed"].includes(order.status) && (
-            <Banner tone="success" icon={<CheckCircle2 className="size-5" />} title={t("order.confirmedTitle")} />
+            <Banner tone="success" icon={<CheckCircle2 className="size-5" />} title={order.payment_method === "wallet" ? t("wallet.paidWithBalance") : t("order.confirmedTitle")} />
           )}
 
           {viewer && vapid && (

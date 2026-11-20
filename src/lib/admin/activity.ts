@@ -11,6 +11,9 @@ const ACTION_LABELS: Record<string, string> = {
   promo_assigned: "Personal promo code given",
   mfa_reset: "Two-step login reset",
   export_orders: "Orders exported to Excel",
+  topup_verified: "Wallet top-up verified",
+  topup_rejected: "Wallet top-up rejected",
+  wallet_adjusted: "Wallet balance corrected",
   promo_unassigned: "Personal promo code removed",
   // Supabase Auth events
   login: "Signed in",

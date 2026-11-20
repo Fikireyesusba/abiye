@@ -147,6 +147,20 @@ function spec(row: EmailRow, ctx: EmailContext): Spec | null {
         am: { title: `የህትመት ስራ ${n} ዝግጁ ነው።`, lines: [pickup ? "ከሱቃችን መውሰድ ይችላሉ።" : "በቅርቡ እናደርሳለን።"] },
         button: { href: jobUrl, en: "View job", am: "ስራውን ይመልከቱ" },
       };
+    case "customer_topup_verified":
+      return {
+        subject: `Balance topped up: +${totalEn || esc(money(p.amount_etb, "en"))} / ቀሪ ሂሳብ ተሞልቷል`,
+        en: { title: `We added ${esc(money(p.amount_etb, "en"))} to your balance.`, lines: [`Top-up ${n || esc(p.topup_number)} is verified. Your balance is now <strong>${esc(money(p.balance_etb, "en"))}</strong>.`, "Use it at checkout with “Pay with my balance”."] },
+        am: { title: `${esc(money(p.amount_etb, "am"))} ወደ ቀሪ ሂሳብዎ ጨምረናል።`, lines: [`የመሙላት ጥያቄ ${esc(p.topup_number)} ተረጋግጧል። ቀሪ ሂሳብዎ አሁን <strong>${esc(money(p.balance_etb, "am"))}</strong> ነው።`, "በክፍያ ጊዜ «በቀሪ ሂሳቤ ክፈል»ን ይጠቀሙ።"] },
+        button: { href: `${ctx.appUrl}/account/wallet`, en: "My balance", am: "የእኔ ቀሪ ሂሳብ" },
+      };
+    case "customer_topup_rejected":
+      return {
+        subject: `Top-up ${esc(p.topup_number)} could not be verified / አልተረጋገጠም`,
+        en: { title: `We could not verify top-up ${esc(p.topup_number)} (${esc(money(p.amount_etb, "en"))}).`, lines: [p.note ? `Reason: ${esc(p.note)}` : "", "Nothing was added to your balance. Check the transfer and send a new request with the right receipt."].filter(Boolean) },
+        am: { title: `የመሙላት ጥያቄ ${esc(p.topup_number)} (${esc(money(p.amount_etb, "am"))}) ማረጋገጥ አልቻልንም።`, lines: [p.note ? `ምክንያት፦ ${esc(p.note)}` : "", "ወደ ቀሪ ሂሳብዎ ምንም አልተጨመረም። ዝውውሩን አረጋግጠው በትክክለኛው ደረሰኝ አዲስ ጥያቄ ይላኩ።"].filter(Boolean) },
+        button: { href: `${ctx.appUrl}/account/wallet`, en: "My balance", am: "የእኔ ቀሪ ሂሳብ" },
+      };
     default:
       return null;
   }

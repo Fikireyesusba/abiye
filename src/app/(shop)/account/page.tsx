@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { Bell, LogOut, Tag } from "lucide-react";
+import { Bell, LogOut, Tag, Wallet } from "lucide-react";
 import { ProfileForm } from "@/components/account/auth-forms";
 import { PushToggle } from "@/components/pwa/push";
 import { getServerEnv } from "@/lib/env";
@@ -77,6 +77,16 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
             </CardContent>
           </Card>
         )}
+        <Card>
+          <CardContent className="flex flex-wrap items-center gap-4 pt-6">
+            <Wallet className="size-8 text-primary" aria-hidden />
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground">{t("wallet.card")}</p>
+              <p className="text-2xl font-semibold tabular-nums">{formatETB(toSantim(Number(account?.wallet_balance_etb ?? 0)), locale)}</p>
+            </div>
+            <Button asChild variant="outline"><Link href="/account/wallet">{t("wallet.cardLink")}</Link></Button>
+          </CardContent>
+        </Card>
         {vapid && (
           <Card>
             <CardHeader>

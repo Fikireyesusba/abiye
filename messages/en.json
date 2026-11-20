@@ -44,6 +44,7 @@
     "quantity": "Quantity"
   },
   "checkout": {
+    "paymentMethod": "How do you want to pay?",
     "title": "Checkout",
     "fullName": "Full name",
     "phone": "Phone number",
@@ -195,7 +196,10 @@
     "promo_not_applicable": "This promo code does not apply to the items in your cart.",
     "promo_limit_reached": "This promo code has reached its usage limit.",
     "promo_already_used": "You have already used this promo code.",
-    "staff_account": "Staff accounts cannot place orders. Please shop with a separate personal email."
+    "staff_account": "Staff accounts cannot place orders. Please shop with a separate personal email.",
+    "wallet_insufficient": "Your balance does not cover this order. Pay by bank transfer instead.",
+    "wallet_limit": "This top-up would take your balance above the 10,000 ETB limit.",
+    "topup_pending_limit": "You already have 3 top-ups waiting for verification. Please wait until we check them."
   },
   "header": {
     "menu": "Menu",
@@ -529,5 +533,46 @@
     "blocked": "Notifications are blocked for this website. Allow them in your browser or phone settings, then come back.",
     "unsupported": "This browser cannot show notifications. Use Chrome on Android, or install the app on iPhone.",
     "iosInstallFirst": "On iPhone, notifications work in the installed app: add it to your home screen, open it from there and tap “Turn on notifications”."
+  },
+  "wallet": {
+    "title": "My balance",
+    "back": "My account",
+    "balance": "Balance",
+    "pending": "Waiting for verification",
+    "limit": "Maximum balance",
+    "explain": "Shop credit you can use to pay for a whole order at checkout. Top up by bank transfer; we add it after we see the money in our bank account. The balance can only be spent in our shop (it is not paid out as cash). Refunds of cancelled orders paid with the balance come back here.",
+    "topUp": "Top up",
+    "step1": "Transfer the amount you want to add to:",
+    "step2": "Write your email ({email}) as the reason / remark.",
+    "step3": "Upload a screenshot or PDF of the receipt below.",
+    "noBank": "Top-ups are not available yet.",
+    "amount": "Amount (ETB)",
+    "amountHint": "Between 10 ETB and {max}.",
+    "reference": "Transaction reference (optional)",
+    "receipt": "Receipt (JPG, PNG or PDF, max 10 MB)",
+    "send": "Send top-up request",
+    "uploading": "Uploading…",
+    "checking": "Checking receipt…",
+    "submitted": "Thank you! Top-up {number} was sent. We add it to your balance after we check the transfer.",
+    "atLimit": "Your balance (with requests waiting for verification) is at the 10,000 ETB limit.",
+    "canAdd": "You can add up to {amount}.",
+    "requests": "Top-up requests",
+    "status_pending": "Waiting",
+    "status_verified": "Added",
+    "status_rejected": "Not verified",
+    "history": "History",
+    "noHistory": "No balance activity yet.",
+    "kind_topup": "Top-up",
+    "kind_order_payment": "Order payment",
+    "kind_refund": "Refund",
+    "kind_adjustment": "Correction",
+    "after": "balance {amount}",
+    "card": "My balance",
+    "cardLink": "Top up and history",
+    "payWith": "Pay with my balance",
+    "payWithHint": "Available: {amount}. The order is confirmed immediately.",
+    "notEnough": "Your balance ({amount}) does not cover this order.",
+    "bankTransfer": "Bank transfer",
+    "paidWithBalance": "Paid with your balance — the order is confirmed."
   }
 }

@@ -95,6 +95,38 @@ export function buildMessage(row: OutboxRow, appUrl: string): BuiltMessage {
         attachment: null,
         text: `🚫 <b>ORDER CANCELLED</b>\n\n${line("Order", p.order_number)}\n${line("Reason", p.note)}${p.refund_required ? "\n⚠️ <b>Payment was verified — a refund is required.</b>" : ""}${orderLink}`,
       };
+    case "wallet_topup":
+      return {
+        attachment,
+        text: [
+          "💰 <b>WALLET TOP-UP TO VERIFY</b>",
+          "",
+          line("Request", p.topup_number),
+          line("Customer", p.customer),
+          line("Amount", `${esc(p.amount_etb)} ETB`),
+          line("Reference", p.transaction_reference ?? "—") + (p.reference_seen_before ? " ⚠️ <b>reference/receipt seen before</b>" : ""),
+          "",
+          "Check your bank account before verifying.",
+        ].join("\n") + admin("/admin/wallet"),
+      };
+    case "wallet_order_paid": {
+      const items = Array.isArray(p.items) ? (p.items as { name?: unknown; quantity?: unknown }[]) : [];
+      return {
+        attachment: null,
+        text: [
+          "💳 <b>NEW ORDER — PAID WITH BALANCE</b>",
+          "",
+          line("Order ID", p.order_number),
+          line("Customer", p.customer_name),
+          line("Phone", phone(p.customer_phone)),
+          "Products:",
+          ...items.slice(0, 30).map((i) => `• ${esc(i.name)} × ${esc(i.quantity)}`),
+          "",
+          line("Total", `${esc(p.total_etb)} ETB`),
+          line("Delivery", p.fulfillment_method === "pickup" ? "Pickup at shop" : [p.city, p.address_line].filter(Boolean).join(" — ")),
+        ].join("\n") + orderLink,
+      };
+    }
     case "test_message":
       return { attachment: null, text: "✅ <b>Test message</b>\n\nTelegram notifications are working." };
     default:

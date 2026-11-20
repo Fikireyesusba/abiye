@@ -51,6 +51,7 @@ export const checkoutSchema = z
     items: z.array(cartItemSchema).min(1).max(MAX_CART_LINES),
     acceptTerms: z.literal(true, { message: "terms_required" }),
     promotionCode: promotionCodeSchema.optional(),
+    paymentMethod: z.enum(["bank_transfer", "wallet"]).default("bank_transfer"),
   })
   .superRefine((v, ctx) => {
     if (v.fulfillment === "delivery") {
