@@ -24,8 +24,12 @@ export async function getAdminBadges(ctx: AdminContext): Promise<AdminBadges> {
       ? Promise.resolve(supabase.rpc("admin_notifications", { p_limit: 200 })).then((r) => (r.data ?? []).filter((n) => n.status === "dead" && !n.last_error?.startsWith("skipped")).length, () => 0)
       : 0,
     // High-risk emails (failed admin sign-ins / codes) from the last 24 h that are not blocked yet.
+    // Active security alerts (same as Security → Active alerts): high-risk emails + suspicious customers not yet reviewed / blocked.
     has("audit.view")
-      ? Promise.resolve(supabase.rpc("admin_suspicious_emails", { p_days: 1 })).then((r) => (r.data ?? []).filter((e) => e.score >= 6 && !e.blocked).length, () => 0)
+      ? Promise.all([
+          Promise.resolve(supabase.rpc("admin_suspicious_emails", { p_days: 7 })).then((r) => (r.data ?? []).filter((e) => e.score >= 6 && !e.blocked).length, () => 0),
+          Promise.resolve(supabase.rpc("admin_suspicious_customers", { p_days: 30 })).then((r) => (r.data ?? []).filter((c) => !c.blocked && !c.deactivated).length, () => 0),
+        ]).then(([a, b]) => a + b)
       : 0,
     // Active products at or below their low-stock level (incl. sold out).
     has("inventory.manage") ? Promise.resolve(supabase.rpc("admin_low_stock_count")).then((r) => Number(r.data ?? 0), () => 0) : 0,

@@ -137,7 +137,7 @@ const toast = (page, text) => page.waitForSelector(`[data-sonner-toast]:has-text
     const crow = o.locator("tr", { hasText: cust });
     check(await crow.count() === 1 && (await crow.innerText()).includes("never paid"), "customer with repeated unpaid orders flagged");
     await fetch(`${B}/api/cron/expire-orders`, { headers: { authorization: `Bearer ${process.env.CRON_SECRET}` } });
-    await o.goto(`${B}/admin/security`);
+    await o.goto(`${B}/admin/security?tab=overview`);
     const ov = await o.locator("main").innerText();
     check(/Expire unpaid orders: ran \d+ min ago/.test(ov), "site health shows when the scheduled job last ran");
     check(ov.includes("Customer emails"), "site health lists configuration checks");

@@ -17,7 +17,8 @@ import { cn } from "@/lib/utils";
 export const metadata: Metadata = { title: "Security" };
 
 const TABS = [
-  { key: "overview", label: "Overview" },
+  { key: "alerts", label: "Active alerts" },
+  { key: "overview", label: "Health & stats" },
   { key: "emails", label: "Suspicious emails" },
   { key: "customers", label: "Suspicious customers" },
   { key: "blocked", label: "Blocked" },
@@ -39,7 +40,7 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
   const ctx = await requirePermission("audit.view");
   const canBlock = ctx.permissions.has("security.manage");
   const sp = await searchParams;
-  const tab = TABS.find((t) => t.key === first(sp.tab))?.key ?? "overview";
+  const tab = TABS.find((t) => t.key === first(sp.tab))?.key ?? "alerts";
   const supabase = await createSupabaseServerClient();
   const probe = await supabase.rpc("admin_system_health");
   if (isMissingDbFunction(probe.error)) return <DatabaseUpdateNeeded title="Security" migration="20261120000027_security_monitoring.sql" />;
@@ -76,6 +77,7 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
           </Link>
         ))}
       </nav>
+      {tab === "alerts" && <Alerts />}
       {tab === "overview" && <Overview />}
       {tab === "emails" && <><Emails /><Reviewed /></>}
       {tab === "customers" && <><Customers /><Reviewed /></>}
@@ -84,6 +86,71 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
       {tab === "events" && <Events title="All security events (newest first)" />}
     </>
   );
+
+  async function Alerts() {
+    const [{ data: emails }, { data: customers }] = await Promise.all([
+      supabase.rpc("admin_suspicious_emails", { p_days: 7 }),
+      supabase.rpc("admin_suspicious_customers", { p_days: 30 }),
+    ]);
+    const emailAlerts = (emails ?? []).filter((e) => e.score >= 6 && !e.blocked);
+    const customerAlerts = (customers ?? []).filter((c) => !c.blocked && !c.deactivated);
+    const total = emailAlerts.length + customerAlerts.length;
+    const Actions = ({ type, subject, email, staff }: { type: "email" | "customer"; subject: string; email: string; staff?: boolean }) =>
+      canBlock ? (
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {staff ? <Link href="/admin/staff" className="text-sm text-primary underline">Staff account — check under Staff (reset two-step login)</Link> : <BlockForm email={email} compact />}
+          <ActionForm action={markSecurityReviewed} hidden={{ type, subject }} submitLabel="Mark as reviewed" variant="outline" size="sm" className="flex flex-wrap items-end gap-2 space-y-0">
+            <input name="note" maxLength={500} placeholder="What did you check? (optional)" aria-label="Review note" className={cn(fieldClass, "h-8 w-56")} />
+          </ActionForm>
+        </div>
+      ) : null;
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">Alerts that need a decision. <strong>Block</strong> the email, or <strong>Mark as reviewed</strong> when you checked it and it is fine — either way the alert leaves this dashboard (and the red badge). It comes back only if something new happens.</p>
+        {total === 0 ? (
+          <p className="flex items-center gap-2 rounded-xl border border-dashed p-8 text-success"><CheckCircle2 className="size-5" aria-hidden /> No active alerts. Everything has been reviewed.</p>
+        ) : (
+          <>
+            {canBlock && <div className="flex flex-wrap gap-2"><ReviewAll type="email" count={emailAlerts.length} /><ReviewAll type="customer" count={customerAlerts.length} /></div>}
+            <ul className="space-y-3" data-testid="active-alerts">
+              {emailAlerts.map((e) => (
+                <li key={`e:${e.email}`} className="rounded-xl border border-destructive/40 bg-destructive/5 p-4" data-alert="email">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <AlertTriangle className="size-5 text-destructive" aria-hidden />
+                    <span className="font-semibold break-all">{e.email}</span>
+                    <Badge variant="destructive">high risk · score {e.score}</Badge>
+                    {e.is_staff && <Badge variant="info">staff account</Badge>}
+                    {!e.has_account && <Badge variant="secondary">no account</Badge>}
+                    <span className="ml-auto text-xs text-muted-foreground">last seen {ago(e.last_seen)}</span>
+                  </div>
+                  <p className="mt-2 text-sm">
+                    {[e.failed_admin > 0 && `${e.failed_admin} failed admin sign-in(s)`, e.failed_mfa > 0 && `${e.failed_mfa} wrong two-step code(s)`,
+                      e.failed_customer > 0 && `${e.failed_customer} failed customer sign-in(s)`, e.blocked_attempts > 0 && `${e.blocked_attempts} blocked attempt(s)`,
+                      e.rate_limited > 0 && `${e.rate_limited} rate-limited`, e.networks > 1 && `from ${e.networks} different networks`].filter(Boolean).join(" · ")}
+                    {" "}<Link href={`/admin/security?tab=events&email=${encodeURIComponent(e.email)}`} className="text-primary underline">See events</Link>
+                  </p>
+                  <Actions type="email" subject={e.email} email={e.email} staff={e.is_staff} />
+                </li>
+              ))}
+              {customerAlerts.map((c) => (
+                <li key={`c:${c.user_id}`} className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-4" data-alert="customer">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <ShieldAlert className="size-5 text-amber-700" aria-hidden />
+                    <Link href={`/admin/customers/${c.user_id}`} className="font-semibold text-primary underline break-all">{c.full_name || c.email}</Link>
+                    <span className="text-xs text-muted-foreground break-all">{c.email}</span>
+                    <Badge variant="warning">suspicious customer</Badge>
+                  </div>
+                  <ul className="mt-2 list-disc pl-5 text-sm">{c.reasons.map((r) => <li key={r}>{r}</li>)}</ul>
+                  <Actions type="customer" subject={c.user_id} email={c.email} />
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+        <Reviewed />
+      </div>
+    );
+  }
 
   async function Overview() {
     const h = probe.data as {
