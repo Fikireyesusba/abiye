@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAuthorizedCron } from "@/lib/security/cron";
 import { dispatchCustomerEmails } from "@/lib/email/dispatch";
+import { recordCronRun } from "@/lib/security/events";
 import { dispatchCustomerPush } from "@/lib/push/dispatch";
 import { dispatchNotifications } from "@/lib/telegram/dispatch";
 
@@ -39,5 +40,6 @@ export async function GET(request: Request) {
     push.failed += r.failed;
     if (!r.configured || r.sent + r.failed < 20) break;
   }
+  await recordCronRun("notifications", true, { telegram: { configured, sent, failed }, emails, push });
   return NextResponse.json({ configured, sent, failed, emails, push });
 }

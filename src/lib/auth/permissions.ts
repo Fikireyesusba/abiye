@@ -22,6 +22,7 @@ export const PERMISSIONS = [
   "customers.manage",
   "wallet.manage",
   "wallet.adjust",
+  "security.manage",
   "reports.operational",
   "analytics.view",
   "promotions.manage",
@@ -85,4 +86,5 @@ export const ADMIN_ROUTES: ReadonlyArray<{ href: string; label: string; anyOf: r
   { href: "/admin/notifications", label: "Notifications", anyOf: ["settings.manage"] },
   { href: "/admin/settings", label: "Settings", anyOf: ["settings.manage", "bank_accounts.manage"] },
   { href: "/admin/activity", label: "Activity log", anyOf: ["audit.view"] },
+  { href: "/admin/security", label: "Security", anyOf: ["audit.view"] },
 ];

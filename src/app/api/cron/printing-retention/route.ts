@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthorizedCron } from "@/lib/security/cron";
+import { recordCronRun } from "@/lib/security/events";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 /**
@@ -16,6 +17,7 @@ export async function GET(request: Request) {
   const { data: due, error } = await db.rpc("printing_files_due_for_deletion", { p_limit: 500 });
   if (error) {
     console.error("[cron] printing retention query failed:", error.message);
+    await recordCronRun("storage-maintenance", false, { error: "retention query failed" });
     return NextResponse.json({ error: "failed" }, { status: 500 });
   }
   if (due?.length) {
@@ -42,5 +44,8 @@ export async function GET(request: Request) {
       else orphans += paths.length;
     }
   }
-  return NextResponse.json({ deleted, orphans });
+  // Security events older than 180 days are removed.
+  const { data: purged } = await db.rpc("purge_security_events");
+  await recordCronRun("storage-maintenance", true, { deleted, orphans, purged_events: purged ?? 0 });
+  return NextResponse.json({ deleted, orphans, purged_events: purged ?? 0 });
 }

@@ -1,4 +1,5 @@
 "use server";
+import { isEmailBlocked, recordSecurityEvent } from "@/lib/security/events";
 import { isStaffAccount } from "@/lib/auth/mfa";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -27,7 +28,14 @@ export async function signUpCustomer(_prev: AccountState, fd: FormData): Promise
   if (fd.get("acceptTerms") !== "on") return { ...values, error: "terms" };
 
   const ip = await clientIpKey();
-  if (!(await rateLimitAll([[`signup:ip:${ip}`, 5, 3600]]))) return { ...values, error: "rateLimited" };
+  if (!(await rateLimitAll([[`signup:ip:${ip}`, 5, 3600]]))) {
+    await recordSecurityEvent("rate_limited", { email: values.email, metadata: { where: "signup" } });
+    return { ...values, error: "rateLimited" };
+  }
+  if (await isEmailBlocked(values.email)) {
+    await recordSecurityEvent("signup_blocked", { email: values.email });
+    return { ...values, error: "blocked" };
+  }
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signUp({
@@ -53,7 +61,12 @@ export async function signInCustomer(_prev: AccountState, fd: FormData): Promise
   if (!email.safeParse(addr).success || !pw) return { email: addr, error: "invalidLogin" };
   const ip = await clientIpKey();
   if (!(await rateLimitAll([[`login:ip:${ip}`, 20, 900], [`login:email:${sha256Hex(addr).slice(0, 32)}`, 5, 900]]))) {
+    await recordSecurityEvent("rate_limited", { email: addr, metadata: { where: "customer_login" } });
     return { email: addr, error: "rateLimited" };
+  }
+  if (await isEmailBlocked(addr)) {
+    await recordSecurityEvent("login_blocked", { email: addr });
+    return { email: addr, error: "blocked" };
   }
   const supabase = await createSupabaseServerClient();
   const { data: signedIn, error } = await supabase.auth.signInWithPassword({ email: addr, password: pw });
@@ -66,12 +79,14 @@ export async function signInCustomer(_prev: AccountState, fd: FormData): Promise
     }
     // Admin/staff logins are for the dashboard only (also refused by the database when ordering).
     if (await isStaffAccount(supabase)) {
+      await recordSecurityEvent("staff_customer_login", { email: addr, userId: signedIn.user.id });
       await supabase.auth.signOut({ scope: "local" });
       return { email: addr, error: "staffAccount" };
     }
   }
   if (error) {
     console.warn(`[customer-login] failed: ${error.code ?? "unknown"} (status ${error.status ?? "?"})`);
+    await recordSecurityEvent("customer_login_failed", { email: addr, metadata: { code: error.code ?? "unknown" } });
     if (error.code === "user_banned") return { email: addr, error: "deactivated" };
     return { email: addr, error: /not confirmed/i.test(error.message) ? "notConfirmed" : "invalidLogin" };
   }
@@ -85,6 +100,7 @@ export async function resendConfirmation(_prev: AccountState, fd: FormData): Pro
   if (!(await rateLimitAll([[`resend:ip:${ip}`, 5, 3600], [`resend:email:${sha256Hex(addr).slice(0, 32)}`, 3, 3600]]))) {
     return { email: addr, error: "rateLimited" };
   }
+  if (await isEmailBlocked(addr)) return { ok: "checkEmail", email: addr };
   const supabase = await createSupabaseServerClient();
   await supabase.auth.resend({ type: "signup", email: addr });
   return { ok: "checkEmail", email: addr };
@@ -97,6 +113,7 @@ export async function requestPasswordReset(_prev: AccountState, fd: FormData): P
   if (!(await rateLimitAll([[`reset:ip:${ip}`, 5, 3600], [`reset:email:${sha256Hex(addr).slice(0, 32)}`, 3, 3600]]))) {
     return { email: addr, error: "rateLimited" };
   }
+  if (await isEmailBlocked(addr)) return { ok: "resetSent", email: addr }; // same answer, nothing sent
   const supabase = await createSupabaseServerClient();
   await supabase.auth.resetPasswordForEmail(addr);
   return { ok: "resetSent", email: addr }; // same answer for unknown emails

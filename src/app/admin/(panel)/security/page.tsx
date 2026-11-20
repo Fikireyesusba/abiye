@@ -1,0 +1,234 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { AlertTriangle, CheckCircle2, ShieldAlert, XCircle } from "lucide-react";
+import { ActionForm } from "@/components/admin/action-form";
+import { DatabaseUpdateNeeded, PageHeader, Panel, StatCard, Table, Td, fieldClass, isMissingDbFunction } from "@/components/admin/ui";
+import { Badge } from "@/components/ui/badge";
+import { blockEmail, unblockEmail } from "@/lib/admin/security-actions";
+import { requirePermission } from "@/lib/auth/guards";
+import { first } from "@/lib/catalog/search";
+import { formatDateTime } from "@/lib/datetime";
+import { emailConfigured } from "@/lib/email/dispatch";
+import { pushConfigured } from "@/lib/push/dispatch";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { telegramConfig } from "@/lib/telegram/dispatch";
+import { cn } from "@/lib/utils";
+
+export const metadata: Metadata = { title: "Security" };
+
+const TABS = [
+  { key: "overview", label: "Overview" },
+  { key: "emails", label: "Suspicious emails" },
+  { key: "customers", label: "Suspicious customers" },
+  { key: "blocked", label: "Blocked" },
+  { key: "logins", label: "Admin sign-ins" },
+  { key: "events", label: "All events" },
+] as const;
+const KIND: Record<string, string> = {
+  admin_login_failed: "Admin sign-in failed", admin_login_not_staff: "Non-staff tried admin sign-in", admin_mfa_failed: "Wrong two-step code",
+  admin_login_success: "Admin signed in", customer_login_failed: "Customer sign-in failed", staff_customer_login: "Staff tried customer sign-in",
+  login_blocked: "Blocked email tried to sign in", signup_blocked: "Blocked email tried to sign up", rate_limited: "Too many attempts (rate limited)",
+};
+const ago = (iso: string | null) => {
+  if (!iso) return "never";
+  const h = (new Date().getTime() - Date.parse(iso)) / 3600000;
+  return h < 1 ? `${Math.max(1, Math.round(h * 60))} min ago` : h < 48 ? `${Math.round(h)} h ago` : `${Math.round(h / 24)} days ago`;
+};
+
+export default async function SecurityPage({ searchParams }: PageProps<"/admin/security">) {
+  const ctx = await requirePermission("audit.view");
+  const canBlock = ctx.permissions.has("security.manage");
+  const sp = await searchParams;
+  const tab = TABS.find((t) => t.key === first(sp.tab))?.key ?? "overview";
+  const supabase = await createSupabaseServerClient();
+  const probe = await supabase.rpc("admin_system_health");
+  if (isMissingDbFunction(probe.error)) return <DatabaseUpdateNeeded title="Security" migration="20261120000027_security_monitoring.sql" />;
+
+  const BlockForm = ({ email, compact }: { email?: string; compact?: boolean }) => (
+    <ActionForm action={blockEmail} hidden={email ? { email } : undefined} submitLabel="Block" variant="destructive" size="sm"
+      confirm={email ? `Block ${email}? It will not be able to sign up, sign in or order.` : "Block this email everywhere on the website?"}
+      className={cn(compact ? "flex flex-wrap items-end gap-2 space-y-0" : "grid gap-2 sm:max-w-md")}>
+      {!email && <input name="email" type="email" required placeholder="email@example.com" aria-label="Email to block" className={fieldClass} />}
+      <input name="reason" required minLength={2} maxLength={500} placeholder="Reason" aria-label="Reason for blocking" className={cn(fieldClass, compact && "h-8 w-44")} />
+    </ActionForm>
+  );
+
+  return (
+    <>
+      <PageHeader title="Security & health" description="Suspicious sign-ins (with the email that was used), risky customer behaviour, blocked emails and the health of the website." />
+      <nav className="mb-5 flex gap-1 overflow-x-auto border-b" aria-label="Security sections">
+        {TABS.map((t) => (
+          <Link key={t.key} href={`/admin/security?tab=${t.key}`} aria-current={t.key === tab ? "page" : undefined}
+            className={cn("-mb-px border-b-2 px-4 py-2 text-sm whitespace-nowrap", t.key === tab ? "border-primary font-medium" : "border-transparent text-muted-foreground hover:text-foreground")}>
+            {t.label}
+          </Link>
+        ))}
+      </nav>
+      {tab === "overview" && <Overview />}
+      {tab === "emails" && <Emails />}
+      {tab === "customers" && <Customers />}
+      {tab === "blocked" && <Blocked />}
+      {tab === "logins" && <Events kind="admin_login_success" title="Successful admin sign-ins (after the two-step code)" />}
+      {tab === "events" && <Events title="All security events (newest first)" />}
+    </>
+  );
+
+  async function Overview() {
+    const h = probe.data as {
+      outbox: Record<string, { pending: number; failed: number; dead_7d: number; oldest_pending: string | null }>;
+      payments_pending: number; payments_oldest: string | null; topups_pending: number; topups_oldest: string | null;
+      overdue_unexpired: number; paid_waiting_24h: number; out_of_stock: number;
+      cron: Record<string, { last_run_at: string; ok: boolean }>; events_24h: Record<string, number>; blocked_emails: number;
+    };
+    const ev = (k: string) => h.events_24h[k] ?? 0;
+    const adminFails = ev("admin_login_failed") + ev("admin_login_not_staff") + ev("admin_mfa_failed");
+    const jobs = [
+      { name: "expire-orders", label: "Expire unpaid orders" },
+      { name: "notifications", label: "Retry notifications" },
+      { name: "storage-maintenance", label: "Storage clean-up" },
+    ];
+    const checks: { ok: boolean; text: string; href?: string }[] = [
+      { ok: emailConfigured(), text: emailConfigured() ? "Customer emails configured" : "Customer emails not configured", href: "/admin/notifications" },
+      { ok: pushConfigured(), text: pushConfigured() ? "Phone notifications configured" : "Phone notifications not configured", href: "/admin/notifications" },
+      { ok: !!telegramConfig(), text: telegramConfig() ? "Staff Telegram alerts configured" : "Staff Telegram alerts not configured", href: "/admin/notifications" },
+      ...jobs.map((j) => {
+        const r = h.cron[j.name];
+        const fresh = r && Date.now() - Date.parse(r.last_run_at) < 36 * 3600000;
+        return { ok: !!r && r.ok && !!fresh, text: `${j.label}: ${r ? `${r.ok ? "ran" : "FAILED"} ${ago(r.last_run_at)}` : "has not run yet"}` };
+      }),
+      { ok: h.overdue_unexpired === 0, text: h.overdue_unexpired ? `${h.overdue_unexpired} unpaid order(s) past the deadline not expired yet (stock still reserved)` : "Unpaid orders expire on time" },
+      { ok: h.paid_waiting_24h === 0, text: h.paid_waiting_24h ? `${h.paid_waiting_24h} paid order(s) waiting more than 24 h to be processed` : "No paid orders waiting more than 24 h", href: "/admin/orders?status=confirmed" },
+      ...Object.entries(h.outbox).map(([ch, o]) => ({ ok: o.failed === 0 && o.dead_7d === 0, text: `${({ email: "Customer emails", push: "Phone notifications", telegram: "Staff Telegram alerts" } as Record<string, string>)[ch] ?? ch}: ${o.pending} queued, ${o.failed} retrying, ${o.dead_7d} failed (7 days)`, href: "/admin/notifications" })),
+    ];
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 [&>*]:min-w-0">
+          <StatCard label="Failed admin sign-ins (24 h)" value={adminFails} tone={adminFails >= 5 ? "danger" : adminFails ? "warning" : undefined} href="/admin/security?tab=emails" />
+          <StatCard label="Failed customer sign-ins (24 h)" value={ev("customer_login_failed")} href="/admin/security?tab=emails" />
+          <StatCard label="Blocked attempts (24 h)" value={ev("login_blocked") + ev("signup_blocked")} hint={`${h.blocked_emails} email(s) blocked`} href="/admin/security?tab=blocked" />
+          <StatCard label="Rate-limited (24 h)" value={ev("rate_limited")} tone={ev("rate_limited") ? "warning" : undefined} />
+          <StatCard label="Payments to verify" value={h.payments_pending} hint={h.payments_oldest ? `oldest ${ago(h.payments_oldest)}` : undefined} href="/admin/payments" />
+          <StatCard label="Top-ups to verify" value={h.topups_pending} hint={h.topups_oldest ? `oldest ${ago(h.topups_oldest)}` : undefined} href="/admin/wallet" />
+          <StatCard label="Out of stock" value={h.out_of_stock} href="/admin/inventory?filter=low" tone={h.out_of_stock ? "warning" : undefined} />
+          <StatCard label="Admin sign-ins (24 h)" value={ev("admin_login_success")} href="/admin/security?tab=logins" />
+        </div>
+        <Panel title="Site health">
+          <ul className="space-y-2 text-sm">
+            {checks.map((c) => (
+              <li key={c.text} className="flex items-start gap-2">
+                {c.ok ? <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" aria-hidden /> : <XCircle className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />}
+                <span>{c.href ? <Link href={c.href} className="underline-offset-2 hover:underline">{c.text}</Link> : c.text}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs text-muted-foreground">Scheduled jobs run once a day on the current Vercel plan; a job not seen for 36 hours is flagged.</p>
+        </Panel>
+        {canBlock && <Panel title="Block an email"><BlockForm /></Panel>}
+      </div>
+    );
+  }
+
+  async function Emails() {
+    const { data } = await supabase.rpc("admin_suspicious_emails", { p_days: 7 });
+    return (
+      <>
+        <p className="mb-3 text-sm text-muted-foreground">Every email used in a failed or blocked sign-in in the last 7 days, riskiest first. Admin attempts weigh more; “networks” counts different internet connections.</p>
+        <Table head={["Email used", "Admin fails", "Code fails", "Customer fails", "Blocked tries", "Networks", "Last seen", "Action"]} empty="No failed sign-ins in the last 7 days.">
+          {(data ?? []).map((r) => (
+            <tr key={r.email} className={cn("align-top", r.score >= 6 && !r.blocked && "bg-destructive/5")}>
+              <Td className="max-w-[16rem] break-all">
+                <span className="font-medium">{r.email}</span>
+                <span className="mt-1 flex flex-wrap gap-1">
+                  {r.is_staff && <Badge variant="info">staff account</Badge>}
+                  {!r.has_account && <Badge variant="secondary">no account</Badge>}
+                  {r.score >= 6 && !r.blocked && <Badge variant="destructive"><AlertTriangle className="size-3" /> high risk</Badge>}
+                  {r.blocked && <Badge variant="outline">blocked</Badge>}
+                </span>
+              </Td>
+              <Td className="tabular-nums">{r.failed_admin}</Td>
+              <Td className="tabular-nums">{r.failed_mfa}</Td>
+              <Td className="tabular-nums">{r.failed_customer}</Td>
+              <Td className="tabular-nums">{r.blocked_attempts}</Td>
+              <Td className="tabular-nums">{r.networks}</Td>
+              <Td className="text-xs whitespace-nowrap text-muted-foreground">{ago(r.last_seen)}</Td>
+              <Td>
+                {r.blocked ? <Link href="/admin/security?tab=blocked" className="text-xs text-primary underline">Blocked</Link>
+                  : r.is_staff ? <Link href="/admin/staff" className="text-xs text-primary underline">Check under Staff</Link>
+                  : canBlock ? <BlockForm email={r.email} compact /> : null}
+                <Link href={`/admin/security?tab=events&email=${encodeURIComponent(r.email)}`} className="mt-1 block text-xs text-primary underline">Events</Link>
+              </Td>
+            </tr>
+          ))}
+        </Table>
+      </>
+    );
+  }
+
+  async function Customers() {
+    const { data } = await supabase.rpc("admin_suspicious_customers", { p_days: 30 });
+    return (
+      <>
+        <p className="mb-3 text-sm text-muted-foreground">Customers whose behaviour in the last 30 days needs a look: unpaid orders that hold stock, rejected receipts, receipts or bank references also used by someone else, many failed sign-ins, baskets left together with unpaid orders.</p>
+        <Table head={["Customer", "Why", "Unpaid (expired / cancelled)", "Rejected receipts", "Reused receipts", "Failed sign-ins", "Action"]} empty="No suspicious customers in the last 30 days.">
+          {(data ?? []).map((r) => (
+            <tr key={r.user_id} className="align-top">
+              <Td className="max-w-[14rem] break-all">
+                <Link href={`/admin/customers/${r.user_id}`} className="font-medium text-primary underline underline-offset-2">{r.full_name || r.email}</Link>
+                <span className="block text-xs text-muted-foreground">{r.email}</span>
+                <span className="mt-1 flex gap-1">{r.deactivated && <Badge variant="destructive">deactivated</Badge>}{r.blocked && <Badge variant="outline">blocked</Badge>}</span>
+              </Td>
+              <Td className="text-xs"><ul className="list-disc pl-4">{r.reasons.map((x) => <li key={x}>{x}</li>)}</ul></Td>
+              <Td className="tabular-nums">{r.expired_orders} / {r.cancelled_unpaid}</Td>
+              <Td className="tabular-nums">{r.rejected_payments + r.rejected_topups}</Td>
+              <Td className="tabular-nums">{r.reused_receipts}</Td>
+              <Td className="tabular-nums">{r.failed_logins}</Td>
+              <Td>{!r.blocked && canBlock && <BlockForm email={r.email} compact />}</Td>
+            </tr>
+          ))}
+        </Table>
+      </>
+    );
+  }
+
+  async function Blocked() {
+    const { data } = await supabase.rpc("admin_blocked_emails");
+    return (
+      <div className="space-y-6">
+        {canBlock && <Panel title="Block an email"><BlockForm /></Panel>}
+        <Table head={["Email", "Reason", "Blocked by", "When", ""]} empty="No blocked emails.">
+          {(data ?? []).map((r) => (
+            <tr key={r.email} className="align-top">
+              <Td className="break-all"><span className="flex items-center gap-1 font-medium"><ShieldAlert className="size-4 text-destructive" aria-hidden /> {r.email}</span>{r.has_account && <span className="text-xs text-muted-foreground">has an account (deactivated)</span>}</Td>
+              <Td className="text-sm">{r.reason}</Td>
+              <Td className="text-sm">{r.blocked_by ?? "—"}</Td>
+              <Td className="text-xs whitespace-nowrap text-muted-foreground">{formatDateTime(r.created_at, "en")}</Td>
+              <Td>{canBlock && <ActionForm action={unblockEmail} hidden={{ email: r.email }} submitLabel="Unblock" variant="outline" size="sm" confirm={`Unblock ${r.email}?`} className="space-y-0" />}</Td>
+            </tr>
+          ))}
+        </Table>
+      </div>
+    );
+  }
+
+  async function Events({ kind, title }: { kind?: string; title: string }) {
+    const email = (first(sp.email) ?? "").trim().toLowerCase().slice(0, 254);
+    const { data } = await supabase.rpc("admin_security_events", { p_kind: kind, p_email: email || undefined, p_limit: 200 });
+    return (
+      <>
+        <p className="mb-3 text-sm text-muted-foreground">{title}{email && <> — for <strong>{email}</strong> · <Link href={`/admin/security?tab=${tab}`} className="text-primary underline">show all</Link></>}. Network = short code of the internet connection (same code = same connection).</p>
+        <Table head={["When", "What", "Email", "Account", "Network", "Device"]} empty="No events.">
+          {(data ?? []).map((e) => (
+            <tr key={e.id} className="align-top">
+              <Td className="text-xs whitespace-nowrap text-muted-foreground">{formatDateTime(e.created_at, "en")}</Td>
+              <Td className={cn("text-sm", e.kind !== "admin_login_success" && "text-destructive")}>{KIND[e.kind] ?? e.kind}</Td>
+              <Td className="max-w-[14rem] text-sm break-all">{e.email ?? "—"}</Td>
+              <Td className="text-sm">{e.user_name ?? "—"}</Td>
+              <Td className="font-mono text-xs">{e.ip_hash ?? "—"}</Td>
+              <Td className="max-w-[16rem] text-xs break-words text-muted-foreground">{e.user_agent ?? "—"}</Td>
+            </tr>
+          ))}
+        </Table>
+      </>
+    );
+  }
+}

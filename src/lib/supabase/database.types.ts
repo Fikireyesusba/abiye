@@ -81,6 +81,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"blocked_emails": {
+                  Row: {
+                    "blocked_by": string | null,"created_at": string,"email": string,"reason": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "blocked_by"?: string | null,"created_at"?: string,"email": string,"reason": string
+                  }
+                  Update: {
+                    "blocked_by"?: string | null,"created_at"?: string,"email"?: string,"reason"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"categories": {
                   Row: {
                     "created_at": string,"department": Database["public"]['Enums']["department"],"description_am": string | null,"description_en": string | null,"id": string,"image_path": string | null,"is_active": boolean,"name_am": string,"name_en": string,"parent_id": string | null,"slug": string,"sort_order": number,"updated_at": string
@@ -100,6 +114,20 @@ isOneToOne: false
       referencedRelation: "categories"
       referencedColumns: ["id"]
     }
+                  ]
+                },"cron_runs": {
+                  Row: {
+                    "detail": NonNullable<Json>,"last_ok": boolean,"last_run_at": string,"name": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "detail"?: NonNullable<Json>,"last_ok": boolean,"last_run_at": string,"name": string
+                  }
+                  Update: {
+                    "detail"?: NonNullable<Json>,"last_ok"?: boolean,"last_run_at"?: string,"name"?: string
+                  }
+                  Relationships: [
+                    
                   ]
                 },"customer_accounts": {
                   Row: {
@@ -593,6 +621,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"security_events": {
+                  Row: {
+                    "created_at": string,"email": string | null,"id": number,"ip_hash": string | null,"kind": string,"metadata": NonNullable<Json>,"user_agent": string | null,"user_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"email"?: string | null,"id"?: never,"ip_hash"?: string | null,"kind": string,"metadata"?: NonNullable<Json>,"user_agent"?: string | null,"user_id"?: string | null
+                  }
+                  Update: {
+                    "created_at"?: string,"email"?: string | null,"id"?: never,"ip_hash"?: string | null,"kind"?: string,"metadata"?: NonNullable<Json>,"user_agent"?: string | null,"user_id"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"wallet_ledger": {
                   Row: {
                     "amount_etb": number,"balance_after_etb": number,"created_at": string,"created_by": string | null,"id": number,"kind": string,"note": string | null,"order_id": string | null,"topup_id": string | null,"user_id": string
@@ -673,6 +715,14 @@ isOneToOne: false
 "admin_assign_promotion":
 { Args: { "p_emails": (string)[],"p_promotion_id": string }; Returns: Json
                            },
+"admin_block_email":
+{ Args: { "p_email": string,"p_reason": string }; Returns: Json
+                           },
+"admin_blocked_emails":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "blocked_by": string,"created_at": string,"email": string,"has_account": boolean,"reason": string
+            }[]
+                           },
 "admin_create_staff_profile":
 { Args: { "p_full_name": string,"p_role_key": string,"p_user_id": string }; Returns: undefined
                            },
@@ -729,6 +779,11 @@ isOneToOne: false
 "admin_review_topup":
 { Args: { "p_decision": string,"p_note"?: string,"p_topup_id": string }; Returns: Json
                            },
+"admin_security_events":
+{ Args: { "p_email"?: string,"p_kind"?: string,"p_limit"?: number }; Returns: {
+              "created_at": string,"email": string,"id": number,"ip_hash": string,"kind": string,"metadata": Json,"user_agent": string,"user_name": string
+            }[]
+                           },
 "admin_set_customer_active":
 { Args: { "p_active": boolean,"p_reason"?: string,"p_user_id": string }; Returns: undefined
                            },
@@ -739,6 +794,22 @@ isOneToOne: false
 { Args: { "p_hours"?: number }; Returns: {
               "amount_etb": number,"email": string,"entity_id": string,"full_name": string,"item_count": number,"items": Json,"kind": string,"phone": string,"reference": string,"since": string,"status": string,"user_id": string
             }[]
+                           },
+"admin_suspicious_customers":
+{ Args: { "p_days"?: number }; Returns: {
+              "blocked": boolean,"cancelled_unpaid": number,"deactivated": boolean,"email": string,"expired_orders": number,"failed_logins": number,"full_name": string,"idle_basket_hours": number,"reasons": (string)[],"rejected_payments": number,"rejected_topups": number,"reused_receipts": number,"user_id": string
+            }[]
+                           },
+"admin_suspicious_emails":
+{ Args: { "p_days"?: number }; Returns: {
+              "blocked": boolean,"blocked_attempts": number,"email": string,"failed_admin": number,"failed_customer": number,"failed_mfa": number,"has_account": boolean,"is_staff": boolean,"last_seen": string,"networks": number,"rate_limited": number,"score": number
+            }[]
+                           },
+"admin_system_health":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"admin_unblock_email":
+{ Args: { "p_email": string }; Returns: Json
                            },
 "admin_update_order_status":
 { Args: { "p_note"?: string,"p_order_id": string,"p_status": Database["public"]['Enums']["order_status"] }; Returns: undefined
@@ -825,6 +896,9 @@ isOneToOne: false
 "expire_unpaid_orders":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"is_email_blocked":
+{ Args: { "p_email": string }; Returns: boolean
+                           },
 "mark_printing_files_deleted":
 { Args: { "p_file_ids": (string)[] }; Returns: number
                            },
@@ -844,6 +918,9 @@ isOneToOne: false
               "file_id": string,"job_id": string,"storage_path": string
             }[]
                            },
+"purge_security_events":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "push_targets":
 { Args: { "p_user_id": string }; Returns: {
               "auth": string,"endpoint": string,"id": string,"locale": string,"p256dh": string
@@ -854,6 +931,12 @@ isOneToOne: false
                            },
 "quote_promotion":
 { Args: { "p_code": string,"p_items": Json,"p_user_id": string }; Returns: Json
+                           },
+"record_cron_run":
+{ Args: { "p_detail"?: Json,"p_name": string,"p_ok": boolean }; Returns: undefined
+                           },
+"record_security_event":
+{ Args: { "p_email"?: string,"p_ip_hash"?: string,"p_kind": string,"p_metadata"?: Json,"p_user_agent"?: string,"p_user_id"?: string }; Returns: undefined
                            },
 "storage_orphans":
 { Args: { "p_limit"?: number,"p_min_age"?: string }; Returns: {

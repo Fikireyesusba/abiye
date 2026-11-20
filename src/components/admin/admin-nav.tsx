@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BarChart3, Bell, Boxes, Wallet, Clock, History, Megaphone, CreditCard, FolderTree, LayoutDashboard, Menu, Package, Printer, Settings, ShoppingCart, UserCog, Users,
+  BarChart3, Bell, Boxes, ShieldAlert, Wallet, Clock, History, Megaphone, CreditCard, FolderTree, LayoutDashboard, Menu, Package, Printer, Settings, ShoppingCart, UserCog, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CountBadge, badgeTotal, useAdminBadges } from "./admin-badges";
@@ -26,6 +26,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/admin/promotions": Megaphone,
   "/admin/analytics": BarChart3,
   "/admin/activity": History,
+  "/admin/security": ShieldAlert,
 };
 
 export interface NavItem {
@@ -39,6 +40,7 @@ const BADGE_LABEL: Record<string, string> = {
   "/admin/orders": "paid orders waiting to be processed",
   "/admin/printing": "printing jobs waiting for a quote or printing",
   "/admin/notifications": "failed Telegram notifications",
+  "/admin/security": "high-risk emails to review",
 };
 
 function Links({ items, onNavigate }: { items: NavItem[]; onNavigate?: boolean }) {

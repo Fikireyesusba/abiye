@@ -4,6 +4,7 @@ import { z } from "zod";
 import { clientIpKey, rateLimitAll } from "@/lib/security/rate-limit";
 import { sha256Hex } from "@/lib/security/tokens";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { recordSecurityEvent } from "@/lib/security/events";
 import { isStaffAccount } from "./mfa";
 import { safeAdminRedirect } from "./safe-redirect";
 
@@ -22,18 +23,23 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
     [`login:ip:${ip}`, 20, 900],
     [`login:email:${sha256Hex(email).slice(0, 32)}`, 5, 900],
   ]);
-  if (!allowed) return { error: "Too many sign-in attempts. Please wait 15 minutes and try again.", email };
+  if (!allowed) {
+    await recordSecurityEvent("rate_limited", { email, metadata: { where: "admin_login" } });
+    return { error: "Too many sign-in attempts. Please wait 15 minutes and try again.", email };
+  }
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) {
     // Visitors get one generic message; the server log keeps the real reason (never the password).
     console.warn(`[admin-login] failed: ${error.code ?? "unknown"} (status ${error.status ?? "?"})`);
+    await recordSecurityEvent("admin_login_failed", { email, metadata: { code: error.code ?? "unknown" } });
     return { error: GENERIC, email };
   }
 
   // Valid Supabase user but not an active staff member: sign straight back out.
   if (!(await isStaffAccount(supabase))) {
+    await recordSecurityEvent("admin_login_not_staff", { email });
     console.warn("[admin-login] signed in but no active staff profile (run bootstrap_super_admin / add in /admin/staff)");
     await supabase.auth.signOut();
     return { error: "This account does not have access to the admin dashboard.", email };

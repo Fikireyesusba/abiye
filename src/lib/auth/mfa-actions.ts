@@ -3,11 +3,17 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { clientIpKey, rateLimitAll } from "@/lib/security/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { recordSecurityEvent } from "@/lib/security/events";
 import { getMfaState } from "./mfa";
 import { safeAdminRedirect } from "./safe-redirect";
 
 export type MfaFormState = { error?: string };
 const code = z.string().trim().regex(/^\d{6}$/);
+
+async function currentEmail(): Promise<string | null> {
+  const { data } = await (await createSupabaseServerClient()).auth.getClaims();
+  return typeof data?.claims?.email === "string" ? data.claims.email : null;
+}
 
 async function limited(userId: string) {
   const ip = await clientIpKey();
@@ -26,8 +32,10 @@ export async function verifyAdminCode(_prev: MfaFormState, fd: FormData): Promis
   const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: state.factorId, code: c.data });
   if (error) {
     console.warn(`[admin-mfa] verify failed: ${error.code ?? error.status ?? "unknown"}`);
+    await recordSecurityEvent("admin_mfa_failed", { userId: state.userId, email: await currentEmail() });
     return { error: "That code is not correct (or has expired). Try the newest code." };
   }
+  await recordSecurityEvent("admin_login_success", { userId: state.userId, email: await currentEmail() });
   redirect(safeAdminRedirect(fd.get("next")));
 }
 
@@ -68,6 +76,10 @@ export async function confirmAdminMfaSetup(_prev: MfaFormState, fd: FormData): P
   if (await limited(state.userId)) return { error: "Too many attempts. Please wait 15 minutes and try again." };
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: factorId.data, code: c.data });
-  if (error) return { error: "That code is not correct. Check the time on your phone is automatic, then try the newest code." };
+  if (error) {
+    await recordSecurityEvent("admin_mfa_failed", { userId: state.userId, email: await currentEmail(), metadata: { setup: true } });
+    return { error: "That code is not correct. Check the time on your phone is automatic, then try the newest code." };
+  }
+  await recordSecurityEvent("admin_login_success", { userId: state.userId, email: await currentEmail(), metadata: { first_setup: true } });
   redirect("/admin?mfaEnabled=1");
 }
