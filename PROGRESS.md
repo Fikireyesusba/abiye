@@ -299,7 +299,7 @@ The owner does not run anything from a personal computer. Production database se
 
 **Migrations applied in production by the owner:** 0001–0016 (via production-setup.sql), 0017 (SQL Editor, 2026-11-19). 0018 and 0019 (SQL Editor, 2026-11-19; owner confirmed Analytics works). 0020 (owner verified 2026-11-19). 0021–0027 (SQL Editor, 2026-11-20; owner confirmed). 0028 and 0029 (SQL Editor, 2026-11-20; owner confirmed). 0030–0034 (SQL Editor, 2026-11-20; owner verified with a check query — 0031/0032 had already been applied once). 0035 and 0036 (SQL Editor, 2026-11-20; owner verified with a check query). 0037 and 0038 (SQL Editor, 2026-11-20; owner confirmed). Pending: none. Website live on Vercel (`fantaf.xyz`); Super Admin `fantaf.transport@gmail.com` signs in.
 
-Owner progress so far: Resend domain `fantaf.xyz` + Supabase SMTP + URL configuration (`https://fantaf.xyz`) + 3 bilingual email templates done.
+Owner progress so far: both Telegram groups connected (orders & payments bot + security bot, test messages received 2026-11-20); Resend domain `fantaf.xyz` + Supabase SMTP + URL configuration (`https://fantaf.xyz`) + 3 bilingual email templates done.
 
 ## Decisions made (change if you disagree)
 
