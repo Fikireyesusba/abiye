@@ -1,0 +1,22 @@
+# Weekly dependency updates as pull requests. Every pull request is checked by the CI workflow
+# (lint, types, unit tests, build, database tests) before anyone merges it.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Africa/Addis_Ababa
+    open-pull-requests-limit: 5
+    groups:
+      # Small, low-risk updates arrive together in one pull request.
+      minor-and-patch:
+        update-types: [minor, patch]
+    labels: [dependencies]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    labels: [dependencies]

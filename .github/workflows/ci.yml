@@ -1,0 +1,55 @@
+# Checks every push and pull request: lint, types, unit tests, production build, and the
+# database test suite (all migrations + security tests on a throwaway PostgreSQL, then the
+# production bundle). No secrets are used; nothing is deployed from here.
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: Lint, types, unit tests, build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      # Placeholders: the build must not depend on real keys (settings fall back to defaults).
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder_000000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  database:
+    name: Database tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: PostgreSQL binaries
+        run: |
+          if ! ls -d /usr/lib/postgresql/*/bin >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib
+          fi
+          ls -d /usr/lib/postgresql/*/bin
+      - name: Migrations + SQL tests
+        run: bash scripts/db-test.sh
+      - name: Production bundle + SQL tests
+        run: BUNDLE=1 bash scripts/db-test.sh
