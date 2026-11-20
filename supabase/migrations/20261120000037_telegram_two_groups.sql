@@ -100,7 +100,8 @@ set search_path = ''
 as $$
 begin
   if new.status is not distinct from old.status
-     or new.status::text not in ('awaiting_payment', 'printing', 'ready', 'completed', 'cancelled') then
+     or new.status::text not in ('awaiting_payment', 'printing', 'ready', 'completed', 'cancelled')
+     or old.status::text = 'submitted' then   -- priced automatically at creation: already in "new printing request"
     return null;
   end if;
   perform private.enqueue_notification('printing_status', 'printing_status:' || new.id || ':' || new.status, jsonb_build_object(

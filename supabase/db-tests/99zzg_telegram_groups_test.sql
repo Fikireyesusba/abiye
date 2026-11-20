@@ -20,7 +20,7 @@ select pg_temp.ok((select array_agg(payload ->> 'to' order by id) from public.no
 
 -- printing job steps
 set role service_role;
-select public.create_printing_job_for_user(:customer, pg_temp.job_payload('c6000000-0000-0000-0000-000000000001', 4));
+select public.create_printing_job_for_user(:customer, pg_temp.job_payload('c6000000-0000-0000-0000-000000000001', null)); -- needs a manual quote
 reset role;
 update public.printing_jobs set status = 'awaiting_payment', total_etb = 40 where id = 'c6000000-0000-0000-0000-000000000001';
 update public.printing_jobs set status = 'printing' where id = 'c6000000-0000-0000-0000-000000000001';

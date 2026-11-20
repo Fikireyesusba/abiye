@@ -157,11 +157,11 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
     const a = await (await b.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
     await adminLogin(a, B, OWNER.email, OWNER.password);
     await a.goto(`${B}/admin/notifications`);
-    check((await a.locator("text=Bot token and chat id are configured").count()) === 1, "admin sees Telegram is configured");
+    check((await a.locator("text=Connected (TELEGRAM_BOT_TOKEN").count()) === 1, "admin sees Telegram is configured");
     const beforeTest = received.length;
-    await a.click("button:has-text('Send test message')");
+    await a.locator("button:has-text('Send test message')").first().click();
     await a.waitForSelector('[data-sonner-toast]:has-text("Test message sent")');
-    check(received.slice(beforeTest).some((x) => x.text?.includes("Telegram notifications are working")), "test message delivered");
+    check(received.slice(beforeTest).some((x) => x.text?.includes("Test message — orders & payments group")), "test message delivered");
     const deadId = sql(`select id from notifications_outbox where payload->>'job_number' = '${jobNumber}'`);
     sql(`update notifications_outbox set status = 'dead', last_error = '400 Bad Request: chat not found' where id = ${deadId}`);
     await a.reload();
