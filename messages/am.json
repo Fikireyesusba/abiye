@@ -282,7 +282,9 @@
     "calculatedAtCheckout": "የመጨረሻ ዋጋዎች በክፍያ ጊዜ ይረጋገጣሉ።",
     "fixIssues": "ከክፍያ በፊት እባክዎ ከላይ ምልክት የተደረገባቸውን ዕቃዎች ያስተካክሉ።",
     "itemTotal": "የዕቃ ድምር",
-    "setQuantity": "ወደ {count} ቀይር"
+    "setQuantity": "ወደ {count} ቀይር",
+    "deliveryAtCheckout": "ማድረስ ወይም ከሱቅ መውሰድ በክፍያ ጊዜ ይመረጣል፤ የማድረሻ ክፍያውም እዚያ ይታያል።",
+    "itemsTotal": "የዕቃዎች ድምር"
   },
   "footer": {
     "shop": "ሱቅ",

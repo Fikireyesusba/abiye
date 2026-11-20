@@ -6,7 +6,7 @@ import { PrintForm } from "@/components/shop/print-form";
 import { Button } from "@/components/ui/button";
 import { getCustomerAccount, getCustomerUser } from "@/lib/account/session";
 import { formatEthiopianPhone } from "@/lib/validation/phone";
-import { getPrintingPrices } from "@/lib/catalog/queries";
+import { getDeliveryZones, getPrintingPrices } from "@/lib/catalog/queries";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import { formatETB, toSantim } from "@/lib/money";
 import type { Locale } from "@/i18n/config";
@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** Online printing: upload → server page count → priced job (or staff quote) → basket → bank transfer. */
 export default async function PrintingPage() {
-  const [t, locale, prices, s] = await Promise.all([getTranslations(), getLocale() as Promise<Locale>, getPrintingPrices(), getSiteSettings()]);
+  const [t, locale, prices, s, zones] = await Promise.all([getTranslations(), getLocale() as Promise<Locale>, getPrintingPrices(), getSiteSettings(), getDeliveryZones()]);
   const charge = s.printing.service_charge_etb;
   const user = await getCustomerUser();
   const account = user ? await getCustomerAccount(user.id) : null;
@@ -82,7 +82,7 @@ export default async function PrintingPage() {
           maxMb={Math.min(25, s.printing.max_file_mb)}
           maxCopies={s.printing.max_copies}
           pickupEnabled={s.delivery.pickup_enabled}
-          deliveryEnabled={s.delivery.delivery_enabled}
+          deliveryEnabled={s.delivery.delivery_enabled && zones.length > 0}
         />
         ) : (
           <div className="flex flex-col items-start gap-4 rounded-xl border border-dashed p-6 sm:flex-row sm:items-center">

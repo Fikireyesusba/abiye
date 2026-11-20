@@ -72,7 +72,8 @@ export async function getCartDetails(input: unknown): Promise<CartDetails> {
     })),
     zones,
     pickupEnabled: settings.delivery.pickup_enabled,
-    deliveryEnabled: settings.delivery.delivery_enabled,
+    // Home delivery only when it is switched on AND at least one delivery city is active.
+    deliveryEnabled: settings.delivery.delivery_enabled && zones.length > 0,
     freeDeliveryThresholdEtb: settings.delivery.free_delivery_threshold_etb,
   };
 }

@@ -282,7 +282,9 @@
     "calculatedAtCheckout": "Final prices are confirmed at checkout.",
     "fixIssues": "Please resolve the items marked above before checkout.",
     "itemTotal": "Item total",
-    "setQuantity": "Set to {count}"
+    "setQuantity": "Set to {count}",
+    "deliveryAtCheckout": "Delivery or pickup is chosen at checkout, where you also see the delivery fee.",
+    "itemsTotal": "Items total"
   },
   "footer": {
     "shop": "Shop",

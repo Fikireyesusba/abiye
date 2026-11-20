@@ -80,15 +80,13 @@ function resetSampleStock() {
   await p.waitForSelector('main a:has-text("Sign in to be notified")');
   check(await p.locator('main button[aria-label="Increase quantity"]').count() === 0, 'sold-out product cannot be added (offers "notify me" instead)');
 
-  // Cart totals: 2 × 2850 + 850 = 6550, + Addis 150 = 6700
+  // Basket: items only (2 × 2850 + 850 = 6550); delivery or pickup is chosen once, at checkout.
   await p.goto(B + '/cart', { waitUntil: 'load' });
   await p.waitForSelector('text=Order summary');
-  await p.selectOption('select:near(:text("Delivery to"))', { label: 'Addis Ababa — 150 ETB' });
-  const total = await p.locator('dl div:has(dt:text-is("Total")) dd').textContent();
-  check(total === '6,700 ETB', `cart total with delivery = ${total}`);
-  await p.check('input[type=radio] >> nth=1');
-  const totalPickup = await p.locator('dl div:has(dt:text-is("Total")) dd').textContent();
-  check(totalPickup === '6,550 ETB', `pickup total = ${totalPickup}`);
+  const total = await p.locator('dl div:has(dt:text-is("Items total")) dd').textContent();
+  check(total === '6,550 ETB', `basket items total = ${total}`);
+  check(await p.locator('main input[type=radio]').count() === 0 && await p.locator('main select').count() === 0, 'no delivery choice in the basket (asked once, at checkout)');
+  check((await p.locator('main').innerText()).includes('Delivery or pickup is chosen at checkout'), 'basket explains where delivery is chosen');
   await p.reload({ waitUntil: 'load' });
   await p.waitForSelector('text=Order summary');
   check((await p.locator('ul.divide-y > li').count()) === 2, 'cart persists after refresh');
@@ -104,13 +102,31 @@ function resetSampleStock() {
   // Over-stock: 5 requested, 3 available -> checkout blocked until fixed
   await p.evaluate(() => localStorage.setItem('cart:v1', JSON.stringify([{type:'product',productId:'20000000-0000-0000-0000-000000000003',quantity:5}])));
   await p.goto(B + '/cart'); await p.waitForSelector('text=Only 3 in stock.');
-  await p.check('input[type=radio] >> nth=0');
-  await p.selectOption('select:near(:text("Delivery to"))', { label: 'Addis Ababa — 150 ETB' });
   check(await p.locator('button:has-text("Proceed to checkout")').isDisabled(), 'checkout blocked when quantity exceeds stock');
   await p.click('button:has-text("Set to 3")');
   await p.waitForSelector('a:has-text("Proceed to checkout")');
   check(true, 'one-tap fix enables checkout');
-  check((await p.locator('dl div:has(dt:text-is("Total")) dd').textContent()) === '2,190 ETB', 'total after fix = 3×680 + 150 = 2,190 ETB');
+  check((await p.locator('dl div:has(dt:text-is("Items total")) dd').textContent()) === '2,040 ETB', 'items total after fix = 3×680 = 2,040 ETB');
+
+  // No active delivery city → checkout offers pickup only (no empty city list)
+  const DBQ = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+  const { ensureCustomer, loginCustomer } = require('./_customer.cjs');
+  await ensureCustomer('nozones-e2e@example.com', 'NoZonesE2E2026x');
+  const nz = await (await b.newContext()).newPage();
+  await loginCustomer(nz, B, 'nozones-e2e@example.com', 'NoZonesE2E2026x');
+  await nz.evaluate(() => localStorage.setItem('cart:v1', JSON.stringify([{ type: 'product', productId: '20000000-0000-0000-0000-000000000007', quantity: 1 }])));
+  require('child_process').execSync(`psql -q "${DBQ}" -c "update delivery_zones set is_active = false where id::text like '40000000-%'"`);
+  try {
+    await nz.goto(B + '/checkout');
+    await nz.waitForSelector('text=Order summary');
+    check(await nz.locator('label:has-text("Home delivery")').count() === 0 && await nz.locator('label:has-text("Pick up from shop") input:checked').count() === 1,
+      'no delivery cities → only pickup is offered (already selected)');
+  } finally {
+    require('child_process').execSync(`psql -q "${DBQ}" -c "update delivery_zones set is_active = true where id::text like '40000000-%'"`);
+  }
+  await nz.goto(B + '/checkout');
+  await nz.waitForSelector('text=Order summary');
+  check(await nz.locator('label:has-text("Home delivery")').count() === 1, 'with delivery cities, Home delivery is offered');
 
   // Language switch
   await p.goto(B + '/');

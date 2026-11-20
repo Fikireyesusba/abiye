@@ -32,6 +32,8 @@ async function fillContact(p, name, phone) {
 }
 
 (async () => {
+  // Leftovers of interrupted earlier runs would make the job lists ambiguous.
+  sql("update printing_jobs set status = 'cancelled' where customer_name in ('Yonas Docx', 'Meron Print') and status in ('awaiting_quote', 'awaiting_payment')");
   sql("delete from rate_limits; update printing_price_rules set price_per_page_etb = 3, is_active = true where color_mode = 'bw' and paper_size = 'A4' and sides = 'single'");
   const b = await chromium.launch();
   const ctx = await b.newContext({ viewport: { width: 1280, height: 1000 } });
@@ -97,10 +99,10 @@ async function fillContact(p, name, phone) {
   await p.goto(`${B}/cart`);
   await p.waitForSelector(`text=Printing job`);
   check((await p.locator("ul.divide-y > li").count()) === 2, "basket shows printing job + product");
-  await p.check("input[type=radio] >> nth=1"); // pickup
-  check((await p.locator("dl div:has(dt:text-is('Total')) dd").textContent()) === "310 ETB", "basket total: 60 printing + 250 cable");
+  check((await p.locator("dl div:has(dt:text-is('Items total')) dd").textContent()) === "310 ETB", "basket items total: 60 printing + 250 cable");
   await p.goto(`${B}/checkout`);
   await p.waitForSelector("text=Order summary");
+  await p.check("label:has-text('Pick up from shop') input[type=radio]");
   await p.check("label:has-text('I agree') input[type=checkbox]");
   await p.fill("#fullName", "Meron Print");
   await p.fill("#phone", "0911556677");

@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { AlertTriangle, Printer, ShoppingBag, Trash2 } from "lucide-react";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cart, itemKey, readFulfillmentPrefs, saveFulfillmentPrefs, type FulfillmentPrefs } from "@/lib/cart/store";
+import { cart, itemKey } from "@/lib/cart/store";
 import { useCartDetails } from "@/lib/cart/use-cart-details";
 import { formatETB, toSantim } from "@/lib/money";
 import { computeCartTotals } from "@/lib/pricing/cart";
@@ -20,14 +20,6 @@ export function CartView() {
   const { items, productItems, details, error } = useCartDetails();
   const locale = useLocale() as Locale;
   const t = useTranslations();
-  // Prefs are only rendered after details load (client-only), so lazy init cannot cause a hydration mismatch.
-  const [prefs, setPrefs] = useState<FulfillmentPrefs>(() => readFulfillmentPrefs());
-
-  const updatePrefs = (p: FulfillmentPrefs) => {
-    setPrefs(p);
-    saveFulfillmentPrefs(p);
-  };
-
   const lines = useMemo(() => {
     if (!details) return [];
     const byId = new Map(details.products.map((p) => [p.id, p]));
@@ -74,8 +66,7 @@ export function CartView() {
     );
   }
 
-  const zone = details.zones.find((z) => z.id === prefs.deliveryZoneId) ?? null;
-  const method = prefs.method === "pickup" && details.pickupEnabled ? "pickup" : details.deliveryEnabled ? "delivery" : "pickup";
+  // Delivery or pickup (and the city) are chosen once, at checkout. The basket shows the items only.
   const valid = lines.filter((l) => !l.unavailable && l.product);
   const payablePrint = printLines.filter((l) => l.job?.payable);
   const totals = computeCartTotals(
@@ -83,15 +74,10 @@ export function CartView() {
       ...valid.map((l) => ({ unitPrice: toSantim(l.product!.unit_price_etb), quantity: l.item.quantity })),
       ...payablePrint.map((l) => ({ unitPrice: toSantim(l.job!.total_etb!), quantity: 1 })),
     ],
-    {
-      fulfillment: method,
-      zoneFee: zone ? toSantim(zone.fee_etb) : null,
-      freeDeliveryThreshold: details.freeDeliveryThresholdEtb !== null ? toSantim(details.freeDeliveryThresholdEtb) : null,
-    },
+    { fulfillment: "pickup", zoneFee: null, freeDeliveryThreshold: null },
   );
   const anythingToPay = valid.length > 0 || payablePrint.length > 0;
   const hasIssues = lines.some((l) => l.unavailable || l.short) || printLines.some((l) => !l.job?.payable);
-  const needsZone = method === "delivery" && !zone;
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem]">
@@ -180,67 +166,25 @@ export function CartView() {
           <CardTitle>{t("cartPage.summary")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <fieldset className="space-y-2">
-            <legend className="mb-2 text-sm font-medium">{t("checkout.fulfillment")}</legend>
-            {details.deliveryEnabled && (
-              <label className="flex cursor-pointer items-center gap-2 rounded-md border p-3 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                <input type="radio" name="method" className="accent-[var(--primary)]" checked={method === "delivery"} onChange={() => updatePrefs({ ...prefs, method: "delivery" })} />
-                {t("checkout.delivery")}
-              </label>
-            )}
-            {details.pickupEnabled && (
-              <label className="flex cursor-pointer items-center gap-2 rounded-md border p-3 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                <input type="radio" name="method" className="accent-[var(--primary)]" checked={method === "pickup"} onChange={() => updatePrefs({ ...prefs, method: "pickup" })} />
-                {t("checkout.pickup")}
-              </label>
-            )}
-          </fieldset>
-
-          {method === "delivery" ? (
-            <label className="block space-y-1.5 text-sm">
-              <span className="font-medium">{t("cartPage.deliveryTo")}</span>
-              <select
-                value={zone?.id ?? ""}
-                onChange={(e) => updatePrefs({ ...prefs, deliveryZoneId: e.target.value || null })}
-                className="h-10 w-full rounded-md border border-input bg-card px-3 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-              >
-                <option value="">{t("cartPage.chooseCity")}</option>
-                {details.zones.map((z) => (
-                  <option key={z.id} value={z.id}>
-                    {localized(z, "name", locale)} — {formatETB(toSantim(z.fee_etb), locale)}
-                  </option>
-                ))}
-              </select>
-              {zone?.estimated_days && <span className="text-xs text-muted-foreground">{t("cartPage.estimatedDays", { days: zone.estimated_days })}</span>}
-            </label>
-          ) : (
-            <p className="text-sm text-muted-foreground">{t("cartPage.pickupFree")}</p>
-          )}
-          {details.freeDeliveryThresholdEtb !== null && method === "delivery" && (
+          <p className="text-sm text-muted-foreground">{t("cartPage.deliveryAtCheckout")}</p>
+          {details.deliveryEnabled && details.freeDeliveryThresholdEtb !== null && (
             <p className="text-xs text-success">{t("cartPage.freeOver", { amount: formatETB(toSantim(details.freeDeliveryThresholdEtb), locale) })}</p>
           )}
-
           <Separator />
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between">
               <dt className="text-muted-foreground">{t("cart.subtotal")}</dt>
               <dd className="tabular-nums">{formatETB(totals.subtotal, locale)}</dd>
             </div>
-            <div className="flex justify-between">
-              <dt className="text-muted-foreground">{t("cart.delivery")}</dt>
-              <dd className="tabular-nums">
-                {method === "pickup" || totals.freeDeliveryApplied ? t("cart.freeDelivery") : zone ? formatETB(totals.deliveryFee, locale) : "—"}
-              </dd>
-            </div>
             <Separator />
             <div className="flex justify-between text-base font-semibold">
-              <dt>{t("cart.total")}</dt>
+              <dt>{t("cartPage.itemsTotal")}</dt>
               <dd className="tabular-nums">{formatETB(totals.total, locale)}</dd>
             </div>
           </dl>
           <p className="text-xs text-muted-foreground">{t("cartPage.calculatedAtCheckout")}</p>
           {hasIssues && <p className="text-sm text-destructive">{t("cartPage.fixIssues")}</p>}
-          {hasIssues || needsZone || !anythingToPay ? (
+          {hasIssues || !anythingToPay ? (
             <Button size="lg" className="w-full" disabled>
               {t("cart.checkout")}
             </Button>

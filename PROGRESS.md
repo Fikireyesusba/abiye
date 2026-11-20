@@ -115,6 +115,13 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - Local dev: sign-ups + email confirmation on, local mail catcher on :54324 (dev:up no longer excludes it).
 - **Production TODO for the owner**: configure SMTP + email templates + URL configuration in Supabase (docs/DEPLOYMENT.md §2b).
 
+## Delivery asked once; no empty city list (reported 2026-11-21) — verified
+
+- Basket no longer has its own delivery / city picker (it showed the choice twice and blocked "Proceed" until a city was picked). It shows the items total and "Delivery or pickup is chosen at checkout" (+ free-delivery threshold hint).
+- Home delivery is offered (checkout, printing form) only when delivery is switched on **and** at least one delivery city is active; otherwise pickup only, pre-selected (`deliveryEnabled = delivery_enabled && zones.length > 0`).
+- Owner action: add delivery cities in Admin → Settings → Delivery (production had none active).
+- Tests updated: storefront (+ no-cities / with-cities checkout checks), printing (chooses pickup at checkout; cancels leftovers of interrupted runs). `scripts/dev-up.sh` now treats a docker/containerd pid file as stale unless that PID really is dockerd/containerd (PIDs are reused after a restart).
+
 ## Staff not listed under Customers (requested 2026-11-21) — verified
 
 Migration **0040**: `admin_customer_accounts` excludes staff (profiles) everywhere (list, search, detail, wallet lookup); `is_staff` kept (always false). `admin_is_staff_account` lets `/admin/customers/<staff id>` redirect to `/admin/staff`. Customers page says staff are managed under Staff. SQL `99zzj_*`; customers browser suite updated (31). Also fixed a time-of-day flake in the analytics SQL test (used the UTC date; now Addis date).
