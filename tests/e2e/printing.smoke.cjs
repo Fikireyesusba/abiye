@@ -150,6 +150,8 @@ async function fillContact(p, name, phone) {
   await a.locator("form:has(button:has-text('Mark collected')) button").click();
   await toast(a, "status updated");
   check(sql(`select status from printing_jobs where id = '${job1}'`) === "completed", "job completed");
+  check(sql(`select count(*) from storage.objects where bucket_id = 'printing-files' and name like 'jobs/${job1}/%'`) === "0"
+    && sql(`select files_deleted_at is not null from printing_jobs where id = '${job1}'`) === "t", "documents deleted as soon as the job is collected");
 
   // ---- 6. Prices editor
   await a.goto(`${B}/admin/printing/prices`);
@@ -162,13 +164,13 @@ async function fillContact(p, name, phone) {
   sql("update printing_price_rules set price_per_page_etb = 3 where color_mode = 'bw' and paper_size = 'A4' and sides = 'single'");
   check(sql(`select total_etb from printing_jobs where id = '${job2}'`) === "36.00", "existing quotes keep their price");
 
-  // ---- 7. Retention
-  sql(`update printing_jobs set files_delete_after = now() - interval '1 minute' where id = '${job1}'`);
+  // ---- 7. Retention (jobs never collected: the daily clean-up deletes expired files)
+  sql(`update printing_jobs set files_delete_after = now() - interval '1 minute' where id = '${job2}'`);
   check((await fetch(`${B}/api/cron/printing-retention`)).status === 401, "retention cron rejects unauthenticated calls");
   const cron = await (await fetch(`${B}/api/cron/printing-retention`, { headers: { authorization: `Bearer ${process.env.CRON_SECRET}` } })).json();
   check(cron.deleted >= 1, `retention cron deleted expired files (${JSON.stringify(cron)})`);
-  check(sql(`select count(*) from storage.objects where bucket_id = 'printing-files' and name like 'jobs/${job1}/%'`) === "0", "storage objects removed");
-  await p.goto(`${B}/printing/jobs/${job1}`);
+  check(sql(`select count(*) from storage.objects where bucket_id = 'printing-files' and name like 'jobs/${job2}/%'`) === "0", "storage objects removed");
+  await p.goto(`${B}/printing/jobs/${job2}`);
   check((await p.locator("text=deleted").count()) > 0, "customer sees the file was deleted");
 
   // ---- 8. Access control
