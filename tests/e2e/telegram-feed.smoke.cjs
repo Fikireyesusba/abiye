@@ -26,6 +26,7 @@ const RUN = Date.now().toString(36);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const tg = [];
+let rightsError = false; // simulate "member cannot send messages"
 const secMsgs = [];
 const orderMsgs = [];
 const tgServer = http.createServer((req, res) => {
@@ -35,6 +36,10 @@ const tgServer = http.createServer((req, res) => {
     const body = Buffer.concat(chunks).toString("utf8");
     const text = req.headers["content-type"]?.startsWith("application/json") ? JSON.parse(body).text : body.match(/name="caption"\r\n\r\n([\s\S]*?)\r\n--/)?.[1];
     const token = req.url.match(/^\/bot([^/]+)\//)?.[1];
+    if (rightsError) {
+      res.writeHead(400, { "content-type": "application/json" });
+      return res.end(JSON.stringify({ ok: false, error_code: 400, description: "Bad Request: not enough rights to send text messages to the chat" }));
+    }
     tg.push(text ?? "");
     (token === SEC_TOKEN ? secMsgs : orderMsgs).push(text ?? "");
     res.writeHead(200, { "content-type": "application/json" });
@@ -128,6 +133,18 @@ const cron = () => fetch(`${B}/api/cron/notifications`, { headers: { authorizati
     await o.locator("button:has-text('Send test message')").nth(1).click();
     check(await waitFor(() => secMsgs.some((t) => t.includes("Test message — security group"))), "security group test message");
     check(await o.locator("details[data-category=security]").count() === 1 && await o.locator("details[data-category=orders]").count() === 1, "notifications grouped by category");
+
+    // ---- bot without rights → hint + Retry all failed
+    rightsError = true;
+    await o.locator("button:has-text('Send test message')").first().click();
+    await o.waitForSelector("[data-sonner-toast]:has-text('could not be delivered')");
+    await o.reload();
+    check((await o.locator("main").innerText()).includes("cannot post in the group"), "explains the missing bot rights");
+    rightsError = false;
+    const beforeRetry = orderMsgs.length;
+    await o.click("button:has-text('Retry all failed')");
+    await o.waitForSelector("[data-sonner-toast]:has-text('retried')");
+    check(orderMsgs.slice(beforeRetry).some((t) => t.includes("Test message — orders & payments group")), "Retry all failed delivers once the bot can post");
 
     // ---- switches: security off → no more security messages
     await o.goto(`${B}/admin/notifications`);

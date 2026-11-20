@@ -123,7 +123,7 @@ It refuses to run again once an active Super Admin exists. (Developers can inste
 1. In Telegram, open **@BotFather** → `/newbot` → choose a name → copy the token (looks like `7000000000:AA…`).
 2. Create a **private group** for staff alerts (e.g. "Abiye Orders"), add the bot to it, and send any message in the group.
 3. Open `https://api.telegram.org/bot<TOKEN>/getUpdates` in a browser and copy `"chat":{"id": …}` — group ids are negative (e.g. `-1001234567890`).
-4. In BotFather: `/setjoingroups` → **Disable** (nobody can add your bot to other groups) and `/setprivacy` → **Enable**.
+4. In BotFather: `/setjoingroups` → **Disable** (nobody can add your bot to other groups) and `/setprivacy` → **Enable**. If the group stops members from sending messages, make the bot an **admin with every right switched off** (admins can always post); otherwise Telegram answers "not enough rights to send text messages".
 5. In Vercel → Settings → Environment Variables (Production), add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_ADMIN_CHAT_ID` (mark the token **Sensitive**), then redeploy.
 6. Sign in to `/admin/notifications` and press **Send test message**. You should see the test message in the group.
 7. **Second bot for security** (recommended): repeat steps 1–4 for a new bot and a separate private group (e.g. "Abiye Security"), then add `TELEGRAM_SECURITY_BOT_TOKEN` (Sensitive) and `TELEGRAM_SECURITY_CHAT_ID` in Vercel and redeploy. Security events, 🚨 alerts, admin sign-ins and admin actions go there; orders, payments, printing, top-ups, stock and customer-message copies stay in the first group. Test it with the security group's **Send test message**.

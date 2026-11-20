@@ -56,3 +56,23 @@ export async function saveTelegramFeed(_prev: ActionResult | null, fd: FormData)
   revalidatePath("/admin/notifications");
   return ok("Telegram activity feed saved.");
 }
+
+/** Retry every failed message at once (customer messages and both Telegram groups). */
+export async function retryAllFailed(): Promise<ActionResult> {
+  await requirePermission("settings.manage");
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("admin_notifications", { p_limit: 1000 });
+  if (error) return dbError(error);
+  const ids = (data ?? []).filter((r) => r.status === "failed" || (r.status === "dead" && !r.last_error?.startsWith("skipped"))).map((r) => r.id).slice(0, 200);
+  if (!ids.length) return ok("Nothing to retry.");
+  let queued = 0;
+  for (const id of ids) {
+    const { error: e } = await supabase.rpc("admin_retry_notification", { p_id: id });
+    if (!e) queued++;
+  }
+  const results = await Promise.allSettled([dispatchNotifications(50), dispatchCustomerEmails(50), dispatchCustomerPush(50), dispatchReceiptArchive(20)]);
+  const failed = results.reduce((n, r) => n + (r.status === "fulfilled" ? r.value.failed : 0), 0);
+  revalidatePath("/admin/notifications");
+  revalidatePath("/admin", "layout");
+  return failed ? fail(`${queued} message(s) retried — ${failed} still failing. See the error next to each.`) : ok(`${queued} message(s) retried and sent.`);
+}

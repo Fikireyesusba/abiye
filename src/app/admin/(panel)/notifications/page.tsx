@@ -3,7 +3,7 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
 import { PageHeader, Panel, Table, Td, fieldClass } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
-import { retryNotification, saveTelegramFeed, sendSecurityTest, sendTestNotification } from "@/lib/admin/notification-actions";
+import { retryAllFailed, retryNotification, saveTelegramFeed, sendSecurityTest, sendTestNotification } from "@/lib/admin/notification-actions";
 import { describe } from "@/lib/telegram/format";
 import { archivePastReceipts, saveReceiptArchive, sendArchiveTest } from "@/lib/admin/archive-actions";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,11 @@ function categoryOf(r: Pick<Row, "channel" | "event_type">): (typeof CATEGORIES)
   if (r.event_type === "test_message") return "other";
   return "orders";
 }
+// Names in the list (the detailed name is in each Telegram message).
+const LIST_LABEL: Record<string, string> = {
+  security_event: "Security event", security_alert: "🚨 Security alert", admin_action: "Admin action",
+  notification_copy: "Copy of a customer message", security_test: "Test message (security group)", test_message: "Test message (orders group)",
+};
 const CHANNEL_LABEL: Record<string, string> = { telegram: "Telegram", email: "Email", push: "Phone", archive: "Archive email" };
 const TONE = { sent: "success", pending: "secondary", processing: "info", failed: "warning", dead: "destructive" } as const;
 
@@ -167,6 +172,17 @@ export default async function NotificationsPage() {
         The latest {rows.length} messages, newest first. Click a category to open it. Failed messages are retried automatically (1, 2, 4… minutes); after the last attempt press <strong>Retry</strong>.
         {problems > 0 && <span className="font-medium text-destructive"> {problems} need attention.</span>}
       </p>
+      {problems > 0 && (
+        <div className="mb-3 space-y-2">
+          {rows.some((r) => isProblem(r) && /not enough rights|chat not found|bot was kicked|forbidden/i.test(r.last_error ?? "")) && (
+            <p className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm">
+              Telegram says the bot <strong>cannot post in the group</strong>. In Telegram: open the group → Edit → Administrators → Add Admin → choose the bot →
+              switch every right off → Save (admins can always post). Or allow members to send messages. Then press <strong>Retry all failed</strong>.
+            </p>
+          )}
+          <ActionForm action={retryAllFailed} submitLabel={`Retry all failed (${problems})`} variant="outline" size="sm" />
+        </div>
+      )}
       <div className="space-y-3">
         {CATEGORIES.map((c) => {
           const list = rows.filter((r) => categoryOf(r) === c.key);
@@ -187,7 +203,7 @@ export default async function NotificationsPage() {
                   {list.map((r) => (
                     <tr key={r.id}>
                       <Td className="text-xs text-muted-foreground tabular-nums">{r.id}</Td>
-                      <Td>{describe({ id: r.id, event_type: r.event_type, payload: {}, attachment_bucket: null, attachment_path: null })[1]}</Td>
+                      <Td>{LIST_LABEL[r.event_type] ?? describe({ id: r.id, event_type: r.event_type, payload: {}, attachment_bucket: null, attachment_path: null })[1]}</Td>
                       <Td className="text-xs">{CHANNEL_LABEL[r.channel] ?? r.channel}</Td>
                       <Td className="max-w-[12rem] font-mono text-xs break-all">{r.reference ?? "—"}</Td>
                       <Td><Badge variant={TONE[r.status]}>{r.status === "dead" && r.last_error?.startsWith("skipped") ? "skipped" : r.status}</Badge></Td>
