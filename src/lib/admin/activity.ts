@@ -26,6 +26,7 @@ const ACTION_LABELS: Record<string, string> = {
   receipt_archive_backfill: "Past receipts sent to the archive",
   audit_cleared: "Old activity entries cleared",
   email_unblocked: "Email unblocked",
+  security_reviewed: "Security alert cleared (reviewed)",
   promo_unassigned: "Personal promo code removed",
   // Supabase Auth events
   login: "Signed in",

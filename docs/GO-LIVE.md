@@ -23,6 +23,7 @@ Paste each file's full contents (GitHub → file → **Raw** → copy) into a ne
 15. `supabase/migrations/20261120000032_product_reviews.sql`
 16. `supabase/migrations/20261120000033_sales_reports.sql`
 17. `supabase/migrations/20261120000034_data_export_reset.sql`
+18. `supabase/migrations/20261120000035_security_reviews.sql`
 
 Each should say "Success. No rows returned". If Supabase warns about RLS, choose "Run without RLS" (the files enable it themselves).
 
@@ -72,7 +73,7 @@ Each should say "Success. No rows returned". If Supabase warns about RLS, choose
 - **Payments to verify** badge in the admin header: verify only after the money is visible in your bank account. A receipt image alone is not proof.
 - **Stalled checkouts**: call or WhatsApp customers who left unpaid orders or full baskets.
 - **Activity log** (Super Admin): who changed what — check it if something looks wrong. Monthly: **Export to Excel** and keep the file; optionally **Clear old entries** afterwards (the last 30 days are always kept).
-- **Security** (Super Admin): glance at it daily — red badge = high-risk sign-in attempts; block emails that keep trying; Site health shows anything not working (notifications, scheduled jobs, overdue work).
+- **Security** (Super Admin): glance at it daily — red badge = high-risk sign-in attempts; block emails that keep trying, or **Mark as reviewed** the ones you checked (clears the badge until something new happens); Site health shows anything not working (notifications, scheduled jobs, overdue work).
 - **Wallet** (Manager / Super Admin): verify top-ups only after the money is in the bank, like payments.
 - **Monthly**: Payments → **Export verified & rejected payments to Excel** and compare the verified totals with your bank statement.
 - **Sales reports** (Super Admin): print or export the **Daily closing** and compare *Money into your bank* with your bank app; monthly statement for your accountant.

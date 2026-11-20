@@ -32,6 +32,7 @@
     "test:smoke:staff-portal": "node --env-file=.env.local tests/e2e/staff-portal.smoke.cjs",
     "test:smoke:wallet": "node --env-file=.env.local tests/e2e/wallet.smoke.cjs",
     "test:smoke:security": "node --env-file=.env.local tests/e2e/security.smoke.cjs",
+    "test:smoke:security-review": "NODE_PATH=$(npm root -g):$(pwd)/node_modules node --env-file=.env.local tests/e2e/security-review.smoke.cjs",
     "test:smoke:reports": "NODE_PATH=$(npm root -g):$(pwd)/node_modules node --env-file=.env.local tests/e2e/reports.smoke.cjs",
     "test:smoke:reviews": "NODE_PATH=$(npm root -g):$(pwd)/node_modules node --env-file=.env.local tests/e2e/reviews.smoke.cjs",
     "test:smoke:stock-alerts": "NODE_PATH=$(npm root -g):$(pwd)/node_modules node --env-file=.env.local tests/e2e/stock-alerts.smoke.cjs",

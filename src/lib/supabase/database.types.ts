@@ -667,6 +667,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"security_reviews": {
+                  Row: {
+                    "note": string | null,"reviewed_at": string,"reviewed_by": string | null,"subject": string,"subject_type": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "note"?: string | null,"reviewed_at"?: string,"reviewed_by"?: string | null,"subject": string,"subject_type": string
+                  }
+                  Update: {
+                    "note"?: string | null,"reviewed_at"?: string,"reviewed_by"?: string | null,"subject"?: string,"subject_type"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"stock_alerts": {
                   Row: {
                     "created_at": string,"id": string,"notified_at": string | null,"product_id": string,"user_id": string
@@ -823,6 +837,9 @@ isOneToOne: false
 "admin_mark_printing_files_deleted":
 { Args: { "p_job_id": string }; Returns: number
                            },
+"admin_mark_security_reviewed":
+{ Args: { "p_note"?: string,"p_subjects": (string)[],"p_type": string }; Returns: number
+                           },
 "admin_moderate_review":
 { Args: { "p_decision": string,"p_note"?: string,"p_review_id": string }; Returns: undefined
                            },
@@ -879,6 +896,11 @@ isOneToOne: false
 "admin_security_events":
 { Args: { "p_email"?: string,"p_kind"?: string,"p_limit"?: number }; Returns: {
               "created_at": string,"email": string,"id": number,"ip_hash": string,"kind": string,"metadata": Json,"user_agent": string,"user_name": string
+            }[]
+                           },
+"admin_security_reviews":
+{ Args: { "p_limit"?: number }; Returns: {
+              "note": string,"reviewed_at": string,"reviewed_by_name": string,"subject": string,"subject_type": string
             }[]
                            },
 "admin_set_customer_active":

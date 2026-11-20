@@ -4,7 +4,7 @@ import { AlertTriangle, CheckCircle2, ShieldAlert, XCircle } from "lucide-react"
 import { ActionForm } from "@/components/admin/action-form";
 import { DatabaseUpdateNeeded, PageHeader, Panel, StatCard, Table, Td, fieldClass, isMissingDbFunction } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
-import { blockEmail, unblockEmail } from "@/lib/admin/security-actions";
+import { blockEmail, markSecurityReviewed, unblockEmail } from "@/lib/admin/security-actions";
 import { requirePermission } from "@/lib/auth/guards";
 import { first } from "@/lib/catalog/search";
 import { formatDateTime } from "@/lib/datetime";
@@ -53,6 +53,18 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
     </ActionForm>
   );
 
+  const ReviewForm = ({ type, subject }: { type: "email" | "customer"; subject: string }) => (
+    <ActionForm action={markSecurityReviewed} hidden={{ type, subject }} submitLabel="Mark as reviewed" variant="outline" size="sm" className="mt-1 space-y-0" />
+  );
+  const ReviewAll = ({ type, count }: { type: "email" | "customer"; count: number }) =>
+    canBlock && count > 0 ? (
+      <ActionForm action={markSecurityReviewed} hidden={{ type, all: "1" }} submitLabel={`Mark all ${count} as reviewed`} variant="outline" size="sm"
+        confirm={`Clear all ${count} alerts? They come back only if something new happens. Nothing is blocked or deleted.`}
+        className="mb-3 flex flex-wrap items-end gap-2 space-y-0">
+        <input name="note" maxLength={500} placeholder="Note (optional)" aria-label="Note" className={cn(fieldClass, "h-8 w-56")} />
+      </ActionForm>
+    ) : null;
+
   return (
     <>
       <PageHeader title="Security & health" description="Suspicious sign-ins (with the email that was used), risky customer behaviour, blocked emails and the health of the website." />
@@ -65,8 +77,8 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
         ))}
       </nav>
       {tab === "overview" && <Overview />}
-      {tab === "emails" && <Emails />}
-      {tab === "customers" && <Customers />}
+      {tab === "emails" && <><Emails /><Reviewed /></>}
+      {tab === "customers" && <><Customers /><Reviewed /></>}
       {tab === "blocked" && <Blocked />}
       {tab === "logins" && <Events kind="admin_login_success" title="Successful admin sign-ins (after the two-step code)" />}
       {tab === "events" && <Events title="All security events (newest first)" />}
@@ -82,6 +94,9 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
     };
     const ev = (k: string) => h.events_24h[k] ?? 0;
     const adminFails = ev("admin_login_failed") + ev("admin_login_not_staff") + ev("admin_mfa_failed");
+    // Only attempts not yet reviewed (and not from blocked emails) keep the card red.
+    const { data: open } = await supabase.rpc("admin_suspicious_emails", { p_days: 1 });
+    const openAdminFails = (open ?? []).filter((e) => !e.blocked).reduce((n, e) => n + Number(e.failed_admin) + Number(e.failed_mfa), 0);
     const jobs = [
       { name: "expire-orders", label: "Expire unpaid orders" },
       { name: "notifications", label: "Retry notifications" },
@@ -103,7 +118,8 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 [&>*]:min-w-0">
-          <StatCard label="Failed admin sign-ins (24 h)" value={adminFails} tone={adminFails >= 5 ? "danger" : adminFails ? "warning" : undefined} href="/admin/security?tab=emails" />
+          <StatCard label="Failed admin sign-ins (24 h)" value={adminFails} hint={adminFails ? (openAdminFails ? `${openAdminFails} not reviewed` : "all reviewed") : undefined}
+            tone={openAdminFails >= 5 ? "danger" : openAdminFails ? "warning" : undefined} href="/admin/security?tab=emails" />
           <StatCard label="Failed customer sign-ins (24 h)" value={ev("customer_login_failed")} href="/admin/security?tab=emails" />
           <StatCard label="Blocked attempts (24 h)" value={ev("login_blocked") + ev("signup_blocked")} hint={`${h.blocked_emails} email(s) blocked`} href="/admin/security?tab=blocked" />
           <StatCard label="Rate-limited (24 h)" value={ev("rate_limited")} tone={ev("rate_limited") ? "warning" : undefined} />
@@ -132,7 +148,8 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
     const { data } = await supabase.rpc("admin_suspicious_emails", { p_days: 7 });
     return (
       <>
-        <p className="mb-3 text-sm text-muted-foreground">Every email used in a failed or blocked sign-in in the last 7 days, riskiest first. Admin attempts weigh more; “networks” counts different internet connections.</p>
+        <p className="mb-3 text-sm text-muted-foreground">Every email used in a failed or blocked sign-in in the last 7 days, riskiest first. Admin attempts weigh more; “networks” counts different internet connections. Checked one and it is fine? <strong>Mark as reviewed</strong> clears it (and the red badge) until something new happens.</p>
+        <ReviewAll type="email" count={(data ?? []).filter((r) => !r.blocked).length} />
         <Table head={["Email used", "Admin fails", "Code fails", "Customer fails", "Blocked tries", "Networks", "Last seen", "Action"]} empty="No failed sign-ins in the last 7 days.">
           {(data ?? []).map((r) => (
             <tr key={r.email} className={cn("align-top", r.score >= 6 && !r.blocked && "bg-destructive/5")}>
@@ -155,6 +172,7 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
                 {r.blocked ? <Link href="/admin/security?tab=blocked" className="text-xs text-primary underline">Blocked</Link>
                   : r.is_staff ? <Link href="/admin/staff" className="text-xs text-primary underline">Check under Staff</Link>
                   : canBlock ? <BlockForm email={r.email} compact /> : null}
+                {canBlock && !r.blocked && <ReviewForm type="email" subject={r.email} />}
                 <Link href={`/admin/security?tab=events&email=${encodeURIComponent(r.email)}`} className="mt-1 block text-xs text-primary underline">Events</Link>
               </Td>
             </tr>
@@ -164,11 +182,28 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
     );
   }
 
+  async function Reviewed() {
+    const { data } = await supabase.rpc("admin_security_reviews", { p_limit: 50 });
+    if (!data?.length) return null;
+    return (
+      <Panel title="Recently reviewed" className="mt-6">
+        <ul className="space-y-1 text-sm">
+          {data.map((r) => (
+            <li key={`${r.subject_type}:${r.subject}`} className="break-all">
+              <span className="font-medium">{r.subject}</span> <span className="text-muted-foreground">({r.subject_type}) · {formatDateTime(r.reviewed_at, "en")} by {r.reviewed_by_name ?? "—"}{r.note ? ` · ${r.note}` : ""}</span>
+            </li>
+          ))}
+        </ul>
+      </Panel>
+    );
+  }
+
   async function Customers() {
     const { data } = await supabase.rpc("admin_suspicious_customers", { p_days: 30 });
     return (
       <>
-        <p className="mb-3 text-sm text-muted-foreground">Customers whose behaviour in the last 30 days needs a look: unpaid orders that hold stock, rejected receipts, receipts or bank references also used by someone else, many failed sign-ins, baskets left together with unpaid orders.</p>
+        <p className="mb-3 text-sm text-muted-foreground">Customers whose behaviour in the last 30 days needs a look: unpaid orders that hold stock, rejected receipts, receipts or bank references also used by someone else, many failed sign-ins, baskets left together with unpaid orders. <strong>Mark as reviewed</strong> clears a customer until new behaviour appears.</p>
+        <ReviewAll type="customer" count={(data ?? []).length} />
         <Table head={["Customer", "Why", "Unpaid (expired / cancelled)", "Rejected receipts", "Reused receipts", "Failed sign-ins", "Action"]} empty="No suspicious customers in the last 30 days.">
           {(data ?? []).map((r) => (
             <tr key={r.user_id} className="align-top">
@@ -182,7 +217,7 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
               <Td className="tabular-nums">{r.rejected_payments + r.rejected_topups}</Td>
               <Td className="tabular-nums">{r.reused_receipts}</Td>
               <Td className="tabular-nums">{r.failed_logins}</Td>
-              <Td>{!r.blocked && canBlock && <BlockForm email={r.email} compact />}</Td>
+              <Td>{!r.blocked && canBlock && <BlockForm email={r.email} compact />}{canBlock && <ReviewForm type="customer" subject={r.user_id} />}</Td>
             </tr>
           ))}
         </Table>

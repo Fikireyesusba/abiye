@@ -38,3 +38,34 @@ export async function unblockEmail(_prev: ActionResult | null, fd: FormData): Pr
   revalidatePath("/admin/security");
   return ok(userId ? `Unblocked ${email} and reactivated the account.` : `Unblocked ${email}.`);
 }
+
+/**
+ * Super Admin: clear alerts ("mark as reviewed"). One email / customer, or everything currently listed.
+ * It disappears from the lists and the red badge and comes back only on new activity.
+ */
+export async function markSecurityReviewed(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("security.manage");
+  const type = fd.get("type") === "customer" ? "customer" : fd.get("type") === "email" ? "email" : null;
+  if (!type) return fail("Invalid request.");
+  const note = String(fd.get("note") ?? "").trim().slice(0, 500) || undefined;
+  const supabase = await createSupabaseServerClient();
+  let subjects: string[];
+  if (fd.get("all") === "1") {
+    const { data, error } = type === "email"
+      ? await supabase.rpc("admin_suspicious_emails", { p_days: 7 }).then((r) => ({ data: (r.data ?? []).filter((x) => !x.blocked).map((x) => x.email), error: r.error }))
+      : await supabase.rpc("admin_suspicious_customers", { p_days: 30 }).then((r) => ({ data: (r.data ?? []).map((x) => x.user_id), error: r.error }));
+    if (error) return dbError(error);
+    subjects = data;
+  } else {
+    const one = String(fd.get("subject") ?? "").trim();
+    const valid = type === "email" ? z.email().max(254).safeParse(one.toLowerCase()).success : z.guid().safeParse(one).success;
+    if (!valid) return fail("Invalid request.");
+    subjects = [one];
+  }
+  if (!subjects.length) return ok("Nothing to clear.");
+  const { data, error } = await supabase.rpc("admin_mark_security_reviewed", { p_type: type, p_subjects: subjects.slice(0, 500), p_note: note });
+  if (error) return dbError(error);
+  revalidatePath("/admin", "layout"); // red badge
+  const n = Number(data ?? 0);
+  return ok(`${n} alert${n === 1 ? "" : "s"} cleared. ${n === 1 ? "It" : "They"} will show again only if something new happens.`);
+}
