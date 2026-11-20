@@ -85,7 +85,7 @@ const SKU = `E2E-NTF-${RUN.toUpperCase()}`;
     await o.waitForSelector("[data-sonner-toast]");
     await o.waitForTimeout(500);
     check(sql(`select count(*) from notifications_outbox where id > ${mark} and event_type = 'low_stock' and payload->>'product_id' = '${pid}'`) === "1", "Telegram low-stock alert at the alert level");
-    check(Number(sql(`select count(*) from notifications_outbox where id > ${mark} and event_type = 'staff_low_stock' and payload->>'product_id' = '${pid}'`)) >= 1, "low-stock email to staff who manage stock");
+    check(sql(`select count(*) from notifications_outbox where id > ${mark} and channel = 'email' and event_type like 'staff_%'`) === "0", "no staff email (stock alerts go to the stock Telegram group)");
     await o.reload();
     const row3 = o.locator("tr", { hasText: `Notify Charger ${RUN}` });
     await row3.locator("input[name=change]").fill("-3");
