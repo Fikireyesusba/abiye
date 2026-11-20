@@ -19,6 +19,9 @@ Paste each file's full contents (GitHub → file → **Raw** → copy) into a ne
 11. `supabase/migrations/20261120000028_profile_and_activity_tools.sql`
 12. `supabase/migrations/20261120000029_payment_export.sql`
 13. `supabase/migrations/20261120000030_pickup_cleanup_and_receipt_archive.sql`
+14. `supabase/migrations/20261120000031_stock_alerts.sql`
+15. `supabase/migrations/20261120000032_product_reviews.sql`
+16. `supabase/migrations/20261120000033_sales_reports.sql`
 
 Each should say "Success. No rows returned". If Supabase warns about RLS, choose "Run without RLS" (the files enable it themselves).
 
@@ -70,6 +73,10 @@ Each should say "Success. No rows returned". If Supabase warns about RLS, choose
 - **Security** (Super Admin): glance at it daily — red badge = high-risk sign-in attempts; block emails that keep trying; Site health shows anything not working (notifications, scheduled jobs, overdue work).
 - **Wallet** (Manager / Super Admin): verify top-ups only after the money is in the bank, like payments.
 - **Monthly**: Payments → **Export verified & rejected payments to Excel** and compare the verified totals with your bank statement.
+- **Sales reports** (Super Admin): print or export the **Daily closing** and compare *Money into your bank* with your bank app; monthly statement for your accountant.
+- **Reviews**: publish or reject waiting reviews (red badge).
+- **Inventory**: red badge = products at their low-stock level; restocking automatically emails customers who asked.
+- **GitHub**: Dependabot opens update requests weekly; merge one only when its CI check is green (GitHub → Pull requests).
 - **Analytics**: weekly look at sales, best sellers and low stock.
 
 ## Security notes

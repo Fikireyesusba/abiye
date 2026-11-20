@@ -17,6 +17,7 @@ const ACTION_LABELS: Record<string, string> = {
   email_blocked: "Email blocked",
   export_activity: "Activity log exported to Excel",
   export_payments: "Payments exported to Excel",
+  export_sales: "Sales report exported to Excel",
   receipt_archive_set: "Receipt archive address changed",
   review_approved: "Review approved",
   review_rejected: "Review rejected",

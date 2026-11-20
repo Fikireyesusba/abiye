@@ -861,6 +861,9 @@ isOneToOne: false
 "admin_review_topup":
 { Args: { "p_decision": string,"p_note"?: string,"p_topup_id": string }; Returns: Json
                            },
+"admin_sales_report":
+{ Args: { "p_from": string,"p_to": string }; Returns: Json
+                           },
 "admin_security_events":
 { Args: { "p_email"?: string,"p_kind"?: string,"p_limit"?: number }; Returns: {
               "created_at": string,"email": string,"id": number,"ip_hash": string,"kind": string,"metadata": Json,"user_agent": string,"user_name": string

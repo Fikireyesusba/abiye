@@ -73,7 +73,7 @@ function Links({ items, onNavigate }: { items: NavItem[]; onNavigate?: boolean }
 
 export function AdminSidebar({ items }: { items: NavItem[] }) {
   return (
-    <aside className="hidden w-60 shrink-0 bg-sidebar text-sidebar-foreground lg:block">
+    <aside className="hidden w-60 shrink-0 bg-sidebar text-sidebar-foreground lg:block print:hidden">
       <div className="sticky top-0 flex h-screen flex-col">
         <Link href="/admin" className="flex h-16 items-center gap-2 px-5 font-semibold">
           <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">A</span>
