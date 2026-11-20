@@ -62,6 +62,7 @@ export const HELP: HelpSection[] = [
       { kind: "list", items: [
         { en: "Browse by department (Cosmetics, Electronics) or use the search box at the top.", am: "በክፍል (የውበት ምርቶች፣ ኤሌክትሮኒክስ) ያስሱ ወይም ከላይ ያለውን የፍለጋ ሳጥን ይጠቀሙ።" },
         { en: "Filter by category, sort by price, or show only items in stock.", am: "በምድብ ያጣሩ፣ በዋጋ ይደርድሩ ወይም ያሉትን ዕቃዎች ብቻ ያሳዩ።" },
+        { en: "Sold out? Tap “Notify me when available” on the product page (signed in) and we email you — and send a phone notification if you turned them on — as soon as it is back.", am: "ተሽጧል? በምርቱ ገጽ ላይ «ሲገኝ አሳውቀኝ»ን ይንኩ (ገብተው)፤ እንደገና እንደተገኘ በኢሜይል — የስልክ ማሳወቂያ ካበሩም በስልክ — እናሳውቅዎታለን።" },
         { en: "Open a product to see photos, details and price, then tap “Add to basket”.", am: "ፎቶዎችን፣ ዝርዝሮችን እና ዋጋውን ለማየት ምርቱን ይክፈቱ፣ ከዚያ «ወደ ጋሪ ጨምር»ን ይንኩ።" },
         { en: "Open the basket (bag icon) to change quantities or remove items. Your basket is saved on your account when you are signed in.", am: "ብዛትን ለመቀየር ወይም ዕቃዎችን ለማስወገድ ጋሪውን (የቦርሳ ምልክት) ይክፈቱ። ሲገቡ ጋሪዎ በመለያዎ ላይ ይቀመጣል።" },
       ] },

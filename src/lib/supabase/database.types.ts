@@ -641,6 +641,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"stock_alerts": {
+                  Row: {
+                    "created_at": string,"id": string,"notified_at": string | null,"product_id": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"notified_at"?: string | null,"product_id": string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"notified_at"?: string | null,"product_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "stock_alerts_product_id_fkey"
+      columns: ["product_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"wallet_ledger": {
                   Row: {
                     "amount_etb": number,"balance_after_etb": number,"created_at": string,"created_by": string | null,"id": number,"kind": string,"note": string | null,"order_id": string | null,"topup_id": string | null,"user_id": string
@@ -765,6 +785,9 @@ isOneToOne: false
 "admin_log_mfa_reset":
 { Args: { "p_user_id": string }; Returns: undefined
                            },
+"admin_low_stock_count":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "admin_mark_printing_files_deleted":
 { Args: { "p_job_id": string }; Returns: number
                            },
@@ -857,6 +880,9 @@ isOneToOne: false
                            },
 "bootstrap_super_admin":
 { Args: { "p_full_name": string,"p_user_id": string }; Returns: undefined
+                           },
+"cancel_stock_alert":
+{ Args: { "p_product_id": string }; Returns: undefined
                            },
 "check_rate_limit":
 { Args: { "p_key": string,"p_limit": number,"p_window_seconds": number }; Returns: boolean
@@ -973,6 +999,9 @@ isOneToOne: false
                            },
 "record_security_event":
 { Args: { "p_email"?: string,"p_ip_hash"?: string,"p_kind": string,"p_metadata"?: Json,"p_user_agent"?: string,"p_user_id"?: string }; Returns: undefined
+                           },
+"request_stock_alert":
+{ Args: { "p_product_id": string }; Returns: undefined
                            },
 "storage_orphans":
 { Args: { "p_limit"?: number,"p_min_age"?: string }; Returns: {

@@ -127,6 +127,20 @@ export function buildMessage(row: OutboxRow, appUrl: string): BuiltMessage {
         ].join("\n") + orderLink,
       };
     }
+    case "low_stock":
+    case "out_of_stock":
+      return {
+        attachment: null,
+        text: [
+          row.event_type === "out_of_stock" ? "⛔ <b>SOLD OUT</b>" : "📉 <b>LOW STOCK</b>",
+          "",
+          line("Product", p.name),
+          line("SKU", p.sku),
+          line("In stock", p.stock) + (row.event_type === "low_stock" ? ` (alert level ${esc(p.threshold)})` : ""),
+          "",
+          row.event_type === "out_of_stock" ? "Customers can ask to be told when it is back." : "Reorder soon.",
+        ].join("\n") + admin(p.product_id ? `/admin/products/${p.product_id}` : "/admin/inventory?filter=low"),
+      };
     case "test_message":
       return { attachment: null, text: "✅ <b>Test message</b>\n\nTelegram notifications are working." };
     default:

@@ -40,3 +40,24 @@ describe("customer emails", () => {
     expect(buildCustomerEmail({ event_type: "something_else", payload: {} }, ctx)).toBeNull();
   });
 });
+
+describe("stock emails", () => {
+  const product = { product_id: "33333333-3333-3333-3333-333333333333", name: "Phone charger <fast>", name_am: "የስልክ ቻርጀር", sku: "CH-1", slug: "phone-charger", stock: 3, threshold: 5 };
+  it("back in stock: bilingual with a product link, escaped", () => {
+    const e = buildCustomerEmail({ event_type: "customer_back_in_stock", payload: product }, ctx)!;
+    expect(e.subject).toContain("Back in stock");
+    expect(e.html).toContain('lang="am"');
+    expect(e.html).toContain("https://shop.example/products/phone-charger");
+    expect(e.html).toContain("Phone charger &lt;fast&gt;");
+    expect(e.html).toContain("asked us to");
+  });
+  it("staff low-stock / sold-out alerts: English, admin link, staff footer", () => {
+    const low = buildCustomerEmail({ event_type: "staff_low_stock", payload: product }, ctx)!;
+    expect(low.subject).toBe("Low stock: Phone charger <fast> (3 left)"); // subjects are plain text
+    expect(low.html).not.toContain('lang="am"');
+    expect(low.html).toContain("/admin/products/33333333-3333-3333-3333-333333333333");
+    expect(low.html).toContain("Staff alert");
+    const out = buildCustomerEmail({ event_type: "staff_out_of_stock", payload: { ...product, stock: 0 } }, ctx)!;
+    expect(out.subject).toContain("Sold out");
+  });
+});

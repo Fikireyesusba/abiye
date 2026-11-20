@@ -99,7 +99,7 @@ select pg_temp.ok((select payload ->> 'transaction_reference' = 'FT2611ABC123' a
 select pg_temp.ok((public.submit_payment(jsonb_build_object('order_id', (select id from t_o1),
   'access_token_hash', pg_temp.hash('tok-b0000000-0000-0000-0000-000000000001'),
   'receipt', (select r from t_receipt))) ->> 'replayed')::boolean, 'resubmitting the same receipt is idempotent');
-select pg_temp.ok((select count(*) from public.notifications_outbox where channel = 'telegram') = 1, 'no duplicate notification on retry');
+select pg_temp.ok((select count(*) from public.notifications_outbox where channel = 'telegram' and event_type not in ('low_stock', 'out_of_stock')) = 1, 'no duplicate notification on retry');
 select pg_temp.ok((select payment_status from public.orders where id = (select id from t_o1)) <> 'verified',
   'a screenshot alone never marks an order as paid');
 reset role;

@@ -17,15 +17,19 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
   await requirePermission("inventory.manage");
   const filter = first((await searchParams).filter) === "low" ? "low" : "all";
   const supabase = await createSupabaseServerClient();
-  const [{ data: products }, { data: moves }] = await Promise.all([
+  const [{ data: products }, { data: moves }, { data: waitingRows }] = await Promise.all([
     supabase.from("products").select("id, name_en, sku, stock_quantity, low_stock_threshold, status").eq("track_inventory", true).neq("status", "archived").order("stock_quantity"),
     supabase.from("inventory_movements").select("id, change, quantity_after, reason, note, created_at, order_id, product:products(name_en, sku)").order("created_at", { ascending: false }).limit(40),
+    // Customers waiting for "back in stock" emails (open requests).
+    supabase.from("stock_alerts").select("product_id").is("notified_at", null).limit(5000),
   ]);
+  const waiting = new Map<string, number>();
+  for (const w of waitingRows ?? []) waiting.set(w.product_id, (waiting.get(w.product_id) ?? 0) + 1);
   const rows = (products ?? []).filter((p) => filter === "all" || p.stock_quantity <= p.low_stock_threshold);
 
   return (
     <>
-      <PageHeader title="Inventory" description="Stock is reserved when an order is placed and released if it expires or is cancelled. Every change is recorded." />
+      <PageHeader title="Inventory" description="Stock is reserved when an order is placed and released if it expires or is cancelled. Every change is recorded. Staff who manage stock get an alert when a product reaches its alert level or sells out; customers waiting for a sold-out product are told automatically when you restock it." />
       <nav className="mb-4 flex gap-1 border-b" aria-label="Inventory filter">
         {FILTERS.map((f) => (
           <Link key={f.k} href={`/admin/inventory?filter=${f.k}`} aria-current={f.k === filter ? "page" : undefined}
@@ -39,6 +43,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
             <Td>
               <span className="text-lg font-semibold tabular-nums">{p.stock_quantity}</span>{" "}
               {p.stock_quantity === 0 ? <Badge variant="destructive">Out</Badge> : p.stock_quantity <= p.low_stock_threshold && <Badge variant="warning">Low</Badge>}
+              {(waiting.get(p.id) ?? 0) > 0 && <span className="block text-xs text-muted-foreground">{waiting.get(p.id)} customer{waiting.get(p.id) === 1 ? "" : "s"} waiting</span>}
             </Td>
             <Td className="tabular-nums">{p.low_stock_threshold}</Td>
             <Td>

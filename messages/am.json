@@ -261,7 +261,13 @@
     "maxAvailable": "{count} ብቻ አለ",
     "home": "መነሻ",
     "imageOf": "ምስል {index} ከ {total}",
-    "noImage": "ገና ምስል የለም"
+    "noImage": "ገና ምስል የለም",
+    "notifyMe": "ሲገኝ አሳውቀኝ",
+    "notifyOn": "እንደገና ሲገኝ በኢሜይል እናሳውቅዎታለን።",
+    "notifyOff": "ማሳወቂያ አይደርስዎትም።",
+    "notifyCancel": "ማሳወቂያውን አቁም",
+    "notifySignIn": "ሲገኝ እንድናሳውቅዎ ይግቡ",
+    "notifyFailed": "ማስቀመጥ አልተቻለም። እባክዎ እንደገና ይሞክሩ።"
   },
   "cartPage": {
     "unavailable": "ከአሁን በኋላ አይገኝም — እባክዎ ያስወግዱት።",

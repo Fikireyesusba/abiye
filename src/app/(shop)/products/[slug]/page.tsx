@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ChevronRight, PackageCheck, PackageX } from "lucide-react";
 import { AddToCart } from "@/components/shop/add-to-cart";
+import { NotifyMe } from "@/components/shop/notify-me";
 import { discountPercent, Price } from "@/components/shop/price";
 import { LOW_STOCK, ProductGrid } from "@/components/shop/product-card";
 import { ProductGallery } from "@/components/shop/product-gallery";
@@ -101,7 +102,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
             )}
           </p>
 
-          <AddToCart productId={product.id} available={available} showQuantity />
+          {available === 0 ? <NotifyMe productId={product.id} slug={product.slug} /> : <AddToCart productId={product.id} available={available} showQuantity />}
 
           {description && (
             <section className="space-y-2 border-t pt-5">

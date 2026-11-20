@@ -261,7 +261,13 @@
     "maxAvailable": "Only {count} available",
     "home": "Home",
     "imageOf": "Image {index} of {total}",
-    "noImage": "No image yet"
+    "noImage": "No image yet",
+    "notifyMe": "Notify me when available",
+    "notifyOn": "We'll email you when it's back in stock.",
+    "notifyOff": "You won't be notified.",
+    "notifyCancel": "Stop notifying me",
+    "notifySignIn": "Sign in to be notified when it's back",
+    "notifyFailed": "Could not save. Please try again."
   },
   "cartPage": {
     "unavailable": "No longer available — please remove it.",
