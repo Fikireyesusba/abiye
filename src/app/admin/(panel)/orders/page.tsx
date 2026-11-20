@@ -79,7 +79,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
         <Button type="submit" variant="outline">Filter</Button>
         {(status || search) && <Button variant="ghost" asChild><Link href="/admin/orders">Clear</Link></Button>}
       </form>
-      <Table head={["Order", "Customer", "Fulfillment", "Total", "Status", "Payment", "Placed"]} empty="No orders match.">
+      <Table scroll head={["Order", "Customer", "Fulfillment", "Total", "Status", "Payment", "Placed"]} empty="No orders match.">
         {orders.map((o) => (
           <tr key={o.id} className="hover:bg-muted/40">
             <Td><Link href={`/admin/orders/${o.id}`} className="font-medium text-primary hover:underline">{o.order_number}</Link></Td>

@@ -119,7 +119,7 @@ export default async function ActivityPage({ searchParams }: PageProps<"/admin/a
         <input name="q" defaultValue={q} placeholder="Action, ID or person" maxLength={60} className={`${fieldClass} max-w-xs`} aria-label="Search activity" />
         <Button type="submit" variant="outline">Search</Button>
       </form>
-      <Table head={["When", "Who", "What", "Item", "Changes"]} empty="No activity found.">
+      <Table scroll head={["When", "Who", "What", "Item", "Changes"]} empty="No activity found.">
         {(rows ?? []).map((r) => {
           const href = entityHref(r.entity_type, r.entity_type === "customer_account" && r.action === "customer_deleted" ? null : r.entity_id);
           const meta = (r.metadata ?? {}) as Record<string, unknown>;

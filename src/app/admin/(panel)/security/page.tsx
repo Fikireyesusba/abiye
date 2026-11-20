@@ -218,7 +218,7 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
       <>
         <p className="mb-3 text-sm text-muted-foreground">Every email used in a failed or blocked sign-in in the last 7 days, riskiest first. Admin attempts weigh more; “networks” counts different internet connections. Checked one and it is fine? <strong>Mark as reviewed</strong> clears it (and the red badge) until something new happens.</p>
         <ReviewAll type="email" count={(data ?? []).filter((r) => !r.blocked).length} />
-        <Table head={["Email used", "Admin fails", "Code fails", "Customer fails", "Blocked tries", "Networks", "Last seen", "Action"]} empty="No failed sign-ins in the last 7 days.">
+        <Table scroll head={["Email used", "Admin fails", "Code fails", "Customer fails", "Blocked tries", "Networks", "Last seen", "Action"]} empty="No failed sign-ins in the last 7 days.">
           {(data ?? []).map((r) => (
             <tr key={r.email} className={cn("align-top", r.score >= 6 && !r.blocked && "bg-destructive/5")}>
               <Td className="max-w-[16rem] break-all">
@@ -272,7 +272,7 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
       <>
         <p className="mb-3 text-sm text-muted-foreground">Customers whose behaviour in the last 30 days needs a look: unpaid orders that hold stock, rejected receipts, receipts or bank references also used by someone else, many failed sign-ins, baskets left together with unpaid orders. <strong>Mark as reviewed</strong> clears a customer until new behaviour appears.</p>
         <ReviewAll type="customer" count={(data ?? []).length} />
-        <Table head={["Customer", "Why", "Unpaid (expired / cancelled)", "Rejected receipts", "Reused receipts", "Failed sign-ins", "Action"]} empty="No suspicious customers in the last 30 days.">
+        <Table scroll head={["Customer", "Why", "Unpaid (expired / cancelled)", "Rejected receipts", "Reused receipts", "Failed sign-ins", "Action"]} empty="No suspicious customers in the last 30 days.">
           {(data ?? []).map((r) => (
             <tr key={r.user_id} className="align-top">
               <Td className="max-w-[14rem] break-all">
@@ -298,7 +298,7 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
     return (
       <div className="space-y-6">
         {canBlock && <Panel title="Block an email"><BlockForm /></Panel>}
-        <Table head={["Email", "Reason", "Blocked by", "When", ""]} empty="No blocked emails.">
+        <Table scroll head={["Email", "Reason", "Blocked by", "When", ""]} empty="No blocked emails.">
           {(data ?? []).map((r) => (
             <tr key={r.email} className="align-top">
               <Td className="break-all"><span className="flex items-center gap-1 font-medium"><ShieldAlert className="size-4 text-destructive" aria-hidden /> {r.email}</span>{r.has_account && <span className="text-xs text-muted-foreground">has an account (deactivated)</span>}</Td>
@@ -319,7 +319,7 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
     return (
       <>
         <p className="mb-3 text-sm text-muted-foreground">{title}{email && <> — for <strong>{email}</strong> · <Link href={`/admin/security?tab=${tab}`} className="text-primary underline">show all</Link></>}. Network = short code of the internet connection (same code = same connection).</p>
-        <Table head={["When", "What", "Email", "Account", "Network", "Device"]} empty="No events.">
+        <Table scroll head={["When", "What", "Email", "Account", "Network", "Device"]} empty="No events.">
           {(data ?? []).map((e) => (
             <tr key={e.id} className="align-top">
               <Td className="text-xs whitespace-nowrap text-muted-foreground">{formatDateTime(e.created_at, "en")}</Td>

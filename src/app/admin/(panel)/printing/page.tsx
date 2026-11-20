@@ -41,7 +41,7 @@ export default async function PrintingJobsPage({ searchParams }: PageProps<"/adm
             className={cn("-mb-px border-b-2 px-4 py-2 text-sm whitespace-nowrap", x.k === tab.k ? "border-primary font-medium" : "border-transparent text-muted-foreground")}>{x.l}</Link>
         ))}
       </nav>
-      <Table head={["Job", "Customer", "Options", "Pages", "Price", "Status", "Received"]} empty="No printing jobs here.">
+      <Table scroll head={["Job", "Customer", "Options", "Pages", "Price", "Status", "Received"]} empty="No printing jobs here.">
         {(jobs ?? []).map((j) => (
           <tr key={j.id} className="hover:bg-muted/40">
             <Td><Link href={`/admin/printing/${j.id}`} className="font-medium text-primary hover:underline">{j.job_number}</Link></Td>

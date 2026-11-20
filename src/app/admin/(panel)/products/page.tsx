@@ -42,7 +42,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
         </select>
         <Button type="submit" variant="outline">Filter</Button>
       </form>
-      <Table head={[<span key="img" className="sr-only">Photo</span>, "Product", "Category", "Price", "Stock", "Status"]} empty="No products found.">
+      <Table scroll head={[<span key="img" className="sr-only">Photo</span>, "Product", "Category", "Price", "Stock", "Status"]} empty="No products found.">
         {products.map((p) => {
           const img = p.images.find((i) => i.is_primary) ?? p.images[0];
           const low = p.track_inventory && p.stock_quantity <= p.low_stock_threshold;

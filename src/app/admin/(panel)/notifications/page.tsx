@@ -224,7 +224,7 @@ export default async function NotificationsPage() {
                 <span className="w-full text-xs text-muted-foreground sm:ml-auto sm:w-auto">{c.hint}{c.key !== "customers" && ` · ${({ security: "Security group", stock: stockConfigured ? "Stock group" : "Orders & payments group (until a stock bot is set)", receipts: "Receipts group", orders: "Orders & payments group" } as Record<string, string>)[c.group]}`}</span>
               </summary>
               <div className="border-t p-2">
-                <Table head={["#", "Event", "Via", "About", "Status", "Attempts", "Created", "Last error", ""]} empty="Nothing yet.">
+                <Table scroll head={["#", "Event", "Via", "About", "Status", "Attempts", "Created", "Last error", ""]} empty="Nothing yet.">
                   {list.map((r) => (
                     <tr key={r.id}>
                       <Td className="text-xs text-muted-foreground tabular-nums">{r.id}</Td>

@@ -68,7 +68,7 @@ export default async function FollowUpPage({ searchParams }: PageProps<"/admin/f
       <section className="mb-8 space-y-3">
         <h2 className="text-base font-semibold">Orders not paid ({orders.length})</h2>
         <p className="text-sm text-muted-foreground">Order placed, but no payment receipt submitted (or the receipt was rejected). Unpaid orders expire automatically at the payment deadline.</p>
-        <Table head={["Customer", "Order", "Total", "Status", "Waiting"]} empty="None.">
+        <Table scroll head={["Customer", "Order", "Total", "Status", "Waiting"]} empty="None.">
           {orders.map((r) => (
             <tr key={`o-${r.entity_id}`} className="align-top">
               <Td><Contact r={r} /></Td>
@@ -85,7 +85,7 @@ export default async function FollowUpPage({ searchParams }: PageProps<"/admin/f
       <section className="mb-8 space-y-3">
         <h2 className="text-base font-semibold">Baskets not checked out ({baskets.length})</h2>
         <p className="text-sm text-muted-foreground">Signed-in customers with items in their basket who have not placed an order (last 30 days). Values use today’s prices.</p>
-        <Table head={["Customer", "Basket", "Value", "Waiting"]} empty="None.">
+        <Table scroll head={["Customer", "Basket", "Value", "Waiting"]} empty="None.">
           {baskets.map((r) => {
             const items = Array.isArray(r.items) ? (r.items as { name: string; quantity: number }[]) : [];
             return (
@@ -103,7 +103,7 @@ export default async function FollowUpPage({ searchParams }: PageProps<"/admin/f
       <section className="space-y-3">
         <h2 className="text-base font-semibold">Printing jobs not paid ({printing.length})</h2>
         <p className="text-sm text-muted-foreground">Priced printing jobs that have not been added to an order and paid.</p>
-        <Table head={["Customer", "Job", "Price", "Waiting"]} empty="None.">
+        <Table scroll head={["Customer", "Job", "Price", "Waiting"]} empty="None.">
           {printing.map((r) => (
             <tr key={`p-${r.entity_id}`} className="align-top">
               <Td><Contact r={r} /></Td>

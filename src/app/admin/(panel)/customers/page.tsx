@@ -41,7 +41,7 @@ export default async function CustomersPage({ searchParams }: PageProps<"/admin/
         <input name="q" defaultValue={q} placeholder="Email, name or phone" maxLength={60} className={`${fieldClass} max-w-xs`} aria-label="Search customers" />
         <Button type="submit" variant="outline">Search</Button>
       </form>
-      <Table head={["Customer", "Phone", "Status", "Orders", "Joined"]} empty="No customers found.">
+      <Table scroll head={["Customer", "Phone", "Status", "Orders", "Joined"]} empty="No customers found.">
         {(accounts ?? []).map((a) => (
           <tr key={a.id} className="hover:bg-muted/40">
             <Td>

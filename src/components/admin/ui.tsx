@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { Searchable } from "./searchable";
 
 /** Small presentational building blocks shared by admin pages. */
 export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: React.ReactNode }) {
@@ -28,13 +29,14 @@ export function Panel({ title, children, className, actions }: { title?: string;
   );
 }
 
-export function Table({ head, children, empty }: { head: React.ReactNode[]; children: React.ReactNode; empty?: string }) {
+/** `scroll`: long lists stay in a box of fixed height that scrolls on its own, with the column titles kept visible. */
+export function Table({ head, children, empty, scroll, search = true }: { head: React.ReactNode[]; children: React.ReactNode; empty?: string; scroll?: boolean; search?: boolean }) {
   const rows = Array.isArray(children) ? children.filter(Boolean) : children ? [children] : [];
-  return (
+  const table = (
     // Focusable so keyboard users can scroll wide tables on small screens.
-    <div className="overflow-x-auto rounded-xl border bg-card focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none" tabIndex={0}>
+    <div className={cn("overflow-x-auto rounded-xl border bg-card focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none", scroll && "max-h-[65vh] overflow-y-auto overscroll-contain")} tabIndex={0}>
       <table className="w-full min-w-[640px] text-sm">
-        <thead className="bg-muted/60 text-left text-xs tracking-wide text-muted-foreground uppercase">
+        <thead className={cn("text-left text-xs tracking-wide text-muted-foreground uppercase", scroll ? "sticky top-0 z-10 bg-muted shadow-[0_1px_0_var(--border)]" : "bg-muted/60")}>
           <tr>{head.map((h, i) => <th key={i} scope="col" className="px-4 py-2.5 font-medium">{h}</th>)}</tr>
         </thead>
         <tbody className="divide-y">
@@ -45,6 +47,8 @@ export function Table({ head, children, empty }: { head: React.ReactNode[]; chil
       </table>
     </div>
   );
+  // Long lists: a search box above the scrolling box (only when there is something to search).
+  return scroll && search && rows.length > 5 ? <Searchable>{table}</Searchable> : table;
 }
 
 export function Td({ children, className }: { children?: React.ReactNode; className?: string }) {

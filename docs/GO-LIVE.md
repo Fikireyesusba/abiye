@@ -29,6 +29,7 @@ Paste each file's full contents (GitHub → file → **Raw** → copy) into a ne
 21. `supabase/migrations/20261120000038_activity_categories.sql`
 22. `supabase/migrations/20261120000039_personal_code_messages.sql`
 23. `supabase/migrations/20261120000040_customers_without_staff.sql`
+24. `supabase/migrations/20261120000041_telegram_four_groups.sql`
 
 Each should say "Success. No rows returned". If Supabase warns about RLS, choose "Run without RLS" (the files enable it themselves).
 

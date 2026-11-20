@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ActionForm } from "@/components/admin/action-form";
+import { Searchable } from "@/components/admin/searchable";
 import { PageHeader, Table, Td, fieldClass } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { adjustStock } from "@/lib/admin/catalog-actions";
@@ -36,7 +37,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
             className={cn("-mb-px border-b-2 px-4 py-2 text-sm", f.k === filter ? "border-primary font-medium" : "border-transparent text-muted-foreground")}>{f.l}</Link>
         ))}
       </nav>
-      <Table head={["Product", "In stock", "Alert at", "Adjust"]} empty="All products are well stocked.">
+      <Table scroll head={["Product", "In stock", "Alert at", "Adjust"]} empty="All products are well stocked.">
         {rows.map((p) => (
           <tr key={p.id}>
             <Td><span className="font-medium">{p.name_en}</span><span className="block text-xs text-muted-foreground">{p.sku}{p.status === "draft" && " · draft"}</span></Td>
@@ -65,10 +66,11 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
           <span className="rounded-full bg-muted px-2 py-0.5 text-xs tabular-nums">{(moves ?? []).length}</span>
           <span className="text-xs text-muted-foreground sm:ml-auto">Latest 40 changes · click to open</span>
         </summary>
-        <ul className="divide-y border-t px-4 text-sm">
+        <Searchable className="border-t p-3" placeholder="Search movements (product, reason, note)…">
+        <ul className="max-h-[60vh] divide-y overflow-y-auto overscroll-contain px-1 text-sm">
           {(moves ?? []).length === 0 && <li className="py-3 text-muted-foreground">No stock changes yet.</li>}
           {(moves ?? []).map((m) => (
-            <li key={m.id} className="grid grid-cols-[3.5rem_1fr] gap-x-3 gap-y-0.5 py-2 sm:grid-cols-[3.5rem_1fr_auto]">
+            <li key={m.id} data-row className="grid grid-cols-[3.5rem_1fr] gap-x-3 gap-y-0.5 py-2 sm:grid-cols-[3.5rem_1fr_auto]">
               <span className={cn("font-semibold tabular-nums", m.change > 0 ? "text-success" : "text-destructive")}>{m.change > 0 ? `+${m.change}` : m.change}</span>
               <span className="min-w-0 break-words">
                 <span className="font-medium">{m.product?.name_en}</span>
@@ -81,6 +83,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
             </li>
           ))}
         </ul>
+        </Searchable>
       </details>
     </>
   );
