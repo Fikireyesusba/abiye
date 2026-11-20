@@ -649,6 +649,9 @@ isOneToOne: false
 "admin_log_customer_action":
 { Args: { "p_action": string,"p_metadata"?: Json,"p_user_id": string }; Returns: undefined
                            },
+"admin_log_export":
+{ Args: { "p_kind": string,"p_metadata"?: Json }; Returns: undefined
+                           },
 "admin_log_mfa_reset":
 { Args: { "p_user_id": string }; Returns: undefined
                            },

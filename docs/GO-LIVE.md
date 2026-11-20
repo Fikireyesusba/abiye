@@ -12,6 +12,7 @@ Paste each file's full contents (GitHub → file → **Raw** → copy) into a ne
 4. `supabase/migrations/20261120000021_admin_mfa.sql`
 5. `supabase/migrations/20261120000022_customer_emails.sql`
 6. `supabase/migrations/20261120000023_customer_push.sql`
+7. `supabase/migrations/20261120000024_export_audit.sql`
 
 Each should say "Success. No rows returned". If Supabase warns about RLS, choose "Run without RLS" (the files enable it themselves).
 

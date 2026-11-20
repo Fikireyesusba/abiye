@@ -10,6 +10,7 @@ const ACTION_LABELS: Record<string, string> = {
   profile_updated: "Profile updated",
   promo_assigned: "Personal promo code given",
   mfa_reset: "Two-step login reset",
+  export_orders: "Orders exported to Excel",
   promo_unassigned: "Personal promo code removed",
   // Supabase Auth events
   login: "Signed in",
@@ -54,6 +55,7 @@ export const ENTITY_LABELS: Record<string, string> = {
   role_permissions: "Role permissions",
   promotions: "Promotion",
   notification: "Notification",
+  export: "Export",
 };
 
 export function actionLabel(action: string): string {

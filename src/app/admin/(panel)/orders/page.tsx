@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Download, FileSpreadsheet } from "lucide-react";
 import { PageHeader, Table, Td, fieldClass } from "@/components/admin/ui";
 import { StatusBadge } from "@/components/status/status-badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,8 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
   const search = parseOrderSearch(first(sp.q));
   const page = parsePage(first(sp.page));
 
+  const today = new Date(new Date().getTime() + 3 * 3600 * 1000).toISOString().slice(0, 10); // Addis Ababa
+  const monthStart = `${today.slice(0, 8)}01`;
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("orders")
@@ -49,6 +52,24 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
         title="Orders"
         description={ctx.permissions.has("orders.view_all") ? `${count ?? 0} orders` : `${count ?? 0} orders assigned to you`}
       />
+      {ctx.permissions.has("orders.view_all") && (
+        <details className="mb-4 rounded-lg border bg-card p-4">
+          <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium"><FileSpreadsheet className="size-4 text-primary" aria-hidden /> Export to Excel</summary>
+          <form method="get" action="/admin/orders/export" className="mt-3 flex flex-wrap items-end gap-3">
+            <label className="text-sm">From<input type="date" name="from" required defaultValue={monthStart} max={today} className={`${fieldClass} mt-1 block`} /></label>
+            <label className="text-sm">To<input type="date" name="to" required defaultValue={today} max={today} className={`${fieldClass} mt-1 block`} /></label>
+            <label className="text-sm">Orders
+              <select name="status" defaultValue="all" className={`${fieldClass} mt-1 block w-auto`}>
+                <option value="all">All orders</option>
+                <option value="paid">Paid (verified) only</option>
+                {ORDER_STATUSES.map((s) => <option key={s} value={s}>{s.replaceAll("_", " ")}</option>)}
+              </select>
+            </label>
+            <Button type="submit"><Download /> Download .xlsx</Button>
+          </form>
+          <p className="mt-2 text-xs text-muted-foreground">Sheets: Summary, Orders (one row per order) and Items. Dates in Addis Ababa time. The file contains customer phone numbers and addresses — store it safely. Each export is recorded in the Activity log.</p>
+        </details>
+      )}
       <form method="get" className="mb-4 flex flex-wrap gap-2">
         <input name="q" defaultValue={first(sp.q)} placeholder="Order number, phone or name" maxLength={40} className={`${fieldClass} max-w-xs`} aria-label="Search orders" />
         <select name="status" defaultValue={status ?? ""} className={`${fieldClass} w-auto`} aria-label="Filter by status">

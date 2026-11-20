@@ -29,6 +29,7 @@
     "test:smoke:emails": "node --env-file=.env.local tests/e2e/emails.smoke.cjs",
     "test:smoke:help": "node --env-file=.env.local tests/e2e/help.smoke.cjs",
     "test:smoke:pwa": "node --env-file=.env.local tests/e2e/pwa.smoke.cjs",
+    "test:smoke:export": "NODE_PATH=$(npm root -g):$(pwd)/node_modules node --env-file=.env.local tests/e2e/export.smoke.cjs",
     "test:smoke:push": "NODE_PATH=$(npm root -g):$(pwd)/node_modules node --env-file=.env.local tests/e2e/push.smoke.cjs",
     "db:bundle": "node scripts/build-production-sql.mjs",
     "test:db:bundle": "BUNDLE=1 bash scripts/db-test.sh"
@@ -38,6 +39,7 @@
     "@supabase/supabase-js": "^2.119.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "exceljs": "^4.4.0",
     "lucide-react": "^1.75.0",
     "next": "16.4.6",
     "next-intl": "^4.15.1",
@@ -68,5 +70,8 @@
     "vite": "^7.3.8",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.12"
+  },
+  "overrides": {
+    "uuid": "11.1.1"
   }
 }
