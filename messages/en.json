@@ -194,7 +194,8 @@
     "promo_min_order": "Your order is below the minimum amount for this promo code.",
     "promo_not_applicable": "This promo code does not apply to the items in your cart.",
     "promo_limit_reached": "This promo code has reached its usage limit.",
-    "promo_already_used": "You have already used this promo code."
+    "promo_already_used": "You have already used this promo code.",
+    "staff_account": "Staff accounts cannot place orders. Please shop with a separate personal email."
   },
   "header": {
     "menu": "Menu",
@@ -470,6 +471,7 @@
       "invalidLogin": "Incorrect email or password.",
       "notConfirmed": "Please confirm your email first — check your inbox (and spam folder).",
       "deactivated": "This account has been deactivated. Please contact us if you think this is a mistake.",
+      "staffAccount": "This is a staff account. Staff accounts cannot be used on the shop — please sign up with a separate personal email to shop.",
       "phone": "Please enter a valid Ethiopian mobile number.",
       "linkExpired": "Your reset link has expired. Please request a new one.",
       "generic": "Something went wrong. Please try again.",

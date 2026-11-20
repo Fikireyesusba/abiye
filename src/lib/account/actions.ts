@@ -7,7 +7,7 @@ import { clientIpKey, rateLimitAll } from "@/lib/security/rate-limit";
 import { sha256Hex } from "@/lib/security/tokens";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ethiopianPhoneSchema } from "@/lib/validation/checkout";
-import { getCustomerUser, safeNext } from "./session";
+import { getCustomerUser, getSignedInUserId, safeNext } from "./session";
 
 /** Error codes are translation keys under "account.errors". */
 export type AccountState = { error?: string; ok?: string; email?: string; name?: string };
@@ -64,6 +64,11 @@ export async function signInCustomer(_prev: AccountState, fd: FormData): Promise
       await supabase.auth.signOut({ scope: "local" });
       return { email: addr, error: "deactivated" };
     }
+    // Admin/staff logins are for the dashboard only (also refused by the database when ordering).
+    if (await isStaffAccount(supabase)) {
+      await supabase.auth.signOut({ scope: "local" });
+      return { email: addr, error: "staffAccount" };
+    }
   }
   if (error) {
     console.warn(`[customer-login] failed: ${error.code ?? "unknown"} (status ${error.status ?? "?"})`);
@@ -101,11 +106,15 @@ export async function requestPasswordReset(_prev: AccountState, fd: FormData): P
 export async function setNewPassword(_prev: AccountState, fd: FormData): Promise<AccountState> {
   if (!password.safeParse(fd.get("password")).success) return { error: "weakPassword" };
   if (fd.get("password") !== fd.get("confirm")) return { error: "passwordMismatch" };
-  const user = await getCustomerUser();
-  if (!user) return { error: "linkExpired" };
+  // Staff use the same reset link: any signed-in account (from the email link) may set its password.
+  if (!(await getSignedInUserId())) return { error: "linkExpired" };
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.updateUser({ password: String(fd.get("password")) });
   if (error) {
+    // Accounts with two-step login (staff) must enter their authenticator code first.
+    if (error.code === "insufficient_aal" || /aal2/i.test(error.message)) {
+      redirect(`/admin/mfa?next=${encodeURIComponent("/account/reset-password")}`);
+    }
     if (error.code === "same_password" || /different from the old/i.test(error.message)) return { error: "samePassword" };
     return { error: /reauthentic|recent/i.test(error.message) ? "linkExpired" : "generic" };
   }

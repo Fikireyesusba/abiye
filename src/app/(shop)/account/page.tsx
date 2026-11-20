@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { signOutCustomer } from "@/lib/account/actions";
 import { getCustomerAccount, requireCustomer } from "@/lib/account/session";
-import { isStaffAccount } from "@/lib/auth/mfa";
 import { formatDateTime } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -30,7 +29,6 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   const [t, locale, account] = await Promise.all([getTranslations(), getLocale() as Promise<Locale>, getCustomerAccount(user.id)]);
   // RLS: a customer can only read their own orders and printing jobs.
   const supabase = await createSupabaseServerClient();
-  const staff = await isStaffAccount(supabase);
   const [{ data: orders }, { data: jobs }, { data: offers }] = await Promise.all([
     supabase.from("orders").select("id, order_number, status, payment_status, total_etb, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
     supabase.from("printing_jobs").select("id, job_number, status, total_etb, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
@@ -48,12 +46,6 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           <Button type="submit" variant="outline" size="sm"><LogOut /> {t("account.signOut")}</Button>
         </form>
       </div>
-      {staff && (
-        <p className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 p-3 text-sm">
-          <span>This is also a staff account.</span>
-          <Link href="/admin" className="font-medium text-primary underline">Open the admin dashboard →</Link>
-        </p>
-      )}
       {sp.welcome && <p className="mb-4 rounded-md bg-success/10 p-3 text-sm text-success" role="status">{t("account.welcome")}</p>}
       {sp.passwordChanged && <p className="mb-4 rounded-md bg-success/10 p-3 text-sm text-success" role="status">{t("account.passwordChanged")}</p>}
 

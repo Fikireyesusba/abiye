@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
+import { isStaffAccount } from "@/lib/auth/mfa";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export interface CustomerUser {
@@ -18,9 +19,19 @@ export const getCustomerUser = cache(async (): Promise<CustomerUser | null> => {
   // only stops new sign-ins/refreshes), so check the account on every request.
   const { data: account } = await supabase.from("customer_accounts").select("deactivated_at").eq("id", sub).maybeSingle();
   if (account?.deactivated_at) return null;
+  // A staff session (signed in to the dashboard) is not a customer session.
+  if (await isStaffAccount(supabase)) return null;
   const emailClaim = data?.claims?.email;
   return { id: sub, email: typeof emailClaim === "string" ? emailClaim : "" };
 });
+
+/** Any signed-in account (customer OR staff) — only for password reset, which serves both. */
+export async function getSignedInUserId(): Promise<string | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.auth.getClaims();
+  const sub = data?.claims?.sub;
+  return error || typeof sub !== "string" ? null : sub;
+}
 
 export async function requireCustomer(next: string): Promise<CustomerUser> {
   const user = await getCustomerUser();
