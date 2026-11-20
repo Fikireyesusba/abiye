@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ACTIVE_COOKIE, SESSION_COOKIE } from "./idle";
 
 /** Sign out after inactivity (called by the browser timer). */
-export async function idleSignOut(_kind: "admin" | "customer"): Promise<void> {
+export async function idleSignOut(): Promise<void> {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut({ scope: "local" });
   const jar = await cookies();

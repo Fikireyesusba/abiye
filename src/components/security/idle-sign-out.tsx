@@ -39,9 +39,11 @@ export function IdleSignOut({ minutes, kind, warning }: { minutes: number; kind:
       const idle = Date.now() - last;
       if (idle >= limit) {
         leaving = true;
-        await idleSignOut(kind).catch(() => {});
+        await idleSignOut().catch(() => {});
         const login = kind === "admin" ? "/admin/login" : "/account/login";
         const next = kind === "customer" ? `&next=${encodeURIComponent(location.pathname)}` : "";
+        // A full page load on purpose: nothing from the signed-out session stays in memory.
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
         location.href = `${login}?reason=idle${next}`;
       } else if (idle >= limit - 60_000 && !warned) {
         warned = true;
