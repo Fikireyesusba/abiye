@@ -82,6 +82,9 @@ export function describe(row: OutboxRow): [string, string] {
     case "order_status": return ["Orders", ORDER_STEP[String(p.to)] ?? titleCase(String(p.to ?? ""))];
     case "printing_status": return ["Printing", PRINT_STEP[String(p.to)] ?? titleCase(String(p.to ?? ""))];
     case "security_test": return ["Security group", "Test message"];
+    case "stock_test": return ["Stock group", "Test message"];
+    case "receipts_test": return ["Receipts group", "Test message"];
+    case "receipt_record": return [p.kind === "wallet_topup" ? "Wallet top-up receipt" : "Payment receipt", p.result === "rejected" ? "Rejected" : "Verified"];
     case "payment_resubmitted": return ["Payments", "Receipt resubmitted"];
     case "printing_request": return ["Printing", "New printing request"];
     case "payment_verified": return ["Payments", "Payment verified"];
@@ -342,6 +345,28 @@ function buildBody(row: OutboxRow, appUrl: string): BuiltMessage {
         ].join("\n") + (p.job_id ? admin(`/admin/printing/${p.job_id}`) : ""),
       };
     }
+    case "receipt_record": {
+      const ok = p.result === "verified";
+      return {
+        attachment,
+        text: [
+          `${ok ? "✅" : "❌"} <b>${p.kind === "wallet_topup" ? "TOP-UP" : "PAYMENT"} ${ok ? "VERIFIED" : "REJECTED"}</b>`,
+          "",
+          line(p.kind === "wallet_topup" ? "Top-up" : "Order", p.number),
+          line("Amount", etb(p.amount_etb)),
+          line("Reference", p.reference ?? "—"),
+          line("Paid into", [p.bank_name, p.account_number].filter(Boolean).join(" · ") || "—"),
+          line("Customer", [p.customer_name, phone(p.customer_phone)].filter(Boolean).join(" · ") || "—"),
+          line("Decided by", p.decided_by ?? "—"),
+          ...(p.reason ? [line("Reason", p.reason)] : []),
+          line("When", addisTime(p.decided_at)),
+        ].join("\n") + (p.order_id ? admin(`/admin/orders/${p.order_id}`) : ""),
+      };
+    }
+    case "stock_test":
+      return { attachment: null, text: `✅ <b>Test message — stock group</b>\n\nLow-stock and sold-out alerts will arrive here.\n${line("Requested by", p.requested_by)}` };
+    case "receipts_test":
+      return { attachment: null, text: `✅ <b>Test message — receipts group</b>\n\nEvery verified or rejected payment receipt (with the file) will arrive here.\n${line("Requested by", p.requested_by)}` };
     case "security_test":
       return { attachment: null, text: `✅ <b>Test message — security group</b>\n\nSecurity alerts, sign-ins and admin actions will arrive here.\n${line("Requested by", p.requested_by)}` };
     case "test_message":

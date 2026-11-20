@@ -1,5 +1,8 @@
 -- Printing jobs, notification outbox worker, rate limiting, storage policies
 \ir _helpers.sql
+-- These tests check the order-progress Telegram messages: switch them on (default is off).
+insert into public.website_settings (key, value, is_public) values ('telegram_feed', '{"order_progress": true, "notifications": true}', false)
+  on conflict (key) do update set value = public.website_settings.value || excluded.value;
 set role service_role;
 
 -- ----------------------------------------------------------- printing pricing

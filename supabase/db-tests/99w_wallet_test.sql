@@ -1,5 +1,8 @@
 -- Wallet (shop credit): top-ups, limit, paying orders, refunds, permissions
 \ir _helpers.sql
+-- These tests check the order-progress Telegram messages: switch them on (default is off).
+insert into public.website_settings (key, value, is_public) values ('telegram_feed', '{"order_progress": true, "notifications": true}', false)
+  on conflict (key) do update set value = public.website_settings.value || excluded.value;
 
 create function pg_temp.topup(p_user uuid, p_amount text) returns jsonb language sql as $$
   select public.submit_wallet_topup(p_user, jsonb_build_object('amount_etb', p_amount, 'transaction_reference', 'FT' || md5(random()::text),

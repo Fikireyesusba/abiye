@@ -882,6 +882,9 @@ isOneToOne: false
               "assigned_at": string,"code": string,"email": string,"full_name": string,"promotion_id": string,"title_en": string,"used": boolean,"user_id": string
             }[]
                            },
+"admin_queue_group_test":
+{ Args: { "p_group": string }; Returns: undefined
+                           },
 "admin_queue_security_test":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
@@ -932,7 +935,7 @@ isOneToOne: false
 { Args: { "p_is_active": boolean,"p_role_key": string,"p_user_id": string }; Returns: undefined
                            },
 "admin_set_telegram_feed":
-{ Args: { "p_admin": boolean,"p_notifications": boolean,"p_security": boolean }; Returns: undefined
+{ Args: { "p_admin": boolean,"p_notifications": boolean,"p_order_progress"?: boolean,"p_printing_requests"?: boolean,"p_security": boolean }; Returns: undefined
                            },
 "admin_stalled_checkouts":
 { Args: { "p_hours"?: number }; Returns: {
@@ -1035,6 +1038,31 @@ isOneToOne: false
       } },
 "claim_telegram":
 { Args: { "p_limit"?: number,"p_security": boolean }; Returns: {
+              "attachment_bucket": string | null,
+"attachment_path": string | null,
+"attempts": number,
+"channel": string,
+"created_at": string,
+"dedupe_key": string,
+"event_type": string,
+"id": number,
+"last_error": string | null,
+"locked_until": string | null,
+"max_attempts": number,
+"next_attempt_at": string,
+"payload": NonNullable<Json>,
+"recipient_user_id": string | null,
+"sent_at": string | null,
+"status": Database["public"]['Enums']["notification_status"]
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "notifications_outbox"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
+"claim_telegram_groups":
+{ Args: { "p_groups": (string)[],"p_limit"?: number }; Returns: {
               "attachment_bucket": string | null,
 "attachment_path": string | null,
 "attempts": number,

@@ -63,6 +63,9 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
   await new Promise((r) => mock.listen(MOCK_PORT, "127.0.0.1", r));
   // Quiet the queue: earlier local test runs left unsent rows (Telegram was not configured).
   sql("update notifications_outbox set status = 'dead', last_error = 'e2e reset' where status in ('pending','failed','processing'); delete from rate_limits;");
+  // This suite checks the order-progress messages (payment decisions, cancellations): switch them on (default off).
+  sql(`insert into website_settings (key, value, is_public) values ('telegram_feed', '{"order_progress": true}', false)
+       on conflict (key) do update set value = website_settings.value || excluded.value`);
   sql(`update products p set stock_quantity = 80 where sku = 'SMP-CH-001'`);
 
   const logs = [];

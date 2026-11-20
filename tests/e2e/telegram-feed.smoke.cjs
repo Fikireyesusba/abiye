@@ -18,6 +18,8 @@ const TG_PORT = 4597;
 const MAIL_PORT = 4596;
 const TOKEN = "7000000001:AAFakeTokenForLocalTestsOnly_abcdefghijk";
 const SEC_TOKEN = "7000000002:AAFakeSecurityTokenForLocalTestsOnly_abcd";
+const STOCK_TOKEN = "7000000003:AAFakeStockTokenForLocalTestsOnly_abcdefg";
+const REC_TOKEN = "7000000004:AAFakeReceiptsTokenForLocalTestsOnly_abcde";
 const KEY = "re_TestKeyForLocalOnly_1234567890";
 const OWNER = { email: "owner@abiye.local", password: process.env.ADMIN_E2E_PASSWORD ?? "LocalDevOwner2026" };
 const results = [];
@@ -29,6 +31,8 @@ const tg = [];
 let rightsError = false; // simulate "member cannot send messages"
 const secMsgs = [];
 const orderMsgs = [];
+const stockMsgs = [];
+const recMsgs = [];
 const tgServer = http.createServer((req, res) => {
   const chunks = [];
   req.on("data", (c) => chunks.push(c));
@@ -41,7 +45,7 @@ const tgServer = http.createServer((req, res) => {
       return res.end(JSON.stringify({ ok: false, error_code: 400, description: "Bad Request: not enough rights to send text messages to the chat" }));
     }
     tg.push(text ?? "");
-    (token === SEC_TOKEN ? secMsgs : orderMsgs).push(text ?? "");
+    ({ [SEC_TOKEN]: secMsgs, [STOCK_TOKEN]: stockMsgs, [REC_TOKEN]: recMsgs }[token] ?? orderMsgs).push(text ?? "");
     res.writeHead(200, { "content-type": "application/json" });
     res.end(JSON.stringify({ ok: true, result: { message_id: tg.length } }));
   });
@@ -62,10 +66,13 @@ const cron = () => fetch(`${B}/api/cron/notifications`, { headers: { authorizati
   await new Promise((r) => tgServer.listen(TG_PORT, "127.0.0.1", r));
   await new Promise((r) => mailServer.listen(MAIL_PORT, "127.0.0.1", r));
   sql("update notifications_outbox set status = 'dead', last_error = 'e2e reset' where status in ('pending','failed','processing'); delete from rate_limits; delete from website_settings where key = 'telegram_feed';");
+  // Copies of customer messages are off by default; this test checks them, so switch them on (order progress stays at its default: off).
+  sql(`insert into website_settings (key, value, is_public) values ('telegram_feed', '{"notifications": true}', false)`);
   sql("update products set stock_quantity = 80 where sku = 'SMP-CH-001'");
   const app = spawn("npx", ["next", "start", "-p", String(PORT)], {
     env: { ...process.env, TELEGRAM_BOT_TOKEN: TOKEN, TELEGRAM_ADMIN_CHAT_ID: "-100123", TELEGRAM_API_BASE: `http://127.0.0.1:${TG_PORT}`,
            TELEGRAM_SECURITY_BOT_TOKEN: SEC_TOKEN, TELEGRAM_SECURITY_CHAT_ID: "-100456",
+           TELEGRAM_STOCK_BOT_TOKEN: STOCK_TOKEN, TELEGRAM_STOCK_CHAT_ID: "-100789", TELEGRAM_RECEIPTS_BOT_TOKEN: REC_TOKEN, TELEGRAM_RECEIPTS_CHAT_ID: "-100321",
            RESEND_API_KEY: KEY, EMAIL_FROM: "Abiye <orders@example.com>", EMAIL_API_BASE: `http://127.0.0.1:${MAIL_PORT}`, APP_URL: B },
     stdio: ["ignore", "pipe", "pipe"], detached: true,
   });
@@ -122,8 +129,25 @@ const cron = () => fetch(`${B}/api/cron/notifications`, { headers: { authorizati
     check(secMsgs.some((t) => t.includes(INTRUDER)) && !orderMsgs.some((t) => t.includes(INTRUDER)), "security messages go only to the security group");
     check(orderMsgs.some((t) => t.includes(num)) && !secMsgs.some((t) => t.includes(num)), "order messages go only to the orders group");
     check(secMsgs.some((t) => t.includes("ADMIN ACTION: EMAIL BLOCKED")), "admin actions go to the security group");
-    check(await waitFor(() => orderMsgs.some((t) => t.includes("ORDER PLACED — AWAITING PAYMENT") && t.includes(num))), "order placed reported to the orders group");
-    sql(`update orders set status = 'confirmed', payment_status = 'verified', payment_verified_at = now() where order_number = '${num}'`);
+    await sleep(1500);
+    check(!orderMsgs.some((t) => t.includes("ORDER PLACED — AWAITING PAYMENT") && t.includes(num)), "by default: no 'order placed' message (approvals only)");
+    // receipt uploaded → orders group (needs approval); decision → receipts group gets the receipt record
+    sql(`set role service_role; select public.submit_payment(jsonb_build_object('order_id',(select id from orders where order_number = '${num}'),
+      'access_token_hash',encode(sha256('a${key}'::bytea),'hex'),'transaction_reference','FTFEED${RUN}',
+      'receipt',jsonb_build_object('path','orders/feed/${RUN}.png','mime','image/png','size',100,'sha256',encode(sha256('feed${RUN}'::bytea),'hex'))))`);
+    await cron();
+    check(await waitFor(() => orderMsgs.some((t) => t.includes(num) && t.includes("Receipt uploaded — verify payment"))), "receipt uploaded → orders group (approval needed)");
+    sql(`begin; select set_config('request.jwt.claims', json_build_object('sub', (select id from auth.users where email = '${OWNER.email}'), 'role', 'authenticated', 'aal', 'aal2')::text, true);
+         set local role authenticated; select public.admin_review_payment((select id from payment_submissions where transaction_reference = 'FTFEED${RUN}'), 'verified'); commit;`);
+    await cron();
+    check(await waitFor(() => recMsgs.some((t) => t.includes("PAYMENT VERIFIED") && t.includes(num) && t.includes(`FTFEED${RUN}`))), "verified receipt → receipts group");
+    check(!orderMsgs.some((t) => t.includes("PAYMENT VERIFIED") && t.includes(num)), "payment decision not repeated in the orders group by default");
+    // stock alert → stock group
+    sql("update products set stock_quantity = 80, low_stock_threshold = 5 where sku = 'SMP-CH-001'; update products set stock_quantity = 3 where sku = 'SMP-CH-001'; update products set stock_quantity = 80 where sku = 'SMP-CH-001'");
+    await cron();
+    check(await waitFor(() => stockMsgs.some((t) => t.includes("LOW STOCK"))) && !orderMsgs.some((t) => t.includes("LOW STOCK")), "stock alert → stock group (not the orders group)");
+    // order progress switched on → steps reported
+    sql(`update website_settings set value = value || '{"order_progress": true}' where key = 'telegram_feed'`);
     await o.goto(`${B}/admin/orders?q=${num}`);
     sql(`begin; select set_config('request.jwt.claims', json_build_object('sub', (select id from auth.users where email = '${OWNER.email}'), 'role', 'authenticated', 'aal', 'aal2')::text, true);
          set local role authenticated; select public.admin_update_order_status((select id from orders where order_number = '${num}'), 'processing', null);

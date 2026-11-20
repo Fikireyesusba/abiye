@@ -12,8 +12,9 @@ update public.products set stock_quantity = 9 where id = :charger;
 select pg_temp.ok(not exists (select 1 from public.notifications_outbox), 'no alert above the level');
 update public.products set stock_quantity = 5 where id = :charger;
 select pg_temp.ok((select count(*) from public.notifications_outbox where channel = 'telegram' and event_type = 'low_stock') = 1, 'Telegram alert at the low-stock level');
-select pg_temp.ok((select count(*) from public.notifications_outbox where channel = 'email' and event_type = 'staff_low_stock') >= 1
-                  and (select payload ->> 'stock' from public.notifications_outbox where event_type = 'low_stock') = '5', 'staff email with the stock left');
+select pg_temp.ok(not exists (select 1 from public.notifications_outbox where channel = 'email' and event_type like 'staff_%')
+                  and (select payload ->> 'stock' from public.notifications_outbox where event_type = 'low_stock') = '5'
+                  and private.telegram_group('low_stock') = 'stock', 'stock alert goes to the stock Telegram group (no staff email)');
 update public.products set stock_quantity = 3 where id = :charger;
 select pg_temp.ok((select count(*) from public.notifications_outbox where event_type = 'low_stock') = 1, 'not repeated while already low');
 

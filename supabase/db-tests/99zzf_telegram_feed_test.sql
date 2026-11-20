@@ -1,5 +1,8 @@
 -- Telegram activity feed: security events, alerts, admin actions, notification copies; switches
 \ir _helpers.sql
+-- These tests check the order-progress Telegram messages: switch them on (default is off).
+insert into public.website_settings (key, value, is_public) values ('telegram_feed', '{"order_progress": true, "notifications": true}', false)
+  on conflict (key) do update set value = public.website_settings.value || excluded.value;
 delete from public.notifications_outbox;
 
 -- security events (bursts within 5 minutes become one message with a count)
@@ -51,7 +54,7 @@ select pg_temp.throws($$select public.admin_set_telegram_feed(false, false, fals
 reset role;
 select pg_temp.login(:super);
 select public.admin_set_telegram_feed(false, false, false);
-select pg_temp.ok(public.admin_telegram_feed() = '{"admin": false, "security": false, "notifications": false}'::jsonb, 'switches saved');
+select pg_temp.ok(public.admin_telegram_feed() = '{"admin": false, "security": false, "notifications": false, "order_progress": false, "printing_requests": true}'::jsonb, 'switches saved');
 reset role;
 delete from public.notifications_outbox;
 insert into public.security_events (kind, email, ip_hash) values ('customer_login_failed', 'quiet@example.com', '1234123412341234');

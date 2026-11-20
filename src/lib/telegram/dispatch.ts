@@ -9,13 +9,31 @@ import { sendMedia, sendMessage, type SendResult, type TelegramConfig } from "./
 import { buildMessage, CAPTION_LIMIT, MESSAGE_LIMIT, truncate, type OutboxRow } from "./format";
 
 const ATTACHMENT_BUCKETS = new Set(["payment-receipts"]);
-const FEED_EVENTS = new Set(["security_event", "security_alert", "admin_action", "notification_copy", "security_test"]);
+const FEED_EVENTS = new Set(["security_event", "security_alert", "admin_action", "notification_copy", "security_test", "stock_test", "receipts_test"]);
 
 /** Orders & payments group (first bot). */
 export function telegramConfig(): TelegramConfig | null {
   const env = getServerEnv();
   if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_ADMIN_CHAT_ID) return null;
   return { token: env.TELEGRAM_BOT_TOKEN, chatId: env.TELEGRAM_ADMIN_CHAT_ID, apiBase: env.TELEGRAM_API_BASE ?? "https://api.telegram.org" };
+}
+
+export type TelegramGroup = "orders" | "security" | "stock" | "receipts";
+
+function configFrom(token: string | undefined, chatId: string | undefined): TelegramConfig | null {
+  if (!token || !chatId) return null;
+  return { token, chatId, apiBase: getServerEnv().TELEGRAM_API_BASE ?? "https://api.telegram.org" };
+}
+
+/** Bot + chat of a group (null = not set up). */
+export function groupConfig(group: TelegramGroup): TelegramConfig | null {
+  const env = getServerEnv();
+  switch (group) {
+    case "orders": return configFrom(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_ADMIN_CHAT_ID);
+    case "security": return configFrom(env.TELEGRAM_SECURITY_BOT_TOKEN, env.TELEGRAM_SECURITY_CHAT_ID);
+    case "stock": return configFrom(env.TELEGRAM_STOCK_BOT_TOKEN, env.TELEGRAM_STOCK_CHAT_ID);
+    case "receipts": return configFrom(env.TELEGRAM_RECEIPTS_BOT_TOKEN, env.TELEGRAM_RECEIPTS_CHAT_ID);
+  }
 }
 
 /** Security group (second bot): security events, alerts, admin sign-ins and admin actions. */
@@ -34,10 +52,10 @@ async function deliver(cfg: TelegramConfig, row: OutboxRow): Promise<SendResult>
       const isImage = ext === "jpg" || ext === "png";
       // Photos are previewed inline in the chat; Telegram rejects photos > 10 MB, so send those as documents.
       const kind = isImage && blob.size <= 10 * 1024 * 1024 ? "photo" : "document";
-      const res = await sendMedia(cfg, kind, blob, `receipt-${row.payload.order_number ?? row.id}.${ext}`, msg.text);
+      const res = await sendMedia(cfg, kind, blob, `receipt-${row.payload.order_number ?? row.payload.number ?? row.id}.${ext}`, msg.text);
       // A photo Telegram cannot process (e.g. odd dimensions) is retried once as a document.
       if (!res.ok && res.kind === "permanent" && kind === "photo") {
-        return sendMedia(cfg, "document", blob, `receipt-${row.payload.order_number ?? row.id}.${ext}`, msg.text);
+        return sendMedia(cfg, "document", blob, `receipt-${row.payload.order_number ?? row.payload.number ?? row.id}.${ext}`, msg.text);
       }
       return res;
     }
@@ -58,16 +76,22 @@ export interface DispatchSummary {
  * "dead" after max attempts; nothing about the order itself is affected.
  */
 export async function dispatchNotifications(limit = 20): Promise<DispatchSummary> {
-  const [orders, security] = await Promise.all([dispatchGroup(false, limit), dispatchGroup(true, limit)]);
-  return { configured: orders.configured || security.configured, sent: orders.sent + security.sent, failed: orders.failed + security.failed };
+  const results = await Promise.all((["orders", "security", "stock", "receipts"] as const).map((g) => dispatchGroup(g, limit)));
+  return results.reduce((a, r) => ({ configured: a.configured || r.configured, sent: a.sent + r.sent, failed: a.failed + r.failed }), { configured: false, sent: 0, failed: 0 });
 }
 
-/** One group: claim its due rows (SKIP LOCKED), send, record the outcome. Unconfigured group: its rows wait (feed rows expire). */
-export async function dispatchGroup(security: boolean, limit = 20): Promise<DispatchSummary> {
-  const cfg = security ? securityTelegramConfig() : telegramConfig();
+/**
+ * One group: claim its due rows (SKIP LOCKED), send, record the outcome. A group that is not set up
+ * leaves its rows waiting (they expire) — except stock alerts, which use the orders bot until a stock bot exists.
+ */
+export async function dispatchGroup(group: TelegramGroup | boolean, limit = 20): Promise<DispatchSummary> {
+  const g: TelegramGroup = group === true ? "security" : group === false ? "orders" : group;
+  if (g === "stock" && !groupConfig("stock")) return { configured: false, sent: 0, failed: 0 }; // sent by the orders bot below
+  const cfg = groupConfig(g);
+  const groups = g === "orders" && !groupConfig("stock") ? ["orders", "stock"] : [g];
   if (!cfg) return { configured: false, sent: 0, failed: 0 };
   const db = getSupabaseAdmin();
-  const { data: rows, error } = await db.rpc("claim_telegram", { p_security: security, p_limit: limit });
+  const { data: rows, error } = await db.rpc("claim_telegram_groups", { p_groups: groups, p_limit: limit });
   if (error) {
     console.error("[telegram] claim failed:", error.message);
     return { configured: true, sent: 0, failed: 0 };
@@ -92,7 +116,7 @@ export async function dispatchGroup(security: boolean, limit = 20): Promise<Disp
 
 /** Send queued staff Telegram messages right after the current response (security events, admin actions). */
 export function telegramSoon() {
-  if (!telegramConfig() && !securityTelegramConfig()) return;
+  if (!(["orders", "security", "stock", "receipts"] as const).some((g) => groupConfig(g))) return;
   after(async () => {
     try {
       await dispatchNotifications(20);

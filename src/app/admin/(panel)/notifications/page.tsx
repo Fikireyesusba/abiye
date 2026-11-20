@@ -3,14 +3,14 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
 import { PageHeader, Panel, Table, Td, fieldClass } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
-import { retryAllFailed, retryNotification, saveTelegramFeed, sendSecurityTest, sendTestNotification } from "@/lib/admin/notification-actions";
+import { retryAllFailed, retryNotification, saveTelegramFeed, sendGroupTest, sendSecurityTest, sendTestNotification } from "@/lib/admin/notification-actions";
 import { describe } from "@/lib/telegram/format";
 import { archivePastReceipts, saveReceiptArchive, sendArchiveTest } from "@/lib/admin/archive-actions";
 import { Input } from "@/components/ui/input";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/datetime";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { securityTelegramConfig, telegramConfig } from "@/lib/telegram/dispatch";
+import { groupConfig, securityTelegramConfig, telegramConfig } from "@/lib/telegram/dispatch";
 import { emailConfigured } from "@/lib/email/dispatch";
 import { pushConfigured, pushSetupProblems } from "@/lib/push/dispatch";
 import { getSiteSettings } from "@/lib/catalog/settings";
@@ -24,7 +24,8 @@ type Row = { id: number; channel: string; event_type: string; status: "pending" 
 const CATEGORIES = [
   { key: "orders", label: "Orders & printing", hint: "Order placed, being prepared, ready, out for delivery, collected, expired, cancelled; printing requests and steps", group: "orders" },
   { key: "payments", label: "Payments & wallet", hint: "Receipts to verify, payments verified / rejected, top-ups, orders paid with balance", group: "orders" },
-  { key: "stock", label: "Stock", hint: "Low stock and sold out", group: "orders" },
+  { key: "stock", label: "Stock", hint: "Low stock and sold out", group: "stock" },
+  { key: "receipts", label: "Receipt files", hint: "Every verified / rejected receipt, with the file", group: "receipts" },
   { key: "security", label: "Security & admin", hint: "Security events, 🚨 alerts, admin sign-ins and sensitive admin actions", group: "security" },
   { key: "customers", label: "Customer messages", hint: "Emails and phone notifications to customers, receipt-archive emails (and their copies in Telegram)", group: "orders" },
   { key: "other", label: "Tests", hint: "Test messages", group: "orders" },
@@ -33,7 +34,8 @@ function categoryOf(r: Pick<Row, "channel" | "event_type">): (typeof CATEGORIES)
   if (r.channel !== "telegram" || r.event_type === "notification_copy") return "customers";
   if (["security_event", "security_alert", "admin_action", "security_test"].includes(r.event_type)) return "security";
   if (["new_order", "payment_resubmitted", "payment_verified", "payment_rejected", "wallet_topup", "wallet_order_paid"].includes(r.event_type)) return "payments";
-  if (["low_stock", "out_of_stock"].includes(r.event_type)) return "stock";
+  if (["low_stock", "out_of_stock", "stock_test"].includes(r.event_type)) return "stock";
+  if (["receipt_record", "receipts_test"].includes(r.event_type)) return "receipts";
   if (r.event_type === "test_message") return "other";
   return "orders";
 }
@@ -41,6 +43,7 @@ function categoryOf(r: Pick<Row, "channel" | "event_type">): (typeof CATEGORIES)
 const LIST_LABEL: Record<string, string> = {
   security_event: "Security event", security_alert: "🚨 Security alert", admin_action: "Admin action",
   notification_copy: "Copy of a customer message", security_test: "Test message (security group)", test_message: "Test message (orders group)",
+  stock_test: "Test message (stock group)", receipts_test: "Test message (receipts group)", receipt_record: "Receipt file",
 };
 const CHANNEL_LABEL: Record<string, string> = { telegram: "Telegram", email: "Email", push: "Phone", archive: "Archive email" };
 const TONE = { sent: "success", pending: "secondary", processing: "info", failed: "warning", dead: "destructive" } as const;
@@ -49,6 +52,8 @@ export default async function NotificationsPage() {
   await requirePermission("settings.manage");
   const configured = !!telegramConfig();
   const securityConfigured = !!securityTelegramConfig();
+  const stockConfigured = !!groupConfig("stock");
+  const receiptsConfigured = !!groupConfig("receipts");
   const emailOn = emailConfigured();
   const pushOn = pushConfigured();
   const pushProblems = pushSetupProblems();
@@ -61,7 +66,7 @@ export default async function NotificationsPage() {
   const { data: archiveRaw } = await supabase.rpc("admin_receipt_archive_status");
   const archive = (archiveRaw ?? null) as { email: string | null; sent: number; waiting: number; dead: number; last_sent_at: string | null; last_error: string | null } | null;
   const { data: feedRaw } = await supabase.rpc("admin_telegram_feed");
-  const feed = (feedRaw ?? null) as { security: boolean; admin: boolean; notifications: boolean } | null;
+  const feed = (feedRaw ?? null) as { security: boolean; admin: boolean; notifications: boolean; order_progress?: boolean; printing_requests?: boolean } | null;
   const today = new Date(new Date().getTime() + 3 * 3600 * 1000).toISOString().slice(0, 10);
 
   return (
@@ -141,7 +146,7 @@ export default async function NotificationsPage() {
             {configured ? <CheckCircle2 className="size-5 text-success" aria-hidden /> : <XCircle className="size-5 text-destructive" aria-hidden />}
             {configured ? "Connected (TELEGRAM_BOT_TOKEN / TELEGRAM_ADMIN_CHAT_ID)." : "Not connected — set TELEGRAM_BOT_TOKEN and TELEGRAM_ADMIN_CHAT_ID in Vercel, then redeploy."}
           </p>
-          <p className="mb-3 text-xs text-muted-foreground">Every step of every order and printing job until it is collected: order placed, receipt to verify, payment verified / rejected, being prepared, ready, out for delivery, collected, cancelled, expired; top-ups; stock alerts; copies of customer messages.</p>
+          <p className="mb-3 text-xs text-muted-foreground">What needs you: receipts to verify (new and resubmitted), wallet top-ups to verify, printing requests to quote. Order progress and copies of customer messages can be switched on below.</p>
           <ActionForm action={sendTestNotification} submitLabel="Send test message" variant="outline" size="sm" />
         </Panel>
         <Panel title="Security group">
@@ -152,15 +157,35 @@ export default async function NotificationsPage() {
           <p className="mb-3 text-xs text-muted-foreground">Security events (failed / successful admin sign-ins, wrong codes, blocked attempts, rate limits), 🚨 high-risk alerts, and sensitive admin actions.</p>
           <ActionForm action={sendSecurityTest} submitLabel="Send test message" variant="outline" size="sm" />
         </Panel>
+        <Panel title="Stock group">
+          <p className="mb-2 flex items-center gap-2 text-sm">
+            {stockConfigured ? <CheckCircle2 className="size-5 text-success" aria-hidden /> : <XCircle className="size-5 text-destructive" aria-hidden />}
+            {stockConfigured ? "Connected (TELEGRAM_STOCK_BOT_TOKEN / TELEGRAM_STOCK_CHAT_ID)." : "Not connected — until TELEGRAM_STOCK_BOT_TOKEN and TELEGRAM_STOCK_CHAT_ID are set, stock alerts go to the orders & payments group."}
+          </p>
+          <p className="mb-3 text-xs text-muted-foreground">Low stock (at each product&apos;s alert level) and sold out. Stock alerts are no longer emailed.</p>
+          <ActionForm action={sendGroupTest} hidden={{ group: "stock" }} submitLabel="Send test message" variant="outline" size="sm" />
+        </Panel>
+        <Panel title="Receipts group">
+          <p className="mb-2 flex items-center gap-2 text-sm">
+            {receiptsConfigured ? <CheckCircle2 className="size-5 text-success" aria-hidden /> : <XCircle className="size-5 text-destructive" aria-hidden />}
+            {receiptsConfigured ? "Connected (TELEGRAM_RECEIPTS_BOT_TOKEN / TELEGRAM_RECEIPTS_CHAT_ID)." : "Not connected — set TELEGRAM_RECEIPTS_BOT_TOKEN and TELEGRAM_RECEIPTS_CHAT_ID in Vercel and redeploy. Until then receipt files wait 2 days, then are dropped (the email archive still gets them)."}
+          </p>
+          <p className="mb-3 text-xs text-muted-foreground">The receipt file of every verified or rejected payment and top-up, with order, amount, reference, bank account, customer, who decided and why — in addition to the receipt-archive email.</p>
+          <ActionForm action={sendGroupTest} hidden={{ group: "receipts" }} submitLabel="Send test message" variant="outline" size="sm" />
+        </Panel>
       </div>
       {feed && (
         <Panel title="Telegram activity feed" className="mb-6">
-          <p className="mb-3 text-sm text-muted-foreground">Orders, payments, printing and stock messages are always sent. Choose the extras below. Each message shows its <strong>service</strong> and <strong>event</strong> name with the details; identical security events within 5 minutes are grouped.</p>
+          <p className="mb-3 text-sm text-muted-foreground">Receipts and top-ups to verify are always sent to the orders & payments group; stock alerts and receipt files to their groups. Choose the rest below. Each message shows its <strong>service</strong> and <strong>event</strong> name with the details; identical security events within 5 minutes are grouped.</p>
           <ActionForm action={saveTelegramFeed} submitLabel="Save" size="sm" className="space-y-2">
             <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="security" defaultChecked={feed.security} className="mt-0.5 size-4 accent-[var(--primary)]" />
               <span><strong>Security events and alerts</strong> → security group</span></label>
             <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="admin" defaultChecked={feed.admin} className="mt-0.5 size-4 accent-[var(--primary)]" />
               <span><strong>Sensitive admin actions</strong> (blocking, staff / roles / bank / settings changes, deactivations, wallet corrections, exports, resets) → security group</span></label>
+            <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="printing_requests" defaultChecked={feed.printing_requests ?? true} className="mt-0.5 size-4 accent-[var(--primary)]" />
+              <span><strong>Printing requests to quote</strong> → orders & payments group</span></label>
+            <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="order_progress" defaultChecked={feed.order_progress ?? false} className="mt-0.5 size-4 accent-[var(--primary)]" />
+              <span><strong>Order &amp; printing progress</strong> (placed, payment verified / rejected, preparing, ready, out for delivery, collected, cancelled, expired, paid with balance) → orders & payments group</span></label>
             <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="notifications" defaultChecked={feed.notifications} className="mt-0.5 size-4 accent-[var(--primary)]" />
               <span><strong>Copies of customer messages</strong> (emails, phone notifications, receipt archive — sent ✓ / failed ✗) → orders & payments group</span></label>
           </ActionForm>
@@ -196,7 +221,7 @@ export default async function NotificationsPage() {
                 <Badge variant="secondary">{list.length}</Badge>
                 {waiting > 0 && <Badge variant="info">{waiting} waiting</Badge>}
                 {failed > 0 && <Badge variant="destructive">{failed} failed</Badge>}
-                <span className="w-full text-xs text-muted-foreground sm:ml-auto sm:w-auto">{c.hint}{c.key !== "customers" && ` · ${c.group === "security" ? "Security group" : "Orders & payments group"}`}</span>
+                <span className="w-full text-xs text-muted-foreground sm:ml-auto sm:w-auto">{c.hint}{c.key !== "customers" && ` · ${({ security: "Security group", stock: stockConfigured ? "Stock group" : "Orders & payments group (until a stock bot is set)", receipts: "Receipts group", orders: "Orders & payments group" } as Record<string, string>)[c.group]}`}</span>
               </summary>
               <div className="border-t p-2">
                 <Table head={["#", "Event", "Via", "About", "Status", "Attempts", "Created", "Last error", ""]} empty="Nothing yet.">

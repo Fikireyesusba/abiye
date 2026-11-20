@@ -6,7 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { dispatchReceiptArchive } from "@/lib/email/archive";
 import { dispatchCustomerEmails } from "@/lib/email/dispatch";
 import { dispatchCustomerPush } from "@/lib/push/dispatch";
-import { dispatchGroup, dispatchNotifications, securityTelegramConfig, telegramConfig } from "@/lib/telegram/dispatch";
+import { dispatchGroup, dispatchNotifications, groupConfig, securityTelegramConfig, telegramConfig } from "@/lib/telegram/dispatch";
 import { dbError, fail, ok, type ActionResult } from "./result";
 
 export async function sendTestNotification(): Promise<ActionResult> {
@@ -51,6 +51,7 @@ export async function saveTelegramFeed(_prev: ActionResult | null, fd: FormData)
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc("admin_set_telegram_feed", {
     p_security: fd.get("security") === "on", p_admin: fd.get("admin") === "on", p_notifications: fd.get("notifications") === "on",
+    p_order_progress: fd.get("order_progress") === "on", p_printing_requests: fd.get("printing_requests") === "on",
   });
   if (error) return dbError(error);
   revalidatePath("/admin/notifications");
@@ -75,4 +76,22 @@ export async function retryAllFailed(): Promise<ActionResult> {
   revalidatePath("/admin/notifications");
   revalidatePath("/admin", "layout");
   return failed ? fail(`${queued} message(s) retried — ${failed} still failing. See the error next to each.`) : ok(`${queued} message(s) retried and sent.`);
+}
+
+/** Test message for the stock or receipts group. */
+export async function sendGroupTest(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("settings.manage");
+  const group = fd.get("group") === "stock" ? "stock" : fd.get("group") === "receipts" ? "receipts" : null;
+  if (!group) return fail("Invalid request.");
+  if (!groupConfig(group)) {
+    return fail(group === "stock"
+      ? "The stock group is not configured (TELEGRAM_STOCK_BOT_TOKEN / TELEGRAM_STOCK_CHAT_ID)."
+      : "The receipts group is not configured (TELEGRAM_RECEIPTS_BOT_TOKEN / TELEGRAM_RECEIPTS_CHAT_ID).");
+  }
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("admin_queue_group_test", { p_group: group });
+  if (error) return dbError(error);
+  const r = await dispatchGroup(group, 20);
+  revalidatePath("/admin/notifications");
+  return r.failed ? fail("Test message could not be delivered — see the error below.") : ok(`Test message sent to the ${group} group.`);
 }
