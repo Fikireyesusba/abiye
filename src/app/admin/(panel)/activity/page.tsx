@@ -13,6 +13,15 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Activity log" };
 
+const CATS = [
+  { key: "orders", label: "Orders & printing", hint: "Status changes, assignments, quotes, file deletions" },
+  { key: "payments", label: "Payments & wallet", hint: "Payments verified / rejected, top-ups, balance corrections" },
+  { key: "customers", label: "Customers", hint: "Accounts deactivated / deleted, invitations, profile changes, promo codes" },
+  { key: "catalog", label: "Products & catalog", hint: "Products, categories, promotions, delivery zones, printing prices, reviews" },
+  { key: "staff", label: "Staff & settings", hint: "Staff, roles, two-step resets, bank accounts, website settings" },
+  { key: "security", label: "Security & data", hint: "Blocked emails, cleared alerts, exports, activity clearing, resets" },
+] as const;
+
 const PAGE = 100;
 
 function entityHref(type: string, id: string | null): string | null {
@@ -34,23 +43,23 @@ export default async function ActivityPage({ searchParams }: PageProps<"/admin/a
   const monthAgo = new Date(now - 30 * 86400000).toISOString().slice(0, 10);
   const clearMax = new Date(now - 31 * 86400000).toISOString().slice(0, 10);
   const sp = await searchParams;
-  const type = first(sp.type) ?? "";
-  const entity = type in ENTITY_LABELS ? type : "";
+  const catParam = first(sp.cat) ?? "";
+  const cat = CATS.find((c) => c.key === catParam)?.key ?? "";
   const q = (first(sp.q) ?? "").trim().slice(0, 60);
   const beforeRaw = Number(first(sp.before));
   const before = Number.isSafeInteger(beforeRaw) && beforeRaw > 0 ? beforeRaw : undefined;
 
   const supabase = await createSupabaseServerClient();
-  const { data: rows, error } = await supabase.rpc("admin_activity_log", {
-    p_entity_type: entity || undefined,
-    p_search: q || undefined,
-    p_limit: PAGE,
-    p_before_id: before,
-  });
-  if (isMissingDbFunction(error)) return <DatabaseUpdateNeeded title="Activity log" migration="20261120000018_customer_account_management.sql" />;
+  const [{ data: rows, error }, { data: counts }] = await Promise.all([
+    supabase.rpc("admin_activity_by_category", { p_category: cat || undefined, p_search: q || undefined, p_limit: PAGE, p_before_id: before }),
+    supabase.rpc("admin_activity_categories", { p_days: 30 }),
+  ]);
+  if (isMissingDbFunction(error)) return <DatabaseUpdateNeeded title="Activity log" migration="20261120000038_activity_categories.sql" />;
   if (error) throw new Error("Could not load the activity log");
   const last = rows?.at(-1);
-  const params = new URLSearchParams({ ...(entity ? { type: entity } : {}), ...(q ? { q } : {}) });
+  const params = new URLSearchParams({ ...(cat ? { cat } : {}), ...(q ? { q } : {}) });
+  const countOf = (k: string) => (counts ?? []).find((c) => c.category === k);
+  const totalAll = (counts ?? []).reduce((n, c) => n + Number(c.total), 0);
 
   return (
     <>
@@ -84,13 +93,31 @@ export default async function ActivityPage({ searchParams }: PageProps<"/admin/a
           </details>
         )}
       </div>
+      <h2 className="mb-2 text-sm font-medium text-muted-foreground">Categories — last 30 days (click to open)</h2>
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
+        <Link href={`/admin/activity${q ? `?q=${encodeURIComponent(q)}` : ""}`} aria-current={!cat ? "page" : undefined}
+          className={`rounded-lg border bg-card p-3 text-sm hover:border-primary ${!cat ? "border-primary ring-1 ring-primary" : ""}`}>
+          <span className="block font-medium">All activity</span>
+          <span className="text-2xl font-semibold tabular-nums">{totalAll}</span>
+        </Link>
+        {CATS.map((c) => {
+          const n = countOf(c.key);
+          return (
+            <Link key={c.key} href={`/admin/activity?${new URLSearchParams({ cat: c.key, ...(q ? { q } : {}) })}`} aria-current={cat === c.key ? "page" : undefined}
+              title={c.hint} data-category={c.key}
+              className={`rounded-lg border bg-card p-3 text-sm hover:border-primary ${cat === c.key ? "border-primary ring-1 ring-primary" : ""}`}>
+              <span className="block font-medium">{c.label}</span>
+              <span className="text-2xl font-semibold tabular-nums">{n ? Number(n.total) : 0}</span>
+              {n?.last_at && <span className="block text-xs text-muted-foreground">latest {formatDateTime(n.last_at, "en")}</span>}
+            </Link>
+          );
+        })}
+      </div>
+      {cat && <p className="mb-3 text-sm text-muted-foreground"><strong className="text-foreground">{CATS.find((c) => c.key === cat)?.label}:</strong> {CATS.find((c) => c.key === cat)?.hint}</p>}
       <form method="get" className="mb-4 flex flex-wrap gap-2">
-        <select name="type" defaultValue={entity} className={`${fieldClass} max-w-[14rem]`} aria-label="Filter by area">
-          <option value="">All areas</option>
-          {Object.entries(ENTITY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
+        {cat && <input type="hidden" name="cat" value={cat} />}
         <input name="q" defaultValue={q} placeholder="Action, ID or person" maxLength={60} className={`${fieldClass} max-w-xs`} aria-label="Search activity" />
-        <Button type="submit" variant="outline">Filter</Button>
+        <Button type="submit" variant="outline">Search</Button>
       </form>
       <Table head={["When", "Who", "What", "Item", "Changes"]} empty="No activity found.">
         {(rows ?? []).map((r) => {

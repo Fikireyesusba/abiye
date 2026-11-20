@@ -136,7 +136,7 @@ async function waitFor(fn, tries = 30) {
     check(page.includes("by "), "timeline: actor names");
 
     // activity log
-    await op.goto(`${B}/admin/activity?type=customer_account`);
+    await op.goto(`${B}/admin/activity?cat=customers`);
     const log = await op.locator("table").innerText();
     check(log.includes("Account deactivated") && log.includes(aEmail), "activity log lists the change with the account");
 

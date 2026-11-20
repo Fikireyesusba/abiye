@@ -761,7 +761,17 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "admin_activity_export":
+            "admin_activity_by_category":
+{ Args: { "p_before_id"?: number,"p_category"?: string,"p_limit"?: number,"p_search"?: string }; Returns: {
+              "action": string,"actor_id": string,"actor_name": string,"actor_role": string,"after_data": Json,"before_data": Json,"category": string,"created_at": string,"entity_id": string,"entity_label": string,"entity_type": string,"id": number,"metadata": Json
+            }[]
+                           },
+"admin_activity_categories":
+{ Args: { "p_days"?: number }; Returns: {
+              "category": string,"last_at": string,"total": number
+            }[]
+                           },
+"admin_activity_export":
 { Args: { "p_entity_type"?: string,"p_from": string,"p_to": string }; Returns: {
               "action": string,"actor_name": string,"actor_role": string,"after_data": Json,"before_data": Json,"created_at": string,"entity_id": string,"entity_label": string,"entity_type": string,"id": number,"metadata": Json
             }[]
