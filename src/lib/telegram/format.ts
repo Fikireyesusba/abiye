@@ -63,13 +63,25 @@ const CUSTOMER_EVENT: Record<string, string> = {
   customer_back_in_stock: "Back in stock", staff_low_stock: "Low stock (staff email)", staff_out_of_stock: "Sold out (staff email)",
   receipt_archive: "Receipt archived",
 };
+const ORDER_STEP: Record<string, string> = {
+  processing: "Being prepared", ready_for_pickup: "Ready for pickup", out_for_delivery: "Out for delivery",
+  completed: "Collected / delivered (completed)", expired: "Expired (not paid in time)",
+};
+const PRINT_STEP: Record<string, string> = {
+  awaiting_payment: "Price quoted (awaiting payment)", printing: "Paid — printing", ready: "Ready for pickup",
+  completed: "Collected / delivered (completed)", cancelled: "Cancelled",
+};
 const titleCase = (s: string) => s.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase());
 
 /** [service, event name] for any outbox row. */
 export function describe(row: OutboxRow): [string, string] {
   const p = row.payload ?? {};
   switch (row.event_type) {
-    case "new_order": return ["Orders", "New order"];
+    case "new_order": return ["Payments", "Receipt uploaded — verify payment"];
+    case "order_placed": return ["Orders", "Order placed (awaiting payment)"];
+    case "order_status": return ["Orders", ORDER_STEP[String(p.to)] ?? titleCase(String(p.to ?? ""))];
+    case "printing_status": return ["Printing", PRINT_STEP[String(p.to)] ?? titleCase(String(p.to ?? ""))];
+    case "security_test": return ["Security group", "Test message"];
     case "payment_resubmitted": return ["Payments", "Receipt resubmitted"];
     case "printing_request": return ["Printing", "New printing request"];
     case "payment_verified": return ["Payments", "Payment verified"];
@@ -274,8 +286,66 @@ function buildBody(row: OutboxRow, appUrl: string): BuiltMessage {
         ].join("\n") + (ok ? "" : admin("/admin/notifications")),
       };
     }
+    case "order_placed": {
+      const items = Array.isArray(p.items) ? (p.items as { name?: unknown; quantity?: unknown }[]) : [];
+      return {
+        attachment: null,
+        text: [
+          "🧾 <b>ORDER PLACED — AWAITING PAYMENT</b>",
+          "",
+          line("Order ID", p.order_number),
+          line("Customer", p.customer_name),
+          line("Phone", phone(p.customer_phone)),
+          "Products:",
+          ...items.slice(0, 30).map((i) => `• ${esc(i.name)} × ${esc(i.quantity)}`),
+          "",
+          `Total: <b>${esc(etb(p.total_etb))}</b>`,
+          line("Delivery", p.fulfillment_method === "pickup" ? "Pickup at shop" : [p.city, p.address_line].filter(Boolean).join(" — ")),
+          line("Pay by", addisTime(p.payment_due_at)),
+          "",
+          "The customer still has to transfer the money and upload the receipt.",
+        ].join("\n") + orderLink,
+      };
+    }
+    case "order_status": {
+      const icon = ({ processing: "📦", ready_for_pickup: "🛍", out_for_delivery: "🚚", completed: "✅", expired: "⌛" } as Record<string, string>)[String(p.to)] ?? "ℹ️";
+      return {
+        attachment: null,
+        text: [
+          `${icon} <b>ORDER ${esc((ORDER_STEP[String(p.to)] ?? String(p.to)).toUpperCase())}</b>`,
+          "",
+          line("Order ID", p.order_number),
+          line("Customer", p.customer_name),
+          line("Phone", phone(p.customer_phone)),
+          line("Total", etb(p.total_etb)),
+          line("Delivery", p.fulfillment_method === "pickup" ? "Pickup at shop" : [p.city, p.address_line].filter(Boolean).join(" — ")),
+          line("Status", `${titleCase(String(p.from ?? ""))} → ${titleCase(String(p.to ?? ""))}`),
+          ...(p.by ? [line("By", p.by)] : [line("By", "System")]),
+          ...(p.note ? [line("Note", p.note)] : []),
+        ].join("\n") + orderLink,
+      };
+    }
+    case "printing_status": {
+      return {
+        attachment: null,
+        text: [
+          `🖨 <b>PRINTING ${esc((PRINT_STEP[String(p.to)] ?? String(p.to)).toUpperCase())}</b>`,
+          "",
+          line("Job", p.job_number),
+          line("Customer", p.customer_name),
+          line("Phone", phone(p.customer_phone)),
+          ...(p.total_etb ? [line("Price", etb(p.total_etb))] : []),
+          ...(p.page_count ? [line("Pages × copies", `${p.page_count} × ${p.copies}`)] : []),
+          line("Status", `${titleCase(String(p.from ?? ""))} → ${titleCase(String(p.to ?? ""))}`),
+          line("By", p.by ?? "System"),
+          ...(p.note ? [line("Note", p.note)] : []),
+        ].join("\n") + (p.job_id ? admin(`/admin/printing/${p.job_id}`) : ""),
+      };
+    }
+    case "security_test":
+      return { attachment: null, text: `✅ <b>Test message — security group</b>\n\nSecurity alerts, sign-ins and admin actions will arrive here.\n${line("Requested by", p.requested_by)}` };
     case "test_message":
-      return { attachment: null, text: "✅ <b>Test message</b>\n\nTelegram notifications are working." };
+      return { attachment: null, text: "✅ <b>Test message — orders & payments group</b>\n\nOrders, payments, printing, top-ups and stock alerts will arrive here." };
     default:
       return { attachment: null, text: `ℹ️ ${esc(row.event_type)}${p.order_number ? `\n${line("Order", p.order_number)}` : ""}` };
   }

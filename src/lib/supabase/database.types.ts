@@ -845,7 +845,7 @@ isOneToOne: false
                            },
 "admin_notifications":
 { Args: { "p_limit"?: number }; Returns: {
-              "attempts": number,"created_at": string,"event_type": string,"id": number,"last_error": string,"max_attempts": number,"next_attempt_at": string,"reference": string,"sent_at": string,"status": Database["public"]['Enums']["notification_status"]
+              "attempts": number,"channel": string,"created_at": string,"event_type": string,"id": number,"last_error": string,"max_attempts": number,"next_attempt_at": string,"reference": string,"sent_at": string,"status": Database["public"]['Enums']["notification_status"]
             }[]
                            },
 "admin_payments_export":
@@ -865,6 +865,9 @@ isOneToOne: false
 { Args: { "p_promotion_id"?: string,"p_user_id"?: string }; Returns: {
               "assigned_at": string,"code": string,"email": string,"full_name": string,"promotion_id": string,"title_en": string,"used": boolean,"user_id": string
             }[]
+                           },
+"admin_queue_security_test":
+{ Args: Record<PropertyKey, never>; Returns: undefined
                            },
 "admin_queue_test_notification":
 { Args: Record<PropertyKey, never>; Returns: undefined
@@ -991,6 +994,31 @@ isOneToOne: false
       } },
 "claim_outbox":
 { Args: { "p_channel": string,"p_limit"?: number }; Returns: {
+              "attachment_bucket": string | null,
+"attachment_path": string | null,
+"attempts": number,
+"channel": string,
+"created_at": string,
+"dedupe_key": string,
+"event_type": string,
+"id": number,
+"last_error": string | null,
+"locked_until": string | null,
+"max_attempts": number,
+"next_attempt_at": string,
+"payload": NonNullable<Json>,
+"recipient_user_id": string | null,
+"sent_at": string | null,
+"status": Database["public"]['Enums']["notification_status"]
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "notifications_outbox"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
+"claim_telegram":
+{ Args: { "p_limit"?: number,"p_security": boolean }; Returns: {
               "attachment_bucket": string | null,
 "attachment_path": string | null,
 "attempts": number,

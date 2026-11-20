@@ -21,7 +21,7 @@ export async function getAdminBadges(ctx: AdminContext): Promise<AdminBadges> {
     has("printing.view") ? count(supabase.from("printing_jobs").select("id", { count: "exact", head: true }).in("status", ["awaiting_quote", "printing"])) : 0,
     // Telegram notifications that failed permanently (among the most recent 200).
     has("settings.manage")
-      ? Promise.resolve(supabase.rpc("admin_notifications", { p_limit: 200 })).then((r) => (r.data ?? []).filter((n) => n.status === "dead").length, () => 0)
+      ? Promise.resolve(supabase.rpc("admin_notifications", { p_limit: 200 })).then((r) => (r.data ?? []).filter((n) => n.status === "dead" && !n.last_error?.startsWith("skipped")).length, () => 0)
       : 0,
     // High-risk emails (failed admin sign-ins / codes) from the last 24 h that are not blocked yet.
     has("audit.view")

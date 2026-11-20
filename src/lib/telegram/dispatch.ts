@@ -9,12 +9,20 @@ import { sendMedia, sendMessage, type SendResult, type TelegramConfig } from "./
 import { buildMessage, CAPTION_LIMIT, MESSAGE_LIMIT, truncate, type OutboxRow } from "./format";
 
 const ATTACHMENT_BUCKETS = new Set(["payment-receipts"]);
-const FEED_EVENTS = new Set(["security_event", "security_alert", "admin_action", "notification_copy"]);
+const FEED_EVENTS = new Set(["security_event", "security_alert", "admin_action", "notification_copy", "security_test"]);
 
+/** Orders & payments group (first bot). */
 export function telegramConfig(): TelegramConfig | null {
   const env = getServerEnv();
   if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_ADMIN_CHAT_ID) return null;
   return { token: env.TELEGRAM_BOT_TOKEN, chatId: env.TELEGRAM_ADMIN_CHAT_ID, apiBase: env.TELEGRAM_API_BASE ?? "https://api.telegram.org" };
+}
+
+/** Security group (second bot): security events, alerts, admin sign-ins and admin actions. */
+export function securityTelegramConfig(): TelegramConfig | null {
+  const env = getServerEnv();
+  if (!env.TELEGRAM_SECURITY_BOT_TOKEN || !env.TELEGRAM_SECURITY_CHAT_ID) return null;
+  return { token: env.TELEGRAM_SECURITY_BOT_TOKEN, chatId: env.TELEGRAM_SECURITY_CHAT_ID, apiBase: env.TELEGRAM_API_BASE ?? "https://api.telegram.org" };
 }
 
 async function deliver(cfg: TelegramConfig, row: OutboxRow): Promise<SendResult> {
@@ -50,10 +58,16 @@ export interface DispatchSummary {
  * "dead" after max attempts; nothing about the order itself is affected.
  */
 export async function dispatchNotifications(limit = 20): Promise<DispatchSummary> {
-  const cfg = telegramConfig();
+  const [orders, security] = await Promise.all([dispatchGroup(false, limit), dispatchGroup(true, limit)]);
+  return { configured: orders.configured || security.configured, sent: orders.sent + security.sent, failed: orders.failed + security.failed };
+}
+
+/** One group: claim its due rows (SKIP LOCKED), send, record the outcome. Unconfigured group: its rows wait (feed rows expire). */
+export async function dispatchGroup(security: boolean, limit = 20): Promise<DispatchSummary> {
+  const cfg = security ? securityTelegramConfig() : telegramConfig();
   if (!cfg) return { configured: false, sent: 0, failed: 0 };
   const db = getSupabaseAdmin();
-  const { data: rows, error } = await db.rpc("claim_notifications", { p_limit: limit });
+  const { data: rows, error } = await db.rpc("claim_telegram", { p_security: security, p_limit: limit });
   if (error) {
     console.error("[telegram] claim failed:", error.message);
     return { configured: true, sent: 0, failed: 0 };
@@ -78,7 +92,7 @@ export async function dispatchNotifications(limit = 20): Promise<DispatchSummary
 
 /** Send queued staff Telegram messages right after the current response (security events, admin actions). */
 export function telegramSoon() {
-  if (!telegramConfig()) return;
+  if (!telegramConfig() && !securityTelegramConfig()) return;
   after(async () => {
     try {
       await dispatchNotifications(20);

@@ -11,7 +11,7 @@ import { formatDateTime } from "@/lib/datetime";
 import { emailConfigured } from "@/lib/email/dispatch";
 import { pushConfigured } from "@/lib/push/dispatch";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { telegramConfig } from "@/lib/telegram/dispatch";
+import { securityTelegramConfig, telegramConfig } from "@/lib/telegram/dispatch";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Security" };
@@ -105,7 +105,8 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
     const checks: { ok: boolean; text: string; href?: string }[] = [
       { ok: emailConfigured(), text: emailConfigured() ? "Customer emails configured" : "Customer emails not configured", href: "/admin/notifications" },
       { ok: pushConfigured(), text: pushConfigured() ? "Phone notifications configured" : "Phone notifications not configured", href: "/admin/notifications" },
-      { ok: !!telegramConfig(), text: telegramConfig() ? "Staff Telegram alerts configured" : "Staff Telegram alerts not configured", href: "/admin/notifications" },
+      { ok: !!telegramConfig(), text: telegramConfig() ? "Orders & payments Telegram group connected" : "Orders & payments Telegram group not connected", href: "/admin/notifications" },
+      { ok: !!securityTelegramConfig(), text: securityTelegramConfig() ? "Security Telegram group connected" : "Security Telegram group not connected", href: "/admin/notifications" },
       ...jobs.map((j) => {
         const r = h.cron[j.name];
         const fresh = r && Date.now() - Date.parse(r.last_run_at) < 36 * 3600000;

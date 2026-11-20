@@ -79,7 +79,7 @@ describe("Telegram activity feed", () => {
   const row = (event_type: string, payload: Record<string, unknown>) => ({ id: 1, event_type, payload, attachment_bucket: null, attachment_path: null });
   it("every message carries its service and event name", () => {
     const m = buildMessage(row("new_order", { order_number: "ET-1", items: [], total_etb: 100 }), "https://shop.example");
-    expect(m.text.split("\n")[1]).toBe("<i>Service: Orders · Event: New order</i>");
+    expect(m.text.split("\n")[1]).toBe("<i>Service: Payments · Event: Receipt uploaded — verify payment</i>");
   });
   it("security event: what, email, network, device, repeats, escaped", () => {
     const m = buildMessage(row("security_event", { kind: "admin_mfa_failed", email: "x<y>@example.com", network: "abcdef1234", device: "curl/8",

@@ -6,18 +6,29 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { dispatchReceiptArchive } from "@/lib/email/archive";
 import { dispatchCustomerEmails } from "@/lib/email/dispatch";
 import { dispatchCustomerPush } from "@/lib/push/dispatch";
-import { dispatchNotifications, telegramConfig } from "@/lib/telegram/dispatch";
+import { dispatchGroup, dispatchNotifications, securityTelegramConfig, telegramConfig } from "@/lib/telegram/dispatch";
 import { dbError, fail, ok, type ActionResult } from "./result";
 
 export async function sendTestNotification(): Promise<ActionResult> {
   await requirePermission("settings.manage");
-  if (!telegramConfig()) return fail("Telegram is not configured (TELEGRAM_BOT_TOKEN / TELEGRAM_ADMIN_CHAT_ID).");
+  if (!telegramConfig()) return fail("The orders & payments group is not configured (TELEGRAM_BOT_TOKEN / TELEGRAM_ADMIN_CHAT_ID).");
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc("admin_queue_test_notification");
   if (error) return dbError(error);
-  const r = await dispatchNotifications(20); // send now so the admin sees the result immediately
+  const r = await dispatchGroup(false, 20); // send now so the admin sees the result immediately
   revalidatePath("/admin/notifications");
-  return r.failed ? fail("Test message could not be delivered — see the error below.") : ok("Test message sent to Telegram.");
+  return r.failed ? fail("Test message could not be delivered — see the error below.") : ok("Test message sent to the orders & payments group.");
+}
+
+export async function sendSecurityTest(): Promise<ActionResult> {
+  await requirePermission("settings.manage");
+  if (!securityTelegramConfig()) return fail("The security group is not configured (TELEGRAM_SECURITY_BOT_TOKEN / TELEGRAM_SECURITY_CHAT_ID).");
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("admin_queue_security_test");
+  if (error) return dbError(error);
+  const r = await dispatchGroup(true, 20);
+  revalidatePath("/admin/notifications");
+  return r.failed ? fail("Test message could not be delivered — see the error below.") : ok("Test message sent to the security group.");
 }
 
 export async function retryNotification(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {

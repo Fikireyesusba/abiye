@@ -17,6 +17,7 @@ const B = `http://localhost:${PORT}`;
 const TG_PORT = 4597;
 const MAIL_PORT = 4596;
 const TOKEN = "7000000001:AAFakeTokenForLocalTestsOnly_abcdefghijk";
+const SEC_TOKEN = "7000000002:AAFakeSecurityTokenForLocalTestsOnly_abcd";
 const KEY = "re_TestKeyForLocalOnly_1234567890";
 const OWNER = { email: "owner@abiye.local", password: process.env.ADMIN_E2E_PASSWORD ?? "LocalDevOwner2026" };
 const results = [];
@@ -25,13 +26,17 @@ const RUN = Date.now().toString(36);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const tg = [];
+const secMsgs = [];
+const orderMsgs = [];
 const tgServer = http.createServer((req, res) => {
   const chunks = [];
   req.on("data", (c) => chunks.push(c));
   req.on("end", () => {
     const body = Buffer.concat(chunks).toString("utf8");
     const text = req.headers["content-type"]?.startsWith("application/json") ? JSON.parse(body).text : body.match(/name="caption"\r\n\r\n([\s\S]*?)\r\n--/)?.[1];
+    const token = req.url.match(/^\/bot([^/]+)\//)?.[1];
     tg.push(text ?? "");
+    (token === SEC_TOKEN ? secMsgs : orderMsgs).push(text ?? "");
     res.writeHead(200, { "content-type": "application/json" });
     res.end(JSON.stringify({ ok: true, result: { message_id: tg.length } }));
   });
@@ -55,6 +60,7 @@ const cron = () => fetch(`${B}/api/cron/notifications`, { headers: { authorizati
   sql("update products set stock_quantity = 80 where sku = 'SMP-CH-001'");
   const app = spawn("npx", ["next", "start", "-p", String(PORT)], {
     env: { ...process.env, TELEGRAM_BOT_TOKEN: TOKEN, TELEGRAM_ADMIN_CHAT_ID: "-100123", TELEGRAM_API_BASE: `http://127.0.0.1:${TG_PORT}`,
+           TELEGRAM_SECURITY_BOT_TOKEN: SEC_TOKEN, TELEGRAM_SECURITY_CHAT_ID: "-100456",
            RESEND_API_KEY: KEY, EMAIL_FROM: "Abiye <orders@example.com>", EMAIL_API_BASE: `http://127.0.0.1:${MAIL_PORT}`, APP_URL: B },
     stdio: ["ignore", "pipe", "pipe"], detached: true,
   });
@@ -106,6 +112,22 @@ const cron = () => fetch(`${B}/api/cron/notifications`, { headers: { authorizati
     await cron();
     check(await waitFor(() => has("SENT: ORDER PLACED (HOW TO PAY)", num, `feed-${RUN}@example.com`)), "copy of the customer's email in Telegram");
     check(has("Service: Customer email · Event: Order placed (how to pay)"), "notification copy service/event");
+
+    // ---- the two groups
+    check(secMsgs.some((t) => t.includes(INTRUDER)) && !orderMsgs.some((t) => t.includes(INTRUDER)), "security messages go only to the security group");
+    check(orderMsgs.some((t) => t.includes(num)) && !secMsgs.some((t) => t.includes(num)), "order messages go only to the orders group");
+    check(secMsgs.some((t) => t.includes("ADMIN ACTION: EMAIL BLOCKED")), "admin actions go to the security group");
+    check(await waitFor(() => orderMsgs.some((t) => t.includes("ORDER PLACED — AWAITING PAYMENT") && t.includes(num))), "order placed reported to the orders group");
+    sql(`update orders set status = 'confirmed', payment_status = 'verified', payment_verified_at = now() where order_number = '${num}'`);
+    await o.goto(`${B}/admin/orders?q=${num}`);
+    sql(`begin; select set_config('request.jwt.claims', json_build_object('sub', (select id from auth.users where email = '${OWNER.email}'), 'role', 'authenticated', 'aal', 'aal2')::text, true);
+         set local role authenticated; select public.admin_update_order_status((select id from orders where order_number = '${num}'), 'processing', null);
+         select public.admin_update_order_status((select id from orders where order_number = '${num}'), 'ready_for_pickup', null); commit;`);
+    await o.goto(`${B}/admin/notifications`);
+    check(await waitFor(() => orderMsgs.some((t) => t.includes("ORDER READY FOR PICKUP") && t.includes(num) && t.includes("By: "))), "ready for pickup reported with who did it");
+    await o.locator("button:has-text('Send test message')").nth(1).click();
+    check(await waitFor(() => secMsgs.some((t) => t.includes("Test message — security group"))), "security group test message");
+    check(await o.locator("details[data-category=security]").count() === 1 && await o.locator("details[data-category=orders]").count() === 1, "notifications grouped by category");
 
     // ---- switches: security off → no more security messages
     await o.goto(`${B}/admin/notifications`);

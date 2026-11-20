@@ -19,6 +19,12 @@ const serverEnvSchema = z.object({
     .regex(/^\d+:[A-Za-z0-9_-]{30,}$/, "Invalid Telegram bot token format")
     .optional(),
   TELEGRAM_ADMIN_CHAT_ID: z.string().regex(/^-?\d+$/, "Chat id must be numeric").optional(),
+  // Second bot / group for security alerts, sign-ins and admin actions (optional).
+  TELEGRAM_SECURITY_BOT_TOKEN: z
+    .string()
+    .regex(/^\d+:[A-Za-z0-9_-]{30,}$/, "Invalid Telegram bot token format")
+    .optional(),
+  TELEGRAM_SECURITY_CHAT_ID: z.string().regex(/^-?\d+$/, "Chat id must be numeric").optional(),
   // Only for tests (a local mock of the Bot API). https anywhere, http only on localhost.
   TELEGRAM_API_BASE: z
     .url()
@@ -51,7 +57,7 @@ export type ServerEnv = z.infer<typeof serverEnvSchema>;
 let cached: ServerEnv | undefined;
 
 const OPTIONAL = new Set([
-  "TELEGRAM_BOT_TOKEN", "TELEGRAM_ADMIN_CHAT_ID", "RESEND_API_KEY", "EMAIL_FROM", "VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "VAPID_SUBJECT",
+  "TELEGRAM_BOT_TOKEN", "TELEGRAM_ADMIN_CHAT_ID", "TELEGRAM_SECURITY_BOT_TOKEN", "TELEGRAM_SECURITY_CHAT_ID", "RESEND_API_KEY", "EMAIL_FROM", "VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "VAPID_SUBJECT",
 ]);
 const optionalProblems: Record<string, string> = {};
 
@@ -73,6 +79,8 @@ export function getServerEnv(): ServerEnv {
     CRON_SECRET: process.env.CRON_SECRET,
     TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || undefined,
     TELEGRAM_ADMIN_CHAT_ID: process.env.TELEGRAM_ADMIN_CHAT_ID || undefined,
+    TELEGRAM_SECURITY_BOT_TOKEN: process.env.TELEGRAM_SECURITY_BOT_TOKEN || undefined,
+    TELEGRAM_SECURITY_CHAT_ID: process.env.TELEGRAM_SECURITY_CHAT_ID || undefined,
     TELEGRAM_API_BASE: process.env.TELEGRAM_API_BASE || undefined,
     RESEND_API_KEY: process.env.RESEND_API_KEY || undefined,
     EMAIL_FROM: process.env.EMAIL_FROM || undefined,

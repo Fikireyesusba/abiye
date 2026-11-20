@@ -67,6 +67,7 @@ select public.create_order_for_user(:customer, pg_temp.order_payload('f7000000-0
   jsonb_build_array(jsonb_build_object('type','product','product_id','20000000-0000-0000-0000-000000000007','quantity',1))));
 reset role;
 select pg_temp.ok(not exists (select 1 from public.customer_carts where user_id = :customer), 'placing an order empties the basket');
+set constraints all immediate; -- run deferred checks before altering the table (test-only backdating)
 alter table public.orders disable trigger orders_updated_at;
 update public.orders set updated_at = now() - interval '3 hours' where idempotency_key = 'f7000000-0000-0000-0000-000000000001';
 alter table public.orders enable trigger orders_updated_at;
