@@ -24,12 +24,22 @@ export async function GET(request: Request) {
   if (!(await rateLimit(`export:activity:${ctx.userId}`, 20, 3600))) return new NextResponse("Too many exports. Try again later.", { status: 429 });
 
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.rpc("admin_activity_export", { p_from: addisStart(from), p_to: addisStart(nextDay(to)), p_entity_type: entity });
-  if (error) {
-    console.error("[export] activity failed:", error.code);
-    return new NextResponse("Could not export the activity log.", { status: 500 });
+  // The API returns at most 1000 rows per request: fetch in pages (the function itself caps at 50,000).
+  type Row = NonNullable<Awaited<ReturnType<typeof fetchPage>>["data"]>[number];
+  const fetchPage = (offset: number) =>
+    supabase.rpc("admin_activity_export", { p_from: addisStart(from), p_to: addisStart(nextDay(to)), p_entity_type: entity })
+      .order("id", { ascending: true })
+      .range(offset, offset + 999);
+  const rows: Row[] = [];
+  for (let offset = 0; offset < 50000; offset += 1000) {
+    const { data, error } = await fetchPage(offset);
+    if (error) {
+      console.error("[export] activity failed:", error.code);
+      return new NextResponse("Could not export the activity log.", { status: 500 });
+    }
+    rows.push(...(data ?? []));
+    if ((data?.length ?? 0) < 1000) break;
   }
-  const rows = data ?? [];
   const wb = new ExcelJS.Workbook();
   wb.creator = ctx.fullName;
   const ws = wb.addWorksheet("Activity log");
