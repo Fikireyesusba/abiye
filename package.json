@@ -10,7 +10,7 @@
     "test:db": "bash scripts/db-test.sh",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
     "db:types": "npx supabase gen types typescript --schema public > /tmp/db-types.ts && test -s /tmp/db-types.ts && grep -q 'Tables' /tmp/db-types.ts && mv /tmp/db-types.ts src/lib/supabase/database.types.ts || (echo 'db:types failed: is local Supabase running?' && exit 1)",
     "dev:sample-images": "node --env-file=.env.local scripts/dev-sample-images.mjs",
