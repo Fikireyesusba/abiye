@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ActionForm } from "@/components/admin/action-form";
-import { PageHeader, Panel, Table, Td, fieldClass } from "@/components/admin/ui";
+import { PageHeader, Table, Td, fieldClass } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { adjustStock } from "@/lib/admin/catalog-actions";
 import { requirePermission } from "@/lib/auth/guards";
@@ -59,19 +59,29 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
           </tr>
         ))}
       </Table>
-      <Panel title="Recent stock movements" className="mt-6">
-        <ul className="divide-y text-sm">
+      <details className="mt-6 rounded-lg border bg-card" data-testid="stock-movements">
+        <summary className="flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 p-4">
+          <span className="font-medium">Recent stock movements</span>
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs tabular-nums">{(moves ?? []).length}</span>
+          <span className="text-xs text-muted-foreground sm:ml-auto">Latest 40 changes · click to open</span>
+        </summary>
+        <ul className="divide-y border-t px-4 text-sm">
+          {(moves ?? []).length === 0 && <li className="py-3 text-muted-foreground">No stock changes yet.</li>}
           {(moves ?? []).map((m) => (
-            <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
-              <span className={cn("w-14 font-semibold tabular-nums", m.change > 0 ? "text-success" : "text-destructive")}>{m.change > 0 ? `+${m.change}` : m.change}</span>
-              <span className="font-medium">{m.product?.name_en}</span>
-              <span className="text-muted-foreground">{m.reason.replaceAll("_", " ")}{m.note && ` — ${m.note}`} → {m.quantity_after}</span>
-              {m.order_id && <Link href={`/admin/orders/${m.order_id}`} className="text-primary hover:underline">order</Link>}
-              <span className="ml-auto text-xs text-muted-foreground">{formatDateTime(m.created_at, "en")}</span>
+            <li key={m.id} className="grid grid-cols-[3.5rem_1fr] gap-x-3 gap-y-0.5 py-2 sm:grid-cols-[3.5rem_1fr_auto]">
+              <span className={cn("font-semibold tabular-nums", m.change > 0 ? "text-success" : "text-destructive")}>{m.change > 0 ? `+${m.change}` : m.change}</span>
+              <span className="min-w-0 break-words">
+                <span className="font-medium">{m.product?.name_en}</span>
+                <span className="block text-muted-foreground">
+                  {m.reason.replaceAll("_", " ")}{m.note && ` — ${m.note}`} → {m.quantity_after} in stock
+                  {m.order_id && <> · <Link href={`/admin/orders/${m.order_id}`} className="text-primary hover:underline">order</Link></>}
+                </span>
+              </span>
+              <span className="col-start-2 text-xs text-muted-foreground sm:col-start-auto sm:text-right">{formatDateTime(m.created_at, "en")}</span>
             </li>
           ))}
         </ul>
-      </Panel>
+      </details>
     </>
   );
 }
