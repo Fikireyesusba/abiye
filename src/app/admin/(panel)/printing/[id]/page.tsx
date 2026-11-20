@@ -18,7 +18,7 @@ export const metadata: Metadata = { title: "Printing job" };
 const etb = (n: number) => formatETB(toSantim(n));
 const NEXT: Record<string, { status: string; label: string }[]> = {
   printing: [{ status: "ready", label: "Mark ready" }],
-  ready: [{ status: "completed", label: "Mark collected / delivered" }, { status: "printing", label: "Back to printing" }],
+  ready: [{ status: "completed", label: "Mark collected / delivered (deletes documents)" }, { status: "printing", label: "Back to printing" }],
 };
 
 export default async function PrintingJobPage({ params }: PageProps<"/admin/printing/[id]">) {
@@ -104,6 +104,7 @@ export default async function PrintingJobPage({ params }: PageProps<"/admin/prin
               <div className="space-y-3">
                 {(NEXT[job.status] ?? []).map((n) => (
                   <ActionForm key={n.status} action={updatePrintingStatus} hidden={{ jobId: job.id, status: n.status }} submitLabel={n.label}
+                    confirm={n.status === "completed" ? "Mark as collected? The customer's documents are deleted from the system now (the job record is kept)." : undefined}
                     variant={n.status === "printing" ? "outline" : "default"} className="[&_button]:w-full" />
                 ))}
                 {cancellable && (

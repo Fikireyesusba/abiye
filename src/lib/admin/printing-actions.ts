@@ -52,9 +52,35 @@ export async function updatePrintingStatus(_prev: ActionResult | null, fd: FormD
     return dbError(error);
   }
   dispatchSoon(); // customer email: ready
+  // Picked up → the customer's documents are deleted now (the job record is kept).
+  // If this fails, the daily storage maintenance job removes them (the database marked them due).
+  let cleaned = "";
+  if (parsed.data.status === "completed") {
+    const removed = await removeJobFiles(supabase, parsed.data.jobId);
+    cleaned = removed === null ? " The documents will be deleted by the daily clean-up." : removed > 0 ? ` ${removed} document${removed === 1 ? "" : "s"} deleted.` : "";
+  }
   revalidatePath(`/admin/printing/${parsed.data.jobId}`);
   revalidatePath("/admin/printing");
-  return ok("Job status updated.");
+  return ok(`Job status updated.${cleaned}`);
+}
+
+/** Remove a finished job's documents from storage and record it. Returns the number deleted, or null on failure. */
+async function removeJobFiles(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, jobId: string): Promise<number | null> {
+  const { data: job } = await supabase.from("printing_jobs").select("status, files:printing_files(storage_path, deleted_at)").eq("id", jobId).maybeSingle();
+  if (!job || ["payment_verification", "printing", "ready"].includes(job.status)) return null;
+  const paths = job.files.filter((f) => !f.deleted_at).map((f) => f.storage_path);
+  if (!paths.length) return 0;
+  const { error: rmError } = await supabase.storage.from("printing-files").remove(paths);
+  if (rmError) {
+    console.error("[printing] could not delete documents after pickup:", rmError.message);
+    return null;
+  }
+  const { data, error } = await supabase.rpc("admin_mark_printing_files_deleted", { p_job_id: jobId });
+  if (error) {
+    console.error("[printing] could not record deleted documents:", error.code);
+    return null;
+  }
+  return Number(data ?? paths.length);
 }
 
 export async function deletePrintingFiles(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
@@ -62,16 +88,10 @@ export async function deletePrintingFiles(_prev: ActionResult | null, fd: FormDa
   const jobId = guid.safeParse(fd.get("jobId"));
   if (!jobId.success) return fail("Invalid request.");
   const supabase = await createSupabaseServerClient();
-  const { data: job } = await supabase.from("printing_jobs").select("status, files:printing_files(storage_path, deleted_at)").eq("id", jobId.data).maybeSingle();
+  const { data: job } = await supabase.from("printing_jobs").select("status").eq("id", jobId.data).maybeSingle();
   if (!job) return fail("Job not found.");
   if (["payment_verification", "printing", "ready"].includes(job.status)) return fail("Files are still needed for this job.");
-  const paths = job.files.filter((f) => !f.deleted_at).map((f) => f.storage_path);
-  if (paths.length) {
-    const { error } = await supabase.storage.from("printing-files").remove(paths);
-    if (error) return fail("Could not delete the files from storage.");
-  }
-  const { error } = await supabase.rpc("admin_mark_printing_files_deleted", { p_job_id: jobId.data });
-  if (error) return dbError(error);
+  if ((await removeJobFiles(supabase, jobId.data)) === null) return fail("Could not delete the files from storage.");
   revalidatePath(`/admin/printing/${jobId.data}`);
   return ok("Customer files deleted.");
 }

@@ -720,6 +720,9 @@ isOneToOne: false
 "admin_analytics":
 { Args: { "p_bucket"?: string,"p_from": string,"p_to": string }; Returns: Json
                            },
+"admin_archive_past_receipts":
+{ Args: { "p_from": string,"p_to": string }; Returns: number
+                           },
 "admin_assign_order":
 { Args: { "p_assignee": string,"p_order_id": string }; Returns: undefined
                            },
@@ -789,6 +792,9 @@ isOneToOne: false
 "admin_quote_printing_job":
 { Args: { "p_job_id": string,"p_note"?: string,"p_page_count": number,"p_total_etb"?: number }; Returns: Json
                            },
+"admin_receipt_archive_status":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "admin_retry_notification":
 { Args: { "p_id": number }; Returns: undefined
                            },
@@ -805,6 +811,9 @@ isOneToOne: false
                            },
 "admin_set_customer_active":
 { Args: { "p_active": boolean,"p_reason"?: string,"p_user_id": string }; Returns: undefined
+                           },
+"admin_set_receipt_archive":
+{ Args: { "p_email": string }; Returns: undefined
                            },
 "admin_set_staff_role":
 { Args: { "p_is_active": boolean,"p_role_key": string,"p_user_id": string }; Returns: undefined
@@ -955,6 +964,9 @@ isOneToOne: false
                            },
 "quote_promotion":
 { Args: { "p_code": string,"p_items": Json,"p_user_id": string }; Returns: Json
+                           },
+"receipt_archive_email":
+{ Args: Record<PropertyKey, never>; Returns: string
                            },
 "record_cron_run":
 { Args: { "p_detail"?: Json,"p_name": string,"p_ok": boolean }; Returns: undefined

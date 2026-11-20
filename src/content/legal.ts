@@ -15,7 +15,7 @@ export const privacy: Record<"en" | "am", LegalSection[]> = {
   en: [
     { heading: "What we collect", body: "When you order, we collect your name, phone number, delivery city and address, delivery instructions, the products you order, your bank transaction reference and the payment receipt you upload. For printing services we also store the documents you upload." },
     { heading: "Why we use it", body: "We use this information only to process, verify, deliver and support your orders, and to contact you about them. We do not sell your information or use it for third-party advertising." },
-    { heading: "Payment receipts and documents", body: "Receipts and printing documents are stored privately. Only authorized {name} staff can open them. Printing documents are deleted automatically after the retention period shown on the printing page." },
+    { heading: "Payment receipts and documents", body: "Receipts and printing documents are stored privately. Only authorized {name} staff can open them. Printing documents are deleted automatically as soon as the prints are collected, or at the latest after the retention period shown on the printing page. Copies of payment receipts are kept by {name} for its accounting records." },
     { heading: "Who can see your data", body: "Only staff who need it for your order. Our hosting providers (Vercel and Supabase) store data on our behalf under their security terms. Order notifications are sent to a private staff Telegram chat." },
     { heading: "Your choices", body: "You may ask us to correct or delete your information by contacting us, unless we must keep it to meet legal or accounting obligations." },
     { heading: "Contact", body: "For privacy questions, contact {name} using the details on our Contact page." },
@@ -23,7 +23,7 @@ export const privacy: Record<"en" | "am", LegalSection[]> = {
   am: [
     { heading: "የምንሰበስበው መረጃ", body: "ሲያዝዙ ስምዎን፣ ስልክ ቁጥርዎን፣ የማድረሻ ከተማና አድራሻዎን፣ የማድረሻ መመሪያዎን፣ ያዘዟቸውን ምርቶች፣ የባንክ ግብይት ማጣቀሻ ቁጥርዎን እና የሚጭኑትን የክፍያ ደረሰኝ እንሰበስባለን። ለህትመት አገልግሎት የሚጭኗቸውን ሰነዶችም እናስቀምጣለን።" },
     { heading: "ለምን እንጠቀምበታለን", body: "ይህን መረጃ የምንጠቀመው ትዕዛዝዎን ለማስኬድ፣ ለማረጋገጥ፣ ለማድረስ እና ለመደገፍ እንዲሁም ስለ ትዕዛዝዎ ለማግኘትዎ ብቻ ነው። መረጃዎን አንሸጥም ወይም ለሶስተኛ ወገን ማስታወቂያ አንጠቀምበትም።" },
-    { heading: "የክፍያ ደረሰኞች እና ሰነዶች", body: "ደረሰኞች እና የህትመት ሰነዶች በግል ይቀመጣሉ። ሊከፍቷቸው የሚችሉት የተፈቀደላቸው የ{name} ሰራተኞች ብቻ ናቸው። የህትመት ሰነዶች በህትመት ገጹ ላይ ከተገለጸው የማቆያ ጊዜ በኋላ በራስ-ሰር ይሰረዛሉ።" },
+    { heading: "የክፍያ ደረሰኞች እና ሰነዶች", body: "ደረሰኞች እና የህትመት ሰነዶች በግል ይቀመጣሉ። ሊከፍቷቸው የሚችሉት የተፈቀደላቸው የ{name} ሰራተኞች ብቻ ናቸው። የህትመት ሰነዶች ህትመቶቹ እንደተወሰዱ ወዲያውኑ፣ ወይም ቢዘገይ በህትመት ገጹ ላይ ከተገለጸው የማቆያ ጊዜ በኋላ በራስ-ሰር ይሰረዛሉ። የክፍያ ደረሰኞች ቅጂዎች ለሂሳብ መዝገብ በ{name} ይቀመጣሉ።" },
     { heading: "መረጃዎን ማን ሊያይ ይችላል", body: "ለትዕዛዝዎ የሚያስፈልጋቸው ሰራተኞች ብቻ። የማስተናገጃ አቅራቢዎቻችን (Vercel እና Supabase) በደህንነት ውሎቻቸው መሰረት መረጃን በእኛ ስም ያከማቻሉ። የትዕዛዝ ማሳወቂያዎች ወደ የግል የሰራተኞች ቴሌግራም ቡድን ይላካሉ።" },
     { heading: "የእርስዎ ምርጫዎች", body: "በህግ ወይም በሂሳብ ግዴታ ምክንያት ማቆየት ካላስፈለገን በስተቀር መረጃዎን እንድናስተካክል ወይም እንድንሰርዝ እኛን በማግኘት መጠየቅ ይችላሉ።" },
     { heading: "ያግኙን", body: "ለግላዊነት ጥያቄዎች በ«ያግኙን» ገጻችን ላይ ባሉት አድራሻዎች {name}ን ያግኙ።" },

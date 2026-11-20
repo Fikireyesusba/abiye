@@ -17,6 +17,8 @@ const ACTION_LABELS: Record<string, string> = {
   email_blocked: "Email blocked",
   export_activity: "Activity log exported to Excel",
   export_payments: "Payments exported to Excel",
+  receipt_archive_set: "Receipt archive address changed",
+  receipt_archive_backfill: "Past receipts sent to the archive",
   audit_cleared: "Old activity entries cleared",
   email_unblocked: "Email unblocked",
   promo_unassigned: "Personal promo code removed",

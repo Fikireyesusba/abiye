@@ -18,6 +18,7 @@ Paste each file's full contents (GitHub → file → **Raw** → copy) into a ne
 10. `supabase/migrations/20261120000027_security_monitoring.sql`
 11. `supabase/migrations/20261120000028_profile_and_activity_tools.sql`
 12. `supabase/migrations/20261120000029_payment_export.sql`
+13. `supabase/migrations/20261120000030_pickup_cleanup_and_receipt_archive.sql`
 
 Each should say "Success. No rows returned". If Supabase warns about RLS, choose "Run without RLS" (the files enable it themselves).
 
@@ -38,6 +39,7 @@ Each should say "Success. No rows returned". If Supabase warns about RLS, choose
 - [ ] **Terms & privacy**: read both (English and Amharic), edit to match how you really work, then tick **Approved** (removes the "draft" notice).
 - [ ] **Customer emails**: `RESEND_API_KEY` and `EMAIL_FROM` set in Vercel (docs/DEPLOYMENT.md §9); place a test order and check the email arrives.
 - [ ] **Phone notifications**: keys created in Admin → Notifications and added to Vercel (docs/DEPLOYMENT.md §10); turn them on in My account on your phone and place a test order.
+- [ ] **Receipt archive** (Admin → Notifications → Payment receipt archive): a separate mailbox you control (e.g. a new Gmail only for receipts), **Send test email** arrives, then **Send past receipts** once.
 - [ ] **Telegram** (Admin → Notifications): bot token + chat set in Vercel, "Send test message" arrives (docs/DEPLOYMENT.md §4).
 
 ## 4. Catalog

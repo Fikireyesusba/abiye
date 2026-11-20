@@ -155,7 +155,9 @@ export default async function PrintJobPage({ params, searchParams }: PageProps<"
                 ))}
               </ul>
             </div>
-            <p className="text-xs text-muted-foreground">{t("printJob.retention", { date: formatDateTime(job.files_delete_after, locale) })}</p>
+            <p className="text-xs text-muted-foreground">
+              {job.files.length > 0 && job.files.every((f) => f.deleted_at) ? t("printJob.retentionDone") : t("printJob.retention", { date: formatDateTime(job.files_delete_after, locale) })}
+            </p>
           </CardContent>
         </Card>
       </div>

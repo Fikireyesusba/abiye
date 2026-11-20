@@ -405,7 +405,7 @@
     "viewOrder": "ትዕዛዙን ይመልከቱ",
     "files": "ፋይሎች",
     "fileDeleted": "ተሰርዟል",
-    "retention": "ፋይሎችዎ ከ{date} በኋላ በራስ-ሰር ይሰረዛሉ።",
+    "retention": "ፋይሎችዎ ህትመቶችዎን እንደወሰዱ ወዲያውኑ፣ ወይም ቢዘገይ ከ{date} በኋላ በራስ-ሰር ይሰረዛሉ።",
     "notFound": "የህትመት ስራው አልተገኘም። ያስቀመጡትን የግል ማገናኛ በመጠቀም ይክፈቱት።",
     "submitted": "ጥያቄዎ ደርሷል — እናመሰግናለን!",
     "options": "አማራጮች",
@@ -415,7 +415,8 @@
     "readyText": "ህትመትዎ ዝግጁ ነው። {where}",
     "pickupWhere": "ከሱቃችን ይውሰዱት።",
     "deliveryWhere": "እናደርስልዎታለን።",
-    "pricedByTeam": "ዋጋው በቡድናችን ተወስኗል"
+    "pricedByTeam": "ዋጋው በቡድናችን ተወስኗል",
+    "retentionDone": "ፋይሎችዎ ከስርዓታችን ተሰርዘዋል።"
   },
   "account": {
     "personalDetails": "የግል መረጃ",

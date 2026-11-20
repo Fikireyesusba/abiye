@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
-import { PageHeader, Panel, Table, Td } from "@/components/admin/ui";
+import { PageHeader, Panel, Table, Td, fieldClass } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { retryNotification, sendTestNotification } from "@/lib/admin/notification-actions";
+import { archivePastReceipts, saveReceiptArchive, sendArchiveTest } from "@/lib/admin/archive-actions";
+import { Input } from "@/components/ui/input";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/datetime";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -14,10 +16,12 @@ import { getSiteSettings } from "@/lib/catalog/settings";
 import { VapidKeyGenerator } from "@/components/admin/vapid-keys";
 
 export const metadata: Metadata = { title: "Notifications" };
+export const maxDuration = 60; // "Send past receipts" keeps emailing for up to ~50 s
 
 const LABEL: Record<string, string> = {
   new_order: "New order", payment_resubmitted: "Payment resubmitted", printing_request: "Printing request",
   payment_verified: "Payment verified", payment_rejected: "Payment rejected", order_cancelled: "Order cancelled", test_message: "Test",
+  receipt_archive: "Receipt archive",
 };
 const TONE = { sent: "success", pending: "secondary", processing: "info", failed: "warning", dead: "destructive" } as const;
 
@@ -31,6 +35,9 @@ export default async function NotificationsPage() {
   const supabase = await createSupabaseServerClient();
   const { data: rows } = await supabase.rpc("admin_notifications", { p_limit: 100 });
   const problems = (rows ?? []).filter((r) => r.status === "failed" || r.status === "dead").length;
+  const { data: archiveRaw } = await supabase.rpc("admin_receipt_archive_status");
+  const archive = (archiveRaw ?? null) as { email: string | null; sent: number; waiting: number; dead: number; last_sent_at: string | null; last_error: string | null } | null;
+  const today = new Date(new Date().getTime() + 3 * 3600 * 1000).toISOString().slice(0, 10);
 
   return (
     <>
@@ -59,6 +66,47 @@ export default async function NotificationsPage() {
             </div>
           )}
           {!pushOn && <VapidKeyGenerator suggestedSubject={`mailto:${settings.contact.email || "orders@example.com"}`} />}
+        </Panel>
+      </div>
+      <h2 className="mb-3 text-base font-semibold">Payment receipt archive</h2>
+      <div className="mb-6 grid gap-4 md:grid-cols-2">
+        <Panel title="Archive address">
+          <p className="mb-3 flex items-center gap-2 text-sm">
+            {archive?.email && emailOn ? <CheckCircle2 className="size-5 text-success" aria-hidden /> : <XCircle className="size-5 text-destructive" aria-hidden />}
+            {!archive ? "Database update needed (migration 20261120000030)." : archive.email
+              ? (emailOn ? <>Every verified or rejected receipt is emailed to <strong>{archive.email}</strong> with the receipt attached.</> : "Address saved, but email is not configured in Vercel yet — receipts wait in the queue.")
+              : "Off. Enter an address you control (e.g. a separate Gmail used only for receipts)."}
+          </p>
+          {archive && (
+            <ActionForm action={saveReceiptArchive} submitLabel="Save address" size="sm" className="space-y-2">
+              <Input type="email" name="email" defaultValue={archive.email ?? ""} placeholder="receipts@example.com" maxLength={254} aria-label="Archive email address" />
+              <p className="text-xs text-muted-foreground">Only a Super Admin can change this. The old address gets a notice when it changes, and the change is in the Activity log. Leave empty to turn archiving off.</p>
+            </ActionForm>
+          )}
+          {archive?.email && <div className="mt-3"><ActionForm action={sendArchiveTest} submitLabel="Send test email" variant="outline" size="sm" /></div>}
+        </Panel>
+        <Panel title="Archive status">
+          {archive ? (
+            <>
+              <dl className="grid grid-cols-3 gap-2 text-center text-sm">
+                <div className="rounded-md bg-muted/60 p-2"><dt className="text-xs text-muted-foreground">Archived</dt><dd className="text-lg font-semibold tabular-nums">{archive.sent}</dd></div>
+                <div className="rounded-md bg-muted/60 p-2"><dt className="text-xs text-muted-foreground">Waiting</dt><dd className="text-lg font-semibold tabular-nums">{archive.waiting}</dd></div>
+                <div className="rounded-md bg-muted/60 p-2"><dt className="text-xs text-muted-foreground">Failed</dt><dd className={`text-lg font-semibold tabular-nums ${archive.dead ? "text-destructive" : ""}`}>{archive.dead}</dd></div>
+              </dl>
+              {archive.last_sent_at && <p className="mt-2 text-xs text-muted-foreground">Last archived {formatDateTime(archive.last_sent_at, "en")}</p>}
+              {archive.last_error && <p className="mt-1 text-xs break-words text-destructive">Last error: {archive.last_error}</p>}
+              {archive.email && (
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-sm font-medium">Send past receipts</summary>
+                  <ActionForm action={archivePastReceipts} submitLabel="Send receipts" size="sm" variant="outline" className="mt-2 flex flex-wrap items-end gap-2">
+                    <label className="text-sm">Decided from<input type="date" name="from" required defaultValue="2026-01-01" max={today} className={`${fieldClass} mt-1 block`} /></label>
+                    <label className="text-sm">To<input type="date" name="to" required defaultValue={today} max={today} className={`${fieldClass} mt-1 block`} /></label>
+                  </ActionForm>
+                  <p className="mt-1 text-xs text-muted-foreground">For receipts verified or rejected before the archive was set up. Receipts already archived are never sent twice.</p>
+                </details>
+              )}
+            </>
+          ) : <p className="text-sm text-muted-foreground">—</p>}
         </Panel>
       </div>
       <h2 className="mb-3 text-base font-semibold">Staff Telegram alerts</h2>

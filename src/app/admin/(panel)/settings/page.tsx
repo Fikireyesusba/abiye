@@ -146,7 +146,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
               <Field label="Service charge per job (ETB)"><Input name="service_charge_etb" type="number" min={0} step="0.01" defaultValue={s.printing.service_charge_etb} /></Field>
               <Field label="Max file size (MB, ≤ 25)"><Input name="max_file_mb" type="number" min={1} max={25} defaultValue={s.printing.max_file_mb} /></Field>
               <Field label="Max copies per job"><Input name="max_copies" type="number" min={1} max={1000} defaultValue={s.printing.max_copies} /></Field>
-              <Field label="Delete customer files after (days)"><Input name="retention_days" type="number" min={1} max={365} defaultValue={s.printing.retention_days} /></Field>
+              <Field label="Delete customer files after (days)" hint="Files are deleted as soon as a job is marked Completed (picked up); this is the latest they are kept otherwise."><Input name="retention_days" type="number" min={1} max={365} defaultValue={s.printing.retention_days} /></Field>
             </div>
           </ActionForm>
           <p className="mt-3 text-xs text-muted-foreground">Per-page prices: <Link href="/admin/printing/prices" className="text-primary hover:underline">Printing → Price list</Link>.</p>

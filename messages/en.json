@@ -405,7 +405,7 @@
     "viewOrder": "View order",
     "files": "Files",
     "fileDeleted": "deleted",
-    "retention": "Your files are deleted automatically after {date}.",
+    "retention": "Your files are deleted automatically as soon as you collect your prints, or after {date} at the latest.",
     "notFound": "Printing job not found. Open it using the private link you saved.",
     "submitted": "Request received — thank you!",
     "options": "Options",
@@ -415,7 +415,8 @@
     "readyText": "Your printing is ready. {where}",
     "pickupWhere": "Collect it at our shop.",
     "deliveryWhere": "We will deliver it to you.",
-    "pricedByTeam": "Price set by our team"
+    "pricedByTeam": "Price set by our team",
+    "retentionDone": "Your files have been deleted from our system."
   },
   "account": {
     "personalDetails": "Personal details",
