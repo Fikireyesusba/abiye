@@ -802,6 +802,12 @@ isOneToOne: false
 "admin_dashboard_stats":
 { Args: { "p_days"?: number }; Returns: Json
                            },
+"admin_data_export":
+{ Args: { "p_area": string,"p_limit"?: number,"p_offset"?: number }; Returns: Json[]
+                           },
+"admin_data_export_areas":
+{ Args: Record<PropertyKey, never>; Returns: (string)[]
+                           },
 "admin_log_customer_action":
 { Args: { "p_action": string,"p_metadata"?: Json,"p_user_id": string }; Returns: undefined
                            },
@@ -851,6 +857,12 @@ isOneToOne: false
                            },
 "admin_receipt_archive_status":
 { Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"admin_reset_phrase":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"admin_reset_test_data":
+{ Args: { "p_confirm": string }; Returns: Json
                            },
 "admin_retry_notification":
 { Args: { "p_id": number }; Returns: undefined
@@ -1045,6 +1057,11 @@ isOneToOne: false
                            },
 "request_stock_alert":
 { Args: { "p_product_id": string }; Returns: undefined
+                           },
+"reset_storage_leftovers":
+{ Args: { "p_before": string,"p_limit"?: number }; Returns: {
+              "bucket": string,"name": string
+            }[]
                            },
 "storage_orphans":
 { Args: { "p_limit"?: number,"p_min_age"?: string }; Returns: {

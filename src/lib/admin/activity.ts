@@ -18,6 +18,8 @@ const ACTION_LABELS: Record<string, string> = {
   export_activity: "Activity log exported to Excel",
   export_payments: "Payments exported to Excel",
   export_sales: "Sales report exported to Excel",
+  export_all: "Everything exported to Excel",
+  data_reset: "Test data reset",
   receipt_archive_set: "Receipt archive address changed",
   review_approved: "Review approved",
   review_rejected: "Review rejected",
@@ -72,6 +74,7 @@ export const ENTITY_LABELS: Record<string, string> = {
   security: "Security",
   audit: "Activity log",
   product_review: "Product review",
+  data: "Data reset",
 };
 
 export function actionLabel(action: string): string {

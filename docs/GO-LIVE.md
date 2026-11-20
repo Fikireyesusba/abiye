@@ -22,6 +22,7 @@ Paste each file's full contents (GitHub → file → **Raw** → copy) into a ne
 14. `supabase/migrations/20261120000031_stock_alerts.sql`
 15. `supabase/migrations/20261120000032_product_reviews.sql`
 16. `supabase/migrations/20261120000033_sales_reports.sql`
+17. `supabase/migrations/20261120000034_data_export_reset.sql`
 
 Each should say "Success. No rows returned". If Supabase warns about RLS, choose "Run without RLS" (the files enable it themselves).
 
@@ -57,6 +58,7 @@ Each should say "Success. No rows returned". If Supabase warns about RLS, choose
 - [ ] As admin: Telegram message arrives → Payments → open receipt → **check your bank app** → Verify → move the order to Completed.
 - [ ] Printing: upload a PDF, pay, mark ready.
 - [ ] Afterwards cancel/refund the test order as you normally would.
+- [ ] **Clear test data** (Admin → Export & reset): *Export everything* (keep the file), then *Reset test data* (type the phrase + authenticator code). Orders start again at ET-10001. Do this once, just before announcing the shop.
 
 ## 6. Vercel
 

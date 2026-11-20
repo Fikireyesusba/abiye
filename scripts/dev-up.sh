@@ -8,6 +8,8 @@ if ! docker info >/dev/null 2>&1; then
     echo "Docker daemon not running — starting it (sandbox/Linux root)…"
     # A sandbox restart can leave a stale pid file behind, which makes dockerd refuse to start.
     if [ -f /var/run/docker.pid ] && ! kill -0 "$(cat /var/run/docker.pid)" 2>/dev/null; then rm -f /var/run/docker.pid; fi
+    c=/var/run/docker/containerd/containerd.pid
+    if [ -f "$c" ] && ! kill -0 "$(cat "$c")" 2>/dev/null; then rm -f "$c"; fi
     nohup dockerd >/tmp/dockerd.log 2>&1 &
     for _ in $(seq 1 30); do docker info >/dev/null 2>&1 && break; sleep 1; done
   fi

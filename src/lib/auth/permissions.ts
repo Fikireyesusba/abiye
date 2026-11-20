@@ -32,6 +32,7 @@ export const PERMISSIONS = [
   "audit.view",
   "audit.manage",
   "reviews.manage",
+  "data.manage",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -91,4 +92,5 @@ export const ADMIN_ROUTES: ReadonlyArray<{ href: string; label: string; anyOf: r
   { href: "/admin/settings", label: "Settings", anyOf: ["settings.manage", "bank_accounts.manage"] },
   { href: "/admin/activity", label: "Activity log", anyOf: ["audit.view"] },
   { href: "/admin/security", label: "Security", anyOf: ["audit.view"] },
+  { href: "/admin/data", label: "Export & reset", anyOf: ["data.manage"] },
 ];
