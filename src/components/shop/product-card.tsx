@@ -2,6 +2,8 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import type { ProductCardData } from "@/lib/catalog/queries";
+import { getRatings, type Rating } from "@/lib/catalog/reviews";
+import { Stars } from "./stars";
 import { localized, type Locale } from "@/i18n/config";
 import { publicImageUrl } from "@/lib/storage";
 import { AddToCart } from "./add-to-cart";
@@ -10,7 +12,7 @@ import { ProductImage } from "./product-image";
 
 export const LOW_STOCK = 5;
 
-export function ProductCard({ product, priority }: { product: ProductCardData; priority?: boolean }) {
+export function ProductCard({ product, priority, rating }: { product: ProductCardData; priority?: boolean; rating?: Rating }) {
   const locale = useLocale() as Locale;
   const t = useTranslations();
   const name = localized(product, "name", locale);
@@ -41,6 +43,12 @@ export function ProductCard({ product, priority }: { product: ProductCardData; p
             {name}
           </Link>
         </h3>
+        {rating && (
+          <p className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Stars value={rating.avg} label={t("reviews.ratingLabel", { rating: rating.avg.toFixed(1) })} />
+            <span>({rating.count})</span>
+          </p>
+        )}
         <div className="mt-auto flex flex-wrap items-end justify-between gap-2 pt-1">
           <Price price={product.price_etb} salePrice={product.sale_price_etb} locale={locale} />
           {available !== null && available > 0 && available <= LOW_STOCK && (
@@ -55,11 +63,12 @@ export function ProductCard({ product, priority }: { product: ProductCardData; p
   );
 }
 
-export function ProductGrid({ products, priorityCount = 0 }: { products: ProductCardData[]; priorityCount?: number }) {
+export async function ProductGrid({ products, priorityCount = 0 }: { products: ProductCardData[]; priorityCount?: number }) {
+  const ratings = await getRatings(products.map((p) => p.id));
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
       {products.map((p, i) => (
-        <ProductCard key={p.id} product={p} priority={i < priorityCount} />
+        <ProductCard key={p.id} product={p} priority={i < priorityCount} rating={ratings.get(p.id)} />
       ))}
     </div>
   );

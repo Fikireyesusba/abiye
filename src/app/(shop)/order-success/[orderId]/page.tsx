@@ -192,7 +192,12 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
             <ul className="space-y-2">
               {order.items.map((i) => (
                 <li key={i.id} className="flex justify-between gap-3">
-                  <span>{localized(i, "name", locale)} <span className="text-muted-foreground">× {i.quantity}</span></span>
+                  <span>
+                    {localized(i, "name", locale)} <span className="text-muted-foreground">× {i.quantity}</span>
+                    {order.status === "completed" && i.product?.slug && (
+                      <Link href={`/products/${i.product.slug}#reviews`} className="block text-xs text-primary hover:underline">{t("reviews.write")}</Link>
+                    )}
+                  </span>
                   <span className="shrink-0 tabular-nums">{formatETB(toSantim(i.line_total_etb), locale)}</span>
                 </li>
               ))}

@@ -3,13 +3,13 @@ import type { AdminContext } from "@/lib/auth/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 /** Things waiting for an admin's action, per menu entry (only what this role may see; RLS applies). */
-export type AdminBadges = Partial<Record<"/admin/payments" | "/admin/wallet" | "/admin/orders" | "/admin/printing" | "/admin/notifications" | "/admin/security" | "/admin/inventory", number>>;
+export type AdminBadges = Partial<Record<"/admin/payments" | "/admin/wallet" | "/admin/orders" | "/admin/printing" | "/admin/notifications" | "/admin/security" | "/admin/inventory" | "/admin/reviews", number>>;
 
 export async function getAdminBadges(ctx: AdminContext): Promise<AdminBadges> {
   const supabase = await createSupabaseServerClient();
   const count = (q: PromiseLike<{ count: number | null }>) => Promise.resolve(q).then((r) => r.count ?? 0, () => 0);
   const has = (p: Parameters<AdminContext["permissions"]["has"]>[0]) => ctx.permissions.has(p);
-  const [payments, wallet, orders, printing, notifications, security, lowStock] = await Promise.all([
+  const [payments, wallet, orders, printing, notifications, security, lowStock, reviews] = await Promise.all([
     // Receipts waiting to be checked against the bank account.
     has("payments.view") ? count(supabase.from("payment_submissions").select("id", { count: "exact", head: true }).eq("status", "pending")) : 0,
     // Wallet top-ups waiting to be checked against the bank account.
@@ -29,6 +29,8 @@ export async function getAdminBadges(ctx: AdminContext): Promise<AdminBadges> {
       : 0,
     // Active products at or below their low-stock level (incl. sold out).
     has("inventory.manage") ? Promise.resolve(supabase.rpc("admin_low_stock_count")).then((r) => Number(r.data ?? 0), () => 0) : 0,
+    // Product reviews waiting for approval.
+    has("reviews.manage") ? Promise.resolve(supabase.rpc("admin_product_reviews", { p_status: "pending", p_limit: 500 })).then((r) => (r.data ?? []).length, () => 0) : 0,
   ]);
-  return { "/admin/payments": payments, "/admin/wallet": wallet, "/admin/orders": orders, "/admin/printing": printing, "/admin/notifications": notifications, "/admin/security": security, "/admin/inventory": lowStock };
+  return { "/admin/payments": payments, "/admin/wallet": wallet, "/admin/orders": orders, "/admin/printing": printing, "/admin/notifications": notifications, "/admin/security": security, "/admin/inventory": lowStock, "/admin/reviews": reviews };
 }

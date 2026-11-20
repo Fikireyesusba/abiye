@@ -31,6 +31,7 @@ export const PERMISSIONS = [
   "bank_accounts.manage",
   "audit.view",
   "audit.manage",
+  "reviews.manage",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -82,6 +83,7 @@ export const ADMIN_ROUTES: ReadonlyArray<{ href: string; label: string; anyOf: r
   { href: "/admin/customers", label: "Customers", anyOf: ["customers.view"] },
   { href: "/admin/follow-up", label: "Stalled checkouts", anyOf: ["customers.view"] },
   { href: "/admin/promotions", label: "Promotions", anyOf: ["promotions.manage"] },
+  { href: "/admin/reviews", label: "Reviews", anyOf: ["reviews.manage"] },
   { href: "/admin/analytics", label: "Analytics", anyOf: ["analytics.view", "reports.operational"] },
   { href: "/admin/staff", label: "Staff", anyOf: ["staff.manage"] },
   { href: "/admin/notifications", label: "Notifications", anyOf: ["settings.manage"] },

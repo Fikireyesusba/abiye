@@ -487,16 +487,42 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"products": {
+                },"product_reviews": {
                   Row: {
-                    "archived_at": string | null,"brand": string | null,"category_id": string,"created_at": string,"created_by": string | null,"description_am": string,"description_en": string,"effective_price_etb": number | null,"id": string,"is_featured": boolean,"low_stock_threshold": number,"name_am": string,"name_en": string,"price_etb": number,"sale_price_etb": number | null,"sku": string,"slug": string,"status": Database["public"]['Enums']["product_status"],"stock_quantity": number,"track_inventory": boolean,"updated_at": string,"updated_by": string | null
+                    "body": string | null,"created_at": string,"display_name": string,"id": string,"order_id": string | null,"product_id": string,"rating": number,"review_note": string | null,"reviewed_at": string | null,"reviewed_by": string | null,"status": string,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "archived_at"?: string | null,"brand"?: string | null,"category_id": string,"created_at"?: string,"created_by"?: string | null,"description_am"?: string,"description_en"?: string,"effective_price_etb"?: never,"id"?: string,"is_featured"?: boolean,"low_stock_threshold"?: number,"name_am": string,"name_en": string,"price_etb": number,"sale_price_etb"?: number | null,"sku": string,"slug": string,"status"?: Database["public"]['Enums']["product_status"],"stock_quantity"?: number,"track_inventory"?: boolean,"updated_at"?: string,"updated_by"?: string | null
+                    "body"?: string | null,"created_at"?: string,"display_name": string,"id"?: string,"order_id"?: string | null,"product_id": string,"rating": number,"review_note"?: string | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"status"?: string,"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "archived_at"?: string | null,"brand"?: string | null,"category_id"?: string,"created_at"?: string,"created_by"?: string | null,"description_am"?: string,"description_en"?: string,"effective_price_etb"?: never,"id"?: string,"is_featured"?: boolean,"low_stock_threshold"?: number,"name_am"?: string,"name_en"?: string,"price_etb"?: number,"sale_price_etb"?: number | null,"sku"?: string,"slug"?: string,"status"?: Database["public"]['Enums']["product_status"],"stock_quantity"?: number,"track_inventory"?: boolean,"updated_at"?: string,"updated_by"?: string | null
+                    "body"?: string | null,"created_at"?: string,"display_name"?: string,"id"?: string,"order_id"?: string | null,"product_id"?: string,"rating"?: number,"review_note"?: string | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "product_reviews_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "product_reviews_product_id_fkey"
+      columns: ["product_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"products": {
+                  Row: {
+                    "archived_at": string | null,"brand": string | null,"category_id": string,"created_at": string,"created_by": string | null,"description_am": string,"description_en": string,"effective_price_etb": number | null,"id": string,"is_featured": boolean,"low_stock_threshold": number,"name_am": string,"name_en": string,"price_etb": number,"rating_avg": number | null,"rating_count": number,"sale_price_etb": number | null,"sku": string,"slug": string,"status": Database["public"]['Enums']["product_status"],"stock_quantity": number,"track_inventory": boolean,"updated_at": string,"updated_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"brand"?: string | null,"category_id": string,"created_at"?: string,"created_by"?: string | null,"description_am"?: string,"description_en"?: string,"effective_price_etb"?: never,"id"?: string,"is_featured"?: boolean,"low_stock_threshold"?: number,"name_am": string,"name_en": string,"price_etb": number,"rating_avg"?: number | null,"rating_count"?: number,"sale_price_etb"?: number | null,"sku": string,"slug": string,"status"?: Database["public"]['Enums']["product_status"],"stock_quantity"?: number,"track_inventory"?: boolean,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"brand"?: string | null,"category_id"?: string,"created_at"?: string,"created_by"?: string | null,"description_am"?: string,"description_en"?: string,"effective_price_etb"?: never,"id"?: string,"is_featured"?: boolean,"low_stock_threshold"?: number,"name_am"?: string,"name_en"?: string,"price_etb"?: number,"rating_avg"?: number | null,"rating_count"?: number,"sale_price_etb"?: number | null,"sku"?: string,"slug"?: string,"status"?: Database["public"]['Enums']["product_status"],"stock_quantity"?: number,"track_inventory"?: boolean,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Relationships: [
                     {
@@ -791,6 +817,9 @@ isOneToOne: false
 "admin_mark_printing_files_deleted":
 { Args: { "p_job_id": string }; Returns: number
                            },
+"admin_moderate_review":
+{ Args: { "p_decision": string,"p_note"?: string,"p_review_id": string }; Returns: undefined
+                           },
 "admin_notifications":
 { Args: { "p_limit"?: number }; Returns: {
               "attempts": number,"created_at": string,"event_type": string,"id": number,"last_error": string,"max_attempts": number,"next_attempt_at": string,"reference": string,"sent_at": string,"status": Database["public"]['Enums']["notification_status"]
@@ -803,6 +832,11 @@ isOneToOne: false
                            },
 "admin_prepare_customer_delete":
 { Args: { "p_user_id": string }; Returns: Json
+                           },
+"admin_product_reviews":
+{ Args: { "p_limit"?: number,"p_status"?: string }; Returns: {
+              "body": string,"created_at": string,"customer_email": string,"display_name": string,"id": string,"order_id": string,"order_number": string,"product_id": string,"product_name": string,"product_slug": string,"rating": number,"review_note": string,"reviewed_at": string,"reviewed_by_name": string,"status": string,"updated_at": string
+            }[]
                            },
 "admin_promotion_customers":
 { Args: { "p_promotion_id"?: string,"p_user_id"?: string }; Returns: {
@@ -952,6 +986,9 @@ isOneToOne: false
 "create_printing_job_for_user":
 { Args: { "p_input": Json,"p_user_id": string }; Returns: Json
                            },
+"delete_my_product_review":
+{ Args: { "p_product_id": string }; Returns: undefined
+                           },
 "expire_unpaid_orders":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
@@ -968,6 +1005,9 @@ isOneToOne: false
 { Args: Record<PropertyKey, never>; Returns: {
               "code": string,"description_am": string,"description_en": string,"discount_type": string,"discount_value": number,"ends_at": string,"min_order_etb": number,"title_am": string,"title_en": string
             }[]
+                           },
+"my_product_review":
+{ Args: { "p_product_id": string }; Returns: Json
                            },
 "my_staff_status":
 { Args: Record<PropertyKey, never>; Returns: Json
@@ -1010,6 +1050,9 @@ isOneToOne: false
                            },
 "submit_payment":
 { Args: { "p_input": Json }; Returns: Json
+                           },
+"submit_product_review":
+{ Args: { "p_body"?: string,"p_product_id": string,"p_rating": number }; Returns: undefined
                            },
 "submit_wallet_topup":
 { Args: { "p_input": Json,"p_user_id": string }; Returns: Json

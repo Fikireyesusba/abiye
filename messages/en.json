@@ -592,5 +592,40 @@
     "notEnough": "Your balance ({amount}) does not cover this order.",
     "bankTransfer": "Bank transfer",
     "paidWithBalance": "Paid with your balance — the order is confirmed."
+  },
+  "reviews": {
+    "title": "Customer reviews",
+    "ratingLabel": "Rated {rating} out of 5",
+    "count": "{count, plural, one {# review} other {# reviews}}",
+    "none": "No reviews yet.",
+    "verified": "Verified purchase",
+    "write": "Write a review",
+    "yourRating": "Your rating",
+    "stars": "{count, plural, one {# star} other {# stars}}",
+    "comment": "Your comment",
+    "placeholder": "What did you like or dislike? (optional)",
+    "moderated": "Only customers who received this product can review it. Reviews appear after we check them; your name shows as first name and initial.",
+    "submit": "Send review",
+    "cancel": "Cancel",
+    "sent": "Thank you! Your review will appear after it is checked.",
+    "chooseStars": "Choose 1 to 5 stars.",
+    "yourReview": "Your review",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteConfirm": "Delete your review?",
+    "deleted": "Review deleted.",
+    "status": {
+      "pending": "Waiting for approval",
+      "approved": "Published",
+      "rejected": "Not published"
+    },
+    "errors": {
+      "invalid": "Choose 1 to 5 stars.",
+      "tooLong": "Comment is too long (max 1000 characters).",
+      "login": "Please sign in again.",
+      "rateLimited": "Too many reviews. Try again later.",
+      "notEligible": "You can review a product after you have received it.",
+      "failed": "Could not send. Please try again."
+    }
   }
 }
