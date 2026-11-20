@@ -418,6 +418,15 @@
     "pricedByTeam": "Price set by our team"
   },
   "account": {
+    "personalDetails": "Personal details",
+    "changeDetails": "Change personal details",
+    "cancel": "Cancel",
+    "email": "Email",
+    "deliveryCity": "Delivery city",
+    "deliveryAddress": "Delivery address",
+    "addressHint": "Sub-city, woreda, street, house number or landmark",
+    "notSet": "Not set",
+    "emailHint": "Your email is your sign-in and cannot be changed here — contact us if it must change. The delivery city and address are filled in for you at checkout.",
     "otherAccountTitle": "This belongs to a different account",
     "otherAccountText": "You are signed in as {email}. Sign in with the account you used for this order to see it.",
     "otherAccountSwitch": "Sign in with another account",
@@ -429,7 +438,6 @@
     "signIn": "Sign in",
     "signUp": "Create account",
     "signOut": "Sign out",
-    "email": "Email",
     "password": "Password",
     "confirmPassword": "Confirm password",
     "fullName": "Full name",
@@ -481,7 +489,8 @@
       "phone": "Please enter a valid Ethiopian mobile number.",
       "linkExpired": "Your reset link has expired. Please request a new one.",
       "generic": "Something went wrong. Please try again.",
-      "samePassword": "Choose a password that is different from your current one."
+      "samePassword": "Choose a password that is different from your current one.",
+      "address": "Enter an address of 3 to 300 characters, or leave it empty."
     }
   },
   "payInfo": {

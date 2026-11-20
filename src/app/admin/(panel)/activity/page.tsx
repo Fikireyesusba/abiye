@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader, Table, Td, fieldClass, DatabaseUpdateNeeded, isMissingDbFunction } from "@/components/admin/ui";
+import { Download, FileSpreadsheet, Trash2 } from "lucide-react";
+import { ActionForm } from "@/components/admin/action-form";
 import { Button } from "@/components/ui/button";
+import { clearActivityLog } from "@/lib/admin/audit-actions";
 import { ENTITY_LABELS, actionLabel, describeChanges, entityLabel } from "@/lib/admin/activity";
 import { requirePermission } from "@/lib/auth/guards";
 import { first } from "@/lib/catalog/search";
@@ -24,7 +27,12 @@ function entityHref(type: string, id: string | null): string | null {
 }
 
 export default async function ActivityPage({ searchParams }: PageProps<"/admin/activity">) {
-  await requirePermission("audit.view");
+  const ctx = await requirePermission("audit.view");
+  const canClear = ctx.permissions.has("audit.manage");
+  const now = new Date().getTime() + 3 * 3600 * 1000; // Addis Ababa
+  const today = new Date(now).toISOString().slice(0, 10);
+  const monthAgo = new Date(now - 30 * 86400000).toISOString().slice(0, 10);
+  const clearMax = new Date(now - 31 * 86400000).toISOString().slice(0, 10);
   const sp = await searchParams;
   const type = first(sp.type) ?? "";
   const entity = type in ENTITY_LABELS ? type : "";
@@ -46,7 +54,36 @@ export default async function ActivityPage({ searchParams }: PageProps<"/admin/a
 
   return (
     <>
-      <PageHeader title="Activity log" description="Every important change: who did it and when. Entries cannot be edited or deleted." />
+      <PageHeader title="Activity log" description="Every important change: who did it and when. Entries cannot be edited; only a Super Admin can clear entries older than 30 days." />
+      <div className="mb-4 grid gap-3 lg:grid-cols-2">
+        <details className="rounded-lg border bg-card p-4">
+          <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium"><FileSpreadsheet className="size-4 text-primary" aria-hidden /> Export to Excel</summary>
+          <form method="get" action="/admin/activity/export" className="mt-3 flex flex-wrap items-end gap-3">
+            <label className="text-sm">From<input type="date" name="from" required defaultValue={monthAgo} max={today} className={`${fieldClass} mt-1 block`} /></label>
+            <label className="text-sm">To<input type="date" name="to" required defaultValue={today} max={today} className={`${fieldClass} mt-1 block`} /></label>
+            <label className="text-sm">Area
+              <select name="type" defaultValue="" className={`${fieldClass} mt-1 block w-auto`}>
+                <option value="">All areas</option>
+                {Object.entries(ENTITY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </label>
+            <Button type="submit"><Download /> Download .xlsx</Button>
+          </form>
+        </details>
+        {canClear && (
+          <details className="rounded-lg border border-destructive/30 bg-card p-4">
+            <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium text-destructive"><Trash2 className="size-4" aria-hidden /> Clear old entries</summary>
+            <ActionForm action={clearActivityLog} submitLabel="Clear entries" variant="destructive" size="sm" className="mt-3"
+              confirm="Permanently remove these activity entries? Make sure you downloaded the Excel export first.">
+              <p className="text-xs text-muted-foreground">Removes entries created <strong>before</strong> the chosen date. The last 30 days are always kept, and every clearing is recorded permanently.</p>
+              <label className="text-sm">Clear everything before
+                <input type="date" name="before" required max={clearMax} defaultValue={clearMax} className={`${fieldClass} mt-1 block w-auto`} />
+              </label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="exported" required className="size-4 accent-[var(--primary)]" /> I downloaded an Excel export of these entries</label>
+            </ActionForm>
+          </details>
+        )}
+      </div>
       <form method="get" className="mb-4 flex flex-wrap gap-2">
         <select name="type" defaultValue={entity} className={`${fieldClass} max-w-[14rem]`} aria-label="Filter by area">
           <option value="">All areas</option>

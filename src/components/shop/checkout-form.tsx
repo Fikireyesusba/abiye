@@ -45,15 +45,19 @@ export function CheckoutForm({
 }: {
   shopAddress: string;
   email: string;
-  defaults: { fullName: string; phone: string };
+  defaults: { fullName: string; phone: string; address?: string; zoneId?: string | null };
   walletBalance?: number;
 }) {
   const t = useTranslations();
   const locale = useLocale() as Locale;
   const router = useRouter();
   const { items, productItems, details, error: loadError, refresh } = useCartDetails();
-  const [prefs, setPrefs] = useState<FulfillmentPrefs>(() => readFulfillmentPrefs());
-  const [form, setForm] = useState({ fullName: defaults.fullName, phone: defaults.phone, addressLine: "", instructions: "" });
+  // The account's saved delivery city/address prefill checkout (a choice made on this device wins).
+  const [prefs, setPrefs] = useState<FulfillmentPrefs>(() => {
+    const p = readFulfillmentPrefs();
+    return p.deliveryZoneId || !defaults.zoneId ? p : { ...p, deliveryZoneId: defaults.zoneId };
+  });
+  const [form, setForm] = useState({ fullName: defaults.fullName, phone: defaults.phone, addressLine: defaults.address ?? "", instructions: "" });
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<AppErrorCode | null>(null);

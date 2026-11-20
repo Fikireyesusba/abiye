@@ -16,6 +16,7 @@ Paste each file's full contents (GitHub → file → **Raw** → copy) into a ne
 8. `supabase/migrations/20261120000025_staff_not_customers.sql`
 9. `supabase/migrations/20261120000026_wallet.sql`
 10. `supabase/migrations/20261120000027_security_monitoring.sql`
+11. `supabase/migrations/20261120000028_profile_and_activity_tools.sql`
 
 Each should say "Success. No rows returned". If Supabase warns about RLS, choose "Run without RLS" (the files enable it themselves).
 
@@ -62,7 +63,7 @@ Each should say "Success. No rows returned". If Supabase warns about RLS, choose
 
 - **Payments to verify** badge in the admin header: verify only after the money is visible in your bank account. A receipt image alone is not proof.
 - **Stalled checkouts**: call or WhatsApp customers who left unpaid orders or full baskets.
-- **Activity log** (Super Admin): who changed what — check it if something looks wrong.
+- **Activity log** (Super Admin): who changed what — check it if something looks wrong. Monthly: **Export to Excel** and keep the file; optionally **Clear old entries** afterwards (the last 30 days are always kept).
 - **Security** (Super Admin): glance at it daily — red badge = high-risk sign-in attempts; block emails that keep trying; Site health shows anything not working (notifications, scheduled jobs, overdue work).
 - **Wallet** (Manager / Super Admin): verify top-ups only after the money is in the bank, like payments.
 - **Analytics**: weekly look at sales, best sellers and low stock.

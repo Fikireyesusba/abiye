@@ -131,17 +131,23 @@ isOneToOne: false
                   ]
                 },"customer_accounts": {
                   Row: {
-                    "accepted_terms_at": string | null,"created_at": string,"deactivated_at": string | null,"deactivated_by": string | null,"deactivation_reason": string | null,"full_name": string | null,"id": string,"phone": string | null,"updated_at": string,"wallet_balance_etb": number
+                    "accepted_terms_at": string | null,"created_at": string,"deactivated_at": string | null,"deactivated_by": string | null,"deactivation_reason": string | null,"default_address": string | null,"default_zone_id": string | null,"full_name": string | null,"id": string,"phone": string | null,"updated_at": string,"wallet_balance_etb": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "accepted_terms_at"?: string | null,"created_at"?: string,"deactivated_at"?: string | null,"deactivated_by"?: string | null,"deactivation_reason"?: string | null,"full_name"?: string | null,"id": string,"phone"?: string | null,"updated_at"?: string,"wallet_balance_etb"?: number
+                    "accepted_terms_at"?: string | null,"created_at"?: string,"deactivated_at"?: string | null,"deactivated_by"?: string | null,"deactivation_reason"?: string | null,"default_address"?: string | null,"default_zone_id"?: string | null,"full_name"?: string | null,"id": string,"phone"?: string | null,"updated_at"?: string,"wallet_balance_etb"?: number
                   }
                   Update: {
-                    "accepted_terms_at"?: string | null,"created_at"?: string,"deactivated_at"?: string | null,"deactivated_by"?: string | null,"deactivation_reason"?: string | null,"full_name"?: string | null,"id"?: string,"phone"?: string | null,"updated_at"?: string,"wallet_balance_etb"?: number
+                    "accepted_terms_at"?: string | null,"created_at"?: string,"deactivated_at"?: string | null,"deactivated_by"?: string | null,"deactivation_reason"?: string | null,"default_address"?: string | null,"default_zone_id"?: string | null,"full_name"?: string | null,"id"?: string,"phone"?: string | null,"updated_at"?: string,"wallet_balance_etb"?: number
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "customer_accounts_default_zone_id_fkey"
+      columns: ["default_zone_id"]
+isOneToOne: false
+      referencedRelation: "delivery_zones"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"customer_carts": {
                   Row: {
@@ -695,7 +701,12 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "admin_activity_log":
+            "admin_activity_export":
+{ Args: { "p_entity_type"?: string,"p_from": string,"p_to": string }; Returns: {
+              "action": string,"actor_name": string,"actor_role": string,"after_data": Json,"before_data": Json,"created_at": string,"entity_id": string,"entity_label": string,"entity_type": string,"id": number,"metadata": Json
+            }[]
+                           },
+"admin_activity_log":
 { Args: { "p_before_id"?: number,"p_entity_type"?: string,"p_limit"?: number,"p_search"?: string }; Returns: {
               "action": string,"actor_id": string,"actor_name": string,"actor_role": string,"after_data": Json,"before_data": Json,"created_at": string,"entity_id": string,"entity_label": string,"entity_type": string,"id": number,"metadata": Json
             }[]
@@ -722,6 +733,9 @@ isOneToOne: false
 { Args: Record<PropertyKey, never>; Returns: {
               "blocked_by": string,"created_at": string,"email": string,"has_account": boolean,"reason": string
             }[]
+                           },
+"admin_clear_audit_logs":
+{ Args: { "p_before": string }; Returns: number
                            },
 "admin_create_staff_profile":
 { Args: { "p_full_name": string,"p_role_key": string,"p_user_id": string }; Returns: undefined

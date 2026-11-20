@@ -1,4 +1,5 @@
 "use server";
+import { revalidatePath } from "next/cache";
 import { isEmailBlocked, recordSecurityEvent } from "@/lib/security/events";
 import { isStaffAccount } from "@/lib/auth/mfa";
 import { redirect } from "next/navigation";
@@ -147,11 +148,16 @@ export async function updateCustomerAccount(_prev: AccountState, fd: FormData): 
   const rawPhone = String(fd.get("phone") ?? "").trim();
   const phone = rawPhone ? ethiopianPhoneSchema.safeParse(rawPhone) : null;
   if (phone && !phone.success) return { error: "phone" };
+  const zone = String(fd.get("zoneId") ?? "");
+  if (zone && !/^[0-9a-f-]{36}$/.test(zone)) return { error: "generic" };
+  const address = String(fd.get("address") ?? "").trim().replace(/\s+/g, " ");
+  if (address && (address.length < 3 || address.length > 300)) return { error: "address" };
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("customer_accounts")
-    .update({ full_name: name, phone: phone?.success ? phone.data : null })
+    .update({ full_name: name, phone: phone?.success ? phone.data : null, default_zone_id: zone || null, default_address: address || null })
     .eq("id", user.id);
+  if (!error) revalidatePath("/account");
   return error ? { error: "generic" } : { ok: "saved" };
 }
 

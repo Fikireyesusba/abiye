@@ -418,6 +418,15 @@
     "pricedByTeam": "ዋጋው በቡድናችን ተወስኗል"
   },
   "account": {
+    "personalDetails": "የግል መረጃ",
+    "changeDetails": "የግል መረጃን ቀይር",
+    "cancel": "ሰርዝ",
+    "email": "ኢሜይል",
+    "deliveryCity": "የማድረሻ ከተማ",
+    "deliveryAddress": "የማድረሻ አድራሻ",
+    "addressHint": "ክፍለ ከተማ፣ ወረዳ፣ መንገድ፣ የቤት ቁጥር ወይም ምልክት",
+    "notSet": "አልተሞላም",
+    "emailHint": "ኢሜይልዎ የመግቢያ መለያዎ ስለሆነ እዚህ መቀየር አይቻልም — መቀየር ካስፈለገ ያግኙን። የማድረሻ ከተማው እና አድራሻው በክፍያ ጊዜ በራስ-ሰር ይሞላሉ።",
     "otherAccountTitle": "ይህ የሌላ መለያ ነው",
     "otherAccountText": "በ{email} ገብተዋል። ለማየት ይህን ትዕዛዝ ባስገቡበት መለያ ይግቡ።",
     "otherAccountSwitch": "በሌላ መለያ ይግቡ",
@@ -429,7 +438,6 @@
     "signIn": "ግባ",
     "signUp": "መለያ ፍጠር",
     "signOut": "ውጣ",
-    "email": "ኢሜይል",
     "password": "የይለፍ ቃል",
     "confirmPassword": "የይለፍ ቃል ያረጋግጡ",
     "fullName": "ሙሉ ስም",
@@ -481,7 +489,8 @@
       "phone": "እባክዎ ትክክለኛ የኢትዮጵያ ሞባይል ቁጥር ያስገቡ።",
       "linkExpired": "የማገናኛው ጊዜ አልፏል። እባክዎ አዲስ ይጠይቁ።",
       "generic": "የሆነ ችግር ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።",
-      "samePassword": "ከአሁኑ የይለፍ ቃልዎ የተለየ የይለፍ ቃል ይምረጡ።"
+      "samePassword": "ከአሁኑ የይለፍ ቃልዎ የተለየ የይለፍ ቃል ይምረጡ።",
+      "address": "ከ3 እስከ 300 ፊደላት ያለው አድራሻ ያስገቡ ወይም ባዶ ይተዉት።"
     }
   },
   "payInfo": {

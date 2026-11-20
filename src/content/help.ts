@@ -131,6 +131,7 @@ export const HELP: HelpSection[] = [
     blocks: [
       { kind: "list", items: [
         { en: "My account → My orders: all your orders and their status, from any device (sign in first).", am: "የእኔ መለያ → ትዕዛዞቼ፦ ሁሉም ትዕዛዞችዎ እና ሁኔታቸው፣ ከማንኛውም መሣሪያ (መጀመሪያ ይግቡ)።" },
+        { en: "My account → Personal details: your name, phone, delivery city and address are saved and filled in at checkout. Tap “Change personal details” to update them.", am: "የእኔ መለያ → የግል መረጃ፦ ስምዎ፣ ስልክዎ፣ የማድረሻ ከተማ እና አድራሻዎ ተቀምጠው ክፍያ ሲፈጽሙ በራሳቸው ይሞላሉ። ለመቀየር «የግል መረጃን ቀይር»ን ይንኩ።" },
         { en: "Our emails: tap the button in the email. If you are asked to sign in, use the same account you ordered with.", am: "ኢሜይሎቻችን፦ በኢሜይሉ ውስጥ ያለውን ቁልፍ ይንኩ። እንዲገቡ ከተጠየቁ ያዘዙበትን መለያ ይጠቀሙ።" },
         { en: "Track order page: enter your order number and the tracking code shown after checkout.", am: "ትዕዛዝ መከታተያ ገጽ፦ የትዕዛዝ ቁጥርዎን እና ከክፍያ በኋላ የታየውን የመከታተያ ኮድ ያስገቡ።" },
         { en: "Phone notifications: in My account tap “Turn on notifications” to get a message on your phone at every step (on iPhone, first install the app — see the top of this page).", am: "የስልክ ማሳወቂያዎች፦ በየእኔ መለያ ውስጥ «ማሳወቂያዎችን አብራ»ን ይንኩ፣ በእያንዳንዱ ደረጃ በስልክዎ ላይ መልዕክት ይደርስዎታል (በiPhone መጀመሪያ መተግበሪያውን ይጫኑ — የዚህን ገጽ ላይኛው ክፍል ይመልከቱ)።" },

@@ -1,8 +1,8 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Loader2, MailCheck } from "lucide-react";
+import { Loader2, MailCheck, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -158,24 +158,74 @@ export function ResetPasswordForm() {
   );
 }
 
-export function ProfileForm({ fullName, phone }: { fullName: string; phone: string }) {
+export interface ProfileDetails {
+  fullName: string;
+  phone: string;
+  email: string;
+  zoneId: string | null;
+  address: string;
+}
+
+/** Saved personal details, shown read-only; "Change personal details" opens the form. */
+export function ProfileForm({ details, zones }: { details: ProfileDetails; zones: { id: string; name: string }[] }) {
   const t = useTranslations("account");
   const [state, action, pending] = useForm(updateCustomerAccount);
+  const [editing, setEditing] = useState(false);
+  // Close the form once a save succeeds (the page re-renders with the saved values).
+  const [seen, setSeen] = useState(state);
+  if (seen !== state) {
+    setSeen(state);
+    if (state.ok === "saved") setEditing(false);
+  }
+  const saved = details;
+  const zoneName = zones.find((z) => z.id === saved.zoneId)?.name;
+  const notSet = <span className="text-muted-foreground">{t("notSet")}</span>;
+
+  if (!editing) {
+    return (
+      <div className="space-y-4">
+        {state.ok === "saved" && <p role="status" className="rounded-md bg-success/10 p-2 text-sm text-success">{t("saved")}</p>}
+        <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+          <div><dt className="text-muted-foreground">{t("fullName")}</dt><dd className="font-medium">{saved.fullName || notSet}</dd></div>
+          <div><dt className="text-muted-foreground">{t("email")}</dt><dd className="font-medium break-all">{saved.email}</dd></div>
+          <div><dt className="text-muted-foreground">{t("phone")}</dt><dd className="font-medium">{saved.phone || notSet}</dd></div>
+          <div><dt className="text-muted-foreground">{t("deliveryCity")}</dt><dd className="font-medium">{zoneName || notSet}</dd></div>
+          <div className="sm:col-span-2"><dt className="text-muted-foreground">{t("deliveryAddress")}</dt><dd className="font-medium">{saved.address || notSet}</dd></div>
+        </dl>
+        <Button type="button" variant="outline" onClick={() => setEditing(true)}><Pencil /> {t("changeDetails")}</Button>
+      </div>
+    );
+  }
   return (
     <form action={action} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="fullName">{t("fullName")}</Label>
-          <Input id="fullName" name="fullName" autoComplete="name" required maxLength={120} defaultValue={fullName} key={`n-${fullName}`} />
+          <Input id="fullName" name="fullName" autoComplete="name" required maxLength={120} defaultValue={saved.fullName} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="phone">{t("phone")}</Label>
-          <Input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" maxLength={20} defaultValue={phone} key={`p-${phone}`} />
+          <Input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" maxLength={20} defaultValue={saved.phone} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="zoneId">{t("deliveryCity")}</Label>
+          <select id="zoneId" name="zoneId" defaultValue={saved.zoneId ?? ""}
+            className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
+            <option value="">—</option>
+            {zones.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="address">{t("deliveryAddress")}</Label>
+          <Input id="address" name="address" autoComplete="street-address" maxLength={300} defaultValue={saved.address} placeholder={t("addressHint")} />
         </div>
       </div>
+      <p className="text-xs text-muted-foreground">{t("emailHint")}</p>
       <ErrorMsg state={state} />
-      {state.ok === "saved" && <p role="status" className="text-sm text-success">{t("saved")}</p>}
-      <Button type="submit" disabled={pending}>{pending && <Loader2 className="animate-spin" />} {t("save")}</Button>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" disabled={pending}>{pending && <Loader2 className="animate-spin" />} {t("save")}</Button>
+        <Button type="button" variant="ghost" onClick={() => setEditing(false)}>{t("cancel")}</Button>
+      </div>
     </form>
   );
 }

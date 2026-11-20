@@ -15,7 +15,8 @@ import { formatDateTime } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatEthiopianPhone } from "@/lib/validation/phone";
-import type { Locale } from "@/i18n/config";
+import { localized, type Locale } from "@/i18n/config";
+import { getDeliveryZones } from "@/lib/catalog/queries";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("account");
@@ -26,7 +27,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   const user = await requireCustomer("/account");
   const vapid = getServerEnv().VAPID_PRIVATE_KEY && getServerEnv().VAPID_SUBJECT ? (getServerEnv().VAPID_PUBLIC_KEY ?? null) : null;
   const sp = await searchParams;
-  const [t, locale, account] = await Promise.all([getTranslations(), getLocale() as Promise<Locale>, getCustomerAccount(user.id)]);
+  const [t, locale, account, zones] = await Promise.all([getTranslations(), getLocale() as Promise<Locale>, getCustomerAccount(user.id), getDeliveryZones()]);
   // RLS: a customer can only read their own orders and printing jobs.
   const supabase = await createSupabaseServerClient();
   const [{ data: orders }, { data: jobs }, { data: offers }] = await Promise.all([
@@ -77,6 +78,19 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
             </CardContent>
           </Card>
         )}
+        <Card>
+          <CardHeader><CardTitle>{t("account.personalDetails")}</CardTitle></CardHeader>
+          <CardContent>
+            <ProfileForm
+              zones={zones.map((z) => ({ id: z.id, name: localized(z, "name", locale) }))}
+              details={{
+                fullName: account?.full_name ?? "", email: user.email,
+                phone: account?.phone ? formatEthiopianPhone(account.phone) : "",
+                zoneId: account?.default_zone_id ?? null, address: account?.default_address ?? "",
+              }}
+            />
+          </CardContent>
+        </Card>
         <Card>
           <CardContent className="flex flex-wrap items-center gap-4 pt-6">
             <Wallet className="size-8 text-primary" aria-hidden />
@@ -146,12 +160,6 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           </Card>
         )}
 
-        <Card>
-          <CardHeader><CardTitle>{t("account.profile")}</CardTitle></CardHeader>
-          <CardContent>
-            <ProfileForm fullName={account?.full_name ?? ""} phone={account?.phone ? formatEthiopianPhone(account.phone) : ""} />
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

@@ -15,6 +15,8 @@ const ACTION_LABELS: Record<string, string> = {
   topup_rejected: "Wallet top-up rejected",
   wallet_adjusted: "Wallet balance corrected",
   email_blocked: "Email blocked",
+  export_activity: "Activity log exported to Excel",
+  audit_cleared: "Old activity entries cleared",
   email_unblocked: "Email unblocked",
   promo_unassigned: "Personal promo code removed",
   // Supabase Auth events
@@ -62,6 +64,7 @@ export const ENTITY_LABELS: Record<string, string> = {
   notification: "Notification",
   export: "Export",
   security: "Security",
+  audit: "Activity log",
 };
 
 export function actionLabel(action: string): string {

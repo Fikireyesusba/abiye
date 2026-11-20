@@ -150,7 +150,10 @@ export async function placeOrder(input: unknown): Promise<PlaceOrderResult> {
   const result = data as { order_id: string; order_number: string };
   // Remember the contact details on the customer's account for next time.
   const supabase = await createSupabaseServerClient();
-  await supabase.from("customer_accounts").update({ full_name: v.fullName, phone: v.phone }).eq("id", user.id);
+  await supabase.from("customer_accounts").update({
+    full_name: v.fullName, phone: v.phone,
+    ...(v.fulfillment === "delivery" && v.deliveryZoneId && v.addressLine ? { default_zone_id: v.deliveryZoneId, default_address: v.addressLine } : {}),
+  }).eq("id", user.id);
   // On an idempotent replay the DB rotated the hashes to these new tokens, so they are valid either way.
   await rememberOrderAccess(result.order_id, accessToken, trackingCode);
   dispatchSoon(); // customer email: order placed, how to pay
