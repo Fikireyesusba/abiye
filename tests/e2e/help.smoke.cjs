@@ -3,6 +3,7 @@
  *   NODE_PATH=$(npm root -g) node --env-file=.env.local tests/e2e/help.smoke.cjs
  */
 const { chromium } = require("playwright");
+const crypto = require("crypto");
 const { execSync } = require("child_process");
 const { ensureCustomer, loginCustomer } = require("./_customer.cjs");
 
@@ -31,7 +32,14 @@ const check = (ok, msg) => results.push(`${ok ? "ok  " : "FAIL"} - ${msg}`);
     check((await m.locator("h1").innerText()).includes("እርዳታ"), "Amharic guide");
     check(!(await m.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)), "no horizontal overflow on phones");
 
-    const ord = execSync(`psql -Atq "${DB}" -c "select id from orders where user_id is not null and user_id <> (select id from auth.users where email = 'other-acct@example.com') order by created_at desc limit 1"`).toString().trim();
+    // An order placed by a different customer (created here, so the test never depends on leftover data).
+    const ownerId = await ensureCustomer("help-order-owner@example.com", "HelpOwner2026x");
+    const key = crypto.randomUUID();
+    execSync(`psql -Atq -v ON_ERROR_STOP=1 "${DB}"`, { input: `set role service_role; select public.create_order_for_user('${ownerId}', jsonb_build_object('idempotency_key','${key}',
+      'access_token_hash',encode(sha256('a${key}'::bytea),'hex'),'tracking_code_hash',encode(sha256('b${key}'::bytea),'hex'),
+      'customer',jsonb_build_object('full_name','Help Owner','phone','+251911223394'),'fulfillment',jsonb_build_object('method','pickup'),
+      'items',jsonb_build_array(jsonb_build_object('type','product','product_id','20000000-0000-0000-0000-000000000007','quantity',1))))` });
+    const ord = execSync(`psql -Atq "${DB}" -c "select id from orders where idempotency_key = '${key}'"`).toString().trim();
     await ensureCustomer("other-acct@example.com", "OtherAcct2026");
     const o = await (await b.newContext()).newPage();
     await loginCustomer(o, B, "other-acct@example.com", "OtherAcct2026");
