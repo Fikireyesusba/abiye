@@ -43,7 +43,7 @@ select pg_temp.ok(not exists (select 1 from public.printing_jobs) and not exists
 select pg_temp.ok(not exists (select 1 from public.customers) and not exists (select 1 from public.customer_accounts a where not exists (select 1 from public.profiles p where p.id = a.id)), 'customers removed (staff kept)');
 select pg_temp.ok(not exists (select 1 from auth.users where id in (:customer, :customer2)), 'customer sign-in accounts removed');
 select pg_temp.ok(not exists (select 1 from public.wallet_ledger) and not exists (select 1 from public.wallet_topups), 'wallet history removed');
-select pg_temp.ok(not exists (select 1 from public.notifications_outbox) and not exists (select 1 from public.security_events), 'queued messages and security events removed');
+select pg_temp.ok(not exists (select 1 from public.notifications_outbox where not (event_type = 'admin_action' and payload ->> 'action' = 'data_reset')) and not exists (select 1 from public.security_events), 'queued messages and security events removed (only the Telegram notice about the reset remains)');
 select pg_temp.ok((select products = (select count(*) from public.products) and categories = (select count(*) from public.categories)
                           and banks = (select count(*) from public.bank_accounts) and staff = (select count(*) from public.profiles)
                           and zones = (select count(*) from public.delivery_zones) from t_before), 'products, categories, banks, zones and staff kept');

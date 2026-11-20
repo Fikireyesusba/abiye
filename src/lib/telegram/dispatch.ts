@@ -9,6 +9,7 @@ import { sendMedia, sendMessage, type SendResult, type TelegramConfig } from "./
 import { buildMessage, CAPTION_LIMIT, MESSAGE_LIMIT, truncate, type OutboxRow } from "./format";
 
 const ATTACHMENT_BUCKETS = new Set(["payment-receipts"]);
+const FEED_EVENTS = new Set(["security_event", "security_alert", "admin_action", "notification_copy"]);
 
 export function telegramConfig(): TelegramConfig | null {
   const env = getServerEnv();
@@ -60,6 +61,11 @@ export async function dispatchNotifications(limit = 20): Promise<DispatchSummary
   const summary: DispatchSummary = { configured: true, sent: 0, failed: 0 };
   let rateLimited: string | null = null;
   for (const row of (rows ?? []) as OutboxRow[]) {
+    // Activity-feed messages older than a day (e.g. queued before Telegram was set up) are dropped, not sent late.
+    if (FEED_EVENTS.has(row.event_type) && Date.now() - Date.parse((row as OutboxRow & { created_at: string }).created_at) > 24 * 3600 * 1000) {
+      await db.from("notifications_outbox").update({ status: "dead", last_error: "skipped: older than 24 h", locked_until: null }).eq("id", row.id).eq("status", "processing");
+      continue;
+    }
     const res: SendResult = rateLimited ? { ok: false, kind: "retry", error: rateLimited } : await deliver(cfg, row);
     if (!res.ok && res.kind === "rate_limited") rateLimited = `rate limited by Telegram (retry after ${res.retryAfter}s)`;
     if (!res.ok && res.kind === "permanent") console.error(`[telegram] permanent failure for outbox #${row.id}: ${res.error}`);
@@ -70,6 +76,18 @@ export async function dispatchNotifications(limit = 20): Promise<DispatchSummary
   return summary;
 }
 
+/** Send queued staff Telegram messages right after the current response (security events, admin actions). */
+export function telegramSoon() {
+  if (!telegramConfig()) return;
+  after(async () => {
+    try {
+      await dispatchNotifications(20);
+    } catch (e) {
+      console.error("[telegram] dispatch failed:", (e as Error).message);
+    }
+  });
+}
+
 /** Send queued notifications (staff Telegram + customer emails + phone notifications + receipt archive) right after the current response (does not delay the user). */
 export function dispatchSoon() {
   after(async () => {
@@ -78,5 +96,7 @@ export function dispatchSoon() {
     if (mail.status === "rejected") console.error("[email] dispatch failed:", (mail.reason as Error).message);
     if (push.status === "rejected") console.error("[push] dispatch failed:", (push.reason as Error).message);
     if (archive.status === "rejected") console.error("[archive] dispatch failed:", (archive.reason as Error).message);
+    // Copies of the customer messages just sent go to Telegram too.
+    await dispatchNotifications().catch((e: Error) => console.error("[telegram] dispatch failed:", e.message));
   });
 }

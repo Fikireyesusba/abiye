@@ -74,3 +74,35 @@ describe("Telegram messages", () => {
     expect(out.endsWith("\n…")).toBe(true);
   });
 });
+
+describe("Telegram activity feed", () => {
+  const row = (event_type: string, payload: Record<string, unknown>) => ({ id: 1, event_type, payload, attachment_bucket: null, attachment_path: null });
+  it("every message carries its service and event name", () => {
+    const m = buildMessage(row("new_order", { order_number: "ET-1", items: [], total_etb: 100 }), "https://shop.example");
+    expect(m.text.split("\n")[1]).toBe("<i>Service: Orders · Event: New order</i>");
+  });
+  it("security event: what, email, network, device, repeats, escaped", () => {
+    const m = buildMessage(row("security_event", { kind: "admin_mfa_failed", email: "x<y>@example.com", network: "abcdef1234", device: "curl/8",
+      repeats: 4, details: { where: "data_reset" }, at: "2026-11-20T07:00:00Z" }), "https://shop.example");
+    expect(m.text).toContain("SECURITY: WRONG TWO-STEP CODE");
+    expect(m.text).toContain("Service: Admin sign-in · Event: Wrong two-step code");
+    expect(m.text).toContain("x&lt;y&gt;@example.com");
+    expect(m.text).toContain("× 4");
+    expect(m.text).toContain("Where: data_reset");
+    expect(m.text).toContain("2026-11-20 10:00 (Addis Ababa)");
+  });
+  it("high-risk alert, admin action and notification copy", () => {
+    const a = buildMessage(row("security_alert", { email: "bad@example.com", score: 9, is_staff: true, last_kind: "admin_login_failed" }), "");
+    expect(a.text).toContain("SECURITY ALERT");
+    expect(a.text).toContain("STAFF account");
+    const b = buildMessage(row("admin_action", { action: "email_blocked", entity_type: "security", entity_id: "bad@example.com", actor: "Owner", role: "super_admin", metadata: { reason: "spam" } }), "");
+    expect(b.text).toContain("ADMIN ACTION: EMAIL BLOCKED");
+    expect(b.text).toContain("Service: Security · Event: Email blocked");
+    expect(b.text).toContain("By: Owner (super admin)");
+    expect(b.text).toContain("Reason: spam");
+    const c = buildMessage(row("notification_copy", { channel: "push", event: "customer_order_confirmed", status: "dead", attempts: 4, error: "HTTP 410", to: "c@example.com", order_number: "ET-9" }), "");
+    expect(c.text).toContain("FAILED: PAYMENT CONFIRMED");
+    expect(c.text).toContain("Service: Phone notification · Event: Payment confirmed");
+    expect(c.text).toContain("Error: HTTP 410");
+  });
+});

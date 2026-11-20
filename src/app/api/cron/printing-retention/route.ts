@@ -46,6 +46,8 @@ export async function GET(request: Request) {
   }
   // Security events older than 180 days are removed.
   const { data: purged } = await db.rpc("purge_security_events");
+  // Telegram activity-feed messages never sent within 2 days (e.g. Telegram not set up) are dropped.
+  await db.rpc("purge_stale_telegram_feed");
   await recordCronRun("storage-maintenance", true, { deleted, orphans, purged_events: purged ?? 0 });
   return NextResponse.json({ deleted, orphans, purged_events: purged ?? 0 });
 }

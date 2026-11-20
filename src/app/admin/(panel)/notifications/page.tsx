@@ -3,7 +3,8 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
 import { PageHeader, Panel, Table, Td, fieldClass } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
-import { retryNotification, sendTestNotification } from "@/lib/admin/notification-actions";
+import { retryNotification, saveTelegramFeed, sendTestNotification } from "@/lib/admin/notification-actions";
+import { describe } from "@/lib/telegram/format";
 import { archivePastReceipts, saveReceiptArchive, sendArchiveTest } from "@/lib/admin/archive-actions";
 import { Input } from "@/components/ui/input";
 import { requirePermission } from "@/lib/auth/guards";
@@ -37,6 +38,8 @@ export default async function NotificationsPage() {
   const problems = (rows ?? []).filter((r) => r.status === "failed" || r.status === "dead").length;
   const { data: archiveRaw } = await supabase.rpc("admin_receipt_archive_status");
   const archive = (archiveRaw ?? null) as { email: string | null; sent: number; waiting: number; dead: number; last_sent_at: string | null; last_error: string | null } | null;
+  const { data: feedRaw } = await supabase.rpc("admin_telegram_feed");
+  const feed = (feedRaw ?? null) as { security: boolean; admin: boolean; notifications: boolean } | null;
   const today = new Date(new Date().getTime() + 3 * 3600 * 1000).toISOString().slice(0, 10);
 
   return (
@@ -126,11 +129,25 @@ export default async function NotificationsPage() {
           {problems > 0 && <p className="mt-2 text-sm font-medium text-destructive">{problems} message(s) need attention.</p>}
         </Panel>
       </div>
+      {feed && (
+        <Panel title="Telegram activity feed" className="mb-6">
+          <p className="mb-3 text-sm text-muted-foreground">Besides orders and payments, the staff Telegram chat can receive everything below. Each message shows its <strong>service</strong> and <strong>event</strong> name with the details. Repeated identical security events within 5 minutes are grouped into one message.</p>
+          <ActionForm action={saveTelegramFeed} submitLabel="Save" size="sm" className="space-y-2">
+            <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="security" defaultChecked={feed.security} className="mt-0.5 size-4 accent-[var(--primary)]" />
+              <span><strong>Security events and alerts</strong> — every sign-in failure, wrong two-step code, admin sign-in, blocked attempt and rate limit, plus a 🚨 alert when an email becomes high-risk</span></label>
+            <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="admin" defaultChecked={feed.admin} className="mt-0.5 size-4 accent-[var(--primary)]" />
+              <span><strong>Sensitive admin actions</strong> — blocking emails, clearing alerts, staff / role / bank account / settings changes, account deactivation or deletion, wallet corrections, exports, resets</span></label>
+            <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="notifications" defaultChecked={feed.notifications} className="mt-0.5 size-4 accent-[var(--primary)]" />
+              <span><strong>Copies of customer notifications</strong> — every customer email, phone notification and receipt-archive email, once sent ✓ or failed ✗ (with the error)</span></label>
+          </ActionForm>
+          {!configured && <p className="mt-2 text-xs text-destructive">Telegram is not connected yet: these messages are kept for 24 hours, then dropped.</p>}
+        </Panel>
+      )}
       <Table head={["#", "Event", "Reference", "Status", "Attempts", "Created", "Last error", ""]} empty="No notifications yet.">
         {(rows ?? []).map((r) => (
           <tr key={r.id}>
             <Td className="text-xs text-muted-foreground tabular-nums">{r.id}</Td>
-            <Td>{LABEL[r.event_type] ?? r.event_type}</Td>
+            <Td>{LABEL[r.event_type] ?? describe({ id: r.id, event_type: r.event_type, payload: {}, attachment_bucket: null, attachment_path: null }).join(" · ")}</Td>
             <Td className="font-mono text-xs">{r.reference ?? "—"}</Td>
             <Td><Badge variant={TONE[r.status]}>{r.status}</Badge></Td>
             <Td className="tabular-nums">{r.attempts}/{r.max_attempts}</Td>

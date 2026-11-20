@@ -1,4 +1,5 @@
 import "server-only";
+import { telegramSoon } from "@/lib/telegram/dispatch";
 import { headers } from "next/headers";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { clientIpKey } from "./rate-limit";
@@ -23,6 +24,7 @@ export async function recordSecurityEvent(kind: SecurityEventKind, opts: { email
       p_user_agent: h.get("user-agent")?.slice(0, 300) ?? undefined,
       p_metadata: (opts.metadata ?? {}) as never,
     });
+    telegramSoon(); // security event → staff Telegram
   } catch (e) {
     console.error("[security] event not recorded:", (e as Error).message);
   }

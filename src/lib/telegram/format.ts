@@ -3,6 +3,7 @@
  * a customer is escaped: Telegram's HTML mode would otherwise let a crafted
  * name or note inject links/formatting into the staff chat.
  */
+import { actionLabel, entityLabel } from "@/lib/admin/activity";
 export function esc(value: unknown): string {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -34,6 +35,67 @@ export interface BuiltMessage {
 
 /** Build the staff message for an outbox row. `appUrl` is used for admin deep links. */
 export function buildMessage(row: OutboxRow, appUrl: string): BuiltMessage {
+  const msg = buildBody(row, appUrl);
+  const [service, event] = describe(row);
+  // Every message: title line, then "Service · Event" so the chat can be scanned and searched.
+  const nl = msg.text.indexOf("\n");
+  const tag = `<i>Service: ${esc(service)} · Event: ${esc(event)}</i>`;
+  return { ...msg, text: nl < 0 ? `${msg.text}\n${tag}` : `${msg.text.slice(0, nl)}\n${tag}${msg.text.slice(nl)}` };
+}
+
+const SECURITY_KIND: Record<string, [string, string]> = {
+  admin_login_failed: ["Admin sign-in", "Wrong password"],
+  admin_login_not_staff: ["Admin sign-in", "Non-staff account tried the admin panel"],
+  admin_mfa_failed: ["Admin sign-in", "Wrong two-step code"],
+  admin_login_success: ["Admin sign-in", "Signed in (password + two-step code)"],
+  customer_login_failed: ["Customer sign-in", "Wrong password"],
+  staff_customer_login: ["Customer sign-in", "Staff account tried the customer side"],
+  login_blocked: ["Customer sign-in", "Blocked email tried to sign in"],
+  signup_blocked: ["Customer sign-up", "Blocked email tried to sign up"],
+  rate_limited: ["Rate limiter", "Too many attempts"],
+};
+const CHANNEL: Record<string, string> = { email: "Customer email", push: "Phone notification", archive: "Receipt archive (email)" };
+const CUSTOMER_EVENT: Record<string, string> = {
+  customer_order_placed: "Order placed (how to pay)", customer_order_confirmed: "Payment confirmed", customer_order_payment_rejected: "Payment rejected",
+  customer_order_ready_for_pickup: "Ready for pickup", customer_order_out_for_delivery: "Out for delivery", customer_order_completed: "Order completed",
+  customer_order_cancelled: "Order cancelled", customer_order_expired: "Order expired", customer_printing_quote_ready: "Printing price ready",
+  customer_printing_ready: "Printing ready", customer_topup_verified: "Top-up verified", customer_topup_rejected: "Top-up rejected",
+  customer_back_in_stock: "Back in stock", staff_low_stock: "Low stock (staff email)", staff_out_of_stock: "Sold out (staff email)",
+  receipt_archive: "Receipt archived",
+};
+const titleCase = (s: string) => s.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase());
+
+/** [service, event name] for any outbox row. */
+export function describe(row: OutboxRow): [string, string] {
+  const p = row.payload ?? {};
+  switch (row.event_type) {
+    case "new_order": return ["Orders", "New order"];
+    case "payment_resubmitted": return ["Payments", "Receipt resubmitted"];
+    case "printing_request": return ["Printing", "New printing request"];
+    case "payment_verified": return ["Payments", "Payment verified"];
+    case "payment_rejected": return ["Payments", "Payment rejected"];
+    case "order_cancelled": return ["Orders", "Order cancelled"];
+    case "wallet_topup": return ["Wallet", "Top-up to verify"];
+    case "wallet_order_paid": return ["Wallet", "Order paid with balance"];
+    case "low_stock": return ["Inventory", "Low stock"];
+    case "out_of_stock": return ["Inventory", "Sold out"];
+    case "test_message": return ["Telegram", "Test message"];
+    case "security_event": return SECURITY_KIND[String(p.kind)] ?? ["Security", titleCase(String(p.kind ?? "event"))];
+    case "security_alert": return ["Security monitor", "High-risk email"];
+    case "admin_action": return [entityLabel(String(p.entity_type ?? "admin")), actionLabel(String(p.action ?? "action"))];
+    case "notification_copy": return [CHANNEL[String(p.channel)] ?? titleCase(String(p.channel ?? "notification")), CUSTOMER_EVENT[String(p.event)] ?? titleCase(String(p.event ?? ""))];
+    default: return ["Shop", titleCase(row.event_type)];
+  }
+}
+
+const addisTime = (iso: unknown) =>
+  typeof iso === "string" ? `${new Date(Date.parse(iso) + 3 * 3600 * 1000).toISOString().slice(0, 16).replace("T", " ")} (Addis Ababa)` : "";
+const short = (v: unknown, n = 300) => {
+  const s = typeof v === "string" ? v : v === null || v === undefined ? "" : JSON.stringify(v);
+  return s.length > n ? `${s.slice(0, n - 1)}…` : s;
+};
+
+function buildBody(row: OutboxRow, appUrl: string): BuiltMessage {
   const p = row.payload ?? {};
   const admin = (path: string) => (appUrl ? `\n\n<a href="${esc(`${appUrl}${path}`)}">Open in admin</a>` : "");
   const orderLink = p.order_id ? admin(`/admin/orders/${p.order_id}`) : p.order_number ? admin(`/admin/orders?q=${encodeURIComponent(String(p.order_number))}`) : "";
@@ -141,6 +203,77 @@ export function buildMessage(row: OutboxRow, appUrl: string): BuiltMessage {
           row.event_type === "out_of_stock" ? "Customers can ask to be told when it is back." : "Reorder soon.",
         ].join("\n") + admin(p.product_id ? `/admin/products/${p.product_id}` : "/admin/inventory?filter=low"),
       };
+    case "security_event": {
+      const [service, what] = SECURITY_KIND[String(p.kind)] ?? ["Security", String(p.kind)];
+      const details = p.details && typeof p.details === "object" ? Object.entries(p.details as Record<string, unknown>).filter(([, v]) => v !== null && v !== "") : [];
+      const icon = p.kind === "admin_login_success" ? "✅" : String(p.kind).startsWith("admin_") ? "🔐" : p.kind === "rate_limited" ? "⏱" : "🔒";
+      return {
+        attachment: null,
+        text: [
+          `${icon} <b>SECURITY: ${esc(what.toUpperCase())}</b>`,
+          "",
+          line("What happened", `${what} (${service})`),
+          line("Email used", p.email ?? "—") + (p.is_staff ? " · <b>staff account</b>" : ""),
+          ...(p.account ? [line("Account", p.account)] : []),
+          line("Network", p.network ?? "—"),
+          ...(p.device ? [line("Device", short(p.device, 160))] : []),
+          ...details.map(([k, v]) => line(titleCase(k), short(v, 120))),
+          ...(Number(p.repeats) > 1 ? [`Repeated: <b>× ${esc(p.repeats)}</b> within 5 minutes`] : []),
+          line("When", addisTime(p.at)),
+        ].join("\n") + admin(`/admin/security?tab=events${p.email ? `&email=${encodeURIComponent(String(p.email))}` : ""}`),
+      };
+    }
+    case "security_alert":
+      return {
+        attachment: null,
+        text: [
+          "🚨 <b>SECURITY ALERT: HIGH-RISK EMAIL</b>",
+          "",
+          line("Email", p.email) + (p.is_staff ? " · <b>this is a STAFF account</b>" : p.has_account ? " · has a customer account" : " · no account"),
+          line("Risk score (24 h)", p.score),
+          line("Latest", SECURITY_KIND[String(p.last_kind)]?.[1] ?? p.last_kind),
+          line("Network", p.network ?? "—"),
+          line("When", addisTime(p.at)),
+          "",
+          p.is_staff ? "Check with this staff member; reset their two-step login under Staff if needed." : "Open Security → block the email, or mark it as reviewed if it is fine.",
+        ].join("\n") + admin("/admin/security?tab=emails"),
+      };
+    case "admin_action": {
+      const meta = p.metadata && typeof p.metadata === "object" ? Object.entries(p.metadata as Record<string, unknown>).filter(([, v]) => v !== null && v !== "") : [];
+      return {
+        attachment: null,
+        text: [
+          `🛡 <b>ADMIN ACTION: ${esc(actionLabel(String(p.action)).toUpperCase())}</b>`,
+          "",
+          line("By", `${p.actor ?? "System"}${p.role ? ` (${String(p.role).replaceAll("_", " ")})` : ""}`),
+          line("Area", entityLabel(String(p.entity_type ?? ""))),
+          ...(p.entity_id ? [line("Item", p.entity_id)] : []),
+          ...meta.slice(0, 10).map(([k, v]) => line(titleCase(k), short(v, 200))),
+          ...(p.before ? [line("Before", short(p.before, 400))] : []),
+          ...(p.after ? [line("After", short(p.after, 400))] : []),
+          line("When", addisTime(p.at)),
+        ].join("\n") + admin("/admin/activity"),
+      };
+    }
+    case "notification_copy": {
+      const ok = p.status === "sent";
+      const ref = p.order_number ?? p.job_number ?? p.number ?? p.product;
+      return {
+        attachment: null,
+        text: [
+          `${ok ? "📣" : "⚠️"} <b>${ok ? "SENT" : "FAILED"}: ${esc((CUSTOMER_EVENT[String(p.event)] ?? titleCase(String(p.event))).toUpperCase())}</b>`,
+          "",
+          line("Channel", CHANNEL[String(p.channel)] ?? p.channel),
+          line("To", p.to ?? "—"),
+          ...(ref ? [line("About", ref)] : []),
+          ...(p.amount_etb ? [line("Amount", etb(p.amount_etb))] : []),
+          ...(p.note ? [line("Note", p.note)] : []),
+          line("Result", ok ? `Delivered after ${p.attempts} attempt(s)` : `Failed after ${p.attempts} attempt(s)`),
+          ...(!ok && p.error ? [line("Error", p.error)] : []),
+          line("When", addisTime(p.at)),
+        ].join("\n") + (ok ? "" : admin("/admin/notifications")),
+      };
+    }
     case "test_message":
       return { attachment: null, text: "✅ <b>Test message</b>\n\nTelegram notifications are working." };
     default:

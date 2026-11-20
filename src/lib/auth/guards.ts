@@ -1,4 +1,5 @@
 import "server-only";
+import { telegramSoon } from "@/lib/telegram/dispatch";
 import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -36,5 +37,7 @@ export async function requirePermission(...anyOf: Permission[]): Promise<AdminCo
   const ctx = await requireAdmin();
   // 404 rather than 403: do not reveal admin features a role cannot use.
   if (!anyOf.some((p) => ctx.permissions.has(p))) notFound();
+  // Admin actions can queue Telegram activity messages: send them after the response.
+  telegramSoon();
   return ctx;
 }

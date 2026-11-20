@@ -912,6 +912,9 @@ isOneToOne: false
 "admin_set_staff_role":
 { Args: { "p_is_active": boolean,"p_role_key": string,"p_user_id": string }; Returns: undefined
                            },
+"admin_set_telegram_feed":
+{ Args: { "p_admin": boolean,"p_notifications": boolean,"p_security": boolean }; Returns: undefined
+                           },
 "admin_stalled_checkouts":
 { Args: { "p_hours"?: number }; Returns: {
               "amount_etb": number,"email": string,"entity_id": string,"full_name": string,"item_count": number,"items": Json,"kind": string,"phone": string,"reference": string,"since": string,"status": string,"user_id": string
@@ -928,6 +931,9 @@ isOneToOne: false
             }[]
                            },
 "admin_system_health":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"admin_telegram_feed":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },
 "admin_topups_export":
@@ -1055,6 +1061,9 @@ isOneToOne: false
             }[]
                            },
 "purge_security_events":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
+"purge_stale_telegram_feed":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
 "push_targets":

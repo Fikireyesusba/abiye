@@ -33,3 +33,15 @@ export async function retryNotification(_prev: ActionResult | null, fd: FormData
   revalidatePath("/admin/notifications");
   return failed ? fail("Still failing — see the error below.") : ok("Message re-sent.");
 }
+
+/** Super Admin: which activity reaches the staff Telegram chat. */
+export async function saveTelegramFeed(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("settings.manage");
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("admin_set_telegram_feed", {
+    p_security: fd.get("security") === "on", p_admin: fd.get("admin") === "on", p_notifications: fd.get("notifications") === "on",
+  });
+  if (error) return dbError(error);
+  revalidatePath("/admin/notifications");
+  return ok("Telegram activity feed saved.");
+}
