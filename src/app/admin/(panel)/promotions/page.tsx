@@ -148,6 +148,8 @@ export default async function PromotionsPage() {
                         <Field label="Add customers by email" htmlFor={`pe-${p.id}`} hint="One per line, or separated by commas. They must have an account. They will see the code under “My account”.">
                           <textarea id={`pe-${p.id}`} name="emails" rows={2} className={fieldClass} placeholder="customer@gmail.com" />
                         </Field>
+                        <input name="note" maxLength={300} placeholder="Personal message (optional)" aria-label="Personal message" className={`${fieldClass} h-8`} />
+                        <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="notify" defaultChecked className="size-4 accent-[var(--primary)]" /> Send the code to each customer (email + phone notification)</label>
                       </ActionForm>
                     </div>
                   )}

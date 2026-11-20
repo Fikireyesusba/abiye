@@ -48,6 +48,15 @@ export function buildPush(event: string, p: Record<string, unknown>, locale: Loc
       return { title: am ? "ቀሪ ሂሳብ ተሞልቷል ✓" : "Balance topped up ✓", body: am ? `+${money(p.amount_etb, locale)} — ቀሪ ሂሳብ ${money(p.balance_etb, locale)}` : `+${money(p.amount_etb, locale)} — balance ${money(p.balance_etb, locale)}`, url: "/account/wallet", tag: `${event}:${p.topup_number}` };
     case "customer_topup_rejected":
       return { title: am ? "የመሙላት ጥያቄ አልተረጋገጠም" : "Top-up not verified", body: String(p.note ?? (am ? "እባክዎ ደረሰኙን ያረጋግጡ።" : "Please check the receipt.")).slice(0, 100), url: "/account/wallet", tag: `${event}:${p.topup_number}` };
+    case "customer_promo_gift": {
+      const off = p.discount_type === "percent" ? `${Number(p.discount_value)}%` : money(p.discount_value, locale);
+      return {
+        title: am ? `ለእርስዎ ብቻ፦ ${off} ቅናሽ 🎁` : `A discount just for you: ${off} off 🎁`,
+        body: am ? `ኮድ ${String(p.code)} — በክፍያ ጊዜ ያስገቡ።` : `Code ${String(p.code)} — enter it at checkout.`,
+        url: "/account#offers",
+        tag: `${event}:${p.code}`,
+      };
+    }
     case "customer_back_in_stock":
       return typeof p.slug === "string"
         ? { title: am ? "እንደገና ተገኝቷል" : "Back in stock", body: am ? `${String(p.name_am || p.name)} አሁን ይገኛል።` : `${String(p.name)} is available again.`, url: `/products/${encodeURIComponent(p.slug)}`, tag: `${event}:${p.slug}` }

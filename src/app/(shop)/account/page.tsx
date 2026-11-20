@@ -52,7 +52,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
 
       <div className="space-y-6">
         {!!offers?.length && (
-          <Card className="border-accent/50 bg-accent/5">
+          <Card id="offers" className="scroll-mt-24 border-accent/50 bg-accent/5">
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Tag className="size-5" aria-hidden /> {t("account.offers")}</CardTitle>
               <p className="text-sm text-muted-foreground">{t("account.offersHint")}</p>

@@ -66,7 +66,7 @@ async function tryCode(page, code) {
     await item.locator("summary").click();
     await item.locator("textarea[name=emails]").fill(`${vip.toUpperCase()}\nnobody-${RUN.toLowerCase()}@example.com`);
     await item.locator("button:has-text('Give code')").click();
-    await op.waitForSelector("text=Given to 1 customer(s).");
+    await op.waitForSelector("text=Given to 1 customer(s)");
     check(await op.locator(`text=No account with: nobody-${RUN.toLowerCase()}@example.com`).count() >= 1, "unknown emails are reported");
     await op.reload();
     check(await op.locator(`text=Personal · 1 customer(s)`).count() >= 1, "promotion shows how many customers hold it");

@@ -61,3 +61,21 @@ describe("stock emails", () => {
     expect(out.subject).toContain("Sold out");
   });
 });
+
+describe("personal discount email", () => {
+  it("shows the code, discount, minimum, expiry and note in both languages", () => {
+    const e = buildCustomerEmail({ event_type: "customer_promo_gift", payload: {
+      code: "MEKDES-7K2Q", discount_type: "fixed", discount_value: 150, min_order_etb: 1000, ends_at: "2026-12-04T09:00:00Z",
+      note: "Thank you <3", name: "Mekdes Alemu" } }, ctx)!;
+    expect(e.subject).toBe("A discount just for you: MEKDES-7K2Q / ለእርስዎ ብቻ የተሰጠ ቅናሽ");
+    expect(e.html).toContain("MEKDES-7K2Q");
+    expect(e.html).toContain("Mekdes, here is a discount just for you");
+    expect(e.html).toContain("Thank you &lt;3");
+    expect(e.html).toContain('lang="am"');
+    expect(e.text).toMatch(/orders from 1,000/);
+    expect(e.text).toContain("Valid until");
+    const pct = buildCustomerEmail({ event_type: "customer_promo_gift", payload: { code: "GIFT-AB23", discount_type: "percent", discount_value: 10, min_order_etb: 0 } }, ctx)!;
+    expect(pct.html).toContain("10% off");
+    expect(pct.text).not.toContain("orders from");
+  });
+});

@@ -60,7 +60,7 @@ const CUSTOMER_EVENT: Record<string, string> = {
   customer_order_ready_for_pickup: "Ready for pickup", customer_order_out_for_delivery: "Out for delivery", customer_order_completed: "Order completed",
   customer_order_cancelled: "Order cancelled", customer_order_expired: "Order expired", customer_printing_quote_ready: "Printing price ready",
   customer_printing_ready: "Printing ready", customer_topup_verified: "Top-up verified", customer_topup_rejected: "Top-up rejected",
-  customer_back_in_stock: "Back in stock", staff_low_stock: "Low stock (staff email)", staff_out_of_stock: "Sold out (staff email)",
+  customer_back_in_stock: "Back in stock", customer_promo_gift: "Personal discount code sent", staff_low_stock: "Low stock (staff email)", staff_out_of_stock: "Sold out (staff email)",
   receipt_archive: "Receipt archived",
 };
 const ORDER_STEP: Record<string, string> = {

@@ -797,7 +797,7 @@ isOneToOne: false
 { Args: { "p_assignee": string,"p_order_id": string }; Returns: undefined
                            },
 "admin_assign_promotion":
-{ Args: { "p_emails": (string)[],"p_promotion_id": string }; Returns: Json
+{ Args: { "p_emails": (string)[],"p_note"?: string,"p_notify"?: boolean,"p_promotion_id": string }; Returns: Json
                            },
 "admin_block_email":
 { Args: { "p_email": string,"p_reason": string }; Returns: Json
@@ -809,6 +809,9 @@ isOneToOne: false
                            },
 "admin_clear_audit_logs":
 { Args: { "p_before": string }; Returns: number
+                           },
+"admin_create_personal_code":
+{ Args: { "p_days"?: number,"p_discount_type": string,"p_min_order"?: number,"p_note"?: string,"p_notify"?: boolean,"p_user_id": string,"p_value": number }; Returns: Json
                            },
 "admin_create_staff_profile":
 { Args: { "p_full_name": string,"p_role_key": string,"p_user_id": string }; Returns: undefined

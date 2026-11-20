@@ -8,7 +8,7 @@ import { StatusBadge } from "@/components/status/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { actionLabel, describeChanges } from "@/lib/admin/activity";
 import { deleteCustomer, resendCustomerInvite, sendCustomerPasswordReset, setCustomerActive } from "@/lib/admin/customer-actions";
-import { assignPromotion, unassignPromotion } from "@/lib/admin/promotion-actions";
+import { assignPromotion, createPersonalCode, unassignPromotion } from "@/lib/admin/promotion-actions";
 import { adjustWallet } from "@/lib/admin/wallet-actions";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/datetime";
@@ -199,15 +199,39 @@ export default async function CustomerPage({ params }: PageProps<"/admin/custome
                     ))}
                   </ul>
                 )}
-                {giveable.length > 0 ? (
+                <details className="rounded-md border p-3" open>
+                  <summary className="cursor-pointer text-sm font-medium">Create &amp; send a new code</summary>
+                  <ActionForm action={createPersonalCode} hidden={{ userId: c.id }} submitLabel="Create & send" size="sm" resetOnSuccess className="mt-2 space-y-2" keepSuccess>
+                    <div className="flex flex-wrap items-end gap-2">
+                      <label className="text-xs">Discount
+                        <input name="value" type="number" required min={1} step="0.01" placeholder="e.g. 10" className={`${fieldClass} mt-1 block h-8 w-24`} />
+                      </label>
+                      <label className="text-xs">Type
+                        <select name="discountType" defaultValue="percent" className={`${fieldClass} mt-1 block h-8 w-auto`}>
+                          <option value="percent">% off</option><option value="fixed">ETB off</option>
+                        </select>
+                      </label>
+                      <label className="text-xs">Min. order (ETB)
+                        <input name="minOrder" type="number" min={0} step="1" placeholder="none" className={`${fieldClass} mt-1 block h-8 w-28`} />
+                      </label>
+                      <label className="text-xs">Valid for (days)
+                        <input name="days" type="number" required min={1} max={365} defaultValue={30} className={`${fieldClass} mt-1 block h-8 w-20`} />
+                      </label>
+                    </div>
+                    <input name="note" maxLength={300} placeholder="Personal message (optional), e.g. Thank you for your loyalty!" aria-label="Personal message" className={`${fieldClass} h-8`} />
+                    <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="notify" defaultChecked className="size-4 accent-[var(--primary)]" /> Send it to the customer (email + phone notification)</label>
+                    <p className="text-xs text-muted-foreground">A unique code (e.g. NAME-7K2Q) that only this customer can use, once.</p>
+                  </ActionForm>
+                </details>
+                {giveable.length > 0 && (
                   <ActionForm action={assignPromotion} hidden={{ emails: c.email }} submitLabel="Give code" size="sm">
-                    <label htmlFor="give-promo" className="text-sm font-medium">Give a personal code</label>
+                    <label htmlFor="give-promo" className="text-sm font-medium">Or give an existing personal promotion</label>
                     <select id="give-promo" name="promotionId" required className={fieldClass}>
                       {giveable.map((p) => <option key={p.id} value={p.id}>{p.code} — {p.title_en}</option>)}
                     </select>
+                    <input name="note" maxLength={300} placeholder="Personal message (optional)" aria-label="Personal message" className={`${fieldClass} h-8`} />
+                    <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="notify" defaultChecked className="size-4 accent-[var(--primary)]" /> Send it to the customer (email + phone notification)</label>
                   </ActionForm>
-                ) : (
-                  <p className="text-xs text-muted-foreground">Create a promotion with “Only for selected customers” under <Link href="/admin/promotions" className="text-primary underline">Promotions</Link> to give codes here.</p>
                 )}
               </div>
             </Panel>

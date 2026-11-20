@@ -162,6 +162,36 @@ function spec(row: EmailRow, ctx: EmailContext): Spec | null {
         am: { title: `የመሙላት ጥያቄ ${esc(p.topup_number)} (${esc(money(p.amount_etb, "am"))}) ማረጋገጥ አልቻልንም።`, lines: [p.note ? `ምክንያት፦ ${esc(p.note)}` : "", "ወደ ቀሪ ሂሳብዎ ምንም አልተጨመረም። ዝውውሩን አረጋግጠው በትክክለኛው ደረሰኝ አዲስ ጥያቄ ይላኩ።"].filter(Boolean) },
         button: { href: `${ctx.appUrl}/account/wallet`, en: "My balance", am: "የእኔ ቀሪ ሂሳብ" },
       };
+    case "customer_promo_gift": {
+      const off = p.discount_type === "percent" ? `${Number(p.discount_value)}%` : esc(money(p.discount_value, "en"));
+      const offAm = p.discount_type === "percent" ? `${Number(p.discount_value)}%` : esc(money(p.discount_value, "am"));
+      const min = Number(p.min_order_etb ?? 0) > 0;
+      const until = typeof p.ends_at === "string" ? addis(p.ends_at, "en") : "";
+      const untilAm = typeof p.ends_at === "string" ? addis(p.ends_at, "am") : "";
+      const code = `<span style="display:inline-block;font-family:monospace;font-size:20px;font-weight:700;letter-spacing:2px;background:#f1efe8;border:1px dashed #14523f;border-radius:6px;padding:6px 12px">${esc(p.code)}</span>`;
+      return {
+        subject: `A discount just for you: ${esc(p.code)} / ለእርስዎ ብቻ የተሰጠ ቅናሽ`,
+        en: {
+          title: `${p.name ? `${esc(String(p.name).split(" ")[0])}, here` : "Here"} is a discount just for you: ${off} off.`,
+          lines: [
+            code,
+            ...(p.note ? [`<em>${esc(p.note)}</em>`] : []),
+            `Enter the code at checkout${min ? ` (orders from ${esc(money(p.min_order_etb, "en"))})` : ""}.${until ? ` Valid until ${esc(until)}.` : ""}`,
+            "It works only with your account and can be used once. You also find it under My account → My offers.",
+          ],
+        },
+        am: {
+          title: `ለእርስዎ ብቻ የተሰጠ ቅናሽ፦ ${offAm} ቅናሽ።`,
+          lines: [
+            code,
+            ...(p.note ? [`<em>${esc(p.note)}</em>`] : []),
+            `በክፍያ ጊዜ ኮዱን ያስገቡ${min ? ` (ከ${esc(money(p.min_order_etb, "am"))} በላይ ለሆኑ ትዕዛዞች)` : ""}።${untilAm ? ` እስከ ${esc(untilAm)} ድረስ ያገለግላል።` : ""}`,
+            "በእርስዎ መለያ ብቻ የሚሰራ ሲሆን አንድ ጊዜ ብቻ ያገለግላል። በየእኔ መለያ → የእኔ ቅናሾች ስርም ያገኙታል።",
+          ],
+        },
+        button: { href: `${ctx.appUrl}/shop`, en: "Start shopping", am: "መግዛት ይጀምሩ" },
+      };
+    }
     case "customer_back_in_stock": {
       const url = typeof p.slug === "string" ? `${ctx.appUrl}/products/${encodeURIComponent(p.slug)}` : ctx.appUrl;
       return {

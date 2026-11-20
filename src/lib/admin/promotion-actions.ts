@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission } from "@/lib/auth/guards";
+import { dispatchSoon } from "@/lib/telegram/dispatch";
 import { fromAddisInput } from "@/lib/datetime";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PRODUCT_IMAGE_TYPES, validateUpload } from "@/lib/validation/upload";
@@ -160,13 +161,16 @@ export async function assignPromotion(_prev: ActionResult | null, fd: FormData):
   const bad = emails.filter((e) => !z.email().safeParse(e).success);
   if (bad.length) return fail(`Not an email address: ${bad.slice(0, 3).join(", ")}`);
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.rpc("admin_assign_promotion", { p_promotion_id: id.data, p_emails: emails });
+  const note = String(fd.get("note") ?? "").trim().slice(0, 300) || undefined;
+  const notify = fd.get("notify") === "on";
+  const { data, error } = await supabase.rpc("admin_assign_promotion", { p_promotion_id: id.data, p_emails: emails, p_notify: notify, p_note: note });
   if (error) return error.message === "invalid_request" ? fail("Tick “Only for selected customers” on this promotion first.") : dbError(error);
   const r = data as { added: string[]; already: string[]; not_found: string[] };
+  if (notify && r.added.length) dispatchSoon(); // email + phone notification now
   revalidatePath("/admin/promotions");
   revalidatePath("/admin/customers", "layout");
   const parts = [
-    r.added.length ? `Given to ${r.added.length} customer(s).` : null,
+    r.added.length ? `Given to ${r.added.length} customer(s)${notify ? " and sent by email (and phone notification if turned on)" : ""}.` : null,
     r.already.length ? `Already had it: ${r.already.join(", ")}.` : null,
     r.not_found.length ? `No account with: ${r.not_found.join(", ")} (they must sign up first).` : null,
   ].filter(Boolean);
@@ -184,4 +188,35 @@ export async function unassignPromotion(_prev: ActionResult | null, fd: FormData
   revalidatePath("/admin/promotions");
   revalidatePath("/admin/customers", "layout");
   return ok("Code removed from this customer.");
+}
+
+/** Create a unique code for ONE customer (e.g. MEKDES-7K2Q), give it and send it by email / phone notification. */
+export async function createPersonalCode(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("promotions.manage");
+  const parsed = z.object({
+    userId: z.guid(),
+    discountType: z.enum(["percent", "fixed"]),
+    value: z.coerce.number().positive("Enter the discount").max(100000),
+    minOrder: z.union([z.literal(""), z.coerce.number().min(0).max(1000000)]).optional(),
+    days: z.coerce.number().int().min(1, "Valid for at least 1 day").max(365, "At most 365 days"),
+    note: z.string().trim().max(300).optional(),
+  }).safeParse(formObject(fd));
+  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Check the discount.");
+  const d = parsed.data;
+  if (d.discountType === "percent" && d.value > 90) return fail("A percentage discount can be at most 90%.");
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("admin_create_personal_code", {
+    p_user_id: d.userId, p_discount_type: d.discountType, p_value: Math.round(d.value * 100) / 100,
+    p_min_order: typeof d.minOrder === "number" ? d.minOrder : 0, p_days: d.days, p_note: d.note || undefined, p_notify: fd.get("notify") === "on",
+  });
+  if (error) {
+    if (error.message === "staff_account") return fail("This is a staff account — personal codes are for customers.");
+    if (error.message === "login_required") return fail("This customer has not confirmed their email yet.");
+    return dbError(error);
+  }
+  const r = data as { code: string };
+  if (fd.get("notify") === "on") dispatchSoon(); // email + phone notification now
+  revalidatePath("/admin/promotions");
+  revalidatePath("/admin/customers", "layout");
+  return ok(`Code ${r.code} created and given${fd.get("notify") === "on" ? " — sent to the customer by email (and phone notification if turned on)" : ""}.`);
 }
