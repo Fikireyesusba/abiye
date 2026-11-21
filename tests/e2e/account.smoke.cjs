@@ -127,7 +127,10 @@ async function emailLink(to, subjectPart) {
 
   // ---- 4. My account: orders, owner access from another device, isolation
   await p.goto(`${B}/account`);
-  check((await p.locator(`a[href="/order-success/${orderId}"]`).count()) === 1, "My account lists the order");
+  check((await p.locator('a[href="/account/orders"]').count()) === 1, "My account links to My orders");
+  await p.click('a[href="/account/orders"]');
+  await p.waitForURL(/\/account\/orders$/);
+  check((await p.locator(`a[href="/order-success/${orderId}"]`).count()) === 1, "My orders lists the order (tap to open)");
   const dev2 = await (await b.newContext()).newPage();
   await loginCustomer(dev2, B, email, "Selam2026pass");
   await dev2.goto(`${B}/order-success/${orderId}`);
