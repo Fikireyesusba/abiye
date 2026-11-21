@@ -264,7 +264,7 @@ async function emailLink(to, subjectPart) {
   await ctx.grantPermissions(["clipboard-read", "clipboard-write"]);
   await p.locator("main button[aria-label*='Account number']").first().click();
   check((await p.evaluate(() => navigator.clipboard.readText())) === "1000000000000", "bank account number copy button");
-  check((await p.locator("footer >> text=1000000000000").count()) === 1, "footer shows the primary bank account");
+  check((await p.locator("footer >> text=1000000000000").count()) === 0, "footer no longer shows bank details (only the contact page and checkout do)");
 
   await a.goto(`${B}/admin/settings?tab=legal`);
   const legal = a.locator("form:has(textarea[name=terms_en])");
