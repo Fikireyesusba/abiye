@@ -147,6 +147,7 @@ function resetSampleStock() {
   }
   // Home: categories near the top, one tap to a sub-category
   await p.goto(B + '/');
+  check(await p.locator('[data-testid=footer-links] a[href="/help"]').count() === 1, 'signed-out visitor: Help and Contact in the footer');
   check(await p.locator('#home-categories').count() === 1 && await p.locator('section:has(#home-categories) a[href="/electronics"]').count() === 1, 'home shows the categories');
   check(await p.locator('section:has(#home-categories) a[href*="?category="]').count() === 0, 'no sub-category list on the home page');
   await p.click('section:has(#home-categories) a[href="/cosmetics"]');

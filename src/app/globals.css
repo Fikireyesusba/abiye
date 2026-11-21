@@ -2,6 +2,8 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+/* Inside the installed app (home-screen icon): `app:hidden` etc. */
+@custom-variant app (@media (display-mode: standalone));
 
 /* =============================================================================
    DESIGN TOKENS

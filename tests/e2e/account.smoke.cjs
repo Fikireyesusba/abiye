@@ -257,8 +257,7 @@ async function emailLink(to, subjectPart) {
     ["Telegram", "https://t.me/abiyeshop"], ["Email", "mailto:abiyeshop@gmail.com"], ["WhatsApp", "https://wa.me/251911001122"], ["Phone", "tel:+251911001122"]]) {
     check((await p.locator(`main a[href="${href}"]`).count()) === 1, `contact page links ${label}`);
   }
-  check((await p.locator("footer a[aria-label^='Instagram']").count()) === 1 && (await p.locator("footer a[aria-label^='TikTok']").count()) === 1,
-    "footer shows social icons");
+  check((await p.locator("[data-testid=footer-links]").count()) === 0, "signed-in customer: no Help / Contact in the footer (they are in the profile menu)");
   check((await p.locator("main:has-text('How to pay')").count()) === 1 && (await p.locator("main >> text=1000000000000").count()) === 1,
     "contact page shows the bank account to pay into");
   await ctx.grantPermissions(["clipboard-read", "clipboard-write"]);
