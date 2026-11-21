@@ -91,3 +91,26 @@ export async function resetStaffMfa(_prev: ActionResult | null, fd: FormData): P
   revalidatePath("/admin/staff");
   return ok("Two-step login reset. They will set it up again at their next sign-in.");
 }
+
+/**
+ * Delete a staff member for good (Super Admin). The database marks them removed
+ * (no access, cannot be switched back on, open work unassigned) and keeps their
+ * name for the history; then their sign-in is blocked with the secret key.
+ */
+export async function removeStaff(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const ctx = await requirePermission("staff.manage");
+  const userId = z.guid().safeParse(fd.get("userId"));
+  if (!userId.success) return fail("Invalid request.");
+  if (userId.data === ctx.userId) return fail("You cannot delete your own account.");
+  const supabase = await createSupabaseServerClient();
+  const { data: name, error } = await supabase.rpc("admin_remove_staff", { p_user_id: userId.data });
+  if (error) return dbError(error);
+  // Only after the permission-checked database step above succeeded.
+  const { error: banError } = await getSupabaseAdmin().auth.admin.updateUserById(userId.data, { ban_duration: "876000h" });
+  revalidatePath("/admin/staff");
+  if (banError) {
+    console.error("[staff] sign-in block failed:", banError.message);
+    return ok(`${name} was removed and has no dashboard access. (Their sign-in could not be blocked right now — they still cannot open the dashboard.)`);
+  }
+  return ok(`${name} was deleted. They can no longer sign in, and their open orders and printing jobs are unassigned.`);
+}

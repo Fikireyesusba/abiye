@@ -168,7 +168,11 @@ async function toast(page, text) {
   // ---- Payments: reject → resubmit → verify
   const o1 = makeOrder("pay", { pay: true });
   await p.goto(`${B}/admin/payments`);
-  const card = p.locator(`li:has-text("${o1.number}")`);
+  check(await p.locator(`a:has-text("${o1.number}")`).count() === 1 && await p.locator("button:has-text('Verify payment')").count() === 0, "payments list shows only the order number");
+  await p.click(`a:has-text("${o1.number}")`);
+  await p.waitForURL(/\/admin\/payments\/[0-9a-f-]{36}$/);
+  const card = p.locator("main");
+  check(await card.locator("img[alt='Payment receipt'], a:has-text('Receipt')").count() + await card.locator("text=Receipt unavailable").count() >= 1, "receipt shown inside the payment");
   await submitIn(p, card.locator("form:has(button:has-text('Reject'))"));
   check(sql(`select status from orders where id = '${o1.id}'`) === "pending_verification", "reject without reason is blocked (browser + server)");
   await card.locator("textarea[name=note]").fill("Transfer not found in CBE statement");
@@ -177,7 +181,8 @@ async function toast(page, text) {
   check(sql(`select status || '/' || payment_status from orders where id = '${o1.id}'`) === "payment_rejected/rejected", "payment rejected");
   submit(o1.id, o1.key, "resub");
   await p.goto(`${B}/admin/payments`);
-  await submitIn(p, p.locator(`li:has-text("${o1.number}")`).locator("form:has(button:has-text('Verify payment'))"));
+  await p.click(`a:has-text("${o1.number}")`);
+  await submitIn(p, p.locator("main form:has(button:has-text('Verify payment'))"));
   await toast(p, "Payment verified");
   check(sql(`select status || '/' || payment_status from orders where id = '${o1.id}'`) === "confirmed/verified", "payment verified → order confirmed");
   check(sql(`select count(*) from audit_logs where action = 'payment_verified' and actor_id = (select id from auth.users where email = '${OWNER.email}') and metadata->>'order_number' = '${o1.number}'`) === "1",
@@ -276,14 +281,35 @@ async function toast(page, text) {
   // ---- Deactivate staff → immediate loss of access
   await p.goto(`${B}/admin/staff`);
   const srow = p.locator(`tr:has-text("${staffEmail}")`);
-  await srow.locator("select[name=active]").selectOption("false");
-  await submitIn(p, srow.locator("form:has(select[name=active])"));
+  await submitIn(p, srow.locator("form:has(button:has-text('Deactivate'))"));
   await toast(p, "Access removed");
+  await srow.locator("button:has-text('Reactivate')").waitFor({ timeout: 10000 });
+  check(await srow.getByText("Deactivated", { exact: true }).count() === 1, "row shows Deactivated");
   const after = await s.goto(`${B}/admin/orders`);
   check(/\/admin\/(login|mfa)/.test(s.url()) && (await s.locator("text=does not have access").count()) + (s.url().includes("/admin/login") ? 1 : 0) >= 1,
     `deactivated staff lose access on their very next request (${after.status()} ${s.url()})`);
   check(sql(`set role authenticated; select set_config('request.jwt.claims', '{"sub":"${staffId}","role":"authenticated","aal":"aal2"}', false); select count(*) from orders;`) === "0",
     "deactivated staff's still-valid token reads no orders (RLS)");
+
+  // ---- Reactivate, then delete for good
+  await submitIn(p, srow.locator("form:has(button:has-text('Reactivate'))"));
+  await toast(p, "Staff member updated");
+  check(sql(`select is_active from profiles where id = '${staffId}'`) === "t", "reactivated");
+  sql(`update orders set assigned_to = '${staffId}' where id = '${o2.id}'`);
+  await submitIn(p, srow.locator("form:has(button:has-text('Delete'))"));
+  await toast(p, "was deleted");
+  check(sql(`select (removed_at is not null and not is_active)::text from profiles where id = '${staffId}'`) === "true", "deleted: marked removed, no access");
+  check(sql(`select banned_until > now() + interval '10 years' from auth.users where id = '${staffId}'`) === "t", "deleted: sign-in blocked");
+  check(sql(`select count(*) from orders where assigned_to = '${staffId}' and status not in ('completed','cancelled','expired')`) === "0", "deleted: open orders unassigned");
+  await p.goto(`${B}/admin/staff`);
+  check(await p.locator(`tr:has-text("${staffEmail}")`).count() === 0 && await p.locator("summary:has-text('Deleted staff')").count() === 1, "deleted staff leave the list (kept under Deleted staff)");
+  const gone = await (await b.newContext()).newPage();
+  await gone.goto(`${B}/admin/login`);
+  await gone.fill("#email", staffEmail);
+  await gone.fill("#password", staffPw);
+  await gone.click("button[type=submit]");
+  await gone.waitForTimeout(2500);
+  check(gone.url().includes("/admin/login"), "deleted staff cannot sign in");
 
   // Super admin cannot demote themselves
   check((await p.locator(`tr:has-text("${OWNER.email}") select[name=role]`).count()) === 0, "own row has no role controls (no self-demotion)");

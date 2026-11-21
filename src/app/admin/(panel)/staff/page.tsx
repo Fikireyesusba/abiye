@@ -3,8 +3,9 @@ import { ActionForm } from "@/components/admin/action-form";
 import { Field, PageHeader, Panel, Table, Td, fieldClass } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { inviteStaff, resetStaffMfa, resetStaffPassword, updateStaff } from "@/lib/admin/staff-actions";
+import { inviteStaff, removeStaff, resetStaffMfa, resetStaffPassword, updateStaff } from "@/lib/admin/staff-actions";
 import { requirePermission } from "@/lib/auth/guards";
+import { formatDateTime } from "@/lib/datetime";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -19,12 +20,14 @@ const ROLES = [
 export default async function StaffPage() {
   const ctx = await requirePermission("staff.manage");
   const supabase = await createSupabaseServerClient();
-  const { data: profiles } = await supabase.from("profiles").select("id, full_name, is_active, created_at, role:admin_roles(key)").order("created_at");
+  const { data: profiles } = await supabase.from("profiles").select("id, full_name, is_active, created_at, removed_at, role:admin_roles(key)").order("created_at");
+  const current = (profiles ?? []).filter((p) => !p.removed_at);
+  const removed = (profiles ?? []).filter((p) => p.removed_at);
   // Emails live in auth.users; read them server-side only, after the permission check above.
   const { data: users } = await getSupabaseAdmin().auth.admin.listUsers({ perPage: 1000 });
   const email = new Map((users?.users ?? []).map((u) => [u.id, u.email ?? ""]));
   // Two-step login status per staff member (few accounts: one lookup each).
-  const twoStep = new Map(await Promise.all((profiles ?? []).map(async (p) => {
+  const twoStep = new Map(await Promise.all(current.map(async (p) => {
     const { data } = await getSupabaseAdmin().auth.admin.mfa.listFactors({ userId: p.id });
     return [p.id, (data?.factors ?? []).some((f) => f.status === "verified")] as const;
   })));
@@ -32,26 +35,32 @@ export default async function StaffPage() {
   return (
     <>
       <PageHeader title="Staff" description="Who can sign in to this dashboard and what they can do." />
-      <div className="grid items-start gap-6 xl:grid-cols-[1fr_22rem]">
-        <Table head={["Name", "Role", "Status", "Change", "Password", "Two-step login"]}>
-          {(profiles ?? []).map((p) => {
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="min-w-0 space-y-4">
+        <Table head={["Name", "Role", "Access", "Password", "Two-step login", "Delete"]}>
+          {current.map((p) => {
             const self = p.id === ctx.userId;
             const roleKey = (p.role as unknown as { key: string } | null)?.key ?? "staff";
             return (
               <tr key={p.id}>
                 <Td><span className="font-medium">{p.full_name}</span>{self && <Badge variant="secondary" className="ml-2">you</Badge>}<span className="block text-xs text-muted-foreground">{email.get(p.id)}</span></Td>
-                <Td>{ROLES.find((r) => r.key === roleKey)?.label}</Td>
-                <Td>{p.is_active ? <Badge variant="success">Active</Badge> : <Badge variant="secondary">No access</Badge>}</Td>
                 <Td>
-                  {self ? <span className="text-xs text-muted-foreground">—</span> : (
-                    <ActionForm action={updateStaff} hidden={{ userId: p.id }} submitLabel="Save" size="sm" variant="outline" className="flex flex-wrap gap-2 space-y-0">
+                  {self ? ROLES.find((r) => r.key === roleKey)?.label : (
+                    <ActionForm action={updateStaff} hidden={{ userId: p.id, active: String(p.is_active) }} submitLabel="Save" size="sm" variant="outline" className="flex flex-wrap gap-2 space-y-0">
                       <select name="role" defaultValue={roleKey} className={`${fieldClass} h-8 w-auto`} aria-label={`Role for ${p.full_name}`}>
                         {ROLES.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}
                       </select>
-                      <select name="active" defaultValue={String(p.is_active)} className={`${fieldClass} h-8 w-auto`} aria-label="Access">
-                        <option value="true">Active</option><option value="false">No access</option>
-                      </select>
                     </ActionForm>
+                  )}
+                </Td>
+                <Td>
+                  {p.is_active ? <Badge variant="success">Active</Badge> : <Badge variant="secondary">Deactivated</Badge>}
+                  {!self && (
+                    <ActionForm action={updateStaff} hidden={{ userId: p.id, role: roleKey, active: String(!p.is_active) }}
+                      submitLabel={p.is_active ? "Deactivate" : "Reactivate"} size="sm" variant="outline" className="mt-2 space-y-2"
+                      confirm={p.is_active
+                        ? `Deactivate ${p.full_name}? They lose access to the dashboard immediately. You can reactivate them later.`
+                        : `Reactivate ${p.full_name}? They can sign in to the dashboard again with their current role.`} />
                   )}
                 </Td>
                 <Td>
@@ -67,10 +76,26 @@ export default async function StaffPage() {
                       confirm={`Reset two-step login for ${p.full_name}? They will set up their authenticator again at the next sign-in (use this if they lost their phone).`} />
                   )}
                 </Td>
+                <Td>
+                  {!self && (
+                    <ActionForm action={removeStaff} hidden={{ userId: p.id }} submitLabel="Delete" size="sm" variant="destructive" keepSuccess className="space-y-2"
+                      confirm={`Delete ${p.full_name} permanently? They can no longer sign in, their open orders and printing jobs are unassigned, and this cannot be undone. Their name stays in the activity history.`} />
+                  )}
+                </Td>
               </tr>
             );
           })}
         </Table>
+        {removed.length > 0 && (
+          <details className="rounded-xl border bg-card p-4 text-sm">
+            <summary className="cursor-pointer font-medium">Deleted staff ({removed.length})</summary>
+            <ul className="mt-2 space-y-1 text-muted-foreground">
+              {removed.map((p) => <li key={p.id} className="break-words">{p.full_name} · {email.get(p.id)} · deleted {formatDateTime(p.removed_at!, "en")}</li>)}
+            </ul>
+            <p className="mt-2 text-xs text-muted-foreground">Kept only so the history shows who did what. Their email address cannot be used for a new account.</p>
+          </details>
+        )}
+        </div>
         <div className="space-y-6">
           <Panel title="Add staff member">
             <ActionForm action={inviteStaff} submitLabel="Create account" keepSuccess resetOnSuccess>

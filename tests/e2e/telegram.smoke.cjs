@@ -175,8 +175,9 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
     // ---- 6. Payment decision + cancellation alerts from admin actions
     const subOrder = sql(`select id from orders where order_number = '${orderNumber}'`);
     await a.goto(`${B}/admin/payments`);
-    await a.locator(`li:has-text("${orderNumber}")`).locator("form:has(button:has-text('Reject')) textarea").fill("Amount not in statement");
-    await a.locator(`li:has-text("${orderNumber}")`).locator("form:has(button:has-text('Reject')) button").click();
+    await a.click(`a:has-text("${orderNumber}")`);
+    await a.locator("main form:has(button:has-text('Reject')) textarea").fill("Amount not in statement");
+    await a.locator("main form:has(button:has-text('Reject')) button").click();
     await a.waitForSelector('[data-sonner-toast]:has-text("Payment rejected")');
     check(await waitFor(() => received.some((x) => x.text?.includes("PAYMENT REJECTED") && x.text.includes(orderNumber) && x.text.includes("Amount not in statement"))),
       "payment rejection alert sent");

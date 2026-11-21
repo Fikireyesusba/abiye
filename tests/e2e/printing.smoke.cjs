@@ -140,7 +140,8 @@ async function fillContact(p, name, phone) {
        'receipt',jsonb_build_object('path','orders/${orderId}/r.png','mime','image/png','size',10,'sha256',encode(sha256('${RUN}'::bytea),'hex'))))`);
   check(sql(`select status from printing_jobs where id = '${job1}'`) === "payment_verification", "job → Payment verification when proof submitted");
   await a.goto(`${B}/admin/payments`);
-  await a.locator(`li:has-text("${sql(`select order_number from orders where id = '${orderId}'`)}") form:has(button:has-text('Verify payment')) button`).click();
+  await a.click(`a:has-text("${sql(`select order_number from orders where id = '${orderId}'`)}")`);
+  await a.locator("form:has(button:has-text('Verify payment')) button").click();
   await toast(a, "Payment verified");
   check(sql(`select status from printing_jobs where id = '${job1}'`) === "printing", "verified payment sends the job to Printing");
   await a.goto(`${B}/admin/printing/${job1}`);

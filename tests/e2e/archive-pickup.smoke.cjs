@@ -110,7 +110,8 @@ async function paidOrder(cid, ref, bytes) {
     const bytes = Buffer.concat([PNG, Buffer.from(RUN)]);
     const ok = await paidOrder(cid, `FTV${RUN}`, bytes);
     await o.goto(`${B}/admin/payments`);
-    const card = o.locator("li", { has: o.locator(`a:has-text('${ok.number}')`) });
+    await o.click(`a:has-text('${ok.number}')`);
+    const card = o.locator("main");
     await card.locator("button:has-text('Verify payment')").click();
     check(await waitFor(() => mails(ARCHIVE, ok.number).length === 1), "verified receipt emailed to the archive right away");
     const m = mails(ARCHIVE, ok.number)[0];
@@ -122,7 +123,8 @@ async function paidOrder(cid, ref, bytes) {
     // ---- reject → archived with the reason
     const bad = await paidOrder(cid, `FTR${RUN}`, Buffer.concat([PNG, Buffer.from(`r${RUN}`)]));
     await o.goto(`${B}/admin/payments`);
-    const card2 = o.locator("li", { has: o.locator(`a:has-text('${bad.number}')`) });
+    await o.click(`a:has-text('${bad.number}')`);
+    const card2 = o.locator("main");
     await card2.locator("textarea[name=note]").fill("Not in our bank statement");
     await card2.locator("button:has-text('Reject')").click();
     check(await waitFor(() => mails(ARCHIVE, bad.number).length === 1), "rejected receipt emailed to the archive");

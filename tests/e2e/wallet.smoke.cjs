@@ -78,7 +78,10 @@ async function requestTopup(page, amount, seed) {
     await adminLogin(m, B, mEmail, "WalletMgr2026x");
     check((await m.locator("aside a[href='/admin/wallet'] span[aria-label]").textContent()) >= "1", "red badge for top-ups to verify");
     await m.goto(`${B}/admin/wallet`);
-    const card = m.locator("li", { hasText: email }).first();
+    await m.click(`a[href='/admin/wallet/${sql(`select id from wallet_topups where user_id = '${uid}' and status = 'pending' order by created_at desc limit 1`)}']`);
+    await m.waitForURL(/\/admin\/wallet\/[0-9a-f-]{36}$/);
+    check(await m.locator("main").getByText(email).count() >= 1, "top-up page shows the customer");
+    const card = m.locator("main");
     check(await card.locator("img, a").count() >= 1, "receipt preview shown to the manager");
     await card.locator("button:has-text('Verify and add to balance')").click();
     await m.waitForSelector("[data-sonner-toast]:has-text('Top-up verified')");
@@ -131,7 +134,8 @@ async function requestTopup(page, amount, seed) {
     await requestTopup(c, 500, 3);
     await c.waitForSelector("[role=status]:has-text(\"was sent\")");
     await m.goto(`${B}/admin/wallet`);
-    const card2 = m.locator("li", { hasText: email }).first();
+    await m.click(`a[href='/admin/wallet/${sql(`select id from wallet_topups where user_id = '${uid}' and status = 'pending' order by created_at desc limit 1`)}']`);
+    const card2 = m.locator("main");
     await card2.locator("textarea").fill("Not in our bank statement");
     await card2.locator("button:has-text('Reject')").click();
     await m.waitForSelector("[data-sonner-toast]:has-text('Top-up rejected')");

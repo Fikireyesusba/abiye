@@ -535,14 +535,14 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"full_name": string,"id": string,"is_active": boolean,"phone": string | null,"role_id": number,"updated_at": string
+                    "created_at": string,"created_by": string | null,"full_name": string,"id": string,"is_active": boolean,"phone": string | null,"removed_at": string | null,"removed_by": string | null,"role_id": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"full_name": string,"id": string,"is_active"?: boolean,"phone"?: string | null,"role_id": number,"updated_at"?: string
+                    "created_at"?: string,"created_by"?: string | null,"full_name": string,"id": string,"is_active"?: boolean,"phone"?: string | null,"removed_at"?: string | null,"removed_by"?: string | null,"role_id": number,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"full_name"?: string,"id"?: string,"is_active"?: boolean,"phone"?: string | null,"role_id"?: number,"updated_at"?: string
+                    "created_at"?: string,"created_by"?: string | null,"full_name"?: string,"id"?: string,"is_active"?: boolean,"phone"?: string | null,"removed_at"?: string | null,"removed_by"?: string | null,"role_id"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -896,6 +896,9 @@ isOneToOne: false
                            },
 "admin_receipt_archive_status":
 { Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"admin_remove_staff":
+{ Args: { "p_user_id": string }; Returns: string
                            },
 "admin_reset_phrase":
 { Args: Record<PropertyKey, never>; Returns: string
