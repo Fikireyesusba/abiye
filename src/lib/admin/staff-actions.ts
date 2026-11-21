@@ -9,7 +9,8 @@ import { maxBirthDate } from "@/lib/age";
 import { ethiopianPhoneSchema } from "@/lib/validation/checkout";
 import { dbError, fail, formObject, ok, type ActionResult } from "./result";
 
-const role = z.enum(["super_admin", "manager", "staff"]);
+/** Any permission set key (checked by the database). */
+const role = z.string().regex(/^[a-z_]{2,40}$/);
 const tempPassword = () => `${randomBytes(12).toString("base64url")}-Aa9`;
 
 /**
@@ -142,4 +143,45 @@ export async function updateStaffDetails(_prev: ActionResult | null, fd: FormDat
   if (error) return dbError(error);
   revalidatePath("/admin/staff");
   return ok("Personal details saved.");
+}
+
+const permList = (fd: FormData) => fd.getAll("perm").map(String).filter((p) => /^[a-z_]+\.[a-z_]+$/.test(p)).slice(0, 100);
+
+/** Super Admin: create or edit a permission set (role). Super Admin's own set always has everything. */
+export async function saveRole(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("staff.manage");
+  const parsed = z.object({ roleId: z.union([z.literal(""), z.coerce.number().int().min(1).max(32767)]), name: z.string().trim().min(2).max(60), description: z.string().trim().max(300) })
+    .safeParse({ roleId: String(fd.get("roleId") ?? ""), name: fd.get("name"), description: String(fd.get("description") ?? "") });
+  if (!parsed.success) return fail("Enter a name (2–60 characters).");
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("admin_save_role", {
+    p_role_id: (parsed.data.roleId === "" ? null : parsed.data.roleId) as unknown as number,
+    p_name: parsed.data.name, p_description: parsed.data.description, p_permissions: permList(fd),
+  });
+  if (error) return dbError(error);
+  revalidatePath("/admin", "layout");
+  return ok(parsed.data.roleId === "" ? `Permission set “${parsed.data.name}” created. Assign it under Team.` : "Permission set saved — applies to its members immediately.");
+}
+
+export async function deleteRole(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("staff.manage");
+  const id = z.coerce.number().int().min(1).safeParse(fd.get("roleId"));
+  if (!id.success) return fail("Invalid request.");
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("admin_delete_role", { p_role_id: id.data });
+  if (error) return error.message === "invalid_request" ? fail("Only an unused, custom permission set can be deleted (move its members to another set first).") : dbError(error);
+  revalidatePath("/admin/staff");
+  return ok("Permission set deleted.");
+}
+
+/** Super Admin: extra permissions for one staff member / manager, on top of their set. */
+export async function setMemberPermissions(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("staff.manage");
+  const userId = z.guid().safeParse(fd.get("userId"));
+  if (!userId.success) return fail("Invalid request.");
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("admin_set_member_permissions", { p_user_id: userId.data, p_permissions: permList(fd) });
+  if (error) return dbError(error);
+  revalidatePath("/admin/staff");
+  return ok("Personal permissions saved — they apply on the person's next page.");
 }

@@ -8,7 +8,7 @@ import { clearActivityLog } from "@/lib/admin/audit-actions";
 import { ENTITY_LABELS, actionLabel, describeChanges, entityLabel } from "@/lib/admin/activity";
 import { requirePermission } from "@/lib/auth/guards";
 import { first } from "@/lib/catalog/search";
-import { formatDateTime, wallClock, zoneToday } from "@/lib/datetime";
+import { formatDateTime, wallClock, zoneDayStartIso, zoneToday } from "@/lib/datetime";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Activity log" };
@@ -45,18 +45,23 @@ export default async function ActivityPage({ searchParams }: PageProps<"/admin/a
   const catParam = first(sp.cat) ?? "";
   const cat = CATS.find((c) => c.key === catParam)?.key ?? "";
   const q = (first(sp.q) ?? "").trim().slice(0, 60);
+  const DAY = /^\d{4}-\d{2}-\d{2}$/;
+  const fromDay = DAY.test(first(sp.from) ?? "") ? first(sp.from)! : "";
+  const toDay = DAY.test(first(sp.to) ?? "") ? first(sp.to)! : "";
+  const nextDay = (d: string) => new Date(Date.parse(`${d}T00:00:00Z`) + 86400000).toISOString().slice(0, 10);
   const beforeRaw = Number(first(sp.before));
   const before = Number.isSafeInteger(beforeRaw) && beforeRaw > 0 ? beforeRaw : undefined;
 
   const supabase = await createSupabaseServerClient();
   const [{ data: rows, error }, { data: counts }] = await Promise.all([
-    supabase.rpc("admin_activity_by_category", { p_category: cat || undefined, p_search: q || undefined, p_limit: PAGE, p_before_id: before }),
+    supabase.rpc("admin_activity_by_category", { p_category: cat || undefined, p_search: q || undefined, p_limit: PAGE, p_before_id: before,
+      p_from: fromDay ? zoneDayStartIso(fromDay) : undefined, p_to: toDay ? zoneDayStartIso(nextDay(toDay)) : undefined }),
     supabase.rpc("admin_activity_categories", { p_days: 30 }),
   ]);
   if (isMissingDbFunction(error)) return <DatabaseUpdateNeeded title="Activity log" migration="20261120000038_activity_categories.sql" />;
   if (error) throw new Error("Could not load the activity log");
   const last = rows?.at(-1);
-  const params = new URLSearchParams({ ...(cat ? { cat } : {}), ...(q ? { q } : {}) });
+  const params = new URLSearchParams({ ...(cat ? { cat } : {}), ...(q ? { q } : {}), ...(fromDay ? { from: fromDay } : {}), ...(toDay ? { to: toDay } : {}) });
   const countOf = (k: string) => (counts ?? []).find((c) => c.category === k);
   const totalAll = (counts ?? []).reduce((n, c) => n + Number(c.total), 0);
 
@@ -116,7 +121,10 @@ export default async function ActivityPage({ searchParams }: PageProps<"/admin/a
       <form method="get" className="mb-4 flex flex-wrap gap-2">
         {cat && <input type="hidden" name="cat" value={cat} />}
         <input name="q" defaultValue={q} placeholder="Action, ID or person" maxLength={60} className={`${fieldClass} max-w-xs`} aria-label="Search activity" />
+        <label className="flex items-center gap-1 text-sm">From<input type="date" name="from" defaultValue={fromDay} max={today} className={`${fieldClass} w-auto`} aria-label="From date" /></label>
+        <label className="flex items-center gap-1 text-sm">To<input type="date" name="to" defaultValue={toDay} max={today} className={`${fieldClass} w-auto`} aria-label="To date" /></label>
         <Button type="submit" variant="outline">Search</Button>
+        {(q || fromDay || toDay) && <Button variant="ghost" asChild><Link href={`/admin/activity${cat ? `?cat=${cat}` : ""}`}>Clear search</Link></Button>}
       </form>
       <Table scroll head={["When", "Who", "What", "Item", "Changes"]} empty="No activity found.">
         {(rows ?? []).map((r) => {

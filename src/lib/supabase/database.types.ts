@@ -41,14 +41,14 @@ isOneToOne: false
                   ]
                 },"admin_roles": {
                   Row: {
-                    "created_at": string,"description": string | null,"id": number,"key": string,"name": string
+                    "created_at": string,"description": string | null,"id": number,"is_builtin": boolean,"key": string,"name": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"description"?: string | null,"id"?: never,"key": string,"name": string
+                    "created_at"?: string,"description"?: string | null,"id"?: never,"is_builtin"?: boolean,"key": string,"name": string
                   }
                   Update: {
-                    "created_at"?: string,"description"?: string | null,"id"?: never,"key"?: string,"name"?: string
+                    "created_at"?: string,"description"?: string | null,"id"?: never,"is_builtin"?: boolean,"key"?: string,"name"?: string
                   }
                   Relationships: [
                     
@@ -533,6 +533,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"profile_permissions": {
+                  Row: {
+                    "granted_at": string,"granted_by": string | null,"permission_key": string,"profile_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "granted_at"?: string,"granted_by"?: string | null,"permission_key": string,"profile_id": string
+                  }
+                  Update: {
+                    "granted_at"?: string,"granted_by"?: string | null,"permission_key"?: string,"profile_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "profile_permissions_permission_key_fkey"
+      columns: ["permission_key"]
+isOneToOne: false
+      referencedRelation: "admin_permissions"
+      referencedColumns: ["key"]
+    },{
+      foreignKeyName: "profile_permissions_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"profiles": {
                   Row: {
                     "created_at": string,"created_by": string | null,"date_of_birth": string | null,"full_name": string,"id": string,"is_active": boolean,"phone": string | null,"removed_at": string | null,"removed_by": string | null,"role_id": number,"sex": string | null,"updated_at": string
@@ -762,7 +788,7 @@ isOneToOne: false
           }
           Functions: {
             "admin_activity_by_category":
-{ Args: { "p_before_id"?: number,"p_category"?: string,"p_limit"?: number,"p_search"?: string }; Returns: {
+{ Args: { "p_before_id"?: number,"p_category"?: string,"p_from"?: string,"p_limit"?: number,"p_search"?: string,"p_to"?: string }; Returns: {
               "action": string,"actor_id": string,"actor_name": string,"actor_role": string,"after_data": Json,"before_data": Json,"category": string,"created_at": string,"entity_id": string,"entity_label": string,"entity_type": string,"id": number,"metadata": Json
             }[]
                            },
@@ -847,6 +873,9 @@ isOneToOne: false
 "admin_data_export_areas":
 { Args: Record<PropertyKey, never>; Returns: (string)[]
                            },
+"admin_delete_role":
+{ Args: { "p_role_id": number }; Returns: undefined
+                           },
 "admin_is_staff_account":
 { Args: { "p_user_id": string }; Returns: boolean
                            },
@@ -879,6 +908,11 @@ isOneToOne: false
 "admin_notifications_export":
 { Args: { "p_from": string,"p_to": string }; Returns: {
               "attempts": number,"channel": string,"created_at": string,"event_type": string,"id": number,"last_error": string,"recipient": string,"reference": string,"sent_at": string,"status": string
+            }[]
+                           },
+"admin_notifications_search":
+{ Args: { "p_from"?: string,"p_limit"?: number,"p_search"?: string,"p_to"?: string }; Returns: {
+              "attempts": number,"channel": string,"created_at": string,"event_type": string,"id": number,"last_error": string,"max_attempts": number,"next_attempt_at": string,"reference": string,"sent_at": string,"status": Database["public"]['Enums']["notification_status"]
             }[]
                            },
 "admin_payments_export":
@@ -935,8 +969,11 @@ isOneToOne: false
 "admin_sales_report":
 { Args: { "p_from": string,"p_to": string }; Returns: Json
                            },
+"admin_save_role":
+{ Args: { "p_description": string,"p_name": string,"p_permissions": (string)[],"p_role_id": number }; Returns: number
+                           },
 "admin_security_events":
-{ Args: { "p_email"?: string,"p_kind"?: string,"p_limit"?: number }; Returns: {
+{ Args: { "p_email"?: string,"p_from"?: string,"p_kind"?: string,"p_limit"?: number,"p_search"?: string,"p_to"?: string }; Returns: {
               "created_at": string,"email": string,"id": number,"ip_hash": string,"kind": string,"metadata": Json,"user_agent": string,"user_name": string
             }[]
                            },
@@ -947,6 +984,9 @@ isOneToOne: false
                            },
 "admin_set_customer_active":
 { Args: { "p_active": boolean,"p_reason"?: string,"p_user_id": string }; Returns: undefined
+                           },
+"admin_set_member_permissions":
+{ Args: { "p_permissions": (string)[],"p_user_id": string }; Returns: undefined
                            },
 "admin_set_receipt_archive":
 { Args: { "p_email": string }; Returns: undefined

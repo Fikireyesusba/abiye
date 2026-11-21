@@ -9,7 +9,7 @@ export default async function AccountPage() {
   const ctx = await requireAdmin();
   return (
     <>
-      <PageHeader title="My account" description={`${ctx.fullName} · ${ctx.role.replace("_", " ")}`} />
+      <PageHeader title="My account" description={`${ctx.fullName} · ${ctx.roleName}`} />
       <Panel title="Change password" className="max-w-lg">
         <PasswordForm />
       </Panel>

@@ -17,7 +17,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const ROLE_LABEL = { super_admin: "Super Admin", manager: "Manager", staff: "Staff" } as const;
 
 /**
  * Admin shell. NOTE: this is presentation only — layouts do not re-run on
@@ -51,7 +50,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
               <UserCircle className="size-5 text-muted-foreground" aria-hidden />
               <span className="hidden text-right leading-tight sm:block">
                 <span className="block font-medium">{ctx.fullName}</span>
-                <span className="block text-xs text-muted-foreground">{ROLE_LABEL[ctx.role]}</span>
+                <span className="block text-xs text-muted-foreground">{ctx.roleName}</span>
               </span>
             </Link>
             <form action={signOut}>

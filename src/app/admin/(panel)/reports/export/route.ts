@@ -5,6 +5,7 @@ import { getSiteSettings } from "@/lib/catalog/settings";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { zoneToday } from "@/lib/datetime";
+import { sendExportCopy } from "@/lib/telegram/export-copy";
 
 export const maxDuration = 60;
 
@@ -27,6 +28,7 @@ export async function GET(request: Request) {
     business: (await getSiteSettings()).business.name.en, title, generatedBy: ctx.fullName, generatedAt: new Date(),
   });
   await supabase.rpc("admin_log_export", { p_kind: "sales", p_metadata: { kind: range.kind, from: range.from, to: range.to } });
+  sendExportCopy(file as ArrayBuffer | Uint8Array, `sales-${range.kind}-${range.value}.xlsx`, "Sales report", ctx.fullName); // copy to the receipts Telegram group
   return new NextResponse(new Uint8Array(file), {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

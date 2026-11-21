@@ -5,6 +5,7 @@ import { getSiteSettings } from "@/lib/catalog/settings";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { zoneDayStartIso } from "@/lib/datetime";
+import { sendExportCopy } from "@/lib/telegram/export-copy";
 
 export const maxDuration = 60;
 
@@ -63,6 +64,7 @@ export async function GET(request: Request) {
   // Exports contain customer contact and bank details: keep a record.
   await supabase.rpc("admin_log_export", { p_kind: "payments", p_metadata: { from, to, filter, rows: payments.length, topups: topups?.length ?? 0 } });
 
+  sendExportCopy(file as ArrayBuffer | Uint8Array, `payments-${from}_to_${to}.xlsx`, "Payments", ctx.fullName); // copy to the receipts Telegram group
   return new NextResponse(new Uint8Array(file), {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

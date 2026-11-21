@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
 import { PageHeader, Panel, SubTabs, Table, Td, fieldClass, pickTab } from "@/components/admin/ui";
@@ -10,7 +11,7 @@ import { describe } from "@/lib/telegram/format";
 import { archivePastReceipts, saveReceiptArchive, sendArchiveTest } from "@/lib/admin/archive-actions";
 import { Input } from "@/components/ui/input";
 import { requirePermission } from "@/lib/auth/guards";
-import { formatDateTime, zoneToday } from "@/lib/datetime";
+import { formatDateTime, zoneDayStartIso, zoneToday } from "@/lib/datetime";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { groupConfig, securityTelegramConfig, telegramConfig } from "@/lib/telegram/dispatch";
 import { emailConfigured } from "@/lib/email/dispatch";
@@ -65,7 +66,20 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
   const pushProblems = pushSetupProblems();
   const settings = await getSiteSettings();
   const supabase = await createSupabaseServerClient();
-  const { data: rowsRaw } = await supabase.rpc("admin_notifications", { p_limit: 600 });
+  // Search (text + Warsaw dates) or the latest 600.
+  const sq = await searchParams;
+  const DAY = /^\d{4}-\d{2}-\d{2}$/;
+  const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
+  const nq = one(sq.q).trim().slice(0, 100);
+  const nFrom = DAY.test(one(sq.from)) ? one(sq.from) : "";
+  const nTo = DAY.test(one(sq.to)) ? one(sq.to) : "";
+  const searching = !!(nq || nFrom || nTo);
+  const nextDay = (d: string) => new Date(Date.parse(`${d}T00:00:00Z`) + 86400000).toISOString().slice(0, 10);
+  const { data: rowsRaw } = searching
+    ? await supabase.rpc("admin_notifications_search", {
+        p_search: nq || undefined, p_limit: 2000,
+        p_from: nFrom ? zoneDayStartIso(nFrom) : undefined, p_to: nTo ? zoneDayStartIso(nextDay(nTo)) : undefined })
+    : await supabase.rpc("admin_notifications", { p_limit: 600 });
   const rows = (rowsRaw ?? []) as Row[];
   const isProblem = (r: Row) => r.status === "failed" || (r.status === "dead" && !r.last_error?.startsWith("skipped"));
   const problems = rows.filter(isProblem).length;
@@ -75,7 +89,7 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
   const feed = (feedRaw ?? null) as { security: boolean; admin: boolean; notifications: boolean; order_progress?: boolean; printing_requests?: boolean } | null;
   const today = zoneToday();
   const monthAgo = new Date(Date.parse(`${today}T00:00:00Z`) - 30 * 86400000).toISOString().slice(0, 10);
-  const sp = await searchParams;
+  const sp = sq;
   const TABS = [
     { key: "messages", label: "Messages", count: problems },
     { key: "telegram", label: "Telegram groups & alerts" },
@@ -195,7 +209,7 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
             {receiptsConfigured ? <CheckCircle2 className="size-5 text-success" aria-hidden /> : <XCircle className="size-5 text-destructive" aria-hidden />}
             {receiptsConfigured ? "Connected (TELEGRAM_RECEIPTS_BOT_TOKEN / TELEGRAM_RECEIPTS_CHAT_ID)." : "Not connected — set TELEGRAM_RECEIPTS_BOT_TOKEN and TELEGRAM_RECEIPTS_CHAT_ID in Vercel and redeploy. Until then receipt files wait 2 days, then are dropped (the email archive still gets them)."}
           </p>
-          <p className="mb-3 text-xs text-muted-foreground">The receipt file of every verified or rejected payment and top-up, with order, amount, reference, bank account, customer, who decided and why — in addition to the receipt-archive email.</p>
+          <p className="mb-3 text-xs text-muted-foreground">The receipt file of every verified or rejected payment and top-up, with order, amount, reference, bank account, customer, who decided and why — in addition to the receipt-archive email. Also a copy of every Excel export (orders, payments, activity, notifications, sales reports, full export).</p>
           <ActionForm action={sendGroupTest} hidden={{ group: "receipts" }} submitLabel="Send test message" variant="outline" size="sm" />
         </Panel>
         <Panel title="Printing group">
@@ -246,7 +260,7 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
         </div>
       </details>
       <p className="mb-3 text-sm text-muted-foreground">
-        The latest {rows.length} messages, newest first. Pick a category above. Failed messages are retried automatically (1, 2, 4… minutes); after the last attempt press <strong>Retry</strong>.
+        {searching ? `${rows.length} message${rows.length === 1 ? "" : "s"} found` : `The latest ${rows.length} messages`}, newest first. Pick a category above. Failed messages are retried automatically (1, 2, 4… minutes); after the last attempt press <strong>Retry</strong>.
         {problems > 0 && <span className="font-medium text-destructive"> {problems} need attention.</span>}
       </p>
       {problems > 0 && (
@@ -260,7 +274,15 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
           <ActionForm action={retryAllFailed} submitLabel={`Retry all failed (${problems})`} variant="outline" size="sm" />
         </div>
       )}
-      <SubTabs base="/admin/notifications" param="cat" level={2} keep={{ tab: "messages" }} active={cat.key}
+      <form method="get" className="mb-3 flex flex-wrap items-end gap-2" data-testid="notif-search">
+        <input type="hidden" name="tab" value="messages" />
+        <input name="q" defaultValue={nq} placeholder="Order / job number, email, event or error" maxLength={100} aria-label="Search notifications" className={`${fieldClass} max-w-xs`} />
+        <label className="text-sm">From<input type="date" name="from" defaultValue={nFrom} max={today} className={`${fieldClass} mt-1 block w-auto`} /></label>
+        <label className="text-sm">To<input type="date" name="to" defaultValue={nTo} max={today} className={`${fieldClass} mt-1 block w-auto`} /></label>
+        <Button type="submit" variant="outline">Search</Button>
+        {searching && <Link href="/admin/notifications?tab=messages" className="pb-2 text-sm text-primary underline">Clear search</Link>}
+      </form>
+      <SubTabs base="/admin/notifications" param="cat" level={2} keep={{ tab: "messages", q: nq || undefined, from: nFrom || undefined, to: nTo || undefined }} active={cat.key}
         tabs={cats.map((c) => ({ key: c.key, label: c.failed ? `${c.label} · ${c.failed} failed` : c.label, count: c.list.length }))} />
       <section data-category={cat.key} className="space-y-2">
         <p className="text-xs text-muted-foreground">{cat.hint}{cat.key !== "customers" && ` · ${({ security: "Security group", stock: stockConfigured ? "Stock group" : "Orders & payments group (until a stock bot is set)", receipts: "Receipts group", printing: "Printing group", orders: "Orders & payments group" } as Record<string, string>)[cat.group]}`}

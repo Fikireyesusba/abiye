@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { blockEmail, clearReviewedList, markSecurityReviewed, unblockEmail } from "@/lib/admin/security-actions";
 import { requirePermission } from "@/lib/auth/guards";
 import { first } from "@/lib/catalog/search";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateTime, zoneDayStartIso } from "@/lib/datetime";
 import { emailConfigured } from "@/lib/email/dispatch";
 import { pushConfigured } from "@/lib/push/dispatch";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -313,10 +313,27 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
 
   async function Events({ kind, title }: { kind?: string; title: string }) {
     const email = (first(sp.email) ?? "").trim().toLowerCase().slice(0, 254);
-    const { data } = await supabase.rpc("admin_security_events", { p_kind: kind, p_email: email || undefined, p_limit: 200 });
+    const q = (first(sp.q) ?? "").trim().slice(0, 100);
+    const DAY = /^\d{4}-\d{2}-\d{2}$/;
+    const fromDay = DAY.test(first(sp.from) ?? "") ? first(sp.from)! : "";
+    const toDay = DAY.test(first(sp.to) ?? "") ? first(sp.to)! : "";
+    const nextDay = (d: string) => new Date(Date.parse(`${d}T00:00:00Z`) + 86400000).toISOString().slice(0, 10);
+    const { data } = await supabase.rpc("admin_security_events", {
+      p_kind: kind, p_email: email || undefined, p_limit: 1000, p_search: q || undefined,
+      p_from: fromDay ? zoneDayStartIso(fromDay) : undefined, p_to: toDay ? zoneDayStartIso(nextDay(toDay)) : undefined,
+    });
     return (
       <>
-        <p className="mb-3 text-sm text-muted-foreground">{title}{email && <> — for <strong>{email}</strong> · <Link href={`/admin/security?tab=${tab}`} className="text-primary underline">show all</Link></>}. Network = short code of the internet connection (same code = same connection).</p>
+        <form method="get" className="mb-3 flex flex-wrap items-end gap-2" data-testid="events-search">
+          <input type="hidden" name="tab" value={tab} />
+          {email && <input type="hidden" name="email" value={email} />}
+          <input name="q" defaultValue={q} placeholder="Email, event, device or network" maxLength={100} aria-label="Search events" className={`${fieldClass} max-w-xs`} />
+          <label className="text-sm">From<input type="date" name="from" defaultValue={fromDay} className={`${fieldClass} mt-1 block w-auto`} /></label>
+          <label className="text-sm">To<input type="date" name="to" defaultValue={toDay} className={`${fieldClass} mt-1 block w-auto`} /></label>
+          <button type="submit" className="h-10 rounded-md border px-4 text-sm hover:bg-muted">Search</button>
+          {(q || fromDay || toDay) && <Link href={`/admin/security?tab=${tab}`} className="pb-2 text-sm text-primary underline">Clear search</Link>}
+        </form>
+        <p className="mb-3 text-sm text-muted-foreground">{(data ?? []).length} event{(data ?? []).length === 1 ? "" : "s"}{(q || fromDay || toDay) ? " found" : " (newest first)"}. {title}{email && <> — for <strong>{email}</strong> · <Link href={`/admin/security?tab=${tab}`} className="text-primary underline">show all</Link></>}. Network = short code of the internet connection (same code = same connection).</p>
         <Table scroll head={["When", "What", "Email", "Account", "Network", "Device"]} empty="No events.">
           {(data ?? []).map((e) => (
             <tr key={e.id} className="align-top">

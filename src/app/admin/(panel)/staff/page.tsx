@@ -3,7 +3,7 @@ import { ActionForm } from "@/components/admin/action-form";
 import { Field, Frame, PageHeader, Panel, SubTabs, Table, Td, fieldClass, pickTab } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { inviteStaff, removeStaff, resetStaffMfa, resetStaffPassword, updateStaff, updateStaffDetails } from "@/lib/admin/staff-actions";
+import { deleteRole, inviteStaff, removeStaff, resetStaffMfa, resetStaffPassword, saveRole, setMemberPermissions, updateStaff, updateStaffDetails } from "@/lib/admin/staff-actions";
 import { maxBirthDate, personSummary } from "@/lib/age";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/datetime";
@@ -12,15 +12,42 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Staff" };
 
-const ROLES = [
-  { key: "staff", label: "Staff", text: "Assigned orders, fulfillment updates, printing jobs" },
-  { key: "manager", label: "Manager", text: "Products, inventory, all orders, payment verification, reports" },
-  { key: "super_admin", label: "Super Admin", text: "Everything, incl. bank accounts, staff, settings, revenue" },
-] as const;
+/** Permission areas, for grouping the check boxes. */
+const AREA: Record<string, string> = {
+  dashboard: "Dashboard", orders: "Orders", payments: "Payments", wallet: "Wallet", printing: "Printing", products: "Products",
+  categories: "Products", inventory: "Products", customers: "Customers", promotions: "Promotions", reviews: "Reviews",
+  analytics: "Reports", reports: "Reports", settings: "Settings", bank_accounts: "Settings", staff: "Staff", audit: "Activity & security",
+  security: "Activity & security", data: "Export & reset",
+};
 
 export default async function StaffPage({ searchParams }: PageProps<"/admin/staff">) {
   const ctx = await requirePermission("staff.manage");
   const supabase = await createSupabaseServerClient();
+  const [{ data: roleRows }, { data: rolePerms }, { data: allPerms }, { data: personal }] = await Promise.all([
+    supabase.from("admin_roles").select("id, key, name, description, is_builtin").order("id"),
+    supabase.from("role_permissions").select("role_id, permission_key"),
+    supabase.from("admin_permissions").select("key, description").order("key"),
+    supabase.from("profile_permissions").select("profile_id, permission_key"),
+  ]);
+  const ROLES = (roleRows ?? []).map((r) => ({ id: r.id, key: r.key, label: r.name, text: r.description ?? "", builtin: r.is_builtin,
+    perms: new Set((rolePerms ?? []).filter((x) => x.role_id === r.id).map((x) => x.permission_key)) }));
+  const perms = (allPerms ?? []).filter((x) => x.key !== "staff.manage");
+  const areas = [...new Set(perms.map((x) => AREA[x.key.split(".")[0]] ?? "Other"))];
+  const permBoxes = (checked: (k: string) => boolean, locked?: (k: string) => boolean) => (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {areas.map((a) => (
+        <fieldset key={a} className="rounded-md border p-2">
+          <legend className="px-1 text-xs font-medium text-muted-foreground">{a}</legend>
+          {perms.filter((x) => (AREA[x.key.split(".")[0]] ?? "Other") === a).map((x) => (
+            <label key={x.key} className="flex items-start gap-2 py-0.5 text-xs">
+              <input type="checkbox" name="perm" value={x.key} defaultChecked={checked(x.key)} disabled={locked?.(x.key)} className="mt-0.5 size-3.5 accent-[var(--primary)]" />
+              <span>{x.description}{locked?.(x.key) && <span className="text-muted-foreground"> (from the set)</span>}</span>
+            </label>
+          ))}
+        </fieldset>
+      ))}
+    </div>
+  );
   const { data: profiles } = await supabase.from("profiles").select("id, full_name, phone, date_of_birth, sex, is_active, created_at, removed_at, role:admin_roles(key)").order("created_at");
   const current = (profiles ?? []).filter((p) => !p.removed_at);
   const removed = (profiles ?? []).filter((p) => p.removed_at);
@@ -37,7 +64,8 @@ export default async function StaffPage({ searchParams }: PageProps<"/admin/staf
     { key: "team", label: "Team", count: current.length },
     { key: "details", label: "Personal details" },
     { key: "add", label: "Add staff member" },
-    { key: "roles", label: "Roles" },
+    { key: "roles", label: "Permission sets", count: ROLES.length },
+    { key: "personal", label: "Personal permissions" },
     { key: "deleted", label: "Deleted staff", count: removed.length },
   ];
   const tab = pickTab(TABS, (await searchParams).tab);
@@ -137,9 +165,62 @@ export default async function StaffPage({ searchParams }: PageProps<"/admin/staf
           </Panel>
       )}
       {tab === "roles" && (
-          <Panel title="Roles" className="max-w-2xl">
-            <dl className="space-y-2 text-sm">{ROLES.map((r) => <div key={r.key}><dt className="font-medium">{r.label}</dt><dd className="text-muted-foreground">{r.text}</dd></div>)}</dl>
+        <div className="space-y-4" data-testid="permission-sets">
+          <p className="text-sm text-muted-foreground">A permission set decides what its members can see and do. Edit Manager or Staff, or create your own (e.g. “Cashier”), then assign it under Team. Changes apply immediately. Only a Super Admin can manage staff.</p>
+          {ROLES.map((r) => {
+            const members = current.filter((p) => (p.role as unknown as { key: string } | null)?.key === r.key).length;
+            return (
+              <details key={r.id} className="rounded-xl border bg-card p-4" data-role={r.key}>
+                <summary className="flex cursor-pointer flex-wrap items-center gap-2">
+                  <span className="font-medium">{r.label}</span>
+                  {r.builtin && <Badge variant="secondary">built-in</Badge>}
+                  <span className="text-xs text-muted-foreground">{r.key === "super_admin" ? "every permission" : `${r.perms.size} permission${r.perms.size === 1 ? "" : "s"}`} · {members} member{members === 1 ? "" : "s"}</span>
+                  {r.text && <span className="w-full text-xs text-muted-foreground">{r.text}</span>}
+                </summary>
+                {r.key === "super_admin" ? <p className="mt-3 text-sm text-muted-foreground">Super Admin always has every permission and cannot be narrowed.</p> : (
+                  <div className="mt-3 space-y-3">
+                    <ActionForm action={saveRole} hidden={{ roleId: String(r.id) }} submitLabel="Save permission set" size="sm" className="space-y-3">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="text-sm">Name<input name="name" required minLength={2} maxLength={60} defaultValue={r.label} className={`${fieldClass} mt-1`} /></label>
+                        <label className="text-sm">Description<input name="description" maxLength={300} defaultValue={r.text} className={`${fieldClass} mt-1`} /></label>
+                      </div>
+                      {permBoxes((k) => r.perms.has(k))}
+                    </ActionForm>
+                    {!r.builtin && members === 0 && (
+                      <ActionForm action={deleteRole} hidden={{ roleId: String(r.id) }} submitLabel="Delete this set" variant="outline" size="sm" confirm={`Delete the permission set “${r.label}”?`} />
+                    )}
+                  </div>
+                )}
+              </details>
+            );
+          })}
+          <Panel title="New permission set">
+            <ActionForm action={saveRole} hidden={{ roleId: "" }} submitLabel="Create permission set" resetOnSuccess className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="text-sm">Name<input name="name" required minLength={2} maxLength={60} placeholder="e.g. Cashier" className={`${fieldClass} mt-1`} /></label>
+                <label className="text-sm">Description<input name="description" maxLength={300} placeholder="What this set is for" className={`${fieldClass} mt-1`} /></label>
+              </div>
+              {permBoxes((k) => k === "dashboard.view")}
+            </ActionForm>
           </Panel>
+        </div>
+      )}
+      {tab === "personal" && (
+        <Frame search="Search staff…" className="space-y-3 bg-transparent p-0">
+          <p className="text-sm text-muted-foreground">Give one person something extra on top of their permission set (e.g. let one staff member verify payments). Ticked and greyed out = already in their set.</p>
+          {current.filter((p) => p.id !== ctx.userId && (p.role as unknown as { key: string } | null)?.key !== "super_admin").map((p) => {
+            const set = ROLES.find((r) => r.key === (p.role as unknown as { key: string } | null)?.key);
+            const mine = new Set((personal ?? []).filter((x) => x.profile_id === p.id).map((x) => x.permission_key));
+            return (
+              <details key={p.id} data-row className="rounded-xl border bg-card p-4" data-member={email.get(p.id)}>
+                <summary className="cursor-pointer text-sm"><span className="font-medium">{p.full_name}</span> <span className="text-muted-foreground">· {email.get(p.id)} · {set?.label}{mine.size ? ` · +${mine.size} personal` : ""}</span></summary>
+                <ActionForm action={setMemberPermissions} hidden={{ userId: p.id }} submitLabel="Save personal permissions" size="sm" className="mt-3 space-y-3">
+                  {permBoxes((k) => mine.has(k) || !!set?.perms.has(k), (k) => !!set?.perms.has(k))}
+                </ActionForm>
+              </details>
+            );
+          })}
+        </Frame>
       )}
     </>
   );

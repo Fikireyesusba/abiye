@@ -186,6 +186,12 @@ const cron = () => fetch(`${B}/api/cron/notifications`, { headers: { authorizati
     check(printFiles.includes("My thesis.pdf"), "as a file with the customer's file name");
     check(!orderMsgs.some((t) => t.includes("PRINT — PAID")) && !recMsgs.some((t) => t.includes("PRINT — PAID")), "only in the printing group");
 
+    // ---- every Excel export: a copy (the file) in the receipts group
+    const tday = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw" }).format(new Date());
+    const exp = await o.request.get(`${B}/admin/orders/export?from=${tday}&to=${tday}&status=all`);
+    check(exp.ok(), "orders exported");
+    check(await waitFor(() => recMsgs.some((t) => t.includes("EXCEL EXPORT") && t.includes(`orders-${tday}_to_${tday}.xlsx`))), "the Excel file was also sent to the receipts group");
+
     // ---- bot without rights → hint + Retry all failed
     rightsError = true;
     await o.locator("button:has-text('Send test message')").first().click();

@@ -36,12 +36,15 @@ export const PERMISSIONS = [
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
-export type RoleKey = "super_admin" | "manager" | "staff";
+/** Built-in sets are super_admin, manager, staff; a Super Admin can create more (Staff → Permission sets). */
+export type RoleKey = string;
 
 export interface AdminContext {
   userId: string;
   fullName: string;
   role: RoleKey;
+  /** Display name of the person's permission set (e.g. "Manager", "Cashier"). */
+  roleName: string;
   permissions: ReadonlySet<Permission>;
 }
 
@@ -60,13 +63,13 @@ const isPermission = (p: unknown): p is Permission =>
 export function parseAdminContext(raw: unknown): AdminContext | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
-  if (typeof r.user_id !== "string" || typeof r.role !== "string") return null;
-  if (!["super_admin", "manager", "staff"].includes(r.role)) return null;
+  if (typeof r.user_id !== "string" || typeof r.role !== "string" || !/^[a-z_]{2,40}$/.test(r.role)) return null;
   const perms = Array.isArray(r.permissions) ? r.permissions.filter(isPermission) : [];
   return {
     userId: r.user_id,
     fullName: typeof r.full_name === "string" ? r.full_name : "",
-    role: r.role as RoleKey,
+    role: r.role,
+    roleName: typeof r.role_name === "string" && r.role_name ? r.role_name : r.role.replaceAll("_", " "),
     permissions: new Set(perms),
   };
 }

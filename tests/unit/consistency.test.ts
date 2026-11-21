@@ -53,10 +53,11 @@ describe("TypeScript ↔ SQL consistency", () => {
 });
 
 describe("admin context parsing", () => {
-  it("drops unknown permissions and rejects unknown roles", () => {
+  it("drops unknown permissions; accepts custom permission sets, rejects malformed role keys", () => {
     const ctx = parseAdminContext({ user_id: "u", full_name: "A", role: "staff", permissions: ["orders.view_assigned", "god.mode"] });
     expect([...ctx!.permissions]).toEqual(["orders.view_assigned"]);
-    expect(parseAdminContext({ user_id: "u", role: "owner", permissions: [] })).toBeNull();
+    expect(parseAdminContext({ user_id: "u", role: "cashier", role_name: "Cashier", permissions: [] })?.roleName).toBe("Cashier");
+    expect(parseAdminContext({ user_id: "u", role: "Owner!", permissions: [] })).toBeNull();
     expect(parseAdminContext(null)).toBeNull();
   });
 });

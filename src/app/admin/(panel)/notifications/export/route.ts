@@ -5,6 +5,7 @@ import { wallClock } from "@/lib/datetime";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { describe } from "@/lib/telegram/format";
+import { sendExportCopy } from "@/lib/telegram/export-copy";
 
 export const maxDuration = 60;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -53,6 +54,7 @@ export async function GET(request: Request) {
 
   await supabase.rpc("admin_log_export", { p_kind: "notifications", p_metadata: { from, to, type: "all", rows: rows.length } });
   const file = await wb.xlsx.writeBuffer();
+  sendExportCopy(file as ArrayBuffer | Uint8Array, `notifications-${from}_to_${to}.xlsx`, "Notifications", ctx.fullName, rows.length); // copy to the receipts Telegram group
   return new NextResponse(new Uint8Array(file as ArrayBuffer), {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

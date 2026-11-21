@@ -5,6 +5,7 @@ import { getSiteSettings } from "@/lib/catalog/settings";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { zoneStamp } from "@/lib/datetime";
+import { sendExportCopy } from "@/lib/telegram/export-copy";
 
 export const maxDuration = 60;
 const MAX_ROWS_PER_AREA = 100_000;
@@ -36,6 +37,7 @@ export async function GET() {
   });
   if (logError) return new NextResponse("Could not record the export. Try again.", { status: 500 });
   const day = zoneStamp(new Date()).replace(/[ :]/g, "-");
+  sendExportCopy(file as ArrayBuffer | Uint8Array, `full-export-${day}.xlsx`, "Everything (full export)", ctx.fullName); // copy to the receipts Telegram group
   return new NextResponse(new Uint8Array(file), {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
