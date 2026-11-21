@@ -168,7 +168,7 @@ const cron = () => fetch(`${B}/api/cron/notifications`, { headers: { authorizati
     const beforeRetry = orderMsgs.length;
     await o.click("button:has-text('Retry all failed')");
     await o.waitForSelector("[data-sonner-toast]:has-text('retried')");
-    check(orderMsgs.slice(beforeRetry).some((t) => t.includes("Test message — orders & payments group")), "Retry all failed delivers once the bot can post");
+    check(await waitFor(() => orderMsgs.slice(beforeRetry).some((t) => t.includes("Test message — orders & payments group"))), "Retry all failed delivers once the bot can post");
 
     // ---- switches: security off → no more security messages
     await o.goto(`${B}/admin/notifications`);
