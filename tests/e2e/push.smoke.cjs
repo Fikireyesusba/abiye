@@ -114,7 +114,7 @@ async function waitFor(fn, ms = 15000) {
     }, { endpoint: ENDPOINT, p256dh: b64u(device.getPublicKey()), auth: b64u(authSecret) });
     const p = await ctx.newPage();
     await loginCustomer(p, B, email, "PushE2E2026x");
-    await p.goto(`${B}/account`);
+    await p.goto(`${B}/account/notifications`);
     await p.waitForSelector("button:has-text('Turn on notifications')");
     check(true, "My account offers phone notifications");
     await p.click("button:has-text('Turn on notifications')");
@@ -165,7 +165,7 @@ async function waitFor(fn, ms = 15000) {
     check(sql(`select count(*) from push_subscriptions where endpoint = '${OLD}'`) === "0", "a device that uninstalled (410) is removed");
 
     // ---- turn off
-    await p.goto(`${B}/account`);
+    await p.goto(`${B}/account/notifications`);
     await p.click("button:has-text('Turn off')");
     await p.waitForSelector("button:has-text('Turn on notifications')");
     check(sql(`select count(*) from push_subscriptions where user_id = '${userId}'`) === "0", "turning off removes the device");
@@ -174,7 +174,7 @@ async function waitFor(fn, ms = 15000) {
     const { devices } = require("playwright");
     const ip = await (await b.newContext({ ...devices["iPhone 14"] })).newPage();
     await loginCustomer(ip, B, email, "PushE2E2026x");
-    await ip.goto(`${B}/account`);
+    await ip.goto(`${B}/account/notifications`);
     await ip.waitForSelector("text=notifications work in the installed app", { timeout: 10000 }).catch(() => null);
     check(await ip.locator("text=notifications work in the installed app").count() === 1, "iPhone (browser): explains to install the app first");
   } catch (e) {

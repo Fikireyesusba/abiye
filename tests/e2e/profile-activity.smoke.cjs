@@ -31,6 +31,10 @@ const addisDay = (offsetDays = 0) => new Intl.DateTimeFormat("en-CA", { timeZone
     const c = await (await b.newContext()).newPage();
     await loginCustomer(c, B, email, "ProfileE2E2026x");
     await c.goto(`${B}/account`);
+    check(await c.locator("[data-testid=account-menu] a").count() >= 2 && (await c.locator("main").innerText()).indexOf("balance") < (await c.locator("main").innerText()).indexOf("Personal details"),
+      "My account: balance on top, then a menu");
+    await c.click("[data-testid=account-menu] a[href='/account/details']");
+    await c.waitForURL(/\/account\/details$/);
     check(await c.locator("text=/^Personal details$/").count() === 1 && await c.locator("#phone").count() === 0
       && await c.locator("button:has-text('Change delivery details')").count() === 1, "details shown read-only with a change button");
     check((await c.locator("main").innerText()).includes(email) && (await c.locator("main").innerText()).includes("can only be changed by us"), "email shown, and how to change details");

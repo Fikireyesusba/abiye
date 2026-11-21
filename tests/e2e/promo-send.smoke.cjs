@@ -68,7 +68,9 @@ const to = (email) => mails.filter((m) => m.to?.[0] === email);
     const c = await (await b.newContext()).newPage();
     await loginCustomer(c, B, email, "GiftE2E2026x");
     await c.goto(`${B}/account`);
-    check((await c.locator("#offers").innerText()).includes(code), "customer sees it under My offers");
+    await c.click("[data-testid=account-menu] a[href='/account/offers']");
+    await c.waitForURL(/\/account\/offers$/);
+    check((await c.locator("#offers").innerText()).includes(code), "customer sees it under My offers (from the My account menu)");
 
     // existing personal promotion, notify OFF → no email
     sql(`insert into promotions (title_en, title_am, code, discount_type, discount_value, restricted, is_active) values ('Quiet ${RUN}', 'ጸጥ', 'QUIET${RUN.toUpperCase()}', 'percent', 5, true, true)`);

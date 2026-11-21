@@ -84,7 +84,7 @@ async function tryCode(page, code) {
     // customer sees and uses it
     const cp = await (await b.newContext()).newPage();
     await loginCustomer(cp, B, vip, "VipCustomer2026");
-    await cp.goto(`${B}/account`);
+    await cp.goto(`${B}/account/offers`);
     const acc = await cp.locator("main").innerText();
     check(acc.includes(CODE) && acc.includes(CODE2), "customer sees the codes under My offers");
     check(await tryCode(cp, CODE.toLowerCase()) === "applied", "the chosen customer can use the code");
@@ -94,7 +94,7 @@ async function tryCode(page, code) {
     const xp = await (await b.newContext()).newPage();
     await loginCustomer(xp, B, other, "OtherCustomer2026");
     check(await tryCode(xp, CODE) === "error", "another customer cannot use it");
-    await xp.goto(`${B}/account`);
+    await xp.goto(`${B}/account/offers`);
     check(!(await xp.locator("main").innerText()).includes(CODE), "another customer does not see it");
     const home = await (await b.newContext()).newPage();
     await home.goto(B);
@@ -104,7 +104,7 @@ async function tryCode(page, code) {
     await op.goto(`${B}/admin/customers/${vipId}?tab=promos`);
     await op.locator("li", { hasText: CODE2 }).locator("button:has-text('Remove')").click();
     await toast(op, "Code removed");
-    await cp.goto(`${B}/account`);
+    await cp.goto(`${B}/account/offers`);
     check(!(await cp.locator("main").innerText()).includes(CODE2), "a removed code disappears for the customer");
   } catch (e) {
     check(false, `crashed: ${e.message}`);

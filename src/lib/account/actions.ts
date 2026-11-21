@@ -188,7 +188,7 @@ export async function updateCustomerAccount(_prev: AccountState, fd: FormData): 
       default_zone_id: zone || null, default_address: address || null,
     })
     .eq("id", user.id);
-  if (!error) revalidatePath("/account");
+  if (!error) { revalidatePath("/account"); revalidatePath("/account/details"); }
   return error ? { error: "generic" } : { ok: "saved" };
 }
 
