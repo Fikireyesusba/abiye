@@ -3,9 +3,8 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Info, Languages, Mail, Menu, PackageSearch, ShoppingBag, UserRound } from "lucide-react";
+import { CircleHelp, Info, Languages, Mail, PackageSearch, ShoppingBag, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { setLocale } from "@/i18n/actions";
 import { useCartCount } from "@/lib/cart/store";
 import { cn } from "@/lib/utils";
@@ -27,7 +26,7 @@ export function CartButton() {
   );
 }
 
-const MENU_ICONS: Record<string, typeof UserRound> = { "/account": UserRound, "/track-order": PackageSearch, "/about": Info, "/contact": Mail };
+const MENU_ICONS: Record<string, typeof UserRound> = { "/account": UserRound, "/track-order": PackageSearch, "/about": Info, "/contact": Mail, "/help": CircleHelp };
 
 /** Profile icon (top right): My account, Track order, About, Contact and the language switch. */
 export function AccountMenu({ links }: { links: NavLink[] }) {
@@ -101,10 +100,10 @@ export interface NavLink {
   label: string;
 }
 
-export function DesktopNav({ links }: { links: NavLink[] }) {
+export function MainNav({ links }: { links: (NavLink & { always?: boolean })[] }) {
   const pathname = usePathname();
   return (
-    <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
+    <nav className="flex items-center gap-0.5 sm:gap-1" aria-label="Main">
       {links.map((l) => {
         const active = l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
         return (
@@ -113,8 +112,9 @@ export function DesktopNav({ links }: { links: NavLink[] }) {
             href={l.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
+              "rounded-md px-2.5 py-2 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground sm:px-3",
               active && "text-foreground",
+              !l.always && "hidden lg:inline-flex",
             )}
           >
             {l.label}
@@ -122,32 +122,5 @@ export function DesktopNav({ links }: { links: NavLink[] }) {
         );
       })}
     </nav>
-  );
-}
-
-export function MobileNav({ links, title }: { links: NavLink[]; title: string }) {
-  const t = useTranslations("header");
-  return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t("openMenu")}>
-          <Menu className="size-5" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" closeLabel={t("closeMenu")}>
-        <SheetHeader className="border-b">
-          <SheetTitle>{title}</SheetTitle>
-        </SheetHeader>
-        <nav className="flex flex-col px-2" aria-label="Mobile">
-          {links.map((l) => (
-            <SheetClose asChild key={l.href}>
-              <Link href={l.href} className="rounded-md px-3 py-3 text-base font-medium hover:bg-secondary">
-                {l.label}
-              </Link>
-            </SheetClose>
-          ))}
-        </nav>
-      </SheetContent>
-    </Sheet>
   );
 }

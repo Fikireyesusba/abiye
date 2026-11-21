@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import { publicImageUrl } from "@/lib/storage";
 import type { Locale } from "@/i18n/config";
-import { AccountMenu, CartButton, DesktopNav, MobileNav } from "./header-client";
+import { AccountMenu, CartButton, MainNav } from "./header-client";
 
 export async function SearchForm({ defaultValue, className }: { defaultValue?: string; className?: string }) {
   const t = await getTranslations();
@@ -34,18 +34,21 @@ export async function SiteHeader() {
   const [settings, t, locale] = await Promise.all([getSiteSettings(), getTranslations(), getLocale() as Promise<Locale>]);
   const name = settings.business.name[locale] || settings.business.name.en;
   const logo = publicImageUrl("site-assets", settings.business.logo_path);
+  // Home and Shop always show; the departments join them on wide screens
+  // (on phones they are on the home page under "Shop by Category").
   const links = [
-    { href: "/shop", label: t("nav.shop") },
+    { href: "/", label: t("nav.home"), always: true },
+    { href: "/shop", label: t("nav.shop"), always: true },
     { href: "/cosmetics", label: t("nav.cosmetics") },
     { href: "/electronics", label: t("nav.electronics") },
     { href: "/printing", label: t("nav.printing") },
-    { href: "/help", label: t("nav.help") },
   ];
   const secondary = [
     { href: "/account", label: t("account.title") },
     { href: "/track-order", label: t("nav.trackOrder") },
     { href: "/about", label: t("nav.about") },
     { href: "/contact", label: t("nav.contact") },
+    { href: "/help", label: t("nav.help") },
   ];
 
   return (
@@ -54,7 +57,6 @@ export async function SiteHeader() {
         {t("header.skipToContent")}
       </a>
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-4 sm:gap-4">
-        <MobileNav links={[{ href: "/", label: t("nav.home") }, ...links]} title={name} />
         <Link href="/" aria-label={name} className="flex shrink-0 items-center gap-2 font-semibold tracking-tight">
           {logo ? (
             <Image src={logo} alt={name} width={120} height={36} className="h-9 w-auto" priority />
@@ -63,9 +65,9 @@ export async function SiteHeader() {
               {(name.match(/[\p{L}\p{N}]/u)?.[0] ?? "S").toUpperCase()}
             </span>
           )}
-          <span className="hidden max-w-[12rem] truncate text-lg sm:inline">{name}</span>
+          <span className="hidden max-w-[12rem] truncate text-lg xl:inline">{name}</span>
         </Link>
-        <DesktopNav links={links} />
+        <MainNav links={links} />
         <SearchForm className="ml-auto hidden w-full max-w-xs md:block" />
         <div className="ml-auto flex items-center gap-1 md:ml-0">
           <AccountMenu links={secondary} />

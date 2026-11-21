@@ -120,7 +120,7 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 Migration **0043** (`products.audience`: women / men / unisex, optional; anon can read it). SQL `99zzm_*`; storefront suite +9 checks.
 - Admin product form: "For (optional)" — Everyone / Women / Men / Unisex.
 - Shop lists (`/shop`, `/cosmetics`, `/electronics`): "For: Everyone · Women · Men" chips (`?for=`), shown when products in that list have it; unisex appears under both. Product cards show "For women / For men / Unisex"; product page shows "For".
-- Header: the person icon opens a menu (My account, Track order, About, Contact, language). These left the ☰ menu, which now holds only the shop sections.
+- Header: no ☰ side menu any more. Top bar: logo, **Home** and **Shop** (Cosmetics / Electronics / Printing join them on wide screens; on phones they are on the home page), profile icon, basket. The profile icon opens My account, Track order, About, Contact, Help and the language switch.
 - Home: "Shop by Category" moved right under the hero — compact Cosmetics / Electronics / Printing tiles plus one-tap sub-category chips (Perfumes, Smartphones …) linking to `/<department>?category=<slug>`. Hero shorter on phones.
 
 ## Payments & top-ups open one at a time; Super Admin deactivates / deletes staff (requested 2026-11-21) — verified

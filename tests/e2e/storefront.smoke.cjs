@@ -166,10 +166,16 @@ function resetSampleStock() {
   // Mobile
   const m = await b.newPage({ viewport: { width: 390, height: 844 } });
   await m.goto(B + '/', { waitUntil: 'networkidle' });
-  await m.click('button[aria-label="Open menu"]');
-  await m.click('[role=dialog] a:has-text("Electronics")');
+  check(await m.locator('button[aria-label="Open menu"]').count() === 0, 'no side menu on phones');
+  check(await m.locator('nav[aria-label=Main] a:visible').allTextContents().then((x) => x.join(',')) === 'Home,Shop', 'phone header shows Home and Shop');
+  await m.click('header button[aria-controls=account-menu]');
+  await m.click('#account-menu a[href="/help"]');
+  await m.waitForURL(/\/help/);
+  check(true, 'Help is in the profile menu');
+  await m.goto(B + '/', { waitUntil: 'networkidle' });
+  await m.click('section:has(#home-categories) a[href="/electronics"]');
   await m.waitForURL(/electronics/);
-  check(true, 'mobile menu navigates');
+  check(true, 'phone reaches departments from the home page');
   const overflow = await m.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   check(!overflow, 'no horizontal overflow on mobile');
 
