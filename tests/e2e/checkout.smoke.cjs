@@ -82,8 +82,7 @@ function resetSampleStock() {
   const orderNumber = (await p.locator("h1").textContent()).replace("Order ", "");
   check((await p.locator("text=1000000000000").count()) > 0, "bank account number shown");
   check((await p.locator("text=6,700 ETB").count()) > 0, "exact amount shown");
-  const trackingCode = (await p.locator("code").first().textContent()).trim();
-  check(/^[0-9A-Z]{5}-[0-9A-Z]{5}$/.test(trackingCode), `tracking code shown (${trackingCode})`);
+  check(!(await p.locator("main").innerText()).includes("Tracking code"), "no tracking code: tracking is by sign-in now");
   check((await p.evaluate(() => localStorage.getItem("cart:v1"))) === "[]", "basket cleared after order");
   check(Number(sql(`select stock_quantity from products where id = '${PERFUME}'`)) === stockBefore - 2, "stock reserved in database");
   const dbTotal = sql(`select total_etb from orders where id = '${orderId}'`);
@@ -139,24 +138,30 @@ function resetSampleStock() {
   check((await fetch(`${B}/order-success/${orderId}?t=${"A".repeat(43)}`, { redirect: "manual" })).headers.get("referrer-policy") === "no-referrer",
     "order page sends Referrer-Policy: no-referrer");
 
-  // ---- Tracking (no personal data)
+  // ---- Tracking: signed-in customers, their own orders only
   await o.goto(B + "/track-order");
-  await o.fill("#orderNumber", orderNumber.toLowerCase());
-  await o.fill("#trackingCode", trackingCode.replace("-", " ").toLowerCase());
-  await o.click("button[type=submit]");
-  await o.waitForSelector(`h2:text("${orderNumber}")`);
-  const html = await o.content();
-  check(html.includes("Pending verification"), "tracking shows status");
+  check(new URL(o.url()).pathname === "/account/login" && o.url().includes("next=%2Ftrack-order"), "track order asks a signed-out visitor to sign in");
+  await p.goto(B + "/track-order");
+  await p.fill("#orderNumber", orderNumber.toLowerCase());
+  await p.click("button[type=submit]");
+  await p.waitForSelector(`h2:text("${orderNumber}")`);
+  const html = await p.content();
+  check(html.includes("Pending verification"), "tracking shows status of the customer's own order");
   check(!html.includes("Abebe") && !html.includes("911223344") && !html.includes("Bole"), "tracking reveals no name/phone/address");
-  await o.fill("#trackingCode", "AAAAA-AAAAA");
-  await o.click("button[type=submit]");
-  await o.waitForSelector("text=No order matches");
-  check(true, "wrong tracking code: not found");
-  for (let i = 0; i < 4; i++) {
-    await o.click("button[type=submit]");
-    await o.waitForTimeout(400);
+  check(await p.locator("#trackingCode").count() === 0, "no tracking code asked");
+  const otherOrder = sql("select order_number from orders where user_id is distinct from (select id from auth.users where email = '" + CUSTOMER.email + "') order by created_at desc limit 1");
+  if (otherOrder) {
+    await p.fill("#orderNumber", otherOrder);
+    await p.click("button[type=submit]");
+    await p.waitForSelector("text=None of your orders");
+    check(true, `another customer's order (${otherOrder}) cannot be tracked`);
   }
-  check((await o.locator("text=Too many attempts").count()) === 1, "tracking brute force is rate-limited");
+  for (let i = 0; i < 10; i++) {
+    await p.click("button[type=submit]");
+    await p.waitForTimeout(300);
+  }
+  check((await p.locator("text=Too many attempts").count()) === 1, "tracking lookups are rate-limited");
+  sql("delete from rate_limits where key like 'track:%'");
 
   // ---- Expiry
   await p.goto(B + "/");

@@ -19,16 +19,11 @@ export function TrackForm() {
 
   return (
     <div className="space-y-8">
-      <form action={action} key={state.submitted ?? 0} className="grid gap-4 rounded-xl border bg-card p-5 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+      <form action={action} key={state.submitted ?? 0} className="grid gap-4 rounded-xl border bg-card p-5 sm:grid-cols-[1fr_auto] sm:items-end">
         <div className="space-y-2">
           <Label htmlFor="orderNumber">{t("track.orderNumber")}</Label>
           <Input id="orderNumber" name="orderNumber" defaultValue={state.values?.orderNumber} required maxLength={12} autoComplete="off" autoCapitalize="characters"
             placeholder={t("track.orderNumberHint")} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="trackingCode">{t("track.trackingCode")}</Label>
-          <Input id="trackingCode" name="trackingCode" defaultValue={state.values?.trackingCode} required maxLength={12} autoComplete="off" autoCapitalize="characters"
-            spellCheck={false} placeholder={t("track.trackingHint")} className="font-mono tracking-wider" />
         </div>
         <Button type="submit" disabled={pending} size="lg">
           {pending ? <Loader2 className="animate-spin" /> : <Search />}

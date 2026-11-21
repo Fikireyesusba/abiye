@@ -1,8 +1,8 @@
 "use server";
 import type { AppErrorCode } from "@/lib/errors";
+import { getCustomerUser } from "@/lib/account/session";
 import { clientIpKey, rateLimitAll } from "@/lib/security/rate-limit";
-import { normalizeTrackingCode, sha256Hex } from "@/lib/security/tokens";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export interface TrackedOrder {
   order_number: string;
@@ -20,38 +20,38 @@ export type TrackState = {
   error?: AppErrorCode;
   submitted?: number;
   /** Echo of the user's own input so the form keeps it after React resets the form. */
-  values?: { orderNumber: string; trackingCode: string };
+  values?: { orderNumber: string };
 };
 
 /**
- * Order lookup by order number + tracking code. Deliberately returns NO
- * personal data (no name, phone or address). Rate-limited per IP and per
- * order number; failures are indistinguishable ("order_not_found").
+ * Order lookup by order number, for the SIGNED-IN customer's own orders only
+ * (the query runs with the customer's session, so database rules also limit it
+ * to their orders). Rate-limited per account and IP; another customer's order
+ * number gives the same "order_not_found" as a number that does not exist.
  */
 export async function trackOrder(_prev: TrackState, formData: FormData): Promise<TrackState> {
   const submitted = Date.now();
   const rawNumber = String(formData.get("orderNumber") ?? "").slice(0, 20);
-  const rawCode = String(formData.get("trackingCode") ?? "").slice(0, 20);
-  const values = { orderNumber: rawNumber, trackingCode: rawCode };
+  const values = { orderNumber: rawNumber };
+  const user = await getCustomerUser();
+  if (!user) return { error: "login_required", submitted, values };
   const orderNumber = rawNumber.trim().toUpperCase().replace(/\s+/g, "");
-  const code = normalizeTrackingCode(rawCode);
   const numberOk = /^ET-?\d{5,9}$/.test(orderNumber);
   const normalizedNumber = numberOk ? orderNumber.replace(/^ET-?/, "ET-") : "";
 
   const ip = await clientIpKey();
-  const checks: Array<[string, number, number]> = [[`track:ip:${ip}`, 10, 900]];
-  if (normalizedNumber) checks.push([`track:order:${normalizedNumber}`, 5, 900]);
-  if (!(await rateLimitAll(checks))) return { error: "rate_limited", submitted, values };
-  if (!numberOk || !code) return { error: "order_not_found", submitted, values };
+  if (!(await rateLimitAll([[`track:ip:${ip}`, 20, 900], [`track:user:${user.id}`, 10, 900]]))) return { error: "rate_limited", submitted, values };
+  if (!numberOk) return { error: "order_not_found", submitted, values };
 
-  const { data, error } = await getSupabaseAdmin()
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
     .from("orders")
     .select(
       `order_number, status, payment_status, fulfillment_method, total_etb, created_at,
        items:order_items ( name_en, name_am, quantity ), history:order_status_history ( to_status, created_at )`,
     )
     .eq("order_number", normalizedNumber)
-    .eq("tracking_code_hash", sha256Hex(code))
+    .eq("user_id", user.id)
     .maybeSingle();
   if (error) {
     console.error("[track] lookup failed:", error.message);
@@ -59,6 +59,7 @@ export async function trackOrder(_prev: TrackState, formData: FormData): Promise
   }
   if (!data) return { error: "order_not_found", submitted, values };
   const result = data as unknown as TrackedOrder;
-  result.history.sort((a, b) => a.created_at.localeCompare(b.created_at));
+  result.items ??= [];
+  result.history = (result.history ?? []).sort((a, b) => a.created_at.localeCompare(b.created_at));
   return { result, submitted, values };
 }

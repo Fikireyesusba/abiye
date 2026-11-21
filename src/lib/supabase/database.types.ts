@@ -131,14 +131,14 @@ isOneToOne: false
                   ]
                 },"customer_accounts": {
                   Row: {
-                    "accepted_terms_at": string | null,"created_at": string,"date_of_birth": string | null,"deactivated_at": string | null,"deactivated_by": string | null,"deactivation_reason": string | null,"default_address": string | null,"default_zone_id": string | null,"full_name": string | null,"id": string,"phone": string | null,"sex": string | null,"updated_at": string,"wallet_balance_etb": number
+                    "accepted_terms_at": string | null,"created_at": string,"date_of_birth": string | null,"deactivated_at": string | null,"deactivated_by": string | null,"deactivation_reason": string | null,"default_address": string | null,"default_zone_id": string | null,"full_name": string | null,"id": string,"member_id": string,"phone": string | null,"sex": string | null,"updated_at": string,"wallet_balance_etb": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "accepted_terms_at"?: string | null,"created_at"?: string,"date_of_birth"?: string | null,"deactivated_at"?: string | null,"deactivated_by"?: string | null,"deactivation_reason"?: string | null,"default_address"?: string | null,"default_zone_id"?: string | null,"full_name"?: string | null,"id": string,"phone"?: string | null,"sex"?: string | null,"updated_at"?: string,"wallet_balance_etb"?: number
+                    "accepted_terms_at"?: string | null,"created_at"?: string,"date_of_birth"?: string | null,"deactivated_at"?: string | null,"deactivated_by"?: string | null,"deactivation_reason"?: string | null,"default_address"?: string | null,"default_zone_id"?: string | null,"full_name"?: string | null,"id": string,"member_id": string,"phone"?: string | null,"sex"?: string | null,"updated_at"?: string,"wallet_balance_etb"?: number
                   }
                   Update: {
-                    "accepted_terms_at"?: string | null,"created_at"?: string,"date_of_birth"?: string | null,"deactivated_at"?: string | null,"deactivated_by"?: string | null,"deactivation_reason"?: string | null,"default_address"?: string | null,"default_zone_id"?: string | null,"full_name"?: string | null,"id"?: string,"phone"?: string | null,"sex"?: string | null,"updated_at"?: string,"wallet_balance_etb"?: number
+                    "accepted_terms_at"?: string | null,"created_at"?: string,"date_of_birth"?: string | null,"deactivated_at"?: string | null,"deactivated_by"?: string | null,"deactivation_reason"?: string | null,"default_address"?: string | null,"default_zone_id"?: string | null,"full_name"?: string | null,"id"?: string,"member_id"?: string,"phone"?: string | null,"sex"?: string | null,"updated_at"?: string,"wallet_balance_etb"?: number
                   }
                   Relationships: [
                     {
@@ -856,7 +856,7 @@ isOneToOne: false
                            },
 "admin_customer_accounts":
 { Args: { "p_limit"?: number,"p_search"?: string,"p_user_id"?: string }; Returns: {
-              "created_at": string,"deactivated_at": string,"deactivated_by_name": string,"deactivation_reason": string,"email": string,"email_confirmed_at": string,"full_name": string,"id": string,"is_staff": boolean,"last_order_at": string,"last_sign_in_at": string,"order_count": number,"phone": string
+              "created_at": string,"deactivated_at": string,"deactivated_by_name": string,"deactivation_reason": string,"email": string,"email_confirmed_at": string,"full_name": string,"id": string,"is_staff": boolean,"last_order_at": string,"last_sign_in_at": string,"member_id": string,"order_count": number,"phone": string
             }[]
                            },
 "admin_customer_activity":

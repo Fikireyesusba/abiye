@@ -34,6 +34,12 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         <div>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t("account.title")}</h1>
           <p className="text-sm text-muted-foreground">{user.email}</p>
+          {account?.member_id && (
+            <p className="mt-1 text-sm">
+              <span className="text-muted-foreground">{t("account.memberId")}: </span>
+              <span className="font-mono font-semibold tracking-widest" data-testid="member-id">{account.member_id}</span>
+            </p>
+          )}
         </div>
         <form action={signOutCustomer}>
           <Button type="submit" variant="outline" size="sm"><LogOut /> {t("account.signOut")}</Button>

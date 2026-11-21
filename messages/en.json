@@ -415,14 +415,14 @@
   },
   "track": {
     "title": "Track your order",
-    "intro": "Enter your order number and the tracking code shown after checkout.",
+    "intro": "Enter the number of one of your orders (for example ET-10025). You can also see all your orders under My account → My orders.",
     "orderNumber": "Order number",
     "orderNumberHint": "e.g. ET-10025",
     "trackingCode": "Tracking code",
     "trackingHint": "e.g. 7K2QX-9MFDA",
     "submit": "Track order",
     "searching": "Searching…",
-    "notFound": "No order matches that order number and tracking code.",
+    "notFound": "None of your orders has that order number.",
     "placedOn": "Placed {date}"
   },
   "printJob": {
@@ -457,6 +457,7 @@
     "retentionDone": "Your files have been deleted from our system."
   },
   "account": {
+    "memberId": "Member ID",
     "personalDetails": "Personal details",
     "changeDetails": "Change delivery details",
     "cancel": "Cancel",

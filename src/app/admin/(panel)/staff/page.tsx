@@ -54,6 +54,8 @@ export default async function StaffPage({ searchParams }: PageProps<"/admin/staf
   // Emails live in auth.users; read them server-side only, after the permission check above.
   const { data: users } = await getSupabaseAdmin().auth.admin.listUsers({ perPage: 1000 });
   const email = new Map((users?.users ?? []).map((u) => [u.id, u.email ?? ""]));
+  const { data: ids } = await getSupabaseAdmin().from("customer_accounts").select("id, member_id").in("id", (profiles ?? []).map((p) => p.id));
+  const memberId = new Map((ids ?? []).map((r) => [r.id, r.member_id]));
   // Two-step login status per staff member (few accounts: one lookup each).
   const twoStep = new Map(await Promise.all(current.map(async (p) => {
     const { data } = await getSupabaseAdmin().auth.admin.mfa.listFactors({ userId: p.id });
@@ -81,7 +83,7 @@ export default async function StaffPage({ searchParams }: PageProps<"/admin/staf
             const roleKey = (p.role as unknown as { key: string } | null)?.key ?? "staff";
             return (
               <tr key={p.id}>
-                <Td><span className="font-medium">{p.full_name}</span>{self && <Badge variant="secondary" className="ml-2">you</Badge>}<span className="block text-xs text-muted-foreground">{email.get(p.id)}</span>{personSummary(p.sex, p.date_of_birth) && <span className="block text-xs text-muted-foreground">{personSummary(p.sex, p.date_of_birth)}</span>}</Td>
+                <Td><span className="font-medium">{p.full_name}</span>{self && <Badge variant="secondary" className="ml-2">you</Badge>}<span className="block text-xs text-muted-foreground">{email.get(p.id)}</span><span className="block font-mono text-xs tracking-wider text-muted-foreground" data-testid="member-id">ID {memberId.get(p.id) ?? "—"}</span>{personSummary(p.sex, p.date_of_birth) && <span className="block text-xs text-muted-foreground">{personSummary(p.sex, p.date_of_birth)}</span>}</Td>
                 <Td>
                   {self ? ROLES.find((r) => r.key === roleKey)?.label : (
                     <ActionForm action={updateStaff} hidden={{ userId: p.id, active: String(p.is_active) }} submitLabel="Save" size="sm" variant="outline" className="flex flex-wrap gap-2 space-y-0">
@@ -129,7 +131,7 @@ export default async function StaffPage({ searchParams }: PageProps<"/admin/staf
         <Frame search="Search staff…" className="space-y-3 bg-transparent p-0">
           {current.map((p) => (
             <div key={p.id} data-row className="rounded-xl border bg-card p-4">
-              <p className="mb-2 text-sm font-medium">{p.full_name} <span className="font-normal text-muted-foreground">· {email.get(p.id)}{personSummary(p.sex, p.date_of_birth) && ` · ${personSummary(p.sex, p.date_of_birth)}`}</span></p>
+              <p className="mb-2 text-sm font-medium">{p.full_name} <span className="font-normal text-muted-foreground">· ID {memberId.get(p.id) ?? "—"} · {email.get(p.id)}{personSummary(p.sex, p.date_of_birth) && ` · ${personSummary(p.sex, p.date_of_birth)}`}</span></p>
               <ActionForm action={updateStaffDetails} hidden={{ userId: p.id }} submitLabel="Save" size="sm" variant="outline" className="grid items-end gap-2 space-y-0 sm:grid-cols-[1fr_10rem_10rem_8rem_auto]">
                 <label className="text-xs">Full name<input name="fullName" required maxLength={120} defaultValue={p.full_name} className={`${fieldClass} mt-1 h-9`} /></label>
                 <label className="text-xs">Phone<input name="phone" type="tel" maxLength={20} defaultValue={p.phone ?? ""} placeholder="0911 234 567" className={`${fieldClass} mt-1 h-9`} /></label>

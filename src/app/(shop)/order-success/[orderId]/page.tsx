@@ -75,7 +75,6 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
   const bank = order.bank_snapshot;
   const appUrl = process.env.APP_URL ?? "";
   const privateLink = accessToken ? `${appUrl}/order-success/${order.id}?t=${accessToken}` : null;
-  const trackingCode = fromCookie?.token === accessToken ? fromCookie.trackingCode : null;
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8">
@@ -152,19 +151,9 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
             <CancelOrder orderId={order.id} />
           )}
 
-          {(trackingCode || (canPay && privateLink)) && (
+          {canPay && privateLink && (
             <Card>
               <CardContent className="space-y-4">
-                {trackingCode && (
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">{t("order.trackingCode")}</p>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <code className="rounded-md bg-muted px-3 py-1.5 font-mono text-lg tracking-widest">{trackingCode}</code>
-                      <CopyButton value={trackingCode} label={t("order.trackingCode")} />
-                    </div>
-                    <p className="text-xs text-muted-foreground">{t("order.trackingHint")}</p>
-                  </div>
-                )}
                 {appUrl && privateLink && (
                   <div className="space-y-1">
                     <p className="text-sm font-medium">{t("order.privateLink")}</p>

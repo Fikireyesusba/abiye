@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { TrackForm } from "@/components/shop/track-form";
+import { requireCustomer } from "@/lib/account/session";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("track");
@@ -8,6 +9,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function TrackOrderPage() {
+  await requireCustomer("/track-order"); // tracking is for signed-in customers, their own orders only
   const t = await getTranslations("track");
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:py-12">

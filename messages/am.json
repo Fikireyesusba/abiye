@@ -415,14 +415,14 @@
   },
   "track": {
     "title": "ትዕዛዝዎን ይከታተሉ",
-    "intro": "የትዕዛዝ ቁጥርዎን እና ከክፍያ በኋላ የታየውን የመከታተያ ኮድ ያስገቡ።",
+    "intro": "የትዕዛዝዎን ቁጥር ያስገቡ (ለምሳሌ ET-10025)። ሁሉንም ትዕዛዞችዎን በየእኔ መለያ → የእኔ ትዕዛዞች ውስጥ ማየት ይችላሉ።",
     "orderNumber": "የትዕዛዝ ቁጥር",
     "orderNumberHint": "ለምሳሌ ET-10025",
     "trackingCode": "የመከታተያ ኮድ",
     "trackingHint": "ለምሳሌ 7K2QX-9MFDA",
     "submit": "ትዕዛዝ ይከታተሉ",
     "searching": "በመፈለግ ላይ…",
-    "notFound": "ከዚያ የትዕዛዝ ቁጥር እና የመከታተያ ኮድ ጋር የሚዛመድ ትዕዛዝ የለም።",
+    "notFound": "ከትዕዛዞችዎ ውስጥ ይህ ቁጥር ያለው የለም።",
     "placedOn": "የታዘዘው {date}"
   },
   "printJob": {
@@ -457,6 +457,7 @@
     "retentionDone": "ፋይሎችዎ ከስርዓታችን ተሰርዘዋል።"
   },
   "account": {
+    "memberId": "የአባል መለያ ቁጥር",
     "personalDetails": "የግል መረጃ",
     "changeDetails": "የማድረሻ መረጃን ቀይር",
     "cancel": "ሰርዝ",
