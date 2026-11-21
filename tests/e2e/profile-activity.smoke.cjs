@@ -1,5 +1,5 @@
 /**
- * Saved customer details (view → "Change personal details" → saved; prefill checkout)
+ * Saved customer details (name / phone / email locked after they are set; staff change them; prefill checkout)
  * and Activity log export to Excel + controlled clearing.
  *   NODE_PATH=$(npm root -g):$(pwd)/node_modules node --env-file=.env.local tests/e2e/profile-activity.smoke.cjs
  */
@@ -26,28 +26,53 @@ const addisDay = (offsetDays = 0) => new Date(Date.now() + 3 * 3600 * 1000 + off
   const uid = await ensureCustomer(email, "ProfileE2E2026x");
   const b = await chromium.launch();
   try {
-    // ---- personal details: read-only view, then change
+    // ---- personal details: name / phone locked once set; delivery details editable
+    sql(`update customer_accounts set phone = null where id = '${uid}'`);
     const c = await (await b.newContext()).newPage();
     await loginCustomer(c, B, email, "ProfileE2E2026x");
     await c.goto(`${B}/account`);
     check(await c.locator("text=/^Personal details$/").count() === 1 && await c.locator("#phone").count() === 0
-      && await c.locator("button:has-text('Change personal details')").count() === 1, "details shown read-only with a change button");
-    check((await c.locator("main").innerText()).includes(email), "email shown");
-    await c.click("button:has-text('Change personal details')");
-    await c.fill("#fullName", "Mekdes Alemu");
-    await c.fill("#phone", "0911 45 67 89");
+      && await c.locator("button:has-text('Change delivery details')").count() === 1, "details shown read-only with a change button");
+    check((await c.locator("main").innerText()).includes(email) && (await c.locator("main").innerText()).includes("can only be changed by us"), "email shown, and how to change details");
+    await c.click("button:has-text('Change delivery details')");
+    check(await c.locator("input#fullName").count() === 0, "name already set: not editable");
+    await c.fill("#phone", "0911 45 67 89");  // missing phone: can be added once
     await c.selectOption("#zoneId", ZONE);
     await c.fill("#address", "Bole, near Edna Mall, house 12");
     await c.click("form button:has-text('Save')");
-    await c.waitForSelector("text=Change personal details");
+    await c.waitForSelector("text=Change delivery details");
     const view = await c.locator("main").innerText();
-    check(view.includes("Mekdes Alemu") && view.includes("+251 91 145 6789".replace(/ /g, " ")) === view.includes("+251 91 145 6789") && view.includes("Bole, near Edna Mall, house 12"),
-      "saved details shown after saving");
+    check(view.includes("E2E Customer") && view.includes("Bole, near Edna Mall, house 12"), "saved details shown after saving");
     check(sql(`select full_name || '|' || phone || '|' || default_zone_id || '|' || default_address from customer_accounts where id = '${uid}'`)
-      === `Mekdes Alemu|+251911456789|${ZONE}|Bole, near Edna Mall, house 12`, "details saved on the account");
+      === `E2E Customer|+251911456789|${ZONE}|Bole, near Edna Mall, house 12`, "phone added once, delivery details saved");
     await c.reload();
-    check((await c.locator("main").innerText()).includes("Bole, near Edna Mall, house 12"), "still there after reloading");
-    check(sql(`select count(*) from audit_logs where action = 'profile_updated' and entity_id = '${uid}' and after_data->>'address' is not null`) === "1", "change recorded on the customer timeline");
+    await c.click("button:has-text('Change delivery details')");
+    check(await c.locator("input#phone").count() === 0 && await c.locator("input#fullName").count() === 0, "phone now locked too");
+    sql(`set role authenticated; select set_config('request.jwt.claims', '{"sub":"${uid}","role":"authenticated"}', false);
+         update customer_accounts set full_name = 'Hacker', phone = '+251922000000' where id = '${uid}'`);
+    check(sql(`select full_name || '|' || phone from customer_accounts where id = '${uid}'`) === "E2E Customer|+251911456789", "database keeps name and phone even when sent directly");
+    check(sql(`select count(*) from audit_logs where action = 'profile_updated' and entity_id = '${uid}' and after_data->>'address' is not null`) >= "1", "change recorded on the customer timeline");
+
+    // ---- staff change the locked details (name, phone, email)
+    const o0 = await (await b.newContext()).newPage();
+    o0.on("dialog", (d) => d.accept());
+    await adminLogin(o0, B, OWNER.email, OWNER.password);
+    await o0.goto(`${B}/admin/customers/${uid}`);
+    await o0.click("summary:has-text('Change personal details')");
+    await o0.fill("input[name=fullName]", "Mekdes Alemu");
+    await o0.fill("input[name=phone]", "0922 45 67 89");
+    await o0.fill("input[name=email]", `new-${email}`);
+    await o0.click("button:has-text('Save details')");
+    await o0.waitForSelector("[data-sonner-toast]:has-text('Details saved')");
+    check(sql(`select a.full_name || '|' || a.phone || '|' || u.email from customer_accounts a join auth.users u on u.id = a.id where a.id = '${uid}'`)
+      === `Mekdes Alemu|+251922456789|new-${email}`, "staff changed name, phone and sign-in email");
+    check(sql(`select count(*) from audit_logs where action = 'profile_updated' and entity_id = '${uid}' and before_data->>'email' = '${email}'`) === "1", "email change recorded (old → new)");
+    await c.goto(`${B}/account`);
+    if (c.url().includes("/login")) await loginCustomer(c, B, `new-${email}`, "ProfileE2E2026x");
+    await o0.close();
+    await c.goto(`${B}/account`);
+    sql(`update auth.users set email = '${email}' where id = '${uid}'`);
+    sql(`update customer_accounts set full_name = 'Mekdes Alemu' where id = '${uid}'`);
 
     // ---- checkout prefilled; a new delivery address is remembered
     await c.evaluate((id) => localStorage.setItem("cart:v1", JSON.stringify([{ type: "product", productId: id, quantity: 1 }])), "20000000-0000-0000-0000-000000000007");

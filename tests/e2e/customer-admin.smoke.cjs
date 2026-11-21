@@ -84,11 +84,12 @@ async function waitFor(fn, tries = 30) {
     const op = await (await b.newContext()).newPage();
     await adminLogin(op, B, OWNER.email, OWNER.password);
     check(await op.locator("a:has-text('Stalled checkouts (2h+)')").count() === 1, "dashboard shows stalled checkouts");
-    await op.goto(`${B}/admin/follow-up`);
+    await op.goto(`${B}/admin/follow-up?tab=baskets`);
     const basketRow = op.locator("section:has(h2:has-text('Baskets')) tr", { hasText: aEmail });
     check(await basketRow.count() === 1 && (await basketRow.innerText()).includes("3 ×"), "follow-up lists the abandoned basket with items");
+    await op.goto(`${B}/admin/follow-up?tab=orders`);
     check(await op.locator("section:has(h2:has-text('Orders not paid')) tr", { hasText: bEmail }).count() === 1, "follow-up lists the unpaid order");
-    await op.goto(`${B}/admin/follow-up?hours=6`);
+    await op.goto(`${B}/admin/follow-up?hours=6&tab=baskets`);
     check(await op.locator("tr", { hasText: aEmail }).count() === 0, "threshold filter works");
 
     // reset email

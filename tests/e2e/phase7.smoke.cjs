@@ -142,10 +142,11 @@ async function watchCsp(context) {
 
     // ------------------------------------------------------------ analytics
     sql(`update orders set status = 'confirmed', payment_status = 'verified', payment_verified_at = now() where id = '${orderId}'`);
-    await op.goto(`${B}/admin/analytics?range=7d`);
+    await op.goto(`${B}/admin/analytics?range=7d&tab=best`);
     const page = (await op.locator("main").innerText()).toLowerCase();
     check(page.includes("revenue (verified)") && page.includes("best sellers") && page.includes("25w usb-c"), "analytics shows revenue and best sellers");
-    check(page.includes(CODE.toLowerCase()), "analytics lists promo code usage");
+    await op.goto(`${B}/admin/analytics?range=7d&tab=stock`);
+    check((await op.locator("main").innerText()).toLowerCase().includes(CODE.toLowerCase()), "analytics lists promo code usage");
     await op.goto(`${B}/admin/analytics?range=12m`);
     check((await op.locator("h1").innerText()) === "Analytics", "12-month view loads");
     await op.goto(`${B}/admin/analytics?from=2026-01-01&to=2026-02-01&bucket=week`);

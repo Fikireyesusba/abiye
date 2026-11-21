@@ -210,7 +210,10 @@ async function emailLink(to, subjectPart) {
   await a.goto(`${B}/admin/customers?q=${encodeURIComponent(email)}`);
   await a.locator(`tr:has-text("${email}") a`).first().click();
   await a.waitForURL(/\/admin\/customers\/[0-9a-f-]{36}$/);
-  check((await a.locator(`a[href="/admin/orders/${orderId}"]`).count()) === 1 && (await a.locator(`text=${email}`).count()) >= 1,
+  const emailShown = (await a.locator(`text=${email}`).count()) >= 1;
+  await a.click("nav a:has-text('Orders')");
+  await a.waitForURL(/tab=orders/);
+  check((await a.locator(`a[href="/admin/orders/${orderId}"]`).count()) === 1 && emailShown,
     "customer page shows their email and orders");
 
   const original = sql("select json_build_object('contact', (select value from website_settings where key='contact'), 'social', (select value from website_settings where key='social'), 'legal', (select value from website_settings where key='legal'))::text");
