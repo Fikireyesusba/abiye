@@ -148,9 +148,12 @@ function resetSampleStock() {
   // Home: categories near the top, one tap to a sub-category
   await p.goto(B + '/');
   check(await p.locator('#home-categories').count() === 1 && await p.locator('section:has(#home-categories) a[href="/electronics"]').count() === 1, 'home shows the categories');
-  await p.locator('section:has(#home-categories) a[href*="?category="]').first().click();
-  await p.waitForURL(/\?category=/);
-  check(true, 'sub-category shortcut opens that category');
+  check(await p.locator('section:has(#home-categories) a[href*="?category="]').count() === 0, 'no sub-category list on the home page');
+  await p.click('section:has(#home-categories) a[href="/cosmetics"]');
+  await p.waitForURL(/\/cosmetics$/);
+  await p.locator('nav[aria-label=Categories] a[href*="category="]').first().click();
+  await p.waitForURL(/\/cosmetics\?category=/);
+  check(true, 'Cosmetics → its sub-categories → products');
 
   // Language switch
   await p.goto(B + '/');

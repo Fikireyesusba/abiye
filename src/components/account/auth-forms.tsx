@@ -6,6 +6,7 @@ import { Loader2, MailCheck, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ageFrom, maxBirthDate } from "@/lib/age";
 import {
   requestPasswordReset, resendConfirmation, setNewPassword, signInCustomer, signUpCustomer, updateCustomerAccount,
   type AccountState,
@@ -93,6 +94,18 @@ export function SignUpForm({ next }: { next: string }) {
           <Input id="email" name="email" type="email" autoComplete="email" required defaultValue={state.email} placeholder="name@gmail.com" aria-describedby="email-hint" />
           <p id="email-hint" className="text-xs text-muted-foreground">{t("gmailHint")}</p>
         </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="dateOfBirth">{t("dateOfBirth")} <span className="font-normal text-muted-foreground">{t("optional")}</span></Label>
+            <Input id="dateOfBirth" name="dateOfBirth" type="date" min="1900-01-01" max={maxBirthDate(10)} autoComplete="bday" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="sex">{t("sex")} <span className="font-normal text-muted-foreground">{t("optional")}</span></Label>
+            <select id="sex" name="sex" defaultValue="" className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
+              <option value="">—</option><option value="female">{t("female")}</option><option value="male">{t("male")}</option>
+            </select>
+          </div>
+        </div>
         <div className="space-y-2">
           <Label htmlFor="password">{t("password")}</Label>
           <Input id="password" name="password" type="password" autoComplete="new-password" minLength={8} required aria-describedby="pw-hint" />
@@ -163,6 +176,8 @@ export interface ProfileDetails {
   fullName: string;
   phone: string;
   email: string;
+  dateOfBirth: string;
+  sex: string;
   zoneId: string | null;
   address: string;
 }
@@ -190,6 +205,8 @@ export function ProfileForm({ details, zones }: { details: ProfileDetails; zones
           <div><dt className="text-muted-foreground">{t("fullName")}</dt><dd className="font-medium">{saved.fullName || notSet}</dd></div>
           <div><dt className="text-muted-foreground">{t("email")}</dt><dd className="font-medium break-all">{saved.email}</dd></div>
           <div><dt className="text-muted-foreground">{t("phone")}</dt><dd className="font-medium">{saved.phone || notSet}</dd></div>
+          <div><dt className="text-muted-foreground">{t("dateOfBirth")}</dt><dd className="font-medium">{saved.dateOfBirth ? `${saved.dateOfBirth} · ${t("age", { age: ageFrom(saved.dateOfBirth) ?? 0 })}` : notSet}</dd></div>
+          <div><dt className="text-muted-foreground">{t("sex")}</dt><dd className="font-medium">{saved.sex ? t(saved.sex === "female" ? "female" : "male") : notSet}</dd></div>
           <div><dt className="text-muted-foreground">{t("deliveryCity")}</dt><dd className="font-medium">{zoneName || notSet}</dd></div>
           <div className="sm:col-span-2"><dt className="text-muted-foreground">{t("deliveryAddress")}</dt><dd className="font-medium">{saved.address || notSet}</dd></div>
         </dl>
@@ -215,6 +232,20 @@ export function ProfileForm({ details, zones }: { details: ProfileDetails; zones
           {saved.phone
             ? <p id="phone" className="flex h-10 items-center rounded-md border bg-muted px-3 text-sm">{saved.phone}</p>
             : <Input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" maxLength={20} />}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="dateOfBirth">{t("dateOfBirth")}</Label>
+          {saved.dateOfBirth
+            ? <p id="dateOfBirth" className="flex h-10 items-center rounded-md border bg-muted px-3 text-sm">{saved.dateOfBirth}</p>
+            : <Input id="dateOfBirth" name="dateOfBirth" type="date" min="1900-01-01" max={maxBirthDate(10)} autoComplete="bday" />}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="sex">{t("sex")}</Label>
+          {saved.sex
+            ? <p id="sex" className="flex h-10 items-center rounded-md border bg-muted px-3 text-sm">{t(saved.sex === "female" ? "female" : "male")}</p>
+            : <select id="sex" name="sex" defaultValue="" className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
+                <option value="">—</option><option value="female">{t("female")}</option><option value="male">{t("male")}</option>
+              </select>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="zoneId">{t("deliveryCity")}</Label>

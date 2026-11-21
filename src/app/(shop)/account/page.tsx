@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { Bell, LogOut, Tag, Wallet } from "lucide-react";
+import { Bell, LogOut, Package, Tag, Wallet } from "lucide-react";
 import { ProfileForm } from "@/components/account/auth-forms";
 import { PushToggle } from "@/components/pwa/push";
 import { getServerEnv } from "@/lib/env";
 import { CopyButton } from "@/components/shop/copy-button";
-import { StatusBadge } from "@/components/status/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { signOutCustomer } from "@/lib/account/actions";
@@ -30,9 +29,8 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   const [t, locale, account, zones] = await Promise.all([getTranslations(), getLocale() as Promise<Locale>, getCustomerAccount(user.id), getDeliveryZones()]);
   // RLS: a customer can only read their own orders and printing jobs.
   const supabase = await createSupabaseServerClient();
-  const [{ data: orders }, { data: jobs }, { data: offers }] = await Promise.all([
-    supabase.from("orders").select("id, order_number, status, payment_status, total_etb, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
-    supabase.from("printing_jobs").select("id, job_number, status, total_etb, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
+  const [{ count: orderCount }, { data: offers }] = await Promise.all([
+    supabase.from("orders").select("id", { count: "exact", head: true }).eq("user_id", user.id).not("payment_status", "in", "(unpaid,rejected)"),
     supabase.rpc("my_offers"),
   ]);
 
@@ -86,6 +84,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
               details={{
                 fullName: account?.full_name ?? "", email: user.email,
                 phone: account?.phone ? formatEthiopianPhone(account.phone) : "",
+                dateOfBirth: account?.date_of_birth ?? "", sex: account?.sex ?? "",
                 zoneId: account?.default_zone_id ?? null, address: account?.default_address ?? "",
               }}
             />
@@ -111,55 +110,15 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           </Card>
         )}
         <Card>
-          <CardHeader><CardTitle>{t("account.myOrders")}</CardTitle></CardHeader>
-          <CardContent>
-            {!orders?.length ? (
-              <p className="text-sm text-muted-foreground">{t("account.noOrders")} <Link href="/shop" className="text-primary underline">{t("nav.shop")}</Link></p>
-            ) : (
-              <ul className="divide-y">
-                {orders.map((o) => (
-                  <li key={o.id}>
-                    <Link href={`/order-success/${o.id}`} className="flex flex-wrap items-center justify-between gap-2 py-3 hover:bg-muted/40">
-                      <span>
-                        <span className="block font-medium">{o.order_number}</span>
-                        <span className="block text-xs text-muted-foreground">{formatDateTime(o.created_at, locale)}</span>
-                      </span>
-                      <span className="flex items-center gap-2">
-                        <span className="text-sm tabular-nums">{formatETB(toSantim(o.total_etb), locale)}</span>
-                        <StatusBadge kind="order" status={o.status} />
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
+          <CardContent className="flex flex-wrap items-center gap-4 pt-6">
+            <Package className="size-8 text-primary" aria-hidden />
+            <div className="flex-1">
+              <p className="font-medium">{t("account.myOrders")}</p>
+              <p className="text-sm text-muted-foreground">{t("account.ordersCount", { count: orderCount ?? 0 })}</p>
+            </div>
+            <Button asChild variant="outline"><Link href="/account/orders">{t("account.showOrders")}</Link></Button>
           </CardContent>
         </Card>
-
-        {!!jobs?.length && (
-          <Card>
-            <CardHeader><CardTitle>{t("account.myPrintJobs")}</CardTitle></CardHeader>
-            <CardContent>
-              <ul className="divide-y">
-                {jobs.map((j) => (
-                  <li key={j.id}>
-                    <Link href={`/printing/jobs/${j.id}`} className="flex flex-wrap items-center justify-between gap-2 py-3 hover:bg-muted/40">
-                      <span>
-                        <span className="block font-medium">{j.job_number}</span>
-                        <span className="block text-xs text-muted-foreground">{formatDateTime(j.created_at, locale)}</span>
-                      </span>
-                      <span className="flex items-center gap-2">
-                        {j.total_etb !== null && <span className="text-sm tabular-nums">{formatETB(toSantim(j.total_etb), locale)}</span>}
-                        <StatusBadge kind="print" status={j.status} />
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        )}
-
       </div>
     </div>
   );

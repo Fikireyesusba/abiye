@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { ActionForm } from "@/components/admin/action-form";
-import { Field, PageHeader, Panel, SubTabs, Table, Td, fieldClass, pickTab } from "@/components/admin/ui";
+import { Field, Frame, PageHeader, Panel, SubTabs, Table, Td, fieldClass, pickTab } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { inviteStaff, removeStaff, resetStaffMfa, resetStaffPassword, updateStaff } from "@/lib/admin/staff-actions";
+import { inviteStaff, removeStaff, resetStaffMfa, resetStaffPassword, updateStaff, updateStaffDetails } from "@/lib/admin/staff-actions";
+import { maxBirthDate, personSummary } from "@/lib/age";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/datetime";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
@@ -20,7 +21,7 @@ const ROLES = [
 export default async function StaffPage({ searchParams }: PageProps<"/admin/staff">) {
   const ctx = await requirePermission("staff.manage");
   const supabase = await createSupabaseServerClient();
-  const { data: profiles } = await supabase.from("profiles").select("id, full_name, is_active, created_at, removed_at, role:admin_roles(key)").order("created_at");
+  const { data: profiles } = await supabase.from("profiles").select("id, full_name, phone, date_of_birth, sex, is_active, created_at, removed_at, role:admin_roles(key)").order("created_at");
   const current = (profiles ?? []).filter((p) => !p.removed_at);
   const removed = (profiles ?? []).filter((p) => p.removed_at);
   // Emails live in auth.users; read them server-side only, after the permission check above.
@@ -34,6 +35,7 @@ export default async function StaffPage({ searchParams }: PageProps<"/admin/staf
 
   const TABS = [
     { key: "team", label: "Team", count: current.length },
+    { key: "details", label: "Personal details" },
     { key: "add", label: "Add staff member" },
     { key: "roles", label: "Roles" },
     { key: "deleted", label: "Deleted staff", count: removed.length },
@@ -51,7 +53,7 @@ export default async function StaffPage({ searchParams }: PageProps<"/admin/staf
             const roleKey = (p.role as unknown as { key: string } | null)?.key ?? "staff";
             return (
               <tr key={p.id}>
-                <Td><span className="font-medium">{p.full_name}</span>{self && <Badge variant="secondary" className="ml-2">you</Badge>}<span className="block text-xs text-muted-foreground">{email.get(p.id)}</span></Td>
+                <Td><span className="font-medium">{p.full_name}</span>{self && <Badge variant="secondary" className="ml-2">you</Badge>}<span className="block text-xs text-muted-foreground">{email.get(p.id)}</span>{personSummary(p.sex, p.date_of_birth) && <span className="block text-xs text-muted-foreground">{personSummary(p.sex, p.date_of_birth)}</span>}</Td>
                 <Td>
                   {self ? ROLES.find((r) => r.key === roleKey)?.label : (
                     <ActionForm action={updateStaff} hidden={{ userId: p.id, active: String(p.is_active) }} submitLabel="Save" size="sm" variant="outline" className="flex flex-wrap gap-2 space-y-0">
@@ -94,6 +96,25 @@ export default async function StaffPage({ searchParams }: PageProps<"/admin/staf
             );
           })}
         </Table>
+      )}
+      {tab === "details" && (
+        <Frame search="Search staff…" className="space-y-3 bg-transparent p-0">
+          {current.map((p) => (
+            <div key={p.id} data-row className="rounded-xl border bg-card p-4">
+              <p className="mb-2 text-sm font-medium">{p.full_name} <span className="font-normal text-muted-foreground">· {email.get(p.id)}{personSummary(p.sex, p.date_of_birth) && ` · ${personSummary(p.sex, p.date_of_birth)}`}</span></p>
+              <ActionForm action={updateStaffDetails} hidden={{ userId: p.id }} submitLabel="Save" size="sm" variant="outline" className="grid items-end gap-2 space-y-0 sm:grid-cols-[1fr_10rem_10rem_8rem_auto]">
+                <label className="text-xs">Full name<input name="fullName" required maxLength={120} defaultValue={p.full_name} className={`${fieldClass} mt-1 h-9`} /></label>
+                <label className="text-xs">Phone<input name="phone" type="tel" maxLength={20} defaultValue={p.phone ?? ""} placeholder="0911 234 567" className={`${fieldClass} mt-1 h-9`} /></label>
+                <label className="text-xs">Date of birth<input name="dateOfBirth" type="date" min="1900-01-01" max={maxBirthDate(14)} defaultValue={p.date_of_birth ?? ""} className={`${fieldClass} mt-1 h-9`} /></label>
+                <label className="text-xs">Sex
+                  <select name="sex" defaultValue={p.sex ?? ""} className={`${fieldClass} mt-1 h-9`}>
+                    <option value="">—</option><option value="female">Female</option><option value="male">Male</option>
+                  </select>
+                </label>
+              </ActionForm>
+            </div>
+          ))}
+        </Frame>
       )}
       {tab === "deleted" && (
           <Panel title={`Deleted staff (${removed.length})`} scroll>

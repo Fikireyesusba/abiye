@@ -8,6 +8,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ethiopianPhoneSchema } from "@/lib/validation/checkout";
 import { dbError, fail, formObject, ok, type ActionResult } from "./result";
+import { maxBirthDate } from "@/lib/age";
 
 /** Effectively permanent; reactivation lifts it. */
 const BAN_DURATION = "876000h";
@@ -182,8 +183,10 @@ export async function updateCustomerDetails(_prev: ActionResult | null, fd: Form
     fullName: z.string().trim().min(2).max(120),
     phone: z.string().trim().max(20),
     email: z.email().max(254),
+    dateOfBirth: z.union([z.literal(""), z.iso.date().refine((d) => d >= "1900-01-01" && d <= maxBirthDate(10), "date of birth")]).optional(),
+    sex: z.enum(["", "female", "male"]).optional(),
   }).safeParse({ ...formObject(fd), email: String(fd.get("email") ?? "").trim().toLowerCase() });
-  if (!parsed.success) return fail("Enter a name (2–120 characters) and a valid email.");
+  if (!parsed.success) return fail("Enter a name (2–120 characters), a valid email and a real date of birth (10+ years).");
   const phone = parsed.data.phone ? ethiopianPhoneSchema.safeParse(parsed.data.phone) : null;
   if (phone && !phone.success) return fail("Enter an Ethiopian mobile number, e.g. 0911 234 567.");
   const { supabase, account, error: loadError } = await loadAccount(parsed.data.userId);
@@ -197,6 +200,7 @@ export async function updateCustomerDetails(_prev: ActionResult | null, fd: Form
   }
   const { error } = await supabase.rpc("admin_update_customer_details", {
     p_user_id: account.id, p_full_name: parsed.data.fullName, p_phone: phone?.success ? phone.data : (null as unknown as string), p_old_email: oldEmail,
+    p_date_of_birth: parsed.data.dateOfBirth || undefined, p_sex: parsed.data.sex || undefined,
   });
   if (error) return dbError(error);
   revalidatePath(`/admin/customers/${account.id}`);

@@ -5,6 +5,8 @@ import { z } from "zod";
 import { requirePermission } from "@/lib/auth/guards";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { maxBirthDate } from "@/lib/age";
+import { ethiopianPhoneSchema } from "@/lib/validation/checkout";
 import { dbError, fail, formObject, ok, type ActionResult } from "./result";
 
 const role = z.enum(["super_admin", "manager", "staff"]);
@@ -115,4 +117,29 @@ export async function removeStaff(_prev: ActionResult | null, fd: FormData): Pro
     return ok(`${name} was removed and has no dashboard access. (Their sign-in could not be blocked right now — they still cannot open the dashboard.)`);
   }
   return ok(`${name} was deleted. They can no longer sign in, and their open orders and printing jobs are unassigned.`);
+}
+
+/** Super Admin: a staff member's personal details (name, phone, date of birth, sex). */
+export async function updateStaffDetails(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("staff.manage");
+  const parsed = z.object({
+    userId: z.guid(),
+    fullName: z.string().trim().min(1).max(120),
+    phone: z.string().trim().max(20),
+    dateOfBirth: z.union([z.literal(""), z.iso.date().refine((d) => d >= "1900-01-01" && d <= maxBirthDate(14))]),
+    sex: z.enum(["", "female", "male"]),
+  }).safeParse(formObject(fd));
+  if (!parsed.success) return fail("Enter a name and a real date of birth (14+ years).");
+  const phone = parsed.data.phone ? ethiopianPhoneSchema.safeParse(parsed.data.phone) : null;
+  if (phone && !phone.success) return fail("Enter an Ethiopian mobile number, e.g. 0911 234 567.");
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("admin_update_staff_details", {
+    p_user_id: parsed.data.userId, p_full_name: parsed.data.fullName,
+    p_phone: phone?.success ? phone.data : (null as unknown as string),
+    p_date_of_birth: (parsed.data.dateOfBirth || null) as unknown as string,
+    p_sex: (parsed.data.sex || null) as unknown as string,
+  });
+  if (error) return dbError(error);
+  revalidatePath("/admin/staff");
+  return ok("Personal details saved.");
 }

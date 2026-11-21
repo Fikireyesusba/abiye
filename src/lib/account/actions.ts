@@ -13,11 +13,14 @@ import { endOtherSessions } from "@/lib/security/single-session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ethiopianPhoneSchema } from "@/lib/validation/checkout";
 import { getCustomerUser, getSignedInUserId, safeNext } from "./session";
+import { maxBirthDate } from "@/lib/age";
 
 /** Error codes are translation keys under "account.errors". */
 export type AccountState = { error?: string; ok?: string; email?: string; name?: string };
 
 const email = z.email().max(254);
+/** Date of birth: a real date, at least 10 years ago, not before 1900. */
+const validBirthDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v)) && v >= "1900-01-01" && v <= maxBirthDate(10);
 const password = z.string().min(8).max(72).regex(/[A-Za-z]/).regex(/\d/);
 
 export async function signUpCustomer(_prev: AccountState, fd: FormData): Promise<AccountState> {
@@ -30,6 +33,9 @@ export async function signUpCustomer(_prev: AccountState, fd: FormData): Promise
   if (!password.safeParse(fd.get("password")).success) return { ...values, error: "weakPassword" };
   if (fd.get("password") !== fd.get("confirm")) return { ...values, error: "passwordMismatch" };
   if (fd.get("acceptTerms") !== "on") return { ...values, error: "terms" };
+  const dob = String(fd.get("dateOfBirth") ?? "");
+  if (dob && !validBirthDate(dob)) return { ...values, error: "dateOfBirth" };
+  const sex = ["female", "male"].includes(String(fd.get("sex"))) ? String(fd.get("sex")) : null;
 
   const ip = await clientIpKey();
   if (!(await rateLimitAll([[`signup:ip:${ip}`, 5, 3600]]))) {
@@ -49,7 +55,11 @@ export async function signUpCustomer(_prev: AccountState, fd: FormData): Promise
     email: values.email,
     password: String(fd.get("password")),
     options: {
-      data: { full_name: values.name, accepted_terms: "true" },
+      data: {
+        full_name: values.name, accepted_terms: "true",
+        // Optional; checked again by the database (invalid values are ignored).
+        ...(dob ? { date_of_birth: dob } : {}), ...(sex ? { sex } : {}),
+      },
       emailRedirectTo: `${getServerEnv().APP_URL}/account`,
     },
   });
@@ -153,7 +163,10 @@ export async function updateCustomerAccount(_prev: AccountState, fd: FormData): 
   if (!user) redirect("/account/login?next=/account");
   const supabase = await createSupabaseServerClient();
   // Name and phone are filled in once; after that only staff can change them (the database enforces it too).
-  const { data: current } = await supabase.from("customer_accounts").select("full_name, phone").eq("id", user.id).maybeSingle();
+  const { data: current } = await supabase.from("customer_accounts").select("full_name, phone, date_of_birth, sex").eq("id", user.id).maybeSingle();
+  const dob = String(fd.get("dateOfBirth") ?? "");
+  if (!current?.date_of_birth && dob && !validBirthDate(dob)) return { error: "dateOfBirth" };
+  const sex = ["female", "male"].includes(String(fd.get("sex"))) ? String(fd.get("sex")) : null;
   const nameLocked = !!current?.full_name?.trim();
   const phoneLocked = !!current?.phone;
   const name = String(fd.get("fullName") ?? "").trim();
@@ -170,6 +183,8 @@ export async function updateCustomerAccount(_prev: AccountState, fd: FormData): 
     .update({
       ...(nameLocked ? {} : { full_name: name }),
       ...(phoneLocked || !phone?.success ? {} : { phone: phone.data }),
+      ...(current?.date_of_birth || !dob ? {} : { date_of_birth: dob }),
+      ...(current?.sex || !sex ? {} : { sex }),
       default_zone_id: zone || null, default_address: address || null,
     })
     .eq("id", user.id);

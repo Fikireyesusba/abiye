@@ -56,7 +56,8 @@ export async function proxy(request: NextRequest) {
 
   // Inactivity sign-out (server side; the browser timer does the same while a tab is open).
   const isAnyLogin = isLogin || path === "/account/login";
-  const cookieOpts = { path: "/", sameSite: "lax" as const, secure: request.nextUrl.protocol === "https:", maxAge: 86400 };
+  // Long-lived on purpose: after days away the old activity time must still be there, so the visit counts as idle (not a fresh start).
+  const cookieOpts = { path: "/", sameSite: "lax" as const, secure: request.nextUrl.protocol === "https:", maxAge: 30 * 86400 };
   // One device per account: a newer sign-in elsewhere ended this session → sign out here too.
   // (An error, e.g. before the database update, never blocks: the database enforces it as well.)
   const ended = needsSession && signedIn && sessionId && !isAnyLogin && supabaseClient

@@ -73,6 +73,17 @@ const backdate = async (page, minutes) => {
     check(u.pathname === "/account/login" && u.searchParams.get("reason") === "idle" && u.searchParams.get("next") === "/account/wallet", "customer 21 minutes idle: signed out, comes back to the page after signing in");
     check((await c.locator("main").innerText()).includes("signed out after 20 minutes of inactivity"), "customer sees why");
 
+    // ---- reopening the app hours later (home page, not a protected page): signed out, not "activity"
+    const h = await (await b.newContext()).newPage();
+    await loginCustomer(h, B, email, "IdleE2E2026x");
+    await h.goto(`${B}/account`);
+    await h.context().addCookies([{ name: "abiye_active", value: String(Date.now() - 5 * 3600_000), url: B }]);
+    await h.goto(`${B}/`);
+    await h.mouse.move(10, 10);
+    await h.waitForURL(/\/account\/login\?reason=idle/, { timeout: 15000 });
+    await h.goto(`${B}/account`);
+    check(new URL(h.url()).pathname === "/account/login", "opened again after 5 hours: signed out (the visit does not count as activity)");
+
     // ---- warning one minute before (admin tab)
     const w = await (await b.newContext()).newPage();
     await adminLogin(w, B, OWNER.email, OWNER.password);

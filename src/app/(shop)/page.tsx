@@ -4,7 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { ArrowRight, BadgeCheck, Printer, ShieldCheck, Smartphone, Sparkles, Truck } from "lucide-react";
 import { ProductGrid } from "@/components/shop/product-card";
 import { Button } from "@/components/ui/button";
-import { getCategories, getFeaturedProducts, getHomepageBanners, getHomepagePromotions, getOnSaleProducts } from "@/lib/catalog/queries";
+import { getFeaturedProducts, getHomepageBanners, getHomepagePromotions, getOnSaleProducts } from "@/lib/catalog/queries";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import { formatETB, toSantim } from "@/lib/money";
 import { publicImageUrl } from "@/lib/storage";
@@ -27,7 +27,7 @@ function SectionHeader({ title, href, linkLabel }: { title: string; href?: strin
 const WHY_ICONS = [BadgeCheck, ShieldCheck, Truck];
 
 export default async function HomePage() {
-  const [s, t, locale, featured, onSale, banners, promotions, categories] = await Promise.all([
+  const [s, t, locale, featured, onSale, banners, promotions] = await Promise.all([
     getSiteSettings(),
     getTranslations(),
     getLocale() as Promise<Locale>,
@@ -35,7 +35,6 @@ export default async function HomePage() {
     getOnSaleProducts(4),
     getHomepageBanners(),
     getHomepagePromotions(),
-    getCategories(),
   ]);
   const pick = (v: { en: string; am: string }) => v[locale] || v.en;
   const heroImage = publicImageUrl("site-assets", s.homepage.hero_image_path);
@@ -46,9 +45,6 @@ export default async function HomePage() {
     { key: "electronics", href: "/electronics", icon: Smartphone, text: t("home.electronicsText"), tone: "bg-electronics/10 text-electronics" },
     { key: "printing", href: "/printing", icon: Printer, text: t("home.printingText"), tone: "bg-printing/10 text-printing" },
   ] as const;
-  // Sub-categories (Perfume, Skincare, Phones …) as one-tap shortcuts.
-  const subcategories = categories.filter((c) => c.parent_id && c.department !== "printing");
-  const deptOf = Object.fromEntries(departments.map((d) => [d.key, d]));
 
   return (
     <>
@@ -90,22 +86,6 @@ export default async function HomePage() {
               </Link>
             ))}
           </div>
-          {subcategories.length > 0 && (
-            <ul className="-mx-4 mt-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
-              {subcategories.map((c) => {
-                const d = deptOf[c.department];
-                return (
-                  <li key={c.id} className="snap-start">
-                    <Link href={`/${c.department}?category=${c.slug}`}
-                      className="inline-flex h-10 items-center gap-2 rounded-full border bg-card px-4 text-sm font-medium whitespace-nowrap hover:bg-secondary">
-                      {d && <d.icon className={`size-4 ${d.tone.split(" ").find((x) => x.startsWith("text-"))}`} aria-hidden />}
-                      {localized(c, "name", locale)}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
         </section>
 
         {/* Promotional banners (admin-managed) */}

@@ -16,6 +16,7 @@ import { formatETB, toSantim } from "@/lib/money";
 import { isGuid } from "@/lib/orders/access";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatEthiopianPhone } from "@/lib/validation/phone";
+import { ageFrom, maxBirthDate } from "@/lib/age";
 
 export const metadata: Metadata = { title: "Customer" };
 
@@ -39,6 +40,7 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
   }
   const verified = (orders ?? []).filter((o) => o.payment_status === "verified").reduce((s, o) => s + Number(o.total_etb), 0);
   const canManage = ctx.permissions.has("customers.manage");
+  const { data: person } = await supabase.from("customer_accounts").select("date_of_birth, sex").eq("id", id).maybeSingle();
   const canPromo = ctx.permissions.has("promotions.manage") && !c.deactivated_at;
   const [{ data: codes }, { data: personal }] = canPromo
     ? await Promise.all([
@@ -93,6 +95,8 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
               <div><dt className="text-muted-foreground">Name</dt><dd className="font-medium">{c.full_name || "—"}</dd></div>
               <div><dt className="text-muted-foreground">Email (sign-in)</dt><dd className="break-all"><a href={`mailto:${c.email}`} className="text-primary">{c.email}</a></dd></div>
               <div><dt className="text-muted-foreground">Phone</dt><dd>{c.phone ? <a href={`tel:${c.phone}`} className="text-primary">{formatEthiopianPhone(c.phone)}</a> : "—"}</dd></div>
+              <div><dt className="text-muted-foreground">Date of birth</dt><dd>{person?.date_of_birth ? `${person.date_of_birth} (${ageFrom(person.date_of_birth)} years)` : "—"}</dd></div>
+              <div><dt className="text-muted-foreground">Sex</dt><dd>{person?.sex === "female" ? "Female" : person?.sex === "male" ? "Male" : "—"}</dd></div>
               <div><dt className="text-muted-foreground">Last sign-in</dt><dd>{c.last_sign_in_at ? formatDateTime(c.last_sign_in_at, "en") : "never"}</dd></div>
             </dl>
             {canManage && !c.is_staff && (
@@ -104,6 +108,14 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
                   <label className="block text-sm">Full name<input name="fullName" required minLength={2} maxLength={120} defaultValue={c.full_name ?? ""} className={`${fieldClass} mt-1`} /></label>
                   <label className="block text-sm">Phone<input name="phone" type="tel" maxLength={20} defaultValue={c.phone ?? ""} placeholder="0911 234 567" className={`${fieldClass} mt-1`} /></label>
                   <label className="block text-sm">Email (sign-in)<input name="email" type="email" required maxLength={254} defaultValue={c.email} className={`${fieldClass} mt-1`} /></label>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="block text-sm">Date of birth<input name="dateOfBirth" type="date" min="1900-01-01" max={maxBirthDate(10)} defaultValue={person?.date_of_birth ?? ""} className={`${fieldClass} mt-1`} /></label>
+                    <label className="block text-sm">Sex
+                      <select name="sex" defaultValue={person?.sex ?? ""} className={`${fieldClass} mt-1`}>
+                        <option value="">—</option><option value="female">Female</option><option value="male">Male</option>
+                      </select>
+                    </label>
+                  </div>
                 </ActionForm>
               </details>
             )}
