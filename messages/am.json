@@ -245,10 +245,21 @@
     "searchResultsFor": "ለ“{query}” የተገኙ ውጤቶች",
     "previous": "ቀዳሚ",
     "next": "ቀጣይ",
-    "pageOf": "ገጽ {page} ከ {total}"
+    "pageOf": "ገጽ {page} ከ {total}",
+    "forLabel": "ለ",
+    "forEveryone": "ሁሉም",
+    "for_women": "ሴቶች",
+    "for_men": "ወንዶች"
   },
   "product": {
     "brand": "ብራንድ",
+    "audience": "ለማን",
+    "audience_women": "ለሴቶች",
+    "audience_men": "ለወንዶች",
+    "audience_unisex": "ለሴቶችና ለወንዶች",
+    "audienceTag_women": "ለሴቶች",
+    "audienceTag_men": "ለወንዶች",
+    "audienceTag_unisex": "ለሁለቱም",
     "sku": "SKU",
     "description": "መግለጫ",
     "related": "ሊወዱት የሚችሉት",

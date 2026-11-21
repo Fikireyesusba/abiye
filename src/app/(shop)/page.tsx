@@ -4,7 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { ArrowRight, BadgeCheck, Printer, ShieldCheck, Smartphone, Sparkles, Truck } from "lucide-react";
 import { ProductGrid } from "@/components/shop/product-card";
 import { Button } from "@/components/ui/button";
-import { getFeaturedProducts, getHomepageBanners, getHomepagePromotions, getOnSaleProducts } from "@/lib/catalog/queries";
+import { getCategories, getFeaturedProducts, getHomepageBanners, getHomepagePromotions, getOnSaleProducts } from "@/lib/catalog/queries";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import { formatETB, toSantim } from "@/lib/money";
 import { publicImageUrl } from "@/lib/storage";
@@ -27,7 +27,7 @@ function SectionHeader({ title, href, linkLabel }: { title: string; href?: strin
 const WHY_ICONS = [BadgeCheck, ShieldCheck, Truck];
 
 export default async function HomePage() {
-  const [s, t, locale, featured, onSale, banners, promotions] = await Promise.all([
+  const [s, t, locale, featured, onSale, banners, promotions, categories] = await Promise.all([
     getSiteSettings(),
     getTranslations(),
     getLocale() as Promise<Locale>,
@@ -35,6 +35,7 @@ export default async function HomePage() {
     getOnSaleProducts(4),
     getHomepageBanners(),
     getHomepagePromotions(),
+    getCategories(),
   ]);
   const pick = (v: { en: string; am: string }) => v[locale] || v.en;
   const heroImage = publicImageUrl("site-assets", s.homepage.hero_image_path);
@@ -45,6 +46,9 @@ export default async function HomePage() {
     { key: "electronics", href: "/electronics", icon: Smartphone, text: t("home.electronicsText"), tone: "bg-electronics/10 text-electronics" },
     { key: "printing", href: "/printing", icon: Printer, text: t("home.printingText"), tone: "bg-printing/10 text-printing" },
   ] as const;
+  // Sub-categories (Perfume, Skincare, Phones …) as one-tap shortcuts.
+  const subcategories = categories.filter((c) => c.parent_id && c.department !== "printing");
+  const deptOf = Object.fromEntries(departments.map((d) => [d.key, d]));
 
   return (
     <>
@@ -52,7 +56,7 @@ export default async function HomePage() {
       <section className="relative overflow-hidden bg-sidebar text-sidebar-foreground">
         {heroImage && <Image src={heroImage} alt="" fill priority sizes="100vw" className="object-cover opacity-35" />}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,oklch(0.8_0.12_82/0.25),transparent_60%)]" aria-hidden />
-        <div className="relative mx-auto flex max-w-7xl flex-col gap-6 px-4 py-16 sm:py-24">
+        <div className="relative mx-auto flex max-w-7xl flex-col gap-5 px-4 py-10 sm:gap-6 sm:py-24">
           <h1 className="max-w-3xl text-3xl leading-tight font-semibold tracking-tight text-balance sm:text-5xl">{pick(s.homepage.hero_title)}</h1>
           <p className="max-w-2xl text-base opacity-85 sm:text-lg">{pick(s.homepage.hero_subtitle)}</p>
           <div className="flex flex-wrap gap-3">
@@ -69,6 +73,41 @@ export default async function HomePage() {
       </section>
 
       <div className="mx-auto w-full max-w-7xl space-y-14 px-4 py-12">
+        {/* Shop by category: departments, then their sub-categories */}
+        <section aria-labelledby="home-categories" className="-mt-4 sm:mt-0">
+          <h2 id="home-categories" className="mb-4 text-xl font-semibold tracking-tight sm:text-2xl">{t("home.departments")}</h2>
+          <div className="grid grid-cols-3 gap-3 sm:gap-4">
+            {departments.map((d) => (
+              <Link key={d.key} href={d.href}
+                className="group flex flex-col items-center gap-2 rounded-2xl border bg-card p-3 text-center shadow-xs transition-shadow hover:shadow-md sm:flex-row sm:items-start sm:gap-4 sm:p-5 sm:text-left">
+                <span className={`inline-flex size-12 shrink-0 items-center justify-center rounded-xl ${d.tone}`}>
+                  <d.icon className="size-6" aria-hidden />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold sm:text-lg">{t(`nav.${d.key}`)}</span>
+                  <span className="mt-1 hidden text-sm text-muted-foreground sm:block">{d.text}</span>
+                </span>
+              </Link>
+            ))}
+          </div>
+          {subcategories.length > 0 && (
+            <ul className="-mx-4 mt-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
+              {subcategories.map((c) => {
+                const d = deptOf[c.department];
+                return (
+                  <li key={c.id} className="snap-start">
+                    <Link href={`/${c.department}?category=${c.slug}`}
+                      className="inline-flex h-10 items-center gap-2 rounded-full border bg-card px-4 text-sm font-medium whitespace-nowrap hover:bg-secondary">
+                      {d && <d.icon className={`size-4 ${d.tone.split(" ").find((x) => x.startsWith("text-"))}`} aria-hidden />}
+                      {localized(c, "name", locale)}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+
         {/* Promotional banners (admin-managed) */}
         {banners.length > 0 && (
           <section aria-label={t("home.offers")} className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2">
@@ -94,26 +133,6 @@ export default async function HomePage() {
             })}
           </section>
         )}
-
-        {/* Departments */}
-        <section>
-          <SectionHeader title={t("home.departments")} />
-          <div className="grid gap-4 sm:grid-cols-3">
-            {departments.map((d) => (
-              <Link key={d.key} href={d.href} className="group flex flex-col gap-3 rounded-2xl border bg-card p-6 shadow-xs transition-shadow hover:shadow-md">
-                <span className={`inline-flex size-12 items-center justify-center rounded-xl ${d.tone}`}>
-                  <d.icon className="size-6" aria-hidden />
-                </span>
-                <h3 className="text-lg font-semibold">{t(`nav.${d.key}`)}</h3>
-                <p className="text-sm text-muted-foreground">{d.text}</p>
-                <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-primary">
-                  {t("home.browse", { department: t(`nav.${d.key}`) })}
-                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
 
         {featured.length > 0 && (
           <section>

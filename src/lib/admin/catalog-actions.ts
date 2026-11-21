@@ -30,6 +30,7 @@ const productSchema = z
     slug: text(100),
     sku: z.string().trim().regex(/^[A-Za-z0-9._-]{2,40}$/, "SKU: 2–40 letters, digits, . _ -"),
     brand: text(80),
+    audience: z.enum(["", "women", "men", "unisex"]).optional(),
     category_id: guid,
     price_etb: money,
     sale_price_etb: optMoney,
@@ -51,7 +52,7 @@ export async function saveProduct(_prev: ActionResult | null, fd: FormData): Pro
   const slug = v.slug ? await slugify(v.slug) : await slugify(v.name_en);
   if (!slug) return fail("Enter a URL slug (English letters/numbers).");
   const row = {
-    name_en: v.name_en, name_am: v.name_am, slug, sku: v.sku, brand: v.brand || null, category_id: v.category_id,
+    name_en: v.name_en, name_am: v.name_am, slug, sku: v.sku, brand: v.brand || null, audience: v.audience || null, category_id: v.category_id,
     price_etb: v.price_etb, sale_price_etb: v.sale_price_etb, description_en: v.description_en, description_am: v.description_am,
     status: v.status, is_featured: v.is_featured === "on", track_inventory: v.track_inventory === "on",
     low_stock_threshold: v.low_stock_threshold, updated_by: ctx.userId,

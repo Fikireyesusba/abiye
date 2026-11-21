@@ -37,7 +37,10 @@ export function ProductCard({ product, priority, rating }: { product: ProductCar
         {available === 0 && <Badge variant="secondary">{t("common.outOfStock")}</Badge>}
       </div>
       <div className="flex flex-1 flex-col gap-2 p-3 sm:p-4">
-        <p className="text-xs text-muted-foreground">{localized(product.category, "name", locale)}</p>
+        <p className="text-xs text-muted-foreground">
+          {localized(product.category, "name", locale)}
+          {product.audience && <> · <span className="font-medium text-foreground/70">{t(`product.audienceTag_${product.audience}`)}</span></>}
+        </p>
         <h3 className="line-clamp-2 text-sm leading-snug font-medium sm:text-base">
           <Link href={`/products/${product.slug}`} className="hover:text-primary">
             {name}

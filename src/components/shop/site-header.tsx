@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import { publicImageUrl } from "@/lib/storage";
 import type { Locale } from "@/i18n/config";
-import { AccountButton, CartButton, DesktopNav, LanguageSwitcher, MobileNav } from "./header-client";
+import { AccountMenu, CartButton, DesktopNav, MobileNav } from "./header-client";
 
 export async function SearchForm({ defaultValue, className }: { defaultValue?: string; className?: string }) {
   const t = await getTranslations();
@@ -54,7 +54,7 @@ export async function SiteHeader() {
         {t("header.skipToContent")}
       </a>
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-4 sm:gap-4">
-        <MobileNav links={[{ href: "/", label: t("nav.home") }, ...links]} secondary={secondary} title={name} />
+        <MobileNav links={[{ href: "/", label: t("nav.home") }, ...links]} title={name} />
         <Link href="/" aria-label={name} className="flex shrink-0 items-center gap-2 font-semibold tracking-tight">
           {logo ? (
             <Image src={logo} alt={name} width={120} height={36} className="h-9 w-auto" priority />
@@ -68,8 +68,7 @@ export async function SiteHeader() {
         <DesktopNav links={links} />
         <SearchForm className="ml-auto hidden w-full max-w-xs md:block" />
         <div className="ml-auto flex items-center gap-1 md:ml-0">
-          <LanguageSwitcher className="hidden sm:inline-flex" />
-          <AccountButton />
+          <AccountMenu links={secondary} />
           <CartButton />
         </div>
       </div>

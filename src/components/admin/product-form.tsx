@@ -6,7 +6,7 @@ import { saveProduct } from "@/lib/admin/catalog-actions";
 
 export interface ProductFormValues {
   id?: string;
-  name_en?: string; name_am?: string; slug?: string; sku?: string; brand?: string | null; category_id?: string;
+  name_en?: string; name_am?: string; slug?: string; sku?: string; brand?: string | null; category_id?: string; audience?: string | null;
   price_etb?: number; sale_price_etb?: number | null; description_en?: string; description_am?: string;
   status?: string; is_featured?: boolean; track_inventory?: boolean; low_stock_threshold?: number; stock_quantity?: number;
 }
@@ -35,6 +35,14 @@ export function ProductForm({ values = {}, categories }: {
           </select>
         </Field>
         <Field label="Brand (optional)" htmlFor="brand"><Input id="brand" name="brand" maxLength={80} defaultValue={values.brand ?? ""} /></Field>
+        <Field label="For (optional)" htmlFor="audience" hint="e.g. perfume for women or men. Customers can filter by it; Unisex shows under both.">
+          <select id="audience" name="audience" defaultValue={values.audience ?? ""} className={fieldClass}>
+            <option value="">Everyone (not shown)</option>
+            <option value="women">Women</option>
+            <option value="men">Men</option>
+            <option value="unisex">Unisex (women and men)</option>
+          </select>
+        </Field>
         <Field label="Price (ETB)" htmlFor="price_etb"><Input id="price_etb" name="price_etb" type="number" min="0.01" step="0.01" required defaultValue={values.price_etb} /></Field>
         <Field label="Sale price (ETB, optional)" htmlFor="sale_price_etb" hint="Must be lower than the price. Empty = no discount.">
           <Input id="sale_price_etb" name="sale_price_etb" type="number" min="0.01" step="0.01" defaultValue={values.sale_price_etb ?? ""} />

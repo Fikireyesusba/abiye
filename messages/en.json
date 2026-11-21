@@ -245,10 +245,21 @@
     "searchResultsFor": "Results for “{query}”",
     "previous": "Previous",
     "next": "Next",
-    "pageOf": "Page {page} of {total}"
+    "pageOf": "Page {page} of {total}",
+    "forLabel": "For",
+    "forEveryone": "Everyone",
+    "for_women": "Women",
+    "for_men": "Men"
   },
   "product": {
     "brand": "Brand",
+    "audience": "For",
+    "audience_women": "Women",
+    "audience_men": "Men",
+    "audience_unisex": "Women and men",
+    "audienceTag_women": "For women",
+    "audienceTag_men": "For men",
+    "audienceTag_unisex": "Unisex",
     "sku": "SKU",
     "description": "Description",
     "related": "You may also like",

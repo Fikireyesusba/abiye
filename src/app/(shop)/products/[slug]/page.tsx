@@ -131,6 +131,12 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
                 <dd>{product.brand}</dd>
               </>
             )}
+            {product.audience && (
+              <>
+                <dt className="text-muted-foreground">{t("product.audience")}</dt>
+                <dd>{t(`product.audience_${product.audience}`)}</dd>
+              </>
+            )}
           </dl>
         </div>
       </div>

@@ -1,9 +1,9 @@
 "use client";
-import { useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Languages, Menu, ShoppingBag, UserRound } from "lucide-react";
+import { Info, Languages, Mail, Menu, PackageSearch, ShoppingBag, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { setLocale } from "@/i18n/actions";
@@ -27,14 +27,46 @@ export function CartButton() {
   );
 }
 
-export function AccountButton() {
+const MENU_ICONS: Record<string, typeof UserRound> = { "/account": UserRound, "/track-order": PackageSearch, "/about": Info, "/contact": Mail };
+
+/** Profile icon (top right): My account, Track order, About, Contact and the language switch. */
+export function AccountMenu({ links }: { links: NavLink[] }) {
   const t = useTranslations("account");
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("pointerdown", onDown); document.removeEventListener("keydown", onKey); };
+  }, [open]);
   return (
-    <Button variant="ghost" size="icon" asChild>
-      <Link href="/account" aria-label={t("accountLink")}>
+    <div ref={box} className="relative">
+      <Button variant="ghost" size="icon" aria-label={t("accountLink")} aria-haspopup="true" aria-expanded={open} aria-controls="account-menu"
+        onClick={() => setOpen((v) => !v)}>
         <UserRound className="size-5" />
-      </Link>
-    </Button>
+      </Button>
+      {open && (
+        <div id="account-menu" className="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-xl border bg-card p-1.5 shadow-lg">
+          <nav aria-label={t("accountLink")} className="flex flex-col">
+            {links.map((l, i) => {
+              const Icon = MENU_ICONS[l.href] ?? UserRound;
+              return (
+                <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
+                  className={cn("flex items-center gap-3 rounded-md px-3 py-2.5 text-sm hover:bg-secondary", i === 0 && "font-medium")}>
+                  <Icon className="size-4 text-muted-foreground" aria-hidden /> {l.label}
+                </Link>
+              );
+            })}
+          </nav>
+          <div className="mt-1 border-t pt-1">
+            <LanguageSwitcher className="w-full justify-start px-3 font-normal" />
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -93,7 +125,7 @@ export function DesktopNav({ links }: { links: NavLink[] }) {
   );
 }
 
-export function MobileNav({ links, title, secondary }: { links: NavLink[]; title: string; secondary: NavLink[] }) {
+export function MobileNav({ links, title }: { links: NavLink[]; title: string }) {
   const t = useTranslations("header");
   return (
     <Sheet>
@@ -115,16 +147,6 @@ export function MobileNav({ links, title, secondary }: { links: NavLink[]; title
             </SheetClose>
           ))}
         </nav>
-        <div className="mt-auto flex flex-col gap-1 border-t p-2 pb-6">
-          {secondary.map((l) => (
-            <SheetClose asChild key={l.href}>
-              <Link href={l.href} className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-secondary">
-                {l.label}
-              </Link>
-            </SheetClose>
-          ))}
-          <LanguageSwitcher className="justify-start" />
-        </div>
       </SheetContent>
     </Sheet>
   );

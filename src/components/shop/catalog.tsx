@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getCategories, listProducts, type Department } from "@/lib/catalog/queries";
+import { getCategories, hasAudienceProducts, listProducts, type Department } from "@/lib/catalog/queries";
 import { first, parsePage, parseSlug, parseSort, sanitizeSearchTerm } from "@/lib/catalog/search";
 import { localized, type Locale } from "@/i18n/config";
 import { cn } from "@/lib/utils";
@@ -38,22 +38,24 @@ export async function Catalog({
   const page = parsePage(first(searchParams.page));
   const categorySlug = parseSlug(first(searchParams.category));
   const inStock = first(searchParams.stock) === "1";
+  const forParam = first(searchParams.for);
+  const audience = forParam === "women" || forParam === "men" ? forParam : null;
 
   const subcategories = categories.filter(
     (c) => c.parent_id !== null && c.department !== "printing" && (!department || c.department === department),
   );
   const activeCategory = subcategories.find((c) => c.slug === categorySlug) ?? null;
 
-  const { products, total, pageCount } = await listProducts({
-    department,
-    categorySlug: activeCategory?.slug ?? null,
-    search: q,
-    sort,
-    page,
-    inStockOnly: inStock,
-  });
+  const [{ products, total, pageCount }, showAudience] = await Promise.all([
+    listProducts({ department, categorySlug: activeCategory?.slug ?? null, search: q, sort, page, inStockOnly: inStock, audience }),
+    hasAudienceProducts(department, activeCategory?.slug ?? null),
+  ]);
 
-  const keep = { q: q || undefined, sort: sort !== "newest" ? sort : undefined, stock: inStock ? "1" : undefined };
+  const keep = { q: q || undefined, sort: sort !== "newest" ? sort : undefined, stock: inStock ? "1" : undefined, for: audience ?? undefined };
+  const chip = (active: boolean) => cn(
+    "inline-flex h-9 items-center rounded-full border px-4 text-sm whitespace-nowrap transition-colors",
+    active ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-secondary",
+  );
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8">
@@ -99,9 +101,25 @@ export async function Catalog({
         </nav>
       )}
 
+      {(showAudience || audience) && (
+        <nav aria-label={t("forLabel")} className="-mx-4 mb-5 overflow-x-auto px-4">
+          <ul className="flex w-max items-center gap-2 pb-1">
+            <li className="pr-1 text-sm text-muted-foreground">{t("forLabel")}:</li>
+            {([null, "women", "men"] as const).map((a) => (
+              <li key={a ?? "all"}>
+                <Link href={href(basePath, { ...keep, category: activeCategory?.slug, for: a ?? undefined })} aria-current={audience === a ? "page" : undefined} className={chip(audience === a)}>
+                  {a ? t(`for_${a}`) : t("forEveryone")}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+
       <form action={basePath} method="get" className="mb-6 flex flex-wrap items-center justify-between gap-3 border-y py-3">
         {q && <input type="hidden" name="q" value={q} />}
         {activeCategory && <input type="hidden" name="category" value={activeCategory.slug} />}
+        {audience && <input type="hidden" name="for" value={audience} />}
         <p className="text-sm text-muted-foreground" aria-live="polite">
           {t("results", { count: total })}
         </p>

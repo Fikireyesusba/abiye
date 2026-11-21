@@ -128,9 +128,35 @@ function resetSampleStock() {
   await nz.waitForSelector('text=Order summary');
   check(await nz.locator('label:has-text("Home delivery")').count() === 1, 'with delivery cities, Home delivery is offered');
 
+  // For women / men filter (unisex shows under both)
+  const psqlq = (q) => require('child_process').execSync(`psql -Atq "${DBQ}" -c "${q}"`).toString().trim();
+  psqlq("update products set audience = 'men' where slug = 'sample-oud-perfume-100ml'");
+  try {
+    await p.goto(B + '/cosmetics?for=men');
+    check(await p.locator('a[href="/products/sample-oud-perfume-100ml"]').count() > 0 && (await p.locator('main').textContent()).includes('For men'), 'For: Men shows the men\'s perfume with its tag');
+    await p.goto(B + '/cosmetics?for=women');
+    check(await p.locator('a[href="/products/sample-oud-perfume-100ml"]').count() === 0, 'For: Women hides it');
+    check(await p.locator('nav a:text-is("Women")').count() === 1 && await p.locator('nav a:text-is("Men")').count() === 1, 'Women / Men filter offered');
+    psqlq("update products set audience = 'unisex' where slug = 'sample-oud-perfume-100ml'");
+    await p.goto(B + '/cosmetics?for=women');
+    check(await p.locator('a[href="/products/sample-oud-perfume-100ml"]').count() > 0, 'unisex shows under Women too');
+    await p.goto(B + '/products/sample-oud-perfume-100ml');
+    check((await p.locator('main').textContent()).includes('Women and men'), 'product page shows who it is for');
+  } finally {
+    psqlq("update products set audience = null where slug = 'sample-oud-perfume-100ml'");
+  }
+  // Home: categories near the top, one tap to a sub-category
+  await p.goto(B + '/');
+  check(await p.locator('#home-categories').count() === 1 && await p.locator('section:has(#home-categories) a[href="/electronics"]').count() === 1, 'home shows the categories');
+  await p.locator('section:has(#home-categories) a[href*="?category="]').first().click();
+  await p.waitForURL(/\?category=/);
+  check(true, 'sub-category shortcut opens that category');
+
   // Language switch
   await p.goto(B + '/');
-  await p.click('header button:has-text("አማርኛ")');
+  await p.click('header button[aria-controls=account-menu]');
+  check(await p.locator('#account-menu a[href="/track-order"]').count() === 1 && await p.locator('#account-menu a[href="/contact"]').count() === 1, 'profile menu: account, track order, about, contact, language');
+  await p.click('#account-menu button:has-text("አማርኛ")');
   await p.waitForFunction(() => document.documentElement.lang === 'am');
   check((await p.locator('nav[aria-label=Main]').textContent()).includes('የውበት ምርቶች'), 'language switch to Amharic');
   await p.goto(B + '/products/sample-oud-perfume-100ml');

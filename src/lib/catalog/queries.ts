@@ -4,11 +4,12 @@ import { getSupabasePublic } from "@/lib/supabase/public";
 import { PAGE_SIZE, searchFilter, type Sort } from "./search";
 
 export type Department = "cosmetics" | "electronics" | "printing";
+export type Audience = "women" | "men" | "unisex";
 
 /** Columns anon may read (see column grants in migration 0008/0010). Never use select("*"). */
 const PRODUCT_CARD = `
   id, slug, sku, name_en, name_am, brand, price_etb, sale_price_etb, effective_price_etb,
-  stock_quantity, track_inventory, is_featured, created_at,
+  stock_quantity, track_inventory, is_featured, created_at, audience,
   category:categories!inner ( id, slug, name_en, name_am, department, parent_id ),
   images:product_images ( storage_path, alt_en, alt_am, is_primary, sort_order )
 `;
@@ -35,6 +36,7 @@ export interface ProductCardData {
   track_inventory: boolean;
   is_featured: boolean;
   created_at: string;
+  audience: Audience | null;
   category: { id: string; slug: string; name_en: string; name_am: string; department: Department; parent_id: string | null };
   images: ProductImage[];
 }
@@ -77,6 +79,8 @@ export interface ProductListQuery {
   sort?: Sort;
   page?: number;
   inStockOnly?: boolean;
+  /** women / men: also includes unisex products. */
+  audience?: "women" | "men" | null;
 }
 
 export async function listProducts(q: ProductListQuery): Promise<{ products: ProductCardData[]; total: number; pageCount: number }> {
@@ -89,6 +93,7 @@ export async function listProducts(q: ProductListQuery): Promise<{ products: Pro
   if (q.department) query = query.eq("category.department", q.department);
   if (q.categorySlug) query = query.eq("category.slug", q.categorySlug);
   if (q.inStockOnly) query = query.or("track_inventory.eq.false,stock_quantity.gt.0");
+  if (q.audience) query = query.in("audience", [q.audience, "unisex"]);
   const filter = searchFilter(q.search ?? "");
   if (filter) query = query.or(filter);
 
@@ -115,6 +120,20 @@ export async function listProducts(q: ProductListQuery): Promise<{ products: Pro
     total,
     pageCount: Math.max(1, Math.ceil(total / PAGE_SIZE)),
   };
+}
+
+/** Whether any shown product in this list is marked for women / men (then the filter is offered). */
+export async function hasAudienceProducts(department?: Department, categorySlug?: string | null): Promise<boolean> {
+  let query = getSupabasePublic()
+    .from("products")
+    .select("id, category:categories!inner(department, slug)", { count: "exact", head: true })
+    .eq("status", "active")
+    .not("audience", "is", null);
+  if (department) query = query.eq("category.department", department);
+  if (categorySlug) query = query.eq("category.slug", categorySlug);
+  const { count, error } = await query;
+  if (error) throw new Error(`audience: ${error.message}`);
+  return (count ?? 0) > 0;
 }
 
 export async function getFeaturedProducts(limit = 8): Promise<ProductCardData[]> {
