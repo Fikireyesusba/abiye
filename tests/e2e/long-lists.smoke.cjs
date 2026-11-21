@@ -40,7 +40,8 @@ const check = (ok, msg) => results.push(`${ok ? "ok  " : "FAIL"} - ${msg}`);
     await p.fill("[data-testid=stock-movements] input[type=search]", "zzz-no-such-thing");
     check(await p.locator("[data-testid=stock-movements] li[data-row]:visible").count() === 0 && all > 0, "stock movements are searchable");
     await p.goto(`${B}/admin/notifications`);
-    check(await p.locator("main details div[tabindex='0']").count() >= 1, "notification categories use the scrolling box");
+    check(await p.locator("main section[data-category] div[tabindex='0']").count() === 1 && await p.locator("nav[aria-label=Sub-sections] a").count() >= 4,
+      "notification categories are sub-tabs with a scrolling box");
   } catch (e) {
     check(false, `crashed: ${e.message.split("\n")[0]}`);
   } finally {

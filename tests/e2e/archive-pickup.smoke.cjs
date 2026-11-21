@@ -92,7 +92,7 @@ async function paidOrder(cid, ref, bytes) {
     await adminLogin(o, B, OWNER.email, OWNER.password);
 
     // ---- set up the archive
-    await o.goto(`${B}/admin/notifications`);
+    await o.goto(`${B}/admin/notifications?tab=archive`);
     await o.fill("input[name=email]", "not an email");
     await o.click("button:has-text('Save address')");
     await o.waitForTimeout(800);
@@ -131,7 +131,7 @@ async function paidOrder(cid, ref, bytes) {
     check(mails(ARCHIVE, bad.number)[0]?.text.includes("Reason: Not in our bank statement"), "with the rejection reason");
 
     // ---- send past receipts
-    await o.goto(`${B}/admin/notifications`);
+    await o.goto(`${B}/admin/notifications?tab=archive`);
     await o.click("summary:has-text('Send past receipts')");
     await o.click("button:has-text('Send receipts')");
     check(await waitFor(() => mails(ARCHIVE, early.number).length === 1), "receipt decided before the archive existed is sent");

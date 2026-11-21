@@ -48,7 +48,7 @@ const to = (email) => mails.filter((m) => m.to?.[0] === email);
     sql(`update customer_accounts set full_name = 'Selam Bekele' where id = '${uid}'`);
     const o = await (await b.newContext({ viewport: { width: 1280, height: 1100 } })).newPage();
     await adminLogin(o, B, OWNER.email, OWNER.password);
-    await o.goto(`${B}/admin/customers/${uid}`);
+    await o.goto(`${B}/admin/customers/${uid}?tab=promos`);
     const form = o.locator("form:has(input[name=days])");
     await form.locator("input[name=value]").fill("150");
     await form.locator("select[name=discountType]").selectOption("fixed");

@@ -92,7 +92,7 @@ async function waitFor(fn, tries = 30) {
     check(await op.locator("tr", { hasText: aEmail }).count() === 0, "threshold filter works");
 
     // reset email
-    await op.goto(`${B}/admin/customers/${A}`);
+    await op.goto(`${B}/admin/customers/${A}?tab=manage`);
     const before = await mailCount(aEmail, "");
     await op.click("button:has-text('Send password reset email')");
     await toast(op, "Password reset email sent");
@@ -120,7 +120,7 @@ async function waitFor(fn, tries = 30) {
     check((await cp.locator("form [role=alert]").innerText()).includes("deactivated"), "deactivated customer cannot sign in");
 
     // reactivate
-    await op.goto(`${B}/admin/customers/${A}`);
+    await op.goto(`${B}/admin/customers/${A}?tab=manage`);
     await op.click("button:has-text('Reactivate account')");
     await toast(op, "Account reactivated");
     check(sql(`select coalesce(banned_until > now(), false) from auth.users where id = '${A}'`) === "f", "ban lifted");
@@ -128,7 +128,7 @@ async function waitFor(fn, tries = 30) {
     check(cp.url().includes("/account"), "reactivated customer can sign in");
 
     // timeline
-    await op.reload();
+    await op.goto(`${B}/admin/customers/${A}?tab=activity`);
     const page = await op.locator("main").innerText();
     check(page.includes("Account deactivated") && page.includes("Repeated fake receipts") && page.includes("Account reactivated"), "timeline: deactivation with reason and reactivation");
     check(page.includes("Password reset email sent"), "timeline: reset email");
@@ -150,7 +150,7 @@ async function waitFor(fn, tries = 30) {
     check(await waitMail(invitee, ""), "invitation email delivered");
     const invId = sql(`select id from auth.users where email = '${invitee}'`);
     check(sql(`select full_name from customer_accounts where id = '${invId}'`) === "Invited Person", "invited account created with the name");
-    await op.goto(`${B}/admin/customers/${invId}`);
+    await op.goto(`${B}/admin/customers/${invId}?tab=manage`);
     await op.click("button:has-text('Send invitation again')");
     await toast(op, "Invitation sent");
     check(await waitMail(invitee, "", 2), "invitation can be sent again before confirming");
@@ -162,7 +162,7 @@ async function waitFor(fn, tries = 30) {
     check((await op.locator("table").innerText()).includes(invitee), "deletion is kept in the activity log with the email");
 
     // guards
-    await op.goto(`${B}/admin/customers/${Bid}`);
+    await op.goto(`${B}/admin/customers/${Bid}?tab=manage`);
     check(await op.locator("button:has-text('Delete account')").count() === 0
       && await op.locator("text=Accounts with orders cannot be deleted").count() === 1, "accounts with orders cannot be deleted");
     await op.goto(`${B}/admin/customers/${M}`);
@@ -173,7 +173,7 @@ async function waitFor(fn, tries = 30) {
     // manager: view only
     const mp = await (await b.newContext()).newPage();
     await adminLogin(mp, B, mEmail, "Manager2026x");
-    await mp.goto(`${B}/admin/customers/${A}`);
+    await mp.goto(`${B}/admin/customers/${A}?tab=activity`);
     check(await mp.locator("text=Manage account").count() === 0 && (await mp.locator("main").innerText()).includes("Signed in"),
       "managers see the timeline but cannot manage accounts");
     const r = await mp.goto(`${B}/admin/activity`);

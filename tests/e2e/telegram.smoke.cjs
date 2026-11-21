@@ -159,7 +159,7 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
     // ---- 5. Admin: status, test message, retry
     const a = await (await b.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
     await adminLogin(a, B, OWNER.email, OWNER.password);
-    await a.goto(`${B}/admin/notifications`);
+    await a.goto(`${B}/admin/notifications?tab=telegram`);
     check((await a.locator("text=Connected (TELEGRAM_BOT_TOKEN").count()) === 1, "admin sees Telegram is configured");
     const beforeTest = received.length;
     await a.locator("button:has-text('Send test message')").first().click();
@@ -167,7 +167,7 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
     check(received.slice(beforeTest).some((x) => x.text?.includes("Test message — orders & payments group")), "test message delivered");
     const deadId = sql(`select id from notifications_outbox where payload->>'job_number' = '${jobNumber}'`);
     sql(`update notifications_outbox set status = 'dead', last_error = '400 Bad Request: chat not found' where id = ${deadId}`);
-    await a.reload();
+    await a.goto(`${B}/admin/notifications?tab=messages&cat=orders`);
     await a.locator(`tr:has(td:text-is("${deadId}")) button:has-text("Retry")`).click();
     await a.waitForSelector('[data-sonner-toast]:has-text("re-sent")');
     check(sql(`select status from notifications_outbox where id = ${deadId}`) === "sent", "admin retry re-sends a dead message");
@@ -179,14 +179,15 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
     await a.locator("main form:has(button:has-text('Reject')) textarea").fill("Amount not in statement");
     await a.locator("main form:has(button:has-text('Reject')) button").click();
     await a.waitForSelector('[data-sonner-toast]:has-text("Payment rejected")');
-    check(await waitFor(() => received.some((x) => x.text?.includes("PAYMENT REJECTED") && x.text.includes(orderNumber) && x.text.includes("Amount not in statement"))),
-      "payment rejection alert sent");
+    await sleep(2500);
+    check(!received.some((x) => x.text?.includes("PAYMENT REJECTED") && x.text.includes(orderNumber)), "no Telegram alert for a rejected payment (payments only: waiting / completed)");
     a.on("dialog", (d) => d.accept());
     await a.goto(`${B}/admin/orders/${subOrder}`);
     await a.fill("textarea[name=note]", "Customer requested cancellation");
     await a.locator("form:has(button:has-text('Cancel order')) button").click();
     await a.waitForSelector('[data-sonner-toast]:has-text("status updated")');
-    check(await waitFor(() => received.some((x) => x.text?.includes("ORDER CANCELLED") && x.text.includes(orderNumber))), "cancellation alert sent");
+    await sleep(2500);
+    check(!received.some((x) => x.text?.includes("ORDER CANCELLED") && x.text.includes(orderNumber)), "no Telegram alert for a cancellation");
 
     // ---- 7. Secrets & auth
     check((await cron(false)).status === 401, "notification cron rejects unauthenticated calls");

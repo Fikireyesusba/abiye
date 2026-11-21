@@ -72,7 +72,7 @@ async function toast(page, text) {
   check((await p.locator("text=Verified revenue").count()) > 0, "super admin sees revenue");
 
   // ---- Staff accounts
-  await p.goto(`${B}/admin/staff`);
+  await p.goto(`${B}/admin/staff?tab=add`);
   const addForm = p.locator("form:has(input[name=fullName])");
   const tempPw = async (name, email, role) => {
     await addForm.locator("input[name=fullName]").fill(name);
@@ -195,6 +195,7 @@ async function toast(page, text) {
   await p.locator("select[name=assignee]").selectOption(staffId);
   await submitIn(p, p.locator("form:has(select[name=assignee])"));
   await toast(p, "Order assigned");
+  await p.goto(`${B}/admin/orders/${o1.id}?tab=history`);
   await p.fill("textarea[name=body]", "Customer prefers afternoon delivery");
   await submitIn(p, p.locator("form:has(textarea[name=body])"));
   await toast(p, "Note added");

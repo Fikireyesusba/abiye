@@ -64,18 +64,18 @@ async function watchCsp(context) {
     const op = await octx.newPage();
     await adminLogin(op, B, OWNER.email, OWNER.password);
 
-    await op.goto(`${B}/admin/promotions`);
-    await op.click("summary:has-text('New promotion')");
+    await op.goto(`${B}/admin/promotions?tab=new`);
     await op.fill("#pt-en-new", `Phase seven ${RUN}`);
     await op.fill("#pt-am-new", "የሙከራ ቅናሽ");
     await op.fill("#pc-new", CODE.toLowerCase());
     await op.fill("#pd-en-new", "Ten percent off everything");
     await op.fill("#pdv-new", "10");
-    await op.check("details[open] input[name=show_on_homepage]");
+    await op.check("main form input[name=show_on_homepage]");
     await op.click("button:has-text('Create promotion')");
     await toast(op, "Promotion created");
     check(sql(`select code || ':' || discount_value || ':' || show_on_homepage from promotions where code = '${CODE}'`) === `${CODE}:10.00:true`, "promotion saved with upper-case code");
 
+    await op.goto(`${B}/admin/promotions?tab=new-banner`);
     await op.fill("#bt-en-new", `Banner ${RUN}`);
     await op.fill("#bt-am-new", "ማስታወቂያ");
     await op.fill("#bl-new", "/electronics");

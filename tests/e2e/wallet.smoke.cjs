@@ -86,7 +86,7 @@ async function requestTopup(page, amount, seed) {
     await card.locator("button:has-text('Verify and add to balance')").click();
     await m.waitForSelector("[data-sonner-toast]:has-text('Top-up verified')");
     check(sql(`select wallet_balance_etb from customer_accounts where id = '${uid}'`) === "3000.00", "manager verified: balance 3,000");
-    check(await (await m.goto(`${B}/admin/customers/${uid}`)) && await m.locator("button:has-text('Correct balance')").count() === 0, "managers cannot correct balances manually");
+    check(await (await m.goto(`${B}/admin/customers/${uid}?tab=wallet`)) && await m.locator("button:has-text('Correct balance')").count() === 0, "managers cannot correct balances manually");
 
     // ---- pay a whole order with the balance
     await c.evaluate((id) => {
@@ -125,7 +125,7 @@ async function requestTopup(page, amount, seed) {
     check(hist.includes("Top-up") && hist.includes("Order payment") && hist.includes("Refund"), "customer history: top-up, payment, refund");
 
     // ---- super admin correction + reject flow
-    await o.goto(`${B}/admin/customers/${uid}`);
+    await o.goto(`${B}/admin/customers/${uid}?tab=wallet`);
     await o.fill("#adj-amount", "-1000");
     await o.fill("#adj-reason", "Test correction");
     await o.click("button:has-text('Correct balance')");

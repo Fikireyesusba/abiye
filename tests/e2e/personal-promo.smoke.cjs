@@ -47,14 +47,13 @@ async function tryCode(page, code) {
 
     // create two personal promotions
     for (const [code, title] of [[CODE, `VIP ${RUN}`], [CODE2, `Gift ${RUN}`]]) {
-      await op.goto(`${B}/admin/promotions`);
-      await op.click("summary:has-text('New promotion')");
+      await op.goto(`${B}/admin/promotions?tab=new`);
       await op.fill("#pt-en-new", title);
       await op.fill("#pt-am-new", "የግል ቅናሽ");
       await op.fill("#pc-new", code);
       await op.fill("#pdv-new", "20");
-      await op.check("details[open] input[name=restricted]");
-      await op.check("details[open] input[name=show_on_homepage]");
+      await op.check("main form input[name=restricted]");
+      await op.check("main form input[name=show_on_homepage]");
       await op.click("button:has-text('Create promotion')");
       await toast(op, "Promotion created");
     }
@@ -72,14 +71,15 @@ async function tryCode(page, code) {
     check(await op.locator(`text=Personal · 1 customer(s)`).count() >= 1, "promotion shows how many customers hold it");
 
     // give the second code from the customer's page
-    await op.goto(`${B}/admin/customers/${vipId}`);
+    await op.goto(`${B}/admin/customers/${vipId}?tab=promos`);
     await op.selectOption("#give-promo", { label: `${CODE2} — Gift ${RUN}` });
     await op.click("button:has-text('Give code')");
     await toast(op, "Given to 1");
     await op.reload();
     const panel = await op.locator("main").innerText();
     check(panel.includes(CODE) && panel.includes(CODE2), "customer page lists their personal codes");
-    check(panel.includes("Personal promo code given"), "timeline records the code");
+    await op.goto(`${B}/admin/customers/${vipId}?tab=activity`);
+    check((await op.locator("main").innerText()).includes("Personal promo code given"), "timeline records the code");
 
     // customer sees and uses it
     const cp = await (await b.newContext()).newPage();
@@ -101,7 +101,7 @@ async function tryCode(page, code) {
     check(!(await home.locator("main").innerText()).includes(CODE), "personal codes never appear on the homepage");
 
     // remove
-    await op.goto(`${B}/admin/customers/${vipId}`);
+    await op.goto(`${B}/admin/customers/${vipId}?tab=promos`);
     await op.locator("li", { hasText: CODE2 }).locator("button:has-text('Remove')").click();
     await toast(op, "Code removed");
     await cp.goto(`${B}/account`);

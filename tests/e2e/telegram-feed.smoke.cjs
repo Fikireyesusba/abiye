@@ -122,12 +122,12 @@ const cron = () => fetch(`${B}/api/cron/notifications`, { headers: { authorizati
     const num = sql(`select order_number from orders where idempotency_key = '${key}'`);
     await cron();
     await cron();
-    check(await waitFor(() => has("SENT: ORDER PLACED (HOW TO PAY)", num, `feed-${RUN}@example.com`)), "copy of the customer's email in Telegram");
-    check(has("Service: Customer email · Event: Order placed (how to pay)"), "notification copy service/event");
+    await sleep(1500);
+    check(!has("SENT: ORDER PLACED (HOW TO PAY)", num), "no copies of customer emails in Telegram (payments only)");
 
     // ---- the two groups
     check(secMsgs.some((t) => t.includes(INTRUDER)) && !orderMsgs.some((t) => t.includes(INTRUDER)), "security messages go only to the security group");
-    check(orderMsgs.some((t) => t.includes(num)) && !secMsgs.some((t) => t.includes(num)), "order messages go only to the orders group");
+    check(!secMsgs.some((t) => t.includes(num)), "order messages never go to the security group");
     check(secMsgs.some((t) => t.includes("ADMIN ACTION: EMAIL BLOCKED")), "admin actions go to the security group");
     await sleep(1500);
     check(!orderMsgs.some((t) => t.includes("ORDER PLACED — AWAITING PAYMENT") && t.includes(num)), "by default: no 'order placed' message (approvals only)");
@@ -141,28 +141,31 @@ const cron = () => fetch(`${B}/api/cron/notifications`, { headers: { authorizati
          set local role authenticated; select public.admin_review_payment((select id from payment_submissions where transaction_reference = 'FTFEED${RUN}'), 'verified'); commit;`);
     await cron();
     check(await waitFor(() => recMsgs.some((t) => t.includes("PAYMENT VERIFIED") && t.includes(num) && t.includes(`FTFEED${RUN}`))), "verified receipt → receipts group");
-    check(!orderMsgs.some((t) => t.includes("PAYMENT VERIFIED") && t.includes(num)), "payment decision not repeated in the orders group by default");
+    check(await waitFor(() => orderMsgs.some((t) => t.includes("PAYMENT VERIFIED") && t.includes(num))), "completed (verified) payment → orders group");
     // stock alert → stock group
     sql("update products set stock_quantity = 80, low_stock_threshold = 5 where sku = 'SMP-CH-001'; update products set stock_quantity = 3 where sku = 'SMP-CH-001'; update products set stock_quantity = 80 where sku = 'SMP-CH-001'");
     await cron();
     check(await waitFor(() => stockMsgs.some((t) => t.includes("LOW STOCK"))) && !orderMsgs.some((t) => t.includes("LOW STOCK")), "stock alert → stock group (not the orders group)");
-    // order progress switched on → steps reported
+    // order steps are never sent (even if the old switch is on)
     sql(`update website_settings set value = value || '{"order_progress": true}' where key = 'telegram_feed'`);
-    await o.goto(`${B}/admin/orders?q=${num}`);
     sql(`begin; select set_config('request.jwt.claims', json_build_object('sub', (select id from auth.users where email = '${OWNER.email}'), 'role', 'authenticated', 'aal', 'aal2')::text, true);
          set local role authenticated; select public.admin_update_order_status((select id from orders where order_number = '${num}'), 'processing', null);
          select public.admin_update_order_status((select id from orders where order_number = '${num}'), 'ready_for_pickup', null); commit;`);
-    await o.goto(`${B}/admin/notifications`);
-    check(await waitFor(() => orderMsgs.some((t) => t.includes("ORDER READY FOR PICKUP") && t.includes(num) && t.includes("By: "))), "ready for pickup reported with who did it");
+    await cron();
+    await sleep(1500);
+    check(!orderMsgs.some((t) => t.includes("ORDER READY FOR PICKUP") && t.includes(num)), "order steps are not sent");
+    await o.goto(`${B}/admin/notifications?tab=telegram`);
     await o.locator("button:has-text('Send test message')").nth(1).click();
     check(await waitFor(() => secMsgs.some((t) => t.includes("Test message — security group"))), "security group test message");
-    check(await o.locator("details[data-category=security]").count() === 1 && await o.locator("details[data-category=orders]").count() === 1, "notifications grouped by category");
+    await o.goto(`${B}/admin/notifications?tab=messages`);
+    check(await o.locator("nav[aria-label=Sub-sections] a:has-text('Security & admin')").count() === 1 && await o.locator("nav[aria-label=Sub-sections] a:has-text('Payments & wallet')").count() === 1, "notifications grouped by category");
+    await o.goto(`${B}/admin/notifications?tab=telegram`);
 
     // ---- bot without rights → hint + Retry all failed
     rightsError = true;
     await o.locator("button:has-text('Send test message')").first().click();
     await o.waitForSelector("[data-sonner-toast]:has-text('could not be delivered')");
-    await o.reload();
+    await o.goto(`${B}/admin/notifications?tab=messages`);
     check((await o.locator("main").innerText()).includes("cannot post in the group"), "explains the missing bot rights");
     rightsError = false;
     const beforeRetry = orderMsgs.length;
@@ -171,7 +174,7 @@ const cron = () => fetch(`${B}/api/cron/notifications`, { headers: { authorizati
     check(await waitFor(() => orderMsgs.slice(beforeRetry).some((t) => t.includes("Test message — orders & payments group"))), "Retry all failed delivers once the bot can post");
 
     // ---- switches: security off → no more security messages
-    await o.goto(`${B}/admin/notifications`);
+    await o.goto(`${B}/admin/notifications?tab=telegram`);
     await o.uncheck("input[name=security]");
     await o.click("form:has(input[name=security]) button[type=submit]");
     await o.waitForSelector("[data-sonner-toast]:has-text('Telegram activity feed saved')");
