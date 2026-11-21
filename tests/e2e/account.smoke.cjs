@@ -70,6 +70,8 @@ async function emailLink(to, subjectPart) {
   check(true, "sign-up requires accepting the terms");
   // only Gmail addresses (local tests also allow example / test domains)
   await p.fill("#email", `buyer-${RUN}@outlook.com`);
+  await p.fill("#password", "Selam2026pass");
+  await p.fill("#confirm", "Selam2026pass");
   await p.check("input[name=acceptTerms]");
   await p.click("form button[type=submit]");
   await p.waitForSelector("[role=alert]:has-text('Gmail')");
