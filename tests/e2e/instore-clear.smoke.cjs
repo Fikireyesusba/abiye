@@ -15,6 +15,9 @@ const check = (ok, msg) => results.push(`${ok ? "ok  " : "FAIL"} - ${msg}`);
 const RUN = Date.now().toString(36);
 const sql = (q) => execSync(`psql -Atq -v ON_ERROR_STOP=1 "${DB}"`, { input: q }).toString().trim().split("\n").pop() ?? "";
 const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw" }).format(new Date());
+// "Not exported yet" is tried on a random past day nobody exports; the real clearing uses yesterday–today.
+const pastDay = new Date(Date.UTC(2021, 0, 1) + (parseInt(RUN.slice(-4), 36) % 700) * 86400000).toISOString().slice(0, 10);
+const yesterday = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw" }).format(new Date(Date.now() - 86400000));
 const toast = (p, t) => p.waitForSelector(`[data-sonner-toast]:has-text("${t}")`, { timeout: 15000 });
 
 (async () => {
@@ -50,31 +53,33 @@ const toast = (p, t) => p.waitForSelector(`[data-sonner-toast]:has-text("${t}")`
     await o.goto(`${B}/admin/activity`);
     await o.click("summary:has-text('Clear entries')");
     const clearForm = o.locator("form:has(button:has-text('Clear entries'))");
-    await clearForm.locator("input[name=from]").fill(today);
-    await clearForm.locator("input[name=to]").fill(today);
+    await clearForm.locator("input[name=from]").fill(pastDay);
+    await clearForm.locator("input[name=to]").fill(pastDay);
     await clearForm.locator("button:has-text('Clear entries')").click();
     await toast(o, "Download the Excel export");
+    await clearForm.locator("input[name=from]").fill(yesterday);
+    await clearForm.locator("input[name=to]").fill(today);
     check(true, "clearing without an export is refused");
     await o.click("summary:has-text('Export to Excel')");
     const exportForm = o.locator("form[action='/admin/activity/export']");
-    await exportForm.locator("input[name=from]").fill(today);
+    await exportForm.locator("input[name=from]").fill(yesterday);
     await exportForm.locator("input[name=to]").fill(today);
     await Promise.all([o.waitForEvent("download"), exportForm.locator("button[type=submit]").click()]);
     await clearForm.locator("button:has-text('Clear entries')").click();
     await toast(o, "Cleared");
-    check(sql(`select count(*) from audit_logs where action = 'audit_cleared' and metadata->>'from' = '${today}'`) >= "1", "after the export: today's entries cleared, the clearing recorded");
+    check(sql(`select count(*) from audit_logs where action = 'audit_cleared' and metadata->>'from' = '${yesterday}'`) >= "1", "after the export: those days cleared, the clearing recorded");
 
     // ---- notifications: same
     sql(`insert into notifications_outbox (event_type, dedupe_key, payload, status, sent_at) values ('test_message', 'e2e-clear-${RUN}', '{}', 'sent', now())`);
     await o.goto(`${B}/admin/notifications`);
     await o.click("[data-testid=notif-export-clear] summary");
     const nExport = o.locator("form[action='/admin/notifications/export']");
-    await nExport.locator("input[name=from]").fill(today);
+    await nExport.locator("input[name=from]").fill(yesterday);
     await nExport.locator("input[name=to]").fill(today);
     const [dl] = await Promise.all([o.waitForEvent("download"), nExport.locator("button[type=submit]").click()]);
     check(/notifications-.*\.xlsx$/.test(dl.suggestedFilename()), "notifications exported to Excel");
     const nClear = o.locator("form:has(button:has-text('Clear these notifications'))");
-    await nClear.locator("input[name=from]").fill(today);
+    await nClear.locator("input[name=from]").fill(yesterday);
     await nClear.locator("input[name=to]").fill(today);
     await nClear.locator("button:has-text('Clear these notifications')").click();
     await toast(o, "Cleared");
