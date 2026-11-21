@@ -124,20 +124,22 @@ const addisDay = (offsetDays = 0) => new Intl.DateTimeFormat("en-CA", { timeZone
     sql(`alter table audit_logs disable trigger audit_logs_immutable;
       insert into audit_logs (action, entity_type, entity_id, created_at) values ('e2e_old_${RUN}', 'test', 'x', now() - interval '90 days');
       alter table audit_logs enable trigger audit_logs_immutable;`);
+    const oldDay = addisDay(-90);
     await o.goto(`${B}/admin/activity`);
-    await o.click("summary:has-text('Clear old entries')");
-    await o.fill("input[name=before]", addisDay(-60));
-    await o.click("button:has-text('Clear entries')");
-    await o.waitForTimeout(1500);
-    check(await o.locator("input[name=exported]").evaluate((el) => !el.checkValidity()), "the export checkbox must be ticked");
-    check(sql(`select count(*) from audit_logs where action = 'e2e_old_${RUN}'`) === "1", "nothing cleared without confirming the export");
-    await o.check("input[name=exported]");
-    await o.click("button:has-text('Clear entries')");
+    await o.click("summary:has-text('Clear entries')");
+    const clearForm = o.locator("form:has(button:has-text('Clear entries'))");
+    await clearForm.locator("input[name=from]").fill(oldDay);
+    await clearForm.locator("input[name=to]").fill(oldDay);
+    await clearForm.locator("button:has-text('Clear entries')").click();
+    await o.waitForSelector("[data-sonner-toast]:has-text('Download the Excel export')");
+    check(sql(`select count(*) from audit_logs where action = 'e2e_old_${RUN}'`) === "1", "nothing cleared before the Excel export of those dates");
+    const ex = await o.request.get(`${B}/admin/activity/export?from=${oldDay}&to=${oldDay}&type=`);
+    check(ex.ok() && (ex.headers()["content-type"] ?? "").includes("spreadsheetml"), "Excel export of those dates downloaded");
+    await clearForm.locator("button:has-text('Clear entries')").click();
     await o.waitForSelector("[data-sonner-toast]:has-text('Cleared')");
-    check(sql(`select count(*) from audit_logs where action = 'e2e_old_${RUN}'`) === "0", "entries older than the date cleared");
-    check(sql(`select count(*) from audit_logs where action = 'profile_updated' and entity_id = '${uid}'`) >= "1", "recent entries kept");
-    check(sql(`select count(*) from audit_logs where action = 'audit_cleared' and created_at > '${STARTED}'`) === "1", "the clearing is recorded");
-    check(await o.locator("input[name=before]").getAttribute("max") === addisDay(-31), "the last 30 days cannot be chosen");
+    check(sql(`select count(*) from audit_logs where action = 'e2e_old_${RUN}'`) === "0", "after the export: entries of those dates cleared");
+    check(sql(`select count(*) from audit_logs where action = 'profile_updated' and entity_id = '${uid}'`) >= "1", "other days kept");
+    check(sql(`select count(*) from audit_logs where action = 'audit_cleared' and created_at > '${STARTED}'`) >= "1", "the clearing is recorded");
   } catch (e) {
     check(false, `crashed: ${e.message.split("\n")[0]}`);
   } finally {
