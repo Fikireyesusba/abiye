@@ -66,7 +66,7 @@ export async function buildPaymentsWorkbook(payments: ExportPayment[], topups: E
   s.columns = [{ width: 36 }, { width: 22 }];
   const rows: [string, string | number | Date][] = [
     [`${meta.business} — payments export`, ""],
-    ["Reviewed between (Addis Ababa time)", `${meta.from} to ${meta.to}`],
+    ["Reviewed between (Ethiopia time)", `${meta.from} to ${meta.to}`],
     ["Included", meta.filter],
     ["Exported by", meta.generatedBy],
     ["Exported at", addis(meta.generatedAt.toISOString())!],

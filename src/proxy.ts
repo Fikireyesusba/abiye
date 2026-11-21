@@ -57,6 +57,25 @@ export async function proxy(request: NextRequest) {
   // Inactivity sign-out (server side; the browser timer does the same while a tab is open).
   const isAnyLogin = isLogin || path === "/account/login";
   const cookieOpts = { path: "/", sameSite: "lax" as const, secure: request.nextUrl.protocol === "https:", maxAge: 86400 };
+  // One device per account: a newer sign-in elsewhere ended this session → sign out here too.
+  // (An error, e.g. before the database update, never blocks: the database enforces it as well.)
+  const ended = needsSession && signedIn && sessionId && !isAnyLogin && supabaseClient
+    ? (await supabaseClient.rpc("session_is_current")).data === false
+    : false;
+  if (ended) {
+    await supabaseClient?.auth.signOut({ scope: "local" });
+    cookiesToSet.push({ name: SESSION_COOKIE, value: "", options: { ...cookieOpts, maxAge: 0 } });
+    cookiesToSet.push({ name: ACTIVE_COOKIE, value: "", options: { ...cookieOpts, maxAge: 0 } });
+    const login = new URL(isAdmin ? "/admin/login" : "/account/login", request.url);
+    login.searchParams.set("reason", "elsewhere");
+    if (!isAdmin) login.searchParams.set("next", path);
+    const response = NextResponse.redirect(login);
+    cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+    Object.entries(extraHeaders).forEach(([k, v]) => response.headers.set(k, v));
+    response.headers.set("Content-Security-Policy", csp);
+    response.headers.set("Cache-Control", "private, no-store");
+    return response;
+  }
   if (needsSession && signedIn && sessionId && !isAnyLogin) {
     const limitMs = (isAdmin ? IDLE_MINUTES.admin : IDLE_MINUTES.customer) * 60_000;
     const last = Number(request.cookies.get(ACTIVE_COOKIE)?.value);

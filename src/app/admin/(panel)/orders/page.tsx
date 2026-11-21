@@ -67,7 +67,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
             </label>
             <Button type="submit"><Download /> Download .xlsx</Button>
           </form>
-          <p className="mt-2 text-xs text-muted-foreground">Sheets: Summary, Orders (one row per order) and Items. Dates in Addis Ababa time. The file contains customer phone numbers and addresses — store it safely. Each export is recorded in the Activity log.</p>
+          <p className="mt-2 text-xs text-muted-foreground">Sheets: Summary, Orders (one row per order) and Items. Dates in Ethiopia time. The file contains customer phone numbers and addresses — store it safely. Each export is recorded in the Activity log.</p>
         </details>
       )}
       <form method="get" className="mb-4 flex flex-wrap gap-2">

@@ -74,7 +74,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/admin/
 
   return (
     <>
-      <PageHeader title="Analytics" description={`${from} to ${to} (Addis Ababa time). Sales count when the payment is verified.${a.money ? "" : " Money figures are visible to Super Admins."}`} />
+      <PageHeader title="Analytics" description={`${from} to ${to} (Ethiopia time). Sales count when the payment is verified.${a.money ? "" : " Money figures are visible to Super Admins."}`} />
       <div className="mb-6 flex flex-wrap items-end gap-2">
         <nav aria-label="Period" className="flex flex-wrap gap-2">
           {RANGES.map((r) => (

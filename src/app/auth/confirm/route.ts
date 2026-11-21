@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { safeNext } from "@/lib/account/session";
+import { endOtherSessions } from "@/lib/security/single-session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const TYPES: EmailOtpType[] = ["email", "signup", "recovery", "invite", "email_change"];
@@ -22,6 +23,7 @@ export async function GET(request: NextRequest) {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
   if (error) return fail;
+  await endOtherSessions(supabase, { customer: true });
   if (SET_PASSWORD.includes(type)) return NextResponse.redirect(new URL("/account/reset-password", request.url));
   return NextResponse.redirect(new URL(`${next}${next.includes("?") ? "&" : "?"}welcome=1`, request.url));
 }

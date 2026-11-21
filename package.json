@@ -33,6 +33,7 @@
     "test:smoke:wallet": "node --env-file=.env.local tests/e2e/wallet.smoke.cjs",
     "test:smoke:security": "node --env-file=.env.local tests/e2e/security.smoke.cjs",
     "test:smoke:long-lists": "NODE_PATH=$(npm root -g):$(pwd)/node_modules node --env-file=.env.local tests/e2e/long-lists.smoke.cjs",
+    "test:smoke:single-session": "NODE_PATH=$(npm root -g):$(pwd)/node_modules node --env-file=.env.local tests/e2e/single-session.smoke.cjs",
     "test:smoke:idle-signout": "NODE_PATH=$(npm root -g):$(pwd)/node_modules node --env-file=.env.local tests/e2e/idle-signout.smoke.cjs",
     "test:smoke:promo-send": "NODE_PATH=$(npm root -g):$(pwd)/node_modules node --env-file=.env.local tests/e2e/promo-send.smoke.cjs",
     "test:smoke:activity-categories": "NODE_PATH=$(npm root -g):$(pwd)/node_modules node --env-file=.env.local tests/e2e/activity-categories.smoke.cjs",

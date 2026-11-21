@@ -16,7 +16,7 @@ describe("receipt archive email", () => {
     expect(m.html).toContain("&lt;b&gt;Abebe&lt;/b&gt;");
     expect(m.html).not.toContain("<b>Abebe</b>");
     expect(m.text).toContain("Reason: Not in bank statement");
-    expect(m.text).toContain("Decided: 2026-11-20 10:30 (Addis Ababa)");
+    expect(m.text).toContain("Decided: 2026-11-20 10:30 (Ethiopia)");
     expect(m.text).toContain("Decided by: Owner");
     expect(m.text).toContain("(attached)");
   });

@@ -38,7 +38,7 @@ export async function buildFullExport(
   about.addRow([`${meta.business} — full data export`]).font = { bold: true, size: 14 };
   about.addRow(["Exported by", meta.generatedBy]);
   about.addRow(["Exported at (UTC)", meta.generatedAt.toISOString()]);
-  about.addRow(["Note", "Times in the sheets are UTC (Addis Ababa = UTC+3). Secrets such as access codes are never exported. Receipt and document files are not included."]);
+  about.addRow(["Note", "Times in the sheets are UTC (Ethiopia time = UTC+3). Secrets such as access codes are never exported. Receipt and document files are not included."]);
   about.addRow([]);
   about.addRow(["Sheet", "Rows"]).font = { bold: true };
   for (const d of data) about.addRow([d.sheet, d.rows.length]);

@@ -99,7 +99,7 @@ export default async function PromotionsPage() {
 
   return (
     <>
-      <PageHeader title="Promotions & banners" description="Promo codes customers can use at checkout, offers on the homepage, and homepage banners. Times are Addis Ababa time." />
+      <PageHeader title="Promotions & banners" description="Promo codes customers can use at checkout, offers on the homepage, and homepage banners. Times are Ethiopia time." />
 
       <section className="mb-10 space-y-4">
         <h2 className="text-lg font-semibold">Promotions</h2>

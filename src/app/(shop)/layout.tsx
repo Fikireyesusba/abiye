@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { IdleSignOut } from "@/components/security/idle-sign-out";
 import { IDLE_MINUTES } from "@/lib/security/idle";
 import { InstallBanner } from "@/components/pwa/pwa";
+import { PushClaim } from "@/components/pwa/push-claim";
 import { CartSync } from "@/components/shop/cart-sync";
 import { SiteFooter } from "@/components/shop/site-footer";
 import { SiteHeader } from "@/components/shop/site-header";
@@ -34,6 +35,7 @@ export default async function ShopLayout({ children }: LayoutProps<"/">) {
       <Toaster />
       <CartSync />
       <InstallBanner />
+      <PushClaim />
     </>
   );
 }

@@ -9,6 +9,7 @@ import { z } from "zod";
 import { getServerEnv } from "@/lib/env";
 import { clientIpKey, rateLimitAll } from "@/lib/security/rate-limit";
 import { sha256Hex } from "@/lib/security/tokens";
+import { endOtherSessions } from "@/lib/security/single-session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ethiopianPhoneSchema } from "@/lib/validation/checkout";
 import { getCustomerUser, getSignedInUserId, safeNext } from "./session";
@@ -93,6 +94,7 @@ export async function signInCustomer(_prev: AccountState, fd: FormData): Promise
     if (error.code === "user_banned") return { email: addr, error: "deactivated" };
     return { email: addr, error: /not confirmed/i.test(error.message) ? "notConfirmed" : "invalidLogin" };
   }
+  await endOtherSessions(supabase, { customer: true });
   redirect(safeNext(fd.get("next")));
 }
 

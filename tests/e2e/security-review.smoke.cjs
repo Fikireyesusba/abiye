@@ -41,9 +41,10 @@ const badge = async (p) => (await p.locator("nav a[href='/admin/security']").fir
     check(await badge(o) === "1", `badge drops to 1 (${await badge(o)})`);
     check((await o.locator("main").innerText()).includes(A) && (await o.locator("main").innerText()).includes("Recently reviewed"), "shown under Recently reviewed");
 
-    // mark all
-    await o.click("button:has-text('Mark all 1 as reviewed')");
-    await o.waitForSelector("[data-sonner-toast]:has-text('cleared')");
+    // no bulk clearing: each alert is reviewed on its own
+    check(await o.locator("button:has-text('Mark all')").count() === 0, "no 'Mark all as reviewed' button");
+    await o.locator("tr", { hasText: B2 }).locator("button:has-text('Mark as reviewed')").click();
+    await o.waitForSelector("[data-sonner-toast]:has-text('1 alert cleared')");
     await o.reload();
     check(await badge(o) === "", `badge gone (${await badge(o) || "none"})`);
     await o.goto(`${B}/admin/security?tab=overview`);

@@ -50,7 +50,7 @@ export async function buildSalesWorkbook(r: SalesReport, meta: { business: strin
   s.columns = [{ width: 44 }, { width: 22 }];
   const rows: [string, string | number | Date, boolean?][] = [
     [`${meta.business} — ${meta.title}`, ""],
-    ["Period (Addis Ababa time)", `${r.from} to ${r.to}`],
+    ["Period (Ethiopia time)", `${r.from} to ${r.to}`],
     ["Exported by", meta.generatedBy],
     ["Exported at", new Date(meta.generatedAt.getTime() + 3 * 3600 * 1000)],
     ["", ""],

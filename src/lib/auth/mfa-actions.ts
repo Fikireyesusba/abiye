@@ -2,6 +2,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { clientIpKey, rateLimitAll } from "@/lib/security/rate-limit";
+import { endOtherSessions } from "@/lib/security/single-session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { recordSecurityEvent } from "@/lib/security/events";
 import { getMfaState } from "./mfa";
@@ -36,6 +37,7 @@ export async function verifyAdminCode(_prev: MfaFormState, fd: FormData): Promis
     return { error: "That code is not correct (or has expired). Try the newest code." };
   }
   await recordSecurityEvent("admin_login_success", { userId: state.userId, email: await currentEmail() });
+  await endOtherSessions(supabase); // only after the second step, so a password alone cannot kick anyone out
   redirect(safeAdminRedirect(fd.get("next")));
 }
 
@@ -81,5 +83,6 @@ export async function confirmAdminMfaSetup(_prev: MfaFormState, fd: FormData): P
     return { error: "That code is not correct. Check the time on your phone is automatic, then try the newest code." };
   }
   await recordSecurityEvent("admin_login_success", { userId: state.userId, email: await currentEmail(), metadata: { first_setup: true } });
+  await endOtherSessions(supabase);
   redirect("/admin?mfaEnabled=1");
 }

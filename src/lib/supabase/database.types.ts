@@ -1039,6 +1039,9 @@ isOneToOne: false
         isOneToOne: false
         isSetofReturn: true
       } },
+"claim_push_device":
+{ Args: { "p_auth": string,"p_endpoint": string,"p_locale"?: string,"p_p256dh": string }; Returns: undefined
+                           },
 "claim_telegram":
 { Args: { "p_limit"?: number,"p_security": boolean }; Returns: {
               "attachment_bucket": string | null,
@@ -1168,6 +1171,9 @@ isOneToOne: false
 { Args: { "p_before": string,"p_limit"?: number }; Returns: {
               "bucket": string,"name": string
             }[]
+                           },
+"session_is_current":
+{ Args: Record<PropertyKey, never>; Returns: boolean
                            },
 "storage_orphans":
 { Args: { "p_limit"?: number,"p_min_age"?: string }; Returns: {

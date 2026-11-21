@@ -37,7 +37,7 @@ const etb = (v: unknown) => (v === null || v === undefined || v === "" ? "" : `$
 const addis = (iso: unknown) => {
   if (typeof iso !== "string" || !iso) return "";
   const d = new Date(Date.parse(iso) + 3 * 3600 * 1000);
-  return `${d.toISOString().slice(0, 16).replace("T", " ")} (Addis Ababa)`;
+  return `${d.toISOString().slice(0, 16).replace("T", " ")} (Ethiopia)`;
 };
 const EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "application/pdf": "pdf" };
 

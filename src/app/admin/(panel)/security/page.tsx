@@ -57,15 +57,6 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
   const ReviewForm = ({ type, subject }: { type: "email" | "customer"; subject: string }) => (
     <ActionForm action={markSecurityReviewed} hidden={{ type, subject }} submitLabel="Mark as reviewed" variant="outline" size="sm" className="mt-1 space-y-0" />
   );
-  const ReviewAll = ({ type, count }: { type: "email" | "customer"; count: number }) =>
-    canBlock && count > 0 ? (
-      <ActionForm action={markSecurityReviewed} hidden={{ type, all: "1" }} submitLabel={`Mark all ${count} as reviewed`} variant="outline" size="sm"
-        confirm={`Clear all ${count} alerts? They come back only if something new happens. Nothing is blocked or deleted.`}
-        className="mb-3 flex flex-wrap items-end gap-2 space-y-0">
-        <input name="note" maxLength={500} placeholder="Note (optional)" aria-label="Note" className={cn(fieldClass, "h-8 w-56")} />
-      </ActionForm>
-    ) : null;
-
   return (
     <>
       <PageHeader title="Security & health" description="Suspicious sign-ins (with the email that was used), risky customer behaviour, blocked emails and the health of the website." />
@@ -111,7 +102,6 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
           <p className="flex items-center gap-2 rounded-xl border border-dashed p-8 text-success"><CheckCircle2 className="size-5" aria-hidden /> No active alerts. Everything has been reviewed.</p>
         ) : (
           <>
-            {canBlock && <div className="flex flex-wrap gap-2"><ReviewAll type="email" count={emailAlerts.length} /><ReviewAll type="customer" count={customerAlerts.length} /></div>}
             <ul className="space-y-3" data-testid="active-alerts">
               {emailAlerts.map((e) => (
                 <li key={`e:${e.email}`} className="rounded-xl border border-destructive/40 bg-destructive/5 p-4" data-alert="email">
@@ -217,7 +207,6 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
     return (
       <>
         <p className="mb-3 text-sm text-muted-foreground">Every email used in a failed or blocked sign-in in the last 7 days, riskiest first. Admin attempts weigh more; “networks” counts different internet connections. Checked one and it is fine? <strong>Mark as reviewed</strong> clears it (and the red badge) until something new happens.</p>
-        <ReviewAll type="email" count={(data ?? []).filter((r) => !r.blocked).length} />
         <Table scroll head={["Email used", "Admin fails", "Code fails", "Customer fails", "Blocked tries", "Networks", "Last seen", "Action"]} empty="No failed sign-ins in the last 7 days.">
           {(data ?? []).map((r) => (
             <tr key={r.email} className={cn("align-top", r.score >= 6 && !r.blocked && "bg-destructive/5")}>
@@ -271,7 +260,6 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
     return (
       <>
         <p className="mb-3 text-sm text-muted-foreground">Customers whose behaviour in the last 30 days needs a look: unpaid orders that hold stock, rejected receipts, receipts or bank references also used by someone else, many failed sign-ins, baskets left together with unpaid orders. <strong>Mark as reviewed</strong> clears a customer until new behaviour appears.</p>
-        <ReviewAll type="customer" count={(data ?? []).length} />
         <Table scroll head={["Customer", "Why", "Unpaid (expired / cancelled)", "Rejected receipts", "Reused receipts", "Failed sign-ins", "Action"]} empty="No suspicious customers in the last 30 days.">
           {(data ?? []).map((r) => (
             <tr key={r.user_id} className="align-top">

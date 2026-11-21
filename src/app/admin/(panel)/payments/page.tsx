@@ -68,7 +68,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/admin/p
         <p className="mt-2 text-xs text-muted-foreground">
           Sheets: Summary (counts and amounts), Order payments{canTopups ? " and Wallet top-ups" : ""}. Each row: result, when and by whom it was decided, the reason for rejections,
           order, customer (name, phone, email), amount, bank account, bank reference, receipt and warnings (reused reference or receipt, amount mismatch).
-          Dates in Addis Ababa time. The file contains customer contact details — store it safely. Each export is recorded in the Activity log.
+          Dates in Ethiopia time. The file contains customer contact details — store it safely. Each export is recorded in the Activity log.
         </p>
       </details>
       <nav className="mb-5 flex gap-1 border-b" aria-label="Payment status">

@@ -23,10 +23,9 @@ export async function savePushSubscription(input: unknown, locale: unknown): Pro
   if (!(await rateLimit(`push:save:${user.id}`, 20, 3600))) return { ok: false, error: "rate_limited" };
   const supabase = await createSupabaseServerClient();
   const { endpoint, keys } = parsed.data;
-  // Re-subscribing the same device (or a device that changed account) replaces the old row.
-  await supabase.from("push_subscriptions").delete().eq("endpoint", endpoint);
-  const { error } = await supabase.from("push_subscriptions").insert({
-    endpoint, p256dh: keys.p256dh, auth: keys.auth, locale: locale === "am" ? "am" : "en",
+  // The device now belongs to this account only (taken from any account that used it before).
+  const { error } = await supabase.rpc("claim_push_device", {
+    p_endpoint: endpoint, p_p256dh: keys.p256dh, p_auth: keys.auth, p_locale: locale === "am" ? "am" : "en",
   });
   if (error) {
     console.warn(`[push] save failed: ${error.code}`);

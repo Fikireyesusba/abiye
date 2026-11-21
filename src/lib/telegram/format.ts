@@ -104,7 +104,7 @@ export function describe(row: OutboxRow): [string, string] {
 }
 
 const addisTime = (iso: unknown) =>
-  typeof iso === "string" ? `${new Date(Date.parse(iso) + 3 * 3600 * 1000).toISOString().slice(0, 16).replace("T", " ")} (Addis Ababa)` : "";
+  typeof iso === "string" ? `${new Date(Date.parse(iso) + 3 * 3600 * 1000).toISOString().slice(0, 16).replace("T", " ")} (Ethiopia)` : "";
 const short = (v: unknown, n = 300) => {
   const s = typeof v === "string" ? v : v === null || v === undefined ? "" : JSON.stringify(v);
   return s.length > n ? `${s.slice(0, n - 1)}…` : s;

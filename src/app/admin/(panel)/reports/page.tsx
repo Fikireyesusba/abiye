@@ -41,7 +41,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
   return (
     <>
       <div className="print:hidden">
-        <PageHeader title="Sales reports" description="Money is counted on the day the payment was verified (Addis Ababa time), so the figures match your bank statement. Print or export to Excel for your accountant." />
+        <PageHeader title="Sales reports" description="Money is counted on the day the payment was verified (Ethiopia time), so the figures match your bank statement. Print or export to Excel for your accountant." />
         <div className="mb-6 flex flex-wrap items-end gap-3">
           <form method="get" className="flex flex-wrap items-end gap-2">
             <input type="hidden" name="kind" value="day" />
@@ -61,7 +61,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
       </div>
 
       <h2 className="mb-1 text-xl font-semibold">{title}</h2>
-      <p className="mb-5 text-sm text-muted-foreground">Period {r.from} to {r.to} (Addis Ababa) · printed by {ctx.fullName} · {formatDateTime(new Date().toISOString(), "en")}</p>
+      <p className="mb-5 text-sm text-muted-foreground">Period {r.from} to {r.to} (Ethiopia time) · printed by {ctx.fullName} · {formatDateTime(new Date().toISOString(), "en")}</p>
 
       <div className="grid gap-4 lg:grid-cols-2 print:grid-cols-2">
         <Panel title="Sales">

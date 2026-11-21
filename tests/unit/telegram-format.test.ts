@@ -89,7 +89,7 @@ describe("Telegram activity feed", () => {
     expect(m.text).toContain("x&lt;y&gt;@example.com");
     expect(m.text).toContain("× 4");
     expect(m.text).toContain("Where: data_reset");
-    expect(m.text).toContain("2026-11-20 10:00 (Addis Ababa)");
+    expect(m.text).toContain("2026-11-20 10:00 (Ethiopia)");
   });
   it("high-risk alert, admin action and notification copy", () => {
     const a = buildMessage(row("security_alert", { email: "bad@example.com", score: 9, is_staff: true, last_kind: "admin_login_failed" }), "");

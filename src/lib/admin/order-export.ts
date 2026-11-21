@@ -22,7 +22,7 @@ export interface ExportOrder {
 
 export interface ExportMeta {
   business: string;
-  from: string; // YYYY-MM-DD (Addis Ababa)
+  from: string; // YYYY-MM-DD (Ethiopia time)
   to: string;
   filter: string;
   generatedBy: string;
@@ -60,7 +60,7 @@ export async function buildOrdersWorkbook(orders: ExportOrder[], meta: ExportMet
   sum.columns = [{ width: 34 }, { width: 22 }];
   const rows: [string, string | number | Date][] = [
     [`${meta.business} — orders export`, ""],
-    ["Period (Addis Ababa time)", `${meta.from} to ${meta.to}`],
+    ["Period (Ethiopia time)", `${meta.from} to ${meta.to}`],
     ["Filter", meta.filter],
     ["Exported by", meta.generatedBy],
     ["Exported at", addis(meta.generatedAt.toISOString())!],

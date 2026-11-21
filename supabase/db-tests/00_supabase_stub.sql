@@ -13,6 +13,8 @@ create schema auth;
 create table auth.users (id uuid primary key default gen_random_uuid(), email text unique,
   email_confirmed_at timestamptz, raw_user_meta_data jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(), last_sign_in_at timestamptz, banned_until timestamptz);
+create table auth.sessions (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade,
+  created_at timestamptz default now(), updated_at timestamptz, aal text);
 create table auth.audit_log_entries (instance_id uuid, id uuid primary key default gen_random_uuid(),
   payload json, created_at timestamptz default now(), ip_address varchar(64) not null default '');
 create function auth.uid() returns uuid language sql stable as $$
