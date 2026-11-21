@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AlertTriangle, CheckCircle2, ShieldAlert, XCircle } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
-import { DatabaseUpdateNeeded, PageHeader, Panel, StatCard, Table, Td, fieldClass, isMissingDbFunction } from "@/components/admin/ui";
+import { DatabaseUpdateNeeded, PageHeader, Panel, StatCard, SubTabs, Table, Td, fieldClass, isMissingDbFunction } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { blockEmail, markSecurityReviewed, unblockEmail } from "@/lib/admin/security-actions";
 import { requirePermission } from "@/lib/auth/guards";
@@ -60,14 +60,7 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
   return (
     <>
       <PageHeader title="Security & health" description="Suspicious sign-ins (with the email that was used), risky customer behaviour, blocked emails and the health of the website." />
-      <nav className="mb-5 flex gap-1 overflow-x-auto border-b" aria-label="Security sections">
-        {TABS.map((t) => (
-          <Link key={t.key} href={`/admin/security?tab=${t.key}`} aria-current={t.key === tab ? "page" : undefined}
-            className={cn("-mb-px border-b-2 px-4 py-2 text-sm whitespace-nowrap", t.key === tab ? "border-primary font-medium" : "border-transparent text-muted-foreground hover:text-foreground")}>
-            {t.label}
-          </Link>
-        ))}
-      </nav>
+      <SubTabs base="/admin/security" tabs={TABS} active={tab} />
       {tab === "alerts" && <Alerts />}
       {tab === "overview" && <Overview />}
       {tab === "emails" && <><Emails /><Reviewed /></>}
@@ -102,7 +95,7 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
           <p className="flex items-center gap-2 rounded-xl border border-dashed p-8 text-success"><CheckCircle2 className="size-5" aria-hidden /> No active alerts. Everything has been reviewed.</p>
         ) : (
           <>
-            <ul className="space-y-3" data-testid="active-alerts">
+            <ul className="max-h-[65vh] space-y-3 overflow-y-auto overscroll-contain" data-testid="active-alerts">
               {emailAlerts.map((e) => (
                 <li key={`e:${e.email}`} className="rounded-xl border border-destructive/40 bg-destructive/5 p-4" data-alert="email">
                   <div className="flex flex-wrap items-center gap-2">

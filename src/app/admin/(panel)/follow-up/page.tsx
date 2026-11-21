@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PageHeader, Table, Td, DatabaseUpdateNeeded, isMissingDbFunction } from "@/components/admin/ui";
+import { DatabaseUpdateNeeded, PageHeader, SubTabs, Table, Td, isMissingDbFunction, pickTab } from "@/components/admin/ui";
 import { StatusBadge } from "@/components/status/status-badge";
 import { waitingFor } from "@/lib/admin/activity";
 import { requirePermission } from "@/lib/auth/guards";
@@ -38,7 +38,8 @@ function Contact({ r }: { r: Row }) {
 
 export default async function FollowUpPage({ searchParams }: PageProps<"/admin/follow-up">) {
   const ctx = await requirePermission("customers.view");
-  const h = Number(first((await searchParams).hours));
+  const sp = await searchParams;
+  const h = Number(first(sp.hours));
   const hours = (HOURS as readonly number[]).includes(h) ? h : 2;
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("admin_stalled_checkouts", { p_hours: hours });
@@ -53,19 +54,27 @@ export default async function FollowUpPage({ searchParams }: PageProps<"/admin/f
   const canOpenOrders = ctx.permissions.has("orders.view_all");
   const canOpenPrinting = ctx.permissions.has("printing.view");
 
+  const TABS = [
+    { key: "orders", label: "Orders not paid", count: orders.length },
+    { key: "baskets", label: "Baskets not checked out", count: baskets.length },
+    { key: "printing", label: "Printing jobs not paid", count: printing.length },
+  ];
+  const tab = pickTab(TABS, sp.tab);
+
   return (
     <>
       <PageHeader title="Stalled checkouts" description={`Customers who started but have not moved forward for more than ${hours} hours. Contact them to help finish.`} />
       <nav aria-label="Waiting time" className="mb-6 flex flex-wrap gap-2">
         {HOURS.map((x) => (
-          <Link key={x} href={`/admin/follow-up?hours=${x}`} aria-current={x === hours ? "page" : undefined}
+          <Link key={x} href={`/admin/follow-up?hours=${x}&tab=${tab}`} aria-current={x === hours ? "page" : undefined}
             className={cn("rounded-full border px-3 py-1 text-sm", x === hours ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted")}>
             {x < 24 ? `${x}+ hours` : `${x / 24}+ days`}
           </Link>
         ))}
       </nav>
+      <SubTabs base="/admin/follow-up" tabs={TABS} active={tab} keep={{ hours: String(hours) }} />
 
-      <section className="mb-8 space-y-3">
+      {tab === "orders" && <section className="mb-8 space-y-3">
         <h2 className="text-base font-semibold">Orders not paid ({orders.length})</h2>
         <p className="text-sm text-muted-foreground">Order placed, but no payment receipt submitted (or the receipt was rejected). Unpaid orders expire automatically at the payment deadline.</p>
         <Table scroll head={["Customer", "Order", "Total", "Status", "Waiting"]} empty="None.">
@@ -80,9 +89,9 @@ export default async function FollowUpPage({ searchParams }: PageProps<"/admin/f
             </tr>
           ))}
         </Table>
-      </section>
+      </section>}
 
-      <section className="mb-8 space-y-3">
+      {tab === "baskets" && <section className="mb-8 space-y-3">
         <h2 className="text-base font-semibold">Baskets not checked out ({baskets.length})</h2>
         <p className="text-sm text-muted-foreground">Signed-in customers with items in their basket who have not placed an order (last 30 days). Values use today’s prices.</p>
         <Table scroll head={["Customer", "Basket", "Value", "Waiting"]} empty="None.">
@@ -98,9 +107,9 @@ export default async function FollowUpPage({ searchParams }: PageProps<"/admin/f
             );
           })}
         </Table>
-      </section>
+      </section>}
 
-      <section className="space-y-3">
+      {tab === "printing" && <section className="space-y-3">
         <h2 className="text-base font-semibold">Printing jobs not paid ({printing.length})</h2>
         <p className="text-sm text-muted-foreground">Priced printing jobs that have not been added to an order and paid.</p>
         <Table scroll head={["Customer", "Job", "Price", "Waiting"]} empty="None.">
@@ -113,7 +122,7 @@ export default async function FollowUpPage({ searchParams }: PageProps<"/admin/f
             </tr>
           ))}
         </Table>
-      </section>
+      </section>}
     </>
   );
 }

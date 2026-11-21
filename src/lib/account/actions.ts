@@ -147,19 +147,27 @@ export async function setNewPassword(_prev: AccountState, fd: FormData): Promise
 export async function updateCustomerAccount(_prev: AccountState, fd: FormData): Promise<AccountState> {
   const user = await getCustomerUser();
   if (!user) redirect("/account/login?next=/account");
+  const supabase = await createSupabaseServerClient();
+  // Name and phone are filled in once; after that only staff can change them (the database enforces it too).
+  const { data: current } = await supabase.from("customer_accounts").select("full_name, phone").eq("id", user.id).maybeSingle();
+  const nameLocked = !!current?.full_name?.trim();
+  const phoneLocked = !!current?.phone;
   const name = String(fd.get("fullName") ?? "").trim();
-  if (name.length < 2 || name.length > 120) return { error: "name" };
+  if (!nameLocked && (name.length < 2 || name.length > 120)) return { error: "name" };
   const rawPhone = String(fd.get("phone") ?? "").trim();
-  const phone = rawPhone ? ethiopianPhoneSchema.safeParse(rawPhone) : null;
+  const phone = !phoneLocked && rawPhone ? ethiopianPhoneSchema.safeParse(rawPhone) : null;
   if (phone && !phone.success) return { error: "phone" };
   const zone = String(fd.get("zoneId") ?? "");
   if (zone && !/^[0-9a-f-]{36}$/.test(zone)) return { error: "generic" };
   const address = String(fd.get("address") ?? "").trim().replace(/\s+/g, " ");
   if (address && (address.length < 3 || address.length > 300)) return { error: "address" };
-  const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("customer_accounts")
-    .update({ full_name: name, phone: phone?.success ? phone.data : null, default_zone_id: zone || null, default_address: address || null })
+    .update({
+      ...(nameLocked ? {} : { full_name: name }),
+      ...(phoneLocked || !phone?.success ? {} : { phone: phone.data }),
+      default_zone_id: zone || null, default_address: address || null,
+    })
     .eq("id", user.id);
   if (!error) revalidatePath("/account");
   return error ? { error: "generic" } : { ok: "saved" };

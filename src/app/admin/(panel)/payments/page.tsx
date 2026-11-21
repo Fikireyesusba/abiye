@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AlertTriangle, Download, FileSpreadsheet } from "lucide-react";
-import { PageHeader, Table, Td, fieldClass } from "@/components/admin/ui";
+import { PageHeader, SubTabs, Table, Td, fieldClass } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { requirePermission } from "@/lib/auth/guards";
 import { first } from "@/lib/catalog/search";
 import { formatDateTime } from "@/lib/datetime";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Payments" };
 const TABS = [
@@ -71,14 +70,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/admin/p
           Dates in Ethiopia time. The file contains customer contact details — store it safely. Each export is recorded in the Activity log.
         </p>
       </details>
-      <nav className="mb-5 flex gap-1 border-b" aria-label="Payment status">
-        {TABS.map((t) => (
-          <Link key={t.key} href={`/admin/payments?status=${t.key}`} aria-current={t.key === status ? "page" : undefined}
-            className={cn("-mb-px border-b-2 px-4 py-2 text-sm", t.key === status ? "border-primary font-medium" : "border-transparent text-muted-foreground hover:text-foreground")}>
-            {t.label}
-          </Link>
-        ))}
-      </nav>
+      <SubTabs base="/admin/payments" param="status" tabs={TABS} active={status} />
       <Table scroll head={["Order", "Submitted", status === "pending" ? "Checks" : "Decided"]}
         empty={status === "pending" ? "No payments waiting for verification." : `No ${status} payments.`}>
         {subs.map((s) => {

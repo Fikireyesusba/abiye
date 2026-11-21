@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ActionForm } from "@/components/admin/action-form";
 import { Searchable } from "@/components/admin/searchable";
-import { PageHeader, Table, Td, fieldClass } from "@/components/admin/ui";
+import { PageHeader, SubTabs, Table, Td, fieldClass } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { adjustStock } from "@/lib/admin/catalog-actions";
 import { requirePermission } from "@/lib/auth/guards";
@@ -16,7 +16,8 @@ const FILTERS = [{ k: "all", l: "All tracked" }, { k: "low", l: "Low & out of st
 
 export default async function InventoryPage({ searchParams }: PageProps<"/admin/inventory">) {
   await requirePermission("inventory.manage");
-  const filter = first((await searchParams).filter) === "low" ? "low" : "all";
+  const requested = first((await searchParams).filter);
+  const filter = requested === "low" || requested === "movements" ? requested : "all";
   const supabase = await createSupabaseServerClient();
   const [{ data: products }, { data: moves }, { data: waitingRows }] = await Promise.all([
     supabase.from("products").select("id, name_en, sku, stock_quantity, low_stock_threshold, status").eq("track_inventory", true).neq("status", "archived").order("stock_quantity"),
@@ -31,12 +32,9 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
   return (
     <>
       <PageHeader title="Inventory" description="Stock is reserved when an order is placed and released if it expires or is cancelled. Every change is recorded. Staff who manage stock get an alert when a product reaches its alert level or sells out; customers waiting for a sold-out product are told automatically when you restock it." />
-      <nav className="mb-4 flex gap-1 border-b" aria-label="Inventory filter">
-        {FILTERS.map((f) => (
-          <Link key={f.k} href={`/admin/inventory?filter=${f.k}`} aria-current={f.k === filter ? "page" : undefined}
-            className={cn("-mb-px border-b-2 px-4 py-2 text-sm", f.k === filter ? "border-primary font-medium" : "border-transparent text-muted-foreground")}>{f.l}</Link>
-        ))}
-      </nav>
+      <SubTabs base="/admin/inventory" param="filter" active={filter}
+        tabs={[...FILTERS.map((f) => ({ key: f.k, label: f.l })), { key: "movements", label: "Recent stock movements", count: (moves ?? []).length }]} />
+      {filter !== "movements" && (
       <Table scroll head={["Product", "In stock", "Alert at", "Adjust"]} empty="All products are well stocked.">
         {rows.map((p) => (
           <tr key={p.id}>
@@ -60,13 +58,11 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
           </tr>
         ))}
       </Table>
-      <details className="mt-6 rounded-lg border bg-card" data-testid="stock-movements">
-        <summary className="flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 p-4">
-          <span className="font-medium">Recent stock movements</span>
-          <span className="rounded-full bg-muted px-2 py-0.5 text-xs tabular-nums">{(moves ?? []).length}</span>
-          <span className="text-xs text-muted-foreground sm:ml-auto">Latest 40 changes · click to open</span>
-        </summary>
-        <Searchable className="border-t p-3" placeholder="Search movements (product, reason, note)…">
+      )}
+      {filter === "movements" && (
+      <section className="rounded-lg border bg-card" data-testid="stock-movements">
+        <p className="px-4 pt-3 text-xs text-muted-foreground">Latest 40 changes</p>
+        <Searchable className="p-3" placeholder="Search movements (product, reason, note)…">
         <ul className="max-h-[60vh] divide-y overflow-y-auto overscroll-contain px-1 text-sm">
           {(moves ?? []).length === 0 && <li className="py-3 text-muted-foreground">No stock changes yet.</li>}
           {(moves ?? []).map((m) => (
@@ -84,7 +80,8 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
           ))}
         </ul>
         </Searchable>
-      </details>
+      </section>
+      )}
     </>
   );
 }

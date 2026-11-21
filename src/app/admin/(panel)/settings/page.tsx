@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ActionForm } from "@/components/admin/action-form";
 import { BrandImage } from "@/components/admin/brand-image";
-import { Field, PageHeader, Panel } from "@/components/admin/ui";
+import { Field, PageHeader, Panel, SubTabs } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +13,6 @@ import { first } from "@/lib/catalog/search";
 import { publicImageUrl } from "@/lib/storage";
 import type { Database } from "@/lib/supabase/database.types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -32,7 +31,8 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
   const canSettings = ctx.permissions.has("settings.manage");
   const canBanks = ctx.permissions.has("bank_accounts.manage");
   const tabs = [
-    ...(canSettings ? [{ k: "general", l: "Business & contact" }, { k: "homepage", l: "Homepage" }, { k: "delivery", l: "Delivery" }] : []),
+    ...(canSettings ? [{ k: "general", l: "Business" }, { k: "contact", l: "Contact & hours" }, { k: "social", l: "Social media" },
+      { k: "homepage", l: "Homepage" }, { k: "delivery", l: "Delivery" }] : []),
     ...(canBanks ? [{ k: "banks", l: "Bank accounts" }] : []),
     ...(canSettings ? [{ k: "legal", l: "Terms & privacy" }, { k: "printing", l: "Printing" }] : []),
   ];
@@ -44,12 +44,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
   return (
     <>
       <PageHeader title="Settings" description="Changes go live on the website immediately." />
-      <nav className="mb-6 flex gap-1 overflow-x-auto border-b" aria-label="Settings sections">
-        {tabs.map((t) => (
-          <Link key={t.k} href={`/admin/settings?tab=${t.k}`} aria-current={t.k === tab ? "page" : undefined}
-            className={cn("-mb-px border-b-2 px-4 py-2 text-sm whitespace-nowrap", t.k === tab ? "border-primary font-medium" : "border-transparent text-muted-foreground hover:text-foreground")}>{t.l}</Link>
-        ))}
-      </nav>
+      <SubTabs base="/admin/settings" tabs={tabs.map((t) => ({ key: t.k, label: t.l }))} active={tab} />
 
       {tab === "general" && (
         <div className="space-y-6">
@@ -65,6 +60,10 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
               </ActionForm>
             </div>
           </Panel>
+        </div>
+      )}
+      {tab === "contact" && (
+        <div className="space-y-6">
           <Panel title="Contact">
             <ActionForm action={saveSettings} hidden={{ key: "contact" }} submitLabel="Save contact details">
               <div className="grid gap-3 sm:grid-cols-2">
@@ -82,6 +81,10 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
               <Bilingual name="hours" label="Opening hours" en={s.hours.en} am={s.hours.am} />
             </ActionForm>
           </Panel>
+        </div>
+      )}
+      {tab === "social" && (
+        <div className="space-y-6">
           <Panel title="Social media">
             <ActionForm action={saveSettings} hidden={{ key: "social" }} submitLabel="Save links">
               <div className="grid gap-3 sm:grid-cols-2">

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PageHeader, Table, Td } from "@/components/admin/ui";
+import { PageHeader, SubTabs, Table, Td } from "@/components/admin/ui";
 import { StatusBadge } from "@/components/status/status-badge";
 import { Button } from "@/components/ui/button";
 import { requirePermission } from "@/lib/auth/guards";
@@ -9,13 +9,13 @@ import { formatDateTime } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatEthiopianPhone } from "@/lib/validation/phone";
-import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Printing" };
 
+// Jobs the customer has not paid for yet (submitted / awaiting payment) are not shown — only work for the shop.
 const TABS = [
   { k: "todo", l: "Needs action", s: ["awaiting_quote", "printing", "ready"] },
-  { k: "waiting", l: "Waiting for customer", s: ["submitted", "awaiting_payment", "payment_verification"] },
+  { k: "approval", l: "Payment to approve", s: ["payment_verification"] },
   { k: "done", l: "Completed / cancelled", s: ["completed", "cancelled"] },
 ] as const;
 
@@ -35,12 +35,7 @@ export default async function PrintingJobsPage({ searchParams }: PageProps<"/adm
     <>
       <PageHeader title="Printing jobs" description="Quote documents that could not be counted, print paid jobs, and mark them ready."
         actions={ctx.permissions.has("printing.pricing") && <Button variant="outline" asChild><Link href="/admin/printing/prices">Price list</Link></Button>} />
-      <nav className="mb-4 flex gap-1 overflow-x-auto border-b" aria-label="Printing job status">
-        {TABS.map((x) => (
-          <Link key={x.k} href={`/admin/printing?tab=${x.k}`} aria-current={x.k === tab.k ? "page" : undefined}
-            className={cn("-mb-px border-b-2 px-4 py-2 text-sm whitespace-nowrap", x.k === tab.k ? "border-primary font-medium" : "border-transparent text-muted-foreground")}>{x.l}</Link>
-        ))}
-      </nav>
+      <SubTabs base="/admin/printing" tabs={TABS.map((x) => ({ key: x.k, label: x.l }))} active={tab.k} />
       <Table scroll head={["Job", "Customer", "Options", "Pages", "Price", "Status", "Received"]} empty="No printing jobs here.">
         {(jobs ?? []).map((j) => (
           <tr key={j.id} className="hover:bg-muted/40">

@@ -5,7 +5,7 @@ import { ArrowLeft, ExternalLink } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
 import { ImageManager } from "@/components/admin/image-manager";
 import { ProductForm } from "@/components/admin/product-form";
-import { PageHeader, Panel } from "@/components/admin/ui";
+import { PageHeader, Panel, SubTabs, pickTab } from "@/components/admin/ui";
 import { deleteProduct, setProductStatus } from "@/lib/admin/catalog-actions";
 import { requirePermission } from "@/lib/auth/guards";
 import { first } from "@/lib/catalog/search";
@@ -28,18 +28,22 @@ export default async function EditProductPage({ params, searchParams }: PageProp
   const images = [...product.images].sort((a, b) => a.sort_order - b.sort_order)
     .map((i) => ({ id: i.id, is_primary: i.is_primary, url: publicImageUrl("product-images", i.storage_path)! }));
 
+  const sp = await searchParams;
+  const TABS = [{ key: "details", label: "Details" }, { key: "images", label: "Images", count: images.length }, { key: "visibility", label: "Visibility" }];
+  // Right after creating a product: add its images.
+  const tab = sp.tab ? pickTab(TABS, sp.tab) : first(sp.created) ? "images" : "details";
+
   return (
     <>
       <Link href="/admin/products" className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /> Products</Link>
       <PageHeader title={product.name_en} description={`SKU ${product.sku} · stock ${product.track_inventory ? product.stock_quantity : "not tracked"} (change in Inventory)`}
         actions={product.status === "active" && <Link href={`/products/${product.slug}`} target="_blank" className="inline-flex items-center gap-1 text-sm text-primary hover:underline">View in shop <ExternalLink className="size-3.5" /></Link>} />
-      {first((await searchParams).created) && <p className="mb-4 rounded-md bg-success/10 p-3 text-sm text-success">Product created. Add images below, then set it to Active.</p>}
-      <div className="grid items-start gap-6 xl:grid-cols-[1fr_20rem]">
-        <div className="min-w-0 space-y-6">
-          <Panel title="Details"><ProductForm values={product} categories={categories ?? []} /></Panel>
-          <Panel title="Images"><ImageManager productId={product.id} images={images} /></Panel>
-        </div>
-        <Panel title="Visibility">
+      {first(sp.created) && <p className="mb-4 rounded-md bg-success/10 p-3 text-sm text-success">Product created. Add images below, then set it to Active.</p>}
+      <SubTabs base={`/admin/products/${product.id}/edit`} tabs={TABS} active={tab} />
+      {tab === "details" && <Panel title="Details"><ProductForm values={product} categories={categories ?? []} /></Panel>}
+      {tab === "images" && <Panel title="Images"><ImageManager productId={product.id} images={images} /></Panel>}
+      {tab === "visibility" && (
+        <Panel title="Visibility" className="max-w-md">
           <div className="space-y-3">
             {product.status !== "archived" ? (
               <ActionForm action={setProductStatus} hidden={{ id: product.id, status: "archived" }} submitLabel="Archive product" variant="outline"
@@ -52,7 +56,7 @@ export default async function EditProductPage({ params, searchParams }: PageProp
             <p className="text-xs text-muted-foreground">Products that were ordered can only be archived, so order history stays accurate.</p>
           </div>
         </Panel>
-      </div>
+      )}
     </>
   );
 }

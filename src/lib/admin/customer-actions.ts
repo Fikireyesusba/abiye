@@ -6,6 +6,7 @@ import { requirePermission } from "@/lib/auth/guards";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { ethiopianPhoneSchema } from "@/lib/validation/checkout";
 import { dbError, fail, formObject, ok, type ActionResult } from "./result";
 
 /** Effectively permanent; reactivation lifts it. */
@@ -158,4 +159,38 @@ export async function deleteCustomer(_prev: ActionResult | null, fd: FormData): 
   await supabase.rpc("admin_log_customer_action", { p_user_id: parsed.data.userId, p_action: "customer_deleted", p_metadata: meta });
   revalidatePath("/admin/customers");
   redirect("/admin/customers?deleted=1");
+}
+
+/**
+ * Staff change a customer's name, phone and sign-in email (customers cannot after they are set).
+ * Permission + target checked first (staff accounts refused); the email is changed with the
+ * secret-key Auth admin API only after that, then everything is recorded in the activity log.
+ */
+export async function updateCustomerDetails(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const { limited } = await guard("details");
+  if (limited) return fail("Too many changes. Please wait and try again.");
+  const parsed = z.object({
+    userId: z.guid(),
+    fullName: z.string().trim().min(2).max(120),
+    phone: z.string().trim().max(20),
+    email: z.email().max(254),
+  }).safeParse({ ...formObject(fd), email: String(fd.get("email") ?? "").trim().toLowerCase() });
+  if (!parsed.success) return fail("Enter a name (2–120 characters) and a valid email.");
+  const phone = parsed.data.phone ? ethiopianPhoneSchema.safeParse(parsed.data.phone) : null;
+  if (phone && !phone.success) return fail("Enter an Ethiopian mobile number, e.g. 0911 234 567.");
+  const { supabase, account, error: loadError } = await loadAccount(parsed.data.userId);
+  if (loadError) return dbError(loadError);
+  if (!account || account.is_staff) return fail("Customer not found.");
+  let oldEmail: string | undefined;
+  if (parsed.data.email !== account.email.toLowerCase()) {
+    const { error } = await getSupabaseAdmin().auth.admin.updateUserById(account.id, { email: parsed.data.email, email_confirm: true });
+    if (error) return fail(/already|registered|exists/i.test(error.message) ? "Another account already uses that email." : "Could not change the email.");
+    oldEmail = account.email;
+  }
+  const { error } = await supabase.rpc("admin_update_customer_details", {
+    p_user_id: account.id, p_full_name: parsed.data.fullName, p_phone: phone?.success ? phone.data : (null as unknown as string), p_old_email: oldEmail,
+  });
+  if (error) return dbError(error);
+  revalidatePath(`/admin/customers/${account.id}`);
+  return ok(oldEmail ? "Details saved. The customer now signs in with the new email." : "Details saved.");
 }

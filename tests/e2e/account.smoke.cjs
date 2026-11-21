@@ -214,7 +214,7 @@ async function emailLink(to, subjectPart) {
     "customer page shows their email and orders");
 
   const original = sql("select json_build_object('contact', (select value from website_settings where key='contact'), 'social', (select value from website_settings where key='social'), 'legal', (select value from website_settings where key='legal'))::text");
-  await a.goto(`${B}/admin/settings?tab=general`);
+  await a.goto(`${B}/admin/settings?tab=contact`);
   const contact = a.locator("form:has(input[name=whatsapp])");
   await contact.locator("input[name=phone]").fill("0911 00 11 22");
   await contact.locator("input[name=email]").fill("abiyeshop@gmail.com");
@@ -222,6 +222,7 @@ async function emailLink(to, subjectPart) {
   await contact.locator("input[name=telegram]").fill("abiyeshop");
   await contact.locator("button[type=submit]").click();
   await a.waitForSelector('[data-sonner-toast]:has-text("Settings saved")');
+  await a.goto(`${B}/admin/settings?tab=social`);
   const social = a.locator("form:has(input[name=instagram])");
   await social.locator("input[name=instagram]").fill("https://instagram.com/abiyeshop");
   await social.locator("input[name=tiktok]").fill("https://www.tiktok.com/@abiyeshop");

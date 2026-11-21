@@ -14,12 +14,15 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatEthiopianPhone } from "@/lib/validation/phone";
 
 export const metadata: Metadata = { title: "Orders" };
+/** An order shows here once the customer has paid (receipt waiting for approval, or verified). Unpaid checkouts: Stalled checkouts. */
+const PAID_PAYMENT = ["pending_verification", "verified", "refunded"] as const;
+const PAID_STATUSES = ORDER_STATUSES.filter((s) => !["awaiting_payment", "payment_rejected", "expired"].includes(s));
 const PAGE = 30;
 
 export default async function OrdersPage({ searchParams }: PageProps<"/admin/orders">) {
   const ctx = await requirePermission("orders.view_all", "orders.view_assigned");
   const sp = await searchParams;
-  const status = ORDER_STATUSES.find((s) => s === first(sp.status)) ?? null;
+  const status = PAID_STATUSES.find((s) => s === first(sp.status)) ?? null;
   const search = parseOrderSearch(first(sp.q));
   const page = parsePage(first(sp.page));
 
@@ -31,6 +34,8 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
     .select("id, order_number, customer_name, customer_phone, fulfillment_method, city, total_etb, status, payment_status, created_at, assigned_to", { count: "exact" })
     .order("created_at", { ascending: false })
     .range((page - 1) * PAGE, page * PAGE - 1);
+  // Searching by number / phone also finds unpaid checkouts (e.g. a customer calling about one).
+  if (!search) query = query.in("payment_status", [...PAID_PAYMENT]);
   if (status) query = query.eq("status", status);
   if (search?.kind === "number") query = query.eq("order_number", search.value);
   if (search?.kind === "phone") query = query.eq("customer_phone", search.value);
@@ -50,7 +55,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
     <>
       <PageHeader
         title="Orders"
-        description={ctx.permissions.has("orders.view_all") ? `${count ?? 0} orders` : `${count ?? 0} orders assigned to you`}
+        description={`${ctx.permissions.has("orders.view_all") ? `${count ?? 0} orders` : `${count ?? 0} orders assigned to you`} · an order appears here once the customer has paid (receipt waiting for approval, or verified). Unpaid checkouts are under Stalled checkouts.`}
       />
       {ctx.permissions.has("orders.view_all") && (
         <details className="mb-4 rounded-lg border bg-card p-4">
@@ -74,7 +79,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
         <input name="q" defaultValue={first(sp.q)} placeholder="Order number, phone or name" maxLength={40} className={`${fieldClass} max-w-xs`} aria-label="Search orders" />
         <select name="status" defaultValue={status ?? ""} className={`${fieldClass} w-auto`} aria-label="Filter by status">
           <option value="">All statuses</option>
-          {ORDER_STATUSES.map((s) => <option key={s} value={s}>{s.replaceAll("_", " ")}</option>)}
+          {PAID_STATUSES.map((s) => <option key={s} value={s}>{s.replaceAll("_", " ")}</option>)}
         </select>
         <Button type="submit" variant="outline">Filter</Button>
         {(status || search) && <Button variant="ghost" asChild><Link href="/admin/orders">Clear</Link></Button>}

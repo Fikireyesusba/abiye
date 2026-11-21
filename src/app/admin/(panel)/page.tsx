@@ -36,6 +36,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
     supabase
       .from("orders")
       .select("id, order_number, customer_name, total_etb, status, payment_status, created_at")
+      .in("payment_status", ["pending_verification", "verified", "refunded"])
       .order("created_at", { ascending: false })
       .limit(8),
     canFollowUp ? supabase.rpc("admin_stalled_checkouts", { p_hours: 2 }) : Promise.resolve({ data: null }),
@@ -57,12 +58,11 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4 [&>*]:min-w-0">
         {showRevenue && <StatCard label="Verified revenue" value={etb(s.revenue_verified_total!)} hint={`${etb(s.revenue_verified_period!)} in the last 14 days`} />}
-        <StatCard label="Total orders" value={s.orders_total} hint={`${s.orders_today} today`} href="/admin/orders" />
+        <StatCard label="Paid orders" value={s.orders_total} hint={`${s.orders_today} today`} href="/admin/orders" />
         {s.pending_payments !== null && (
           <StatCard label="Payments to verify" value={s.pending_payments} href="/admin/payments?status=pending" tone={s.pending_payments > 0 ? "warning" : undefined} />
         )}
         <StatCard label="Awaiting processing" value={s.awaiting_processing} href="/admin/orders?status=confirmed" />
-        <StatCard label="Awaiting payment" value={s.awaiting_payment} href="/admin/orders?status=awaiting_payment" />
         {s.products_active !== null && <StatCard label="Active products" value={s.products_active} href="/admin/products" />}
         {s.low_stock !== null && (
           <StatCard label="Low / out of stock" value={`${s.low_stock} / ${s.out_of_stock}`} href="/admin/inventory?filter=low"

@@ -12,14 +12,14 @@ select private.enqueue_notification('payment_resubmitted', 'x:5', '{}');
 select private.enqueue_notification('wallet_topup', 'x:6', '{}');
 select private.enqueue_notification('printing_request', 'x:7', '{}');
 select pg_temp.ok((select array_agg(event_type order by event_type) from public.notifications_outbox)
-                  = array['new_order', 'payment_resubmitted', 'printing_request', 'wallet_topup'], 'by default only payments / top-ups to verify and printing requests');
+                  = array['new_order', 'payment_resubmitted', 'payment_verified', 'printing_request', 'wallet_topup'], 'only payments / top-ups to verify, completed payments and printing requests');
 select pg_temp.login(:super);
 select public.admin_set_telegram_feed(true, true, false, true, false);
 reset role;
 select private.enqueue_notification('order_placed', 'x:8', '{}');
 select private.enqueue_notification('printing_request', 'x:9', '{}');
-select pg_temp.ok(exists (select 1 from public.notifications_outbox where dedupe_key = 'x:8') and not exists (select 1 from public.notifications_outbox where dedupe_key = 'x:9'),
-                  'switches turn order progress on and printing requests off');
+select pg_temp.ok(not exists (select 1 from public.notifications_outbox where dedupe_key = 'x:8') and not exists (select 1 from public.notifications_outbox where dedupe_key = 'x:9'),
+                  'order steps never sent (0045); printing requests can be switched off');
 
 -- routing
 select pg_temp.ok(private.telegram_group('low_stock') = 'stock' and private.telegram_group('receipt_record') = 'receipts'

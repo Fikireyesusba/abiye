@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ActionForm } from "@/components/admin/action-form";
 import { BannerForm } from "@/components/admin/banner-form";
-import { Field, PageHeader, Panel, fieldClass } from "@/components/admin/ui";
+import { Field, Frame, PageHeader, Panel, SubTabs, fieldClass, pickTab } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { assignPromotion, deleteBanner, deletePromotion, savePromotion, unassignPromotion } from "@/lib/admin/promotion-actions";
 import { requirePermission } from "@/lib/auth/guards";
@@ -76,7 +76,7 @@ function timeWindow(start: string | null, end: string | null) {
   return `${start ? formatDateTime(start, "en") : "now"} → ${end ? formatDateTime(end, "en") : "no end"}`;
 }
 
-export default async function PromotionsPage() {
+export default async function PromotionsPage({ searchParams }: PageProps<"/admin/promotions">) {
   await requirePermission("promotions.manage");
   const supabase = await createSupabaseServerClient();
   const [{ data: promos }, { data: banners }, { data: cats }, { data: prods }, { data: used }, { data: holders }] = await Promise.all([
@@ -97,20 +97,31 @@ export default async function PromotionsPage() {
     p.is_active && (!p.starts_at || Date.parse(p.starts_at) <= now) && (!p.ends_at || Date.parse(p.ends_at) > now);
   const nameOf = (list: Option[], id: string | null) => list.find((x) => x.id === id)?.name.replace(/^— /, "") ?? "—";
 
+  const TABS = [
+    { key: "codes", label: "Promotions", count: (promos ?? []).length },
+    { key: "new", label: "New promotion" },
+    { key: "banners", label: "Homepage banners", count: (banners ?? []).length },
+    { key: "new-banner", label: "New banner" },
+  ];
+  const tab = pickTab(TABS, (await searchParams).tab);
+
   return (
     <>
       <PageHeader title="Promotions & banners" description="Promo codes customers can use at checkout, offers on the homepage, and homepage banners. Times are Ethiopia time." />
 
-      <section className="mb-10 space-y-4">
-        <h2 className="text-lg font-semibold">Promotions</h2>
-        <details className="rounded-lg border bg-card p-4">
-          <summary className="cursor-pointer text-sm font-medium">New promotion</summary>
-          <div className="mt-4"><ActionForm action={savePromotion} hidden={{ id: "" }} submitLabel="Create promotion" resetOnSuccess><PromotionFields categories={categories} products={products} /></ActionForm></div>
-        </details>
+      <SubTabs base="/admin/promotions" tabs={TABS} active={tab} />
+      {tab === "new" && (
+        <Panel title="New promotion">
+          <div><ActionForm action={savePromotion} hidden={{ id: "" }} submitLabel="Create promotion" resetOnSuccess><PromotionFields categories={categories} products={products} /></ActionForm></div>
+        </Panel>
+      )}
+      {tab === "codes" && (
+      <section className="space-y-4">
         {(promos ?? []).length === 0 && <p className="text-sm text-muted-foreground">No promotions yet.</p>}
+        <Frame search="Search promotions (title, code, customer)…" className="p-2">
         <ul className="space-y-3">
           {((promos ?? []) as Promo[]).map((p) => (
-            <li key={p.id} className="rounded-lg border bg-card p-4">
+            <li key={p.id} data-row className="rounded-lg border bg-card p-4">
               <details>
                 <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2">
                   <span className="font-medium">{p.title_en}</span>
@@ -159,15 +170,17 @@ export default async function PromotionsPage() {
             </li>
           ))}
         </ul>
+        </Frame>
         <p className="text-xs text-muted-foreground">
           The discount is calculated by the system at checkout from current prices (never by the customer’s browser). Printing jobs are not discounted.
           For a simple price cut on one product, you can also set a sale price on the product.
         </p>
       </section>
+      )}
 
+      {tab === "new-banner" && <Panel title="New banner"><BannerForm /></Panel>}
+      {tab === "banners" && (
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Homepage banners</h2>
-        <Panel title="New banner"><BannerForm /></Panel>
         {(banners ?? []).length === 0 && <p className="text-sm text-muted-foreground">No banners yet.</p>}
         <ul className="grid gap-4 lg:grid-cols-2">
           {(banners ?? []).map((b) => {
@@ -196,6 +209,7 @@ export default async function PromotionsPage() {
           })}
         </ul>
       </section>
+      )}
     </>
   );
 }

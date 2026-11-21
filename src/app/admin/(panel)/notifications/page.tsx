@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
-import { PageHeader, Panel, Table, Td, fieldClass } from "@/components/admin/ui";
+import { PageHeader, Panel, SubTabs, Table, Td, fieldClass, pickTab } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { retryAllFailed, retryNotification, saveTelegramFeed, sendGroupTest, sendSecurityTest, sendTestNotification } from "@/lib/admin/notification-actions";
 import { describe } from "@/lib/telegram/format";
@@ -22,8 +22,8 @@ export const maxDuration = 60; // "Send past receipts" keeps emailing for up to 
 type Row = { id: number; channel: string; event_type: string; status: "pending" | "processing" | "sent" | "failed" | "dead"; attempts: number; max_attempts: number;
   last_error: string | null; created_at: string; sent_at: string | null; reference: string | null };
 const CATEGORIES = [
-  { key: "orders", label: "Orders & printing", hint: "Order placed, being prepared, ready, out for delivery, collected, expired, cancelled; printing requests and steps", group: "orders" },
-  { key: "payments", label: "Payments & wallet", hint: "Receipts to verify, payments verified / rejected, top-ups, orders paid with balance", group: "orders" },
+  { key: "payments", label: "Payments & wallet", hint: "Receipts and top-ups waiting for approval, completed payments (verified, paid with balance)", group: "orders" },
+  { key: "orders", label: "Orders & printing", hint: "Printing requests to quote (and older order-step messages)", group: "orders" },
   { key: "stock", label: "Stock", hint: "Low stock and sold out", group: "stock" },
   { key: "receipts", label: "Receipt files", hint: "Every verified / rejected receipt, with the file", group: "receipts" },
   { key: "security", label: "Security & admin", hint: "Security events, 🚨 alerts, admin sign-ins and sensitive admin actions", group: "security" },
@@ -48,7 +48,7 @@ const LIST_LABEL: Record<string, string> = {
 const CHANNEL_LABEL: Record<string, string> = { telegram: "Telegram", email: "Email", push: "Phone", archive: "Archive email" };
 const TONE = { sent: "success", pending: "secondary", processing: "info", failed: "warning", dead: "destructive" } as const;
 
-export default async function NotificationsPage() {
+export default async function NotificationsPage({ searchParams }: PageProps<"/admin/notifications">) {
   await requirePermission("settings.manage");
   const configured = !!telegramConfig();
   const securityConfigured = !!securityTelegramConfig();
@@ -68,10 +68,26 @@ export default async function NotificationsPage() {
   const { data: feedRaw } = await supabase.rpc("admin_telegram_feed");
   const feed = (feedRaw ?? null) as { security: boolean; admin: boolean; notifications: boolean; order_progress?: boolean; printing_requests?: boolean } | null;
   const today = new Date(new Date().getTime() + 3 * 3600 * 1000).toISOString().slice(0, 10);
+  const sp = await searchParams;
+  const TABS = [
+    { key: "messages", label: "Messages", count: problems },
+    { key: "telegram", label: "Telegram groups & alerts" },
+    { key: "customers", label: "Customer emails & phone" },
+    { key: "archive", label: "Receipt archive" },
+  ];
+  const tab = pickTab(TABS, sp.tab);
+  const cats = CATEGORIES.map((c) => {
+    const list = rows.filter((r) => categoryOf(r) === c.key);
+    return { ...c, list, failed: list.filter(isProblem).length, waiting: list.filter((r) => r.status === "pending" || r.status === "processing").length };
+  }).filter((c) => c.list.length || c.key !== "other");
+  // Opens on the first category with a failed message, else the first one.
+  const cat = cats.find((c) => c.key === (Array.isArray(sp.cat) ? sp.cat[0] : sp.cat)) ?? cats.find((c) => c.failed) ?? cats[0];
 
   return (
     <>
       <PageHeader title="Notifications" description="Staff alerts go to your private Telegram chat; customers get emails and (if they turn them on) phone notifications. Orders are never affected if a service is down." />
+      <SubTabs base="/admin/notifications" tabs={TABS} active={tab} />
+      {tab === "customers" && (
       <div className="mb-6 grid gap-4 md:grid-cols-2">
         <Panel title="Customer emails">
           <p className="flex items-center gap-2 text-sm">
@@ -98,7 +114,8 @@ export default async function NotificationsPage() {
           {!pushOn && <VapidKeyGenerator suggestedSubject={`mailto:${settings.contact.email || "orders@example.com"}`} />}
         </Panel>
       </div>
-      <h2 className="mb-3 text-base font-semibold">Payment receipt archive</h2>
+      )}
+      {tab === "archive" && (
       <div className="mb-6 grid gap-4 md:grid-cols-2">
         <Panel title="Archive address">
           <p className="mb-3 flex items-center gap-2 text-sm">
@@ -139,14 +156,15 @@ export default async function NotificationsPage() {
           ) : <p className="text-sm text-muted-foreground">—</p>}
         </Panel>
       </div>
-      <h2 className="mb-3 text-base font-semibold">Staff Telegram groups</h2>
+      )}
+      {tab === "telegram" && (<>
       <div className="mb-6 grid gap-4 md:grid-cols-2">
         <Panel title="Orders & payments group">
           <p className="mb-2 flex items-center gap-2 text-sm">
             {configured ? <CheckCircle2 className="size-5 text-success" aria-hidden /> : <XCircle className="size-5 text-destructive" aria-hidden />}
             {configured ? "Connected (TELEGRAM_BOT_TOKEN / TELEGRAM_ADMIN_CHAT_ID)." : "Not connected — set TELEGRAM_BOT_TOKEN and TELEGRAM_ADMIN_CHAT_ID in Vercel, then redeploy."}
           </p>
-          <p className="mb-3 text-xs text-muted-foreground">What needs you: receipts to verify (new and resubmitted), wallet top-ups to verify, printing requests to quote. Order progress and copies of customer messages can be switched on below.</p>
+          <p className="mb-3 text-xs text-muted-foreground">Payments only: receipts and wallet top-ups waiting for your approval, and completed payments (verified, or paid with balance) — for orders and printing. Plus printing requests that need a price (switch below). No order steps or copies of customer messages.</p>
           <ActionForm action={sendTestNotification} submitLabel="Send test message" variant="outline" size="sm" />
         </Panel>
         <Panel title="Security group">
@@ -176,7 +194,7 @@ export default async function NotificationsPage() {
       </div>
       {feed && (
         <Panel title="Telegram activity feed" className="mb-6">
-          <p className="mb-3 text-sm text-muted-foreground">Receipts and top-ups to verify are always sent to the orders & payments group; stock alerts and receipt files to their groups. Choose the rest below. Each message shows its <strong>service</strong> and <strong>event</strong> name with the details; identical security events within 5 minutes are grouped.</p>
+          <p className="mb-3 text-sm text-muted-foreground">Payments waiting for approval and completed payments always go to the orders & payments group; stock alerts and receipt files to their groups. Choose the rest below. Each message shows its <strong>service</strong> and <strong>event</strong> name with the details; identical security events within 5 minutes are grouped.</p>
           <ActionForm action={saveTelegramFeed} submitLabel="Save" size="sm" className="space-y-2">
             <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="security" defaultChecked={feed.security} className="mt-0.5 size-4 accent-[var(--primary)]" />
               <span><strong>Security events and alerts</strong> → security group</span></label>
@@ -184,17 +202,14 @@ export default async function NotificationsPage() {
               <span><strong>Sensitive admin actions</strong> (blocking, staff / roles / bank / settings changes, deactivations, wallet corrections, exports, resets) → security group</span></label>
             <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="printing_requests" defaultChecked={feed.printing_requests ?? true} className="mt-0.5 size-4 accent-[var(--primary)]" />
               <span><strong>Printing requests to quote</strong> → orders & payments group</span></label>
-            <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="order_progress" defaultChecked={feed.order_progress ?? false} className="mt-0.5 size-4 accent-[var(--primary)]" />
-              <span><strong>Order &amp; printing progress</strong> (placed, payment verified / rejected, preparing, ready, out for delivery, collected, cancelled, expired, paid with balance) → orders & payments group</span></label>
-            <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="notifications" defaultChecked={feed.notifications} className="mt-0.5 size-4 accent-[var(--primary)]" />
-              <span><strong>Copies of customer messages</strong> (emails, phone notifications, receipt archive — sent ✓ / failed ✗) → orders & payments group</span></label>
           </ActionForm>
         </Panel>
       )}
+      </>)}
 
-      <h2 className="mb-1 text-base font-semibold">Notifications by category</h2>
+      {tab === "messages" && (<>
       <p className="mb-3 text-sm text-muted-foreground">
-        The latest {rows.length} messages, newest first. Click a category to open it. Failed messages are retried automatically (1, 2, 4… minutes); after the last attempt press <strong>Retry</strong>.
+        The latest {rows.length} messages, newest first. Pick a category above. Failed messages are retried automatically (1, 2, 4… minutes); after the last attempt press <strong>Retry</strong>.
         {problems > 0 && <span className="font-medium text-destructive"> {problems} need attention.</span>}
       </p>
       {problems > 0 && (
@@ -208,42 +223,28 @@ export default async function NotificationsPage() {
           <ActionForm action={retryAllFailed} submitLabel={`Retry all failed (${problems})`} variant="outline" size="sm" />
         </div>
       )}
-      <div className="space-y-3">
-        {CATEGORIES.map((c) => {
-          const list = rows.filter((r) => categoryOf(r) === c.key);
-          if (!list.length && c.key === "other") return null;
-          const failed = list.filter(isProblem).length;
-          const waiting = list.filter((r) => r.status === "pending" || r.status === "processing").length;
-          return (
-            <details key={c.key} open={failed > 0} className="rounded-lg border bg-card" data-category={c.key}>
-              <summary className="flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 p-4">
-                <span className="font-medium">{c.label}</span>
-                <Badge variant="secondary">{list.length}</Badge>
-                {waiting > 0 && <Badge variant="info">{waiting} waiting</Badge>}
-                {failed > 0 && <Badge variant="destructive">{failed} failed</Badge>}
-                <span className="w-full text-xs text-muted-foreground sm:ml-auto sm:w-auto">{c.hint}{c.key !== "customers" && ` · ${({ security: "Security group", stock: stockConfigured ? "Stock group" : "Orders & payments group (until a stock bot is set)", receipts: "Receipts group", orders: "Orders & payments group" } as Record<string, string>)[c.group]}`}</span>
-              </summary>
-              <div className="border-t p-2">
-                <Table scroll head={["#", "Event", "Via", "About", "Status", "Attempts", "Created", "Last error", ""]} empty="Nothing yet.">
-                  {list.map((r) => (
-                    <tr key={r.id}>
-                      <Td className="text-xs text-muted-foreground tabular-nums">{r.id}</Td>
-                      <Td>{LIST_LABEL[r.event_type] ?? describe({ id: r.id, event_type: r.event_type, payload: {}, attachment_bucket: null, attachment_path: null })[1]}</Td>
-                      <Td className="text-xs">{CHANNEL_LABEL[r.channel] ?? r.channel}</Td>
-                      <Td className="max-w-[12rem] font-mono text-xs break-all">{r.reference ?? "—"}</Td>
-                      <Td><Badge variant={TONE[r.status]}>{r.status === "dead" && r.last_error?.startsWith("skipped") ? "skipped" : r.status}</Badge></Td>
-                      <Td className="tabular-nums">{r.attempts}/{r.max_attempts}</Td>
-                      <Td className="text-xs text-muted-foreground">{formatDateTime(r.created_at, "en")}{r.sent_at && <span className="block">sent {formatDateTime(r.sent_at, "en")}</span>}</Td>
-                      <Td className="max-w-xs text-xs break-words text-destructive">{r.last_error}</Td>
-                      <Td>{isProblem(r) && <ActionForm action={retryNotification} hidden={{ id: String(r.id) }} submitLabel="Retry" size="sm" variant="outline" />}</Td>
-                    </tr>
-                  ))}
-                </Table>
-              </div>
-            </details>
-          );
-        })}
-      </div>
+      <SubTabs base="/admin/notifications" param="cat" level={2} keep={{ tab: "messages" }} active={cat.key}
+        tabs={cats.map((c) => ({ key: c.key, label: c.failed ? `${c.label} · ${c.failed} failed` : c.label, count: c.list.length }))} />
+      <section data-category={cat.key} className="space-y-2">
+        <p className="text-xs text-muted-foreground">{cat.hint}{cat.key !== "customers" && ` · ${({ security: "Security group", stock: stockConfigured ? "Stock group" : "Orders & payments group (until a stock bot is set)", receipts: "Receipts group", orders: "Orders & payments group" } as Record<string, string>)[cat.group]}`}
+          {cat.waiting > 0 && <Badge variant="info" className="ml-2">{cat.waiting} waiting</Badge>}</p>
+        <Table scroll head={["#", "Event", "Via", "About", "Status", "Attempts", "Created", "Last error", ""]} empty="Nothing yet.">
+          {cat.list.map((r) => (
+            <tr key={r.id}>
+              <Td className="text-xs text-muted-foreground tabular-nums">{r.id}</Td>
+              <Td>{LIST_LABEL[r.event_type] ?? describe({ id: r.id, event_type: r.event_type, payload: {}, attachment_bucket: null, attachment_path: null })[1]}</Td>
+              <Td className="text-xs">{CHANNEL_LABEL[r.channel] ?? r.channel}</Td>
+              <Td className="max-w-[12rem] font-mono text-xs break-all">{r.reference ?? "—"}</Td>
+              <Td><Badge variant={TONE[r.status]}>{r.status === "dead" && r.last_error?.startsWith("skipped") ? "skipped" : r.status}</Badge></Td>
+              <Td className="tabular-nums">{r.attempts}/{r.max_attempts}</Td>
+              <Td className="text-xs text-muted-foreground">{formatDateTime(r.created_at, "en")}{r.sent_at && <span className="block">sent {formatDateTime(r.sent_at, "en")}</span>}</Td>
+              <Td className="max-w-xs text-xs break-words text-destructive">{r.last_error}</Td>
+              <Td>{isProblem(r) && <ActionForm action={retryNotification} hidden={{ id: String(r.id) }} submitLabel="Retry" size="sm" variant="outline" />}</Td>
+            </tr>
+          ))}
+        </Table>
+      </section>
+      </>)}
     </>
   );
 }

@@ -113,6 +113,8 @@ async function toast(page, text) {
   await toast(p, "added");
   await p.waitForSelector("text=MAIN");
   check(sql(`select count(*) from product_images where product_id = '${productId}' and is_primary`) === "1", "uploaded image verified and set as main image");
+  check(await p.locator("nav a[aria-current=page]:has-text('Images')").count() === 1, "new product opens on the Images tab");
+  await p.click("nav a:has-text('Details')");
   await p.selectOption("select[name=status]", "active");
   await submitIn(p, p.locator("form:has(input[name=sku])"));
   await toast(p, "Product saved");
@@ -139,7 +141,7 @@ async function toast(page, text) {
   check(sql(`select count(*) from inventory_movements where product_id = '${productId}'`) === "2", "stock history recorded (opening + restock)");
 
   // Archive → gone from shop; cannot hard-delete once it has history
-  await p.goto(`${B}/admin/products/${productId}/edit`);
+  await p.goto(`${B}/admin/products/${productId}/edit?tab=visibility`);
   await submitIn(p, p.locator("form:has(button:has-text('Delete permanently'))"));
   await toast(p, "cannot be deleted");
   check(true, "product with stock history cannot be hard-deleted");
@@ -237,7 +239,7 @@ async function toast(page, text) {
   check(sql(`select coalesce(sum(change),0) from inventory_movements where order_id = '${o2.id}'`) === "0", "cancellation released its stock");
 
   // ---- Settings (super admin) go live
-  await p.goto(`${B}/admin/settings?tab=general`);
+  await p.goto(`${B}/admin/settings?tab=contact`);
   const hours = `Mon–Sat 9:00–19:00 (${RUN})`;
   const hoursForm = p.locator("form:has(input[name=hours_en])");
   await hoursForm.locator("input[name=hours_en]").fill(hours);
@@ -302,7 +304,7 @@ async function toast(page, text) {
   check(sql(`select banned_until > now() + interval '10 years' from auth.users where id = '${staffId}'`) === "t", "deleted: sign-in blocked");
   check(sql(`select count(*) from orders where assigned_to = '${staffId}' and status not in ('completed','cancelled','expired')`) === "0", "deleted: open orders unassigned");
   await p.goto(`${B}/admin/staff`);
-  check(await p.locator(`tr:has-text("${staffEmail}")`).count() === 0 && await p.locator("summary:has-text('Deleted staff')").count() === 1, "deleted staff leave the list (kept under Deleted staff)");
+  check(await p.locator(`tr:has-text("${staffEmail}")`).count() === 0 && await p.locator("nav a:has-text('Deleted staff')").count() === 1, "deleted staff leave the list (kept under Deleted staff)");
   const gone = await (await b.newContext()).newPage();
   await gone.goto(`${B}/admin/login`);
   await gone.fill("#email", staffEmail);

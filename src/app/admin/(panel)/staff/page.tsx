@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ActionForm } from "@/components/admin/action-form";
-import { Field, PageHeader, Panel, Table, Td, fieldClass } from "@/components/admin/ui";
+import { Field, PageHeader, Panel, SubTabs, Table, Td, fieldClass, pickTab } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { inviteStaff, removeStaff, resetStaffMfa, resetStaffPassword, updateStaff } from "@/lib/admin/staff-actions";
@@ -17,7 +17,7 @@ const ROLES = [
   { key: "super_admin", label: "Super Admin", text: "Everything, incl. bank accounts, staff, settings, revenue" },
 ] as const;
 
-export default async function StaffPage() {
+export default async function StaffPage({ searchParams }: PageProps<"/admin/staff">) {
   const ctx = await requirePermission("staff.manage");
   const supabase = await createSupabaseServerClient();
   const { data: profiles } = await supabase.from("profiles").select("id, full_name, is_active, created_at, removed_at, role:admin_roles(key)").order("created_at");
@@ -32,12 +32,20 @@ export default async function StaffPage() {
     return [p.id, (data?.factors ?? []).some((f) => f.status === "verified")] as const;
   })));
 
+  const TABS = [
+    { key: "team", label: "Team", count: current.length },
+    { key: "add", label: "Add staff member" },
+    { key: "roles", label: "Roles" },
+    { key: "deleted", label: "Deleted staff", count: removed.length },
+  ];
+  const tab = pickTab(TABS, (await searchParams).tab);
+
   return (
     <>
       <PageHeader title="Staff" description="Who can sign in to this dashboard and what they can do." />
-      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="min-w-0 space-y-4">
-        <Table head={["Name", "Role", "Access", "Password", "Two-step login", "Delete"]}>
+      <SubTabs base="/admin/staff" tabs={TABS} active={tab} />
+      {tab === "team" && (
+        <Table scroll head={["Name", "Role", "Access", "Password", "Two-step login", "Delete"]}>
           {current.map((p) => {
             const self = p.id === ctx.userId;
             const roleKey = (p.role as unknown as { key: string } | null)?.key ?? "staff";
@@ -86,18 +94,18 @@ export default async function StaffPage() {
             );
           })}
         </Table>
-        {removed.length > 0 && (
-          <details className="rounded-xl border bg-card p-4 text-sm">
-            <summary className="cursor-pointer font-medium">Deleted staff ({removed.length})</summary>
-            <ul className="mt-2 space-y-1 text-muted-foreground">
+      )}
+      {tab === "deleted" && (
+          <Panel title={`Deleted staff (${removed.length})`} scroll>
+            {removed.length === 0 && <p className="text-sm text-muted-foreground">Nobody has been deleted.</p>}
+            <ul className="space-y-1 text-sm text-muted-foreground">
               {removed.map((p) => <li key={p.id} className="break-words">{p.full_name} · {email.get(p.id)} · deleted {formatDateTime(p.removed_at!, "en")}</li>)}
             </ul>
             <p className="mt-2 text-xs text-muted-foreground">Kept only so the history shows who did what. Their email address cannot be used for a new account.</p>
-          </details>
-        )}
-        </div>
-        <div className="space-y-6">
-          <Panel title="Add staff member">
+          </Panel>
+      )}
+      {tab === "add" && (
+          <Panel title="Add staff member" className="max-w-xl">
             <ActionForm action={inviteStaff} submitLabel="Create account" keepSuccess resetOnSuccess>
               <Field label="Full name"><Input name="fullName" required maxLength={120} /></Field>
               <Field label="Email"><Input name="email" type="email" required maxLength={254} /></Field>
@@ -106,11 +114,12 @@ export default async function StaffPage() {
               </Field>
             </ActionForm>
           </Panel>
-          <Panel title="Roles">
+      )}
+      {tab === "roles" && (
+          <Panel title="Roles" className="max-w-2xl">
             <dl className="space-y-2 text-sm">{ROLES.map((r) => <div key={r.key}><dt className="font-medium">{r.label}</dt><dd className="text-muted-foreground">{r.text}</dd></div>)}</dl>
           </Panel>
-        </div>
-      </div>
+      )}
     </>
   );
 }

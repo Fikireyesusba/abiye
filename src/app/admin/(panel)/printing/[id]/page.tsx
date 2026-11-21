@@ -50,7 +50,7 @@ export default async function PrintingJobPage({ params }: PageProps<"/admin/prin
       <PageHeader title={job.job_number} description={`Received ${formatDateTime(job.created_at, "en")}`} actions={<StatusBadge kind="print" status={job.status} />} />
       <div className="grid items-start gap-6 xl:grid-cols-[1fr_22rem]">
         <div className="min-w-0 space-y-6">
-          <Panel title="Files">
+          <Panel title="Files" scroll>
             <ul className="divide-y text-sm">
               {job.files.map((f, i) => (
                 <li key={f.id} className="flex flex-wrap items-center gap-3 py-2.5">
@@ -85,7 +85,7 @@ export default async function PrintingJobPage({ params }: PageProps<"/admin/prin
             </Panel>
           )}
 
-          <Panel title="Progress">
+          <Panel title="Progress" scroll>
             <ol className="space-y-2 border-l pl-4 text-sm">
               {history.map((h) => (
                 <li key={h.id} className="relative">

@@ -192,6 +192,9 @@ export function ProfileForm({ details, zones }: { details: ProfileDetails; zones
           <div><dt className="text-muted-foreground">{t("deliveryCity")}</dt><dd className="font-medium">{zoneName || notSet}</dd></div>
           <div className="sm:col-span-2"><dt className="text-muted-foreground">{t("deliveryAddress")}</dt><dd className="font-medium">{saved.address || notSet}</dd></div>
         </dl>
+        <p className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
+          {t("detailsLocked")} <Link href="/contact" className="font-medium text-primary underline underline-offset-2">{t("contactUs")}</Link>
+        </p>
         <Button type="button" variant="outline" onClick={() => setEditing(true)}><Pencil /> {t("changeDetails")}</Button>
       </div>
     );
@@ -199,13 +202,18 @@ export function ProfileForm({ details, zones }: { details: ProfileDetails; zones
   return (
     <form action={action} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
+        {/* Name and phone: filled in once, then locked (changes through the shop). */}
         <div className="space-y-2">
           <Label htmlFor="fullName">{t("fullName")}</Label>
-          <Input id="fullName" name="fullName" autoComplete="name" required maxLength={120} defaultValue={saved.fullName} />
+          {saved.fullName
+            ? <p id="fullName" className="flex h-10 items-center rounded-md border bg-muted px-3 text-sm">{saved.fullName}</p>
+            : <Input id="fullName" name="fullName" autoComplete="name" required maxLength={120} />}
         </div>
         <div className="space-y-2">
           <Label htmlFor="phone">{t("phone")}</Label>
-          <Input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" maxLength={20} defaultValue={saved.phone} />
+          {saved.phone
+            ? <p id="phone" className="flex h-10 items-center rounded-md border bg-muted px-3 text-sm">{saved.phone}</p>
+            : <Input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" maxLength={20} />}
         </div>
         <div className="space-y-2">
           <Label htmlFor="zoneId">{t("deliveryCity")}</Label>

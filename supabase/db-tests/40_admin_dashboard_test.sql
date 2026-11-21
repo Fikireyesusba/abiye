@@ -13,13 +13,13 @@ reset role;
 select pg_temp.login(:super);
 select public.admin_review_payment((select id from public.payment_submissions limit 1), 'verified');
 create temp table t_super as select public.admin_dashboard_stats(7) as s;
-select pg_temp.ok((select (s->>'orders_total')::int from t_super) = 2, 'super admin sees all orders');
+select pg_temp.ok((select (s->>'orders_total')::int from t_super) = 1, 'super admin sees all paid orders (the unpaid checkout is not an order yet)');
 select pg_temp.ok((select (s->>'revenue_verified_total')::numeric from t_super) = 1850, 'super admin sees verified revenue (2×850 + 150)');
 select pg_temp.ok((select jsonb_array_length(s->'daily') from t_super) = 7, 'daily series has one row per day');
-select pg_temp.ok((select (s->'daily'->6->>'orders')::int from t_super) = 2, 'today''s orders counted');
+select pg_temp.ok((select (s->'daily'->6->>'orders')::int from t_super) = 1, 'today''s paid orders counted');
 select pg_temp.ok((select (s->>'awaiting_processing')::int from t_super) = 1, 'verified order awaits processing');
 select pg_temp.ok((select (s->>'out_of_stock')::int from t_super) = 1, 'out-of-stock products counted');
-select public.admin_assign_order((select id from public.orders where idempotency_key = 'd0000000-0000-0000-0000-000000000002'),
+select public.admin_assign_order((select id from public.orders where idempotency_key = 'd0000000-0000-0000-0000-000000000001'),
   'aaaaaaaa-0000-0000-0000-000000000003');
 reset role;
 

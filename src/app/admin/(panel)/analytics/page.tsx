@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BarChart } from "@/components/admin/bar-chart";
-import { PageHeader, Panel, StatCard, Table, Td, fieldClass, DatabaseUpdateNeeded, isMissingDbFunction } from "@/components/admin/ui";
+import { DatabaseUpdateNeeded, PageHeader, Panel, StatCard, SubTabs, Table, Td, fieldClass, isMissingDbFunction, pickTab } from "@/components/admin/ui";
 import { StatusBadge } from "@/components/status/status-badge";
 import { Button } from "@/components/ui/button";
 import { requirePermission } from "@/lib/auth/guards";
@@ -71,6 +71,15 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/admin/
   const statusTotal = Object.values(a.statuses).reduce((s, n) => s + n, 0);
   const catMax = Math.max(1, ...a.by_category.map((c) => (a.money ? Number(c.revenue) : c.qty)));
   const conversion = t.orders_placed ? Math.round((100 * t.orders_paid) / t.orders_placed) : null;
+  const TABS = [
+    { key: "trends", label: "Trends" },
+    { key: "mix", label: "Categories & status" },
+    { key: "best", label: "Best sellers", count: a.best_sellers.length },
+    { key: "stock", label: "Inventory & promo codes" },
+  ];
+  const tab = pickTab(TABS, sp.tab);
+  // Keep the chosen period when switching sections.
+  const keep = preset ? { range: preset.key } : { from, to, bucket };
 
   return (
     <>
@@ -78,7 +87,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/admin/
       <div className="mb-6 flex flex-wrap items-end gap-2">
         <nav aria-label="Period" className="flex flex-wrap gap-2">
           {RANGES.map((r) => (
-            <Link key={r.key} href={`/admin/analytics?range=${r.key}`} aria-current={preset?.key === r.key ? "page" : undefined}
+            <Link key={r.key} href={`/admin/analytics?range=${r.key}&tab=${tab}`} aria-current={preset?.key === r.key ? "page" : undefined}
               className={cn("rounded-full border px-3 py-1 text-sm", preset?.key === r.key ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted")}>
               {r.label}
             </Link>
@@ -92,6 +101,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/admin/
               <option value="day">Day</option><option value="week">Week</option><option value="month">Month</option>
             </select>
           </label>
+          <input type="hidden" name="tab" value={tab} />
           <Button type="submit" variant="outline" size="sm">Show</Button>
         </form>
       </div>
@@ -103,6 +113,8 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/admin/
         <StatCard label="Items sold" value={t.items_sold} hint={`${t.orders_expired} expired · ${t.orders_cancelled} cancelled`} />
       </div>
 
+      <SubTabs base="/admin/analytics" tabs={TABS} active={tab} keep={keep} />
+      {tab === "trends" && (
       <div className="grid items-start gap-6 xl:grid-cols-2 [&>*]:min-w-0">
         <Panel title={a.money ? `Verified revenue per ${a.bucket} (ETB)` : `Paid orders per ${a.bucket}`}>
           <BarChart
@@ -122,8 +134,12 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/admin/
             }))}
           />
         </Panel>
+      </div>
+      )}
 
-        <Panel title="Sales by category">
+      {tab === "mix" && (
+      <div className="grid items-start gap-6 xl:grid-cols-2 [&>*]:min-w-0">
+        <Panel title="Sales by category" scroll>
           {a.by_category.length === 0 ? <p className="text-sm text-muted-foreground">No paid orders in this period.</p> : (
             <ul className="space-y-3">
               {a.by_category.map((c) => {
@@ -156,9 +172,10 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/admin/
           )}
         </Panel>
       </div>
+      )}
 
-      <h2 className="mt-8 mb-3 text-base font-semibold">Best sellers</h2>
-      <Table head={a.money ? ["#", "Product", "Sold", "Revenue"] : ["#", "Product", "Sold"]} empty="No paid orders in this period.">
+      {tab === "best" && (
+      <Table scroll head={a.money ? ["#", "Product", "Sold", "Revenue"] : ["#", "Product", "Sold"]} empty="No paid orders in this period.">
         {a.best_sellers.map((b, i) => (
           <tr key={b.product_id ?? i}>
             <Td className="text-muted-foreground">{i + 1}</Td>
@@ -169,8 +186,10 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/admin/
           </tr>
         ))}
       </Table>
+      )}
 
-      <div className="mt-8 grid items-start gap-6 xl:grid-cols-2 [&>*]:min-w-0">
+      {tab === "stock" && (
+      <div className="grid items-start gap-6 xl:grid-cols-2 [&>*]:min-w-0">
         <Panel title="Inventory now">
           <dl className="grid grid-cols-2 gap-3 text-sm">
             <div><dt className="text-muted-foreground">Active products</dt><dd className="text-lg font-semibold">{a.inventory.active_products}</dd></div>
@@ -180,7 +199,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/admin/
             {a.money && <div className="col-span-2"><dt className="text-muted-foreground">Stock value (at selling price)</dt><dd className="text-lg font-semibold">{etb(a.inventory.stock_value)}</dd></div>}
           </dl>
         </Panel>
-        <Panel title="Promo codes used">
+        <Panel title="Promo codes used" scroll>
           {a.promotions.length === 0 ? <p className="text-sm text-muted-foreground">No promo codes used in this period.</p> : (
             <ul className="space-y-2 text-sm">
               {a.promotions.map((p) => (
@@ -193,6 +212,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/admin/
           )}
         </Panel>
       </div>
+      )}
     </>
   );
 }

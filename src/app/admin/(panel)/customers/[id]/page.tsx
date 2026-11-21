@@ -3,11 +3,11 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
-import { PageHeader, Panel, Table, Td, fieldClass } from "@/components/admin/ui";
+import { Frame, PageHeader, Panel, SubTabs, Table, Td, fieldClass, pickTab } from "@/components/admin/ui";
 import { StatusBadge } from "@/components/status/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { actionLabel, describeChanges } from "@/lib/admin/activity";
-import { deleteCustomer, resendCustomerInvite, sendCustomerPasswordReset, setCustomerActive } from "@/lib/admin/customer-actions";
+import { deleteCustomer, resendCustomerInvite, sendCustomerPasswordReset, setCustomerActive, updateCustomerDetails } from "@/lib/admin/customer-actions";
 import { assignPromotion, createPersonalCode, unassignPromotion } from "@/lib/admin/promotion-actions";
 import { adjustWallet } from "@/lib/admin/wallet-actions";
 import { requirePermission } from "@/lib/auth/guards";
@@ -19,7 +19,7 @@ import { formatEthiopianPhone } from "@/lib/validation/phone";
 
 export const metadata: Metadata = { title: "Customer" };
 
-export default async function CustomerPage({ params }: PageProps<"/admin/customers/[id]">) {
+export default async function CustomerPage({ params, searchParams }: PageProps<"/admin/customers/[id]">) {
   const ctx = await requirePermission("customers.view");
   const { id } = await params;
   if (!isGuid(id)) notFound();
@@ -57,6 +57,16 @@ export default async function CustomerPage({ params }: PageProps<"/admin/custome
   const hidden = { userId: c.id };
   const addresses = [...new Set((orders ?? []).filter((o) => o.address_line).map((o) => `${o.city} — ${o.address_line}`))];
 
+  const TABS = [
+    { key: "details", label: "Details" },
+    { key: "orders", label: "Orders", count: (orders ?? []).length },
+    { key: "activity", label: "Activity", count: (activity ?? []).length },
+    ...(canWallet ? [{ key: "wallet", label: "Wallet" }] : []),
+    ...(canPromo ? [{ key: "promos", label: "Promo codes", count: (codes ?? []).length }] : []),
+    ...(canManage ? [{ key: "manage", label: "Manage account" }] : []),
+  ];
+  const tab = pickTab(TABS, (await searchParams).tab);
+
   return (
     <>
       <Link href="/admin/customers" className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /> Customers</Link>
@@ -74,10 +84,41 @@ export default async function CustomerPage({ params }: PageProps<"/admin/custome
           This customer cannot sign in or place orders.
         </p>
       )}
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_20rem]">
-        <div className="min-w-0 space-y-6">
-        <h2 className="text-base font-semibold">Purchase history</h2>
-        <Table head={["Order", "Total", "Status", "Payment", "Placed"]} empty="No orders yet.">
+      <SubTabs base={`/admin/customers/${c.id}`} tabs={TABS} active={tab} />
+
+      {tab === "details" && (
+        <div className="grid items-start gap-6 lg:grid-cols-2">
+          <Panel title="Personal details">
+            <dl className="mb-4 grid gap-2 text-sm sm:grid-cols-2">
+              <div><dt className="text-muted-foreground">Name</dt><dd className="font-medium">{c.full_name || "—"}</dd></div>
+              <div><dt className="text-muted-foreground">Email (sign-in)</dt><dd className="break-all"><a href={`mailto:${c.email}`} className="text-primary">{c.email}</a></dd></div>
+              <div><dt className="text-muted-foreground">Phone</dt><dd>{c.phone ? <a href={`tel:${c.phone}`} className="text-primary">{formatEthiopianPhone(c.phone)}</a> : "—"}</dd></div>
+              <div><dt className="text-muted-foreground">Last sign-in</dt><dd>{c.last_sign_in_at ? formatDateTime(c.last_sign_in_at, "en") : "never"}</dd></div>
+            </dl>
+            {canManage && !c.is_staff && (
+              <details className="rounded-md border p-3">
+                <summary className="cursor-pointer text-sm font-medium">Change personal details</summary>
+                <p className="mt-2 text-xs text-muted-foreground">Customers cannot change their name, phone or email themselves once set — they ask you. Changes are recorded in the activity log.</p>
+                <ActionForm action={updateCustomerDetails} hidden={hidden} submitLabel="Save details" size="sm" keepSuccess className="mt-3 space-y-3"
+                  confirm="Change this customer's personal details? A new email becomes their sign-in.">
+                  <label className="block text-sm">Full name<input name="fullName" required minLength={2} maxLength={120} defaultValue={c.full_name ?? ""} className={`${fieldClass} mt-1`} /></label>
+                  <label className="block text-sm">Phone<input name="phone" type="tel" maxLength={20} defaultValue={c.phone ?? ""} placeholder="0911 234 567" className={`${fieldClass} mt-1`} /></label>
+                  <label className="block text-sm">Email (sign-in)<input name="email" type="email" required maxLength={254} defaultValue={c.email} className={`${fieldClass} mt-1`} /></label>
+                </ActionForm>
+              </details>
+            )}
+          </Panel>
+          <div className="space-y-6">
+            {ctx.permissions.has("analytics.view") && <Panel title="Verified spend"><p className="text-2xl font-semibold">{formatETB(toSantim(verified))}</p></Panel>}
+            <Panel title="Delivery addresses" scroll>
+              {addresses.length ? <ul className="space-y-2 text-sm">{addresses.map((a) => <li key={a}>{a}</li>)}</ul> : <p className="text-sm text-muted-foreground">None yet.</p>}
+            </Panel>
+          </div>
+        </div>
+      )}
+
+      {tab === "orders" && (
+        <Table scroll head={["Order", "Total", "Status", "Payment", "Placed"]} empty="No orders yet.">
           {(orders ?? []).map((o) => (
             <tr key={o.id}>
               <Td>{ctx.permissions.has("orders.view_all") ? <Link href={`/admin/orders/${o.id}`} className="text-primary hover:underline">{o.order_number}</Link> : o.order_number}</Td>
@@ -87,8 +128,10 @@ export default async function CustomerPage({ params }: PageProps<"/admin/custome
               <Td className="text-xs text-muted-foreground">{formatDateTime(o.created_at, "en")}</Td>
             </tr>
           ))}
-        </Table>
-        <Panel title="Activity">
+        </Table>      )}
+
+      {tab === "activity" && (
+        <Frame search="Search this customer's activity…">
           {(activity ?? []).length === 0 ? <p className="text-sm text-muted-foreground">No activity recorded yet.</p> : (
             <ol className="space-y-3">
               {(activity ?? []).map((a, i) => {
@@ -108,7 +151,7 @@ export default async function CustomerPage({ params }: PageProps<"/admin/custome
                   typeof d.note === "string" ? `Note: ${d.note}` : null,
                 ].filter(Boolean);
                 return (
-                  <li key={`${a.at}-${i}`} className="flex flex-col gap-0.5 text-sm sm:flex-row sm:gap-3">
+                  <li key={`${a.at}-${i}`} data-row className="flex flex-col gap-0.5 text-sm sm:flex-row sm:gap-3">
                     <span className="shrink-0 text-xs sm:w-36 text-muted-foreground tabular-nums">{formatDateTime(a.at, "en")}</span>
                     <div className="min-w-0">
                       <p>
@@ -123,52 +166,14 @@ export default async function CustomerPage({ params }: PageProps<"/admin/custome
               })}
             </ol>
           )}
-        </Panel>
-        </div>
-        <div className="space-y-6">
-          {canManage && (
-            <Panel title="Manage account">
-              {c.is_staff ? (
-                <p className="text-sm text-muted-foreground">This is a staff account. Manage it under <Link href="/admin/staff" className="text-primary underline">Staff</Link>.</p>
-              ) : (
-                <div className="space-y-5">
-                  {!c.deactivated_at && (c.email_confirmed_at ? (
-                    <ActionForm action={sendCustomerPasswordReset} hidden={hidden} submitLabel="Send password reset email" variant="outline" size="sm">
-                      <p className="text-xs text-muted-foreground">The customer gets an email with a link to choose a new password. You never see their password.</p>
-                    </ActionForm>
-                  ) : (
-                    <ActionForm action={resendCustomerInvite} hidden={hidden} submitLabel="Send invitation again" variant="outline" size="sm">
-                      <p className="text-xs text-muted-foreground">Not confirmed yet. Sends an invitation email with a link to set a password.</p>
-                    </ActionForm>
-                  ))}
-                  {c.deactivated_at ? (
-                    <ActionForm action={setCustomerActive} hidden={{ ...hidden, active: "true" }} submitLabel="Reactivate account" size="sm">
-                      <p className="text-xs text-muted-foreground">Allows signing in and ordering again.</p>
-                    </ActionForm>
-                  ) : (
-                    <ActionForm action={setCustomerActive} hidden={{ ...hidden, active: "false" }} submitLabel="Deactivate account" variant="destructive" size="sm"
-                      confirm="Deactivate this account? The customer will not be able to sign in or place orders.">
-                      <label htmlFor="reason" className="text-sm font-medium">Reason (kept in the activity log)</label>
-                      <textarea id="reason" name="reason" required maxLength={500} rows={2} className={fieldClass} />
-                    </ActionForm>
-                  )}
-                  {c.order_count === 0 ? (
-                    <ActionForm action={deleteCustomer} hidden={hidden} submitLabel="Delete account" variant="destructive" size="sm"
-                      confirm={`Permanently delete ${c.email}? This cannot be undone.`}>
-                      <p className="text-xs text-muted-foreground">Removes the account and its saved details. Only possible for accounts without orders or printing jobs.</p>
-                    </ActionForm>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">Accounts with orders cannot be deleted (order history must be kept). Deactivate instead.</p>
-                  )}
-                </div>
-              )}
-            </Panel>
-          )}
-          {canWallet && (
-            <Panel title="Wallet balance">
+        </Frame>
+      )}
+
+      {tab === "wallet" && canWallet && (
+        <Panel title="Wallet balance" className="max-w-2xl">
               <p className="text-2xl font-semibold tabular-nums">{formatETB(toSantim(Number(acct?.wallet_balance_etb ?? 0)))}</p>
               {(ledger ?? []).length > 0 && (
-                <ul className="mt-3 divide-y text-xs">
+                <ul className="mt-3 max-h-[45vh] divide-y overflow-y-auto text-xs">
                   {(ledger ?? []).map((l) => (
                     <li key={l.id} className="flex flex-wrap justify-between gap-2 py-1.5">
                       <span>{l.kind.replace("_", " ")}{l.note ? ` · ${l.note}` : ""}</span>
@@ -187,10 +192,11 @@ export default async function CustomerPage({ params }: PageProps<"/admin/custome
                   <input id="adj-reason" name="reason" required minLength={3} maxLength={500} className={fieldClass} />
                 </ActionForm>
               )}
-            </Panel>
-          )}
-          {canPromo && (
-            <Panel title="Personal promo codes">
+        </Panel>
+      )}
+
+      {tab === "promos" && canPromo && (
+        <Panel title="Personal promo codes" className="max-w-3xl">
               <div className="space-y-3">
                 {(codes ?? []).length === 0 ? <p className="text-sm text-muted-foreground">None.</p> : (
                   <ul className="divide-y text-sm">
@@ -239,23 +245,47 @@ export default async function CustomerPage({ params }: PageProps<"/admin/custome
                   </ActionForm>
                 )}
               </div>
-            </Panel>
-          )}
-          <Panel title="Contact">
-            <dl className="space-y-2 text-sm">
-              <div><dt className="text-muted-foreground">Email</dt><dd className="break-all"><a href={`mailto:${c.email}`} className="text-primary">{c.email}</a></dd></div>
-              <div><dt className="text-muted-foreground">Phone</dt><dd>{c.phone ? <a href={`tel:${c.phone}`} className="text-primary">{formatEthiopianPhone(c.phone)}</a> : "—"}</dd></div>
-              <div><dt className="text-muted-foreground">Last sign-in</dt><dd>{c.last_sign_in_at ? formatDateTime(c.last_sign_in_at, "en") : "never"}</dd></div>
-            </dl>
-          </Panel>
-          {ctx.permissions.has("analytics.view") && <Panel title="Verified spend"><p className="text-2xl font-semibold">{formatETB(toSantim(verified))}</p></Panel>}
-          {addresses.length > 0 && (
-            <Panel title="Delivery addresses">
-              <ul className="space-y-2 text-sm">{addresses.map((a) => <li key={a}>{a}</li>)}</ul>
-            </Panel>
-          )}
-        </div>
-      </div>
+        </Panel>
+      )}
+
+      {tab === "manage" && canManage && (
+        <Panel title="Manage account" className="max-w-2xl">
+              {c.is_staff ? (
+                <p className="text-sm text-muted-foreground">This is a staff account. Manage it under <Link href="/admin/staff" className="text-primary underline">Staff</Link>.</p>
+              ) : (
+                <div className="space-y-5">
+                  {!c.deactivated_at && (c.email_confirmed_at ? (
+                    <ActionForm action={sendCustomerPasswordReset} hidden={hidden} submitLabel="Send password reset email" variant="outline" size="sm">
+                      <p className="text-xs text-muted-foreground">The customer gets an email with a link to choose a new password. You never see their password.</p>
+                    </ActionForm>
+                  ) : (
+                    <ActionForm action={resendCustomerInvite} hidden={hidden} submitLabel="Send invitation again" variant="outline" size="sm">
+                      <p className="text-xs text-muted-foreground">Not confirmed yet. Sends an invitation email with a link to set a password.</p>
+                    </ActionForm>
+                  ))}
+                  {c.deactivated_at ? (
+                    <ActionForm action={setCustomerActive} hidden={{ ...hidden, active: "true" }} submitLabel="Reactivate account" size="sm">
+                      <p className="text-xs text-muted-foreground">Allows signing in and ordering again.</p>
+                    </ActionForm>
+                  ) : (
+                    <ActionForm action={setCustomerActive} hidden={{ ...hidden, active: "false" }} submitLabel="Deactivate account" variant="destructive" size="sm"
+                      confirm="Deactivate this account? The customer will not be able to sign in or place orders.">
+                      <label htmlFor="reason" className="text-sm font-medium">Reason (kept in the activity log)</label>
+                      <textarea id="reason" name="reason" required maxLength={500} rows={2} className={fieldClass} />
+                    </ActionForm>
+                  )}
+                  {c.order_count === 0 ? (
+                    <ActionForm action={deleteCustomer} hidden={hidden} submitLabel="Delete account" variant="destructive" size="sm"
+                      confirm={`Permanently delete ${c.email}? This cannot be undone.`}>
+                      <p className="text-xs text-muted-foreground">Removes the account and its saved details. Only possible for accounts without orders or printing jobs.</p>
+                    </ActionForm>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Accounts with orders cannot be deleted (order history must be kept). Deactivate instead.</p>
+                  )}
+                </div>
+              )}
+        </Panel>
+      )}
     </>
   );
 }

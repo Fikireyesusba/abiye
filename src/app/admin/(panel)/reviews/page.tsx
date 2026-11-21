@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Star } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
-import { DatabaseUpdateNeeded, PageHeader, isMissingDbFunction } from "@/components/admin/ui";
+import { DatabaseUpdateNeeded, PageHeader, SubTabs, isMissingDbFunction } from "@/components/admin/ui";
 import { Input } from "@/components/ui/input";
 import { moderateReview } from "@/lib/admin/review-actions";
 import { requirePermission } from "@/lib/auth/guards";
@@ -30,14 +30,7 @@ export default async function ReviewsPage({ searchParams }: PageProps<"/admin/re
   return (
     <>
       <PageHeader title="Reviews" description="Only customers who received the product (order completed) can review it. Nothing appears on the shop until you publish it. Edited reviews come back here." />
-      <nav className="mb-5 flex gap-1 border-b" aria-label="Review status">
-        {TABS.map((t) => (
-          <Link key={t.key} href={`/admin/reviews?status=${t.key}`} aria-current={t.key === status ? "page" : undefined}
-            className={cn("-mb-px border-b-2 px-4 py-2 text-sm", t.key === status ? "border-primary font-medium" : "border-transparent text-muted-foreground hover:text-foreground")}>
-            {t.label}
-          </Link>
-        ))}
-      </nav>
+      <SubTabs base="/admin/reviews" param="status" tabs={TABS} active={status} />
       {(rows ?? []).length === 0 && <p className="rounded-xl border border-dashed py-12 text-center text-muted-foreground">No {status === "pending" ? "reviews waiting" : `${status} reviews`}.</p>}
       <ul className="space-y-4">
         {(rows ?? []).map((r) => (

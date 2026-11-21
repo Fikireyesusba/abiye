@@ -969,6 +969,9 @@ isOneToOne: false
 "admin_unblock_email":
 { Args: { "p_email": string }; Returns: Json
                            },
+"admin_update_customer_details":
+{ Args: { "p_full_name": string,"p_old_email"?: string,"p_phone": string,"p_user_id": string }; Returns: undefined
+                           },
 "admin_update_order_status":
 { Args: { "p_note"?: string,"p_order_id": string,"p_status": Database["public"]['Enums']["order_status"] }; Returns: undefined
                            },

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
 import { ReceiptPreview } from "@/components/admin/receipt-preview";
-import { PageHeader, Panel, fieldClass } from "@/components/admin/ui";
+import { PageHeader, Panel, SubTabs, fieldClass, pickTab } from "@/components/admin/ui";
 import { StatusBadge } from "@/components/status/status-badge";
 import { Textarea } from "@/components/ui/textarea";
 import { nextStatuses, type OrderStatus } from "@/lib/admin/order-flow";
@@ -23,7 +23,7 @@ const STATUS_LABEL: Record<string, string> = {
   completed: "Mark completed", cancelled: "Cancel order",
 };
 
-export default async function OrderDetailPage({ params }: PageProps<"/admin/orders/[id]">) {
+export default async function OrderDetailPage({ params, searchParams }: PageProps<"/admin/orders/[id]">) {
   const ctx = await requirePermission("orders.view_all", "orders.view_assigned");
   const { id } = await params;
   if (!isGuid(id)) notFound();
@@ -58,6 +58,15 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
   const canFulfil = can("orders.manage") || can("orders.update_fulfillment");
   const bank = order.bank_snapshot as Record<string, string | null>;
 
+  const sp = await searchParams;
+  const TABS = [
+    { key: "items", label: "Items" },
+    ...(can("payments.view") ? [{ key: "payment", label: "Payment", count: submissions?.filter((x) => x.status === "pending").length }] : []),
+    { key: "history", label: "History & notes", count: history.length + notes.length },
+  ];
+  // Opens on the payment when a receipt is waiting for approval.
+  const tab = sp.tab ? pickTab(TABS, sp.tab) : submissions?.some((x) => x.status === "pending") && can("payments.view") ? "payment" : "items";
+
   return (
     <>
       <Link href="/admin/orders" className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
@@ -74,9 +83,10 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
         }
       />
 
+      <SubTabs base={`/admin/orders/${order.id}`} tabs={TABS} active={tab} />
       <div className="grid items-start gap-6 xl:grid-cols-[1fr_22rem]">
         <div className="min-w-0 space-y-6">
-          {can("payments.view") && (
+          {tab === "payment" && can("payments.view") && (
             <Panel title="Payment evidence">
               {!submissions?.length ? (
                 <p className="text-sm text-muted-foreground">No payment submitted yet. Payment due {formatDateTime(order.payment_due_at, "en")}.</p>
@@ -109,7 +119,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
             </Panel>
           )}
 
-          <Panel title="Items">
+          {tab === "items" && <Panel title="Items" scroll>
             <ul className="divide-y text-sm">
               {order.items.map((i) => (
                 <li key={i.id} className="flex justify-between gap-3 py-2">
@@ -124,9 +134,10 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
               {Number(order.discount_etb) > 0 && <div className="flex justify-between text-success"><dt>Promo discount</dt><dd>−{etb(order.discount_etb)}</dd></div>}
               <div className="flex justify-between font-semibold"><dt>Total</dt><dd>{etb(order.total_etb)}</dd></div>
             </dl>
-          </Panel>
+          </Panel>}
 
-          <Panel title="History & internal notes">
+          {tab === "history" && <Panel title="History & internal notes">
+            <div className="max-h-[50vh] overflow-y-auto overscroll-contain">
             <ol className="space-y-2 border-l pl-4 text-sm">
               {[...history.map((h) => ({ at: h.created_at, kind: "status" as const, h })), ...notes.map((n) => ({ at: n.created_at, kind: "note" as const, n }))]
                 .sort((a, b) => a.at.localeCompare(b.at))
@@ -143,12 +154,13 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
                   </li>
                 ))}
             </ol>
+            </div>
             {canFulfil && (
               <ActionForm action={addOrderNote} hidden={{ orderId: order.id }} submitLabel="Add note" variant="outline" size="sm" resetOnSuccess className="mt-4">
                 <Textarea name="body" required maxLength={2000} rows={2} placeholder="Internal note (not visible to the customer)" aria-label="Internal note" />
               </ActionForm>
             )}
-          </Panel>
+          </Panel>}
         </div>
 
         <div className="space-y-6">

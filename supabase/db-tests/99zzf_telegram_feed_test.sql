@@ -1,5 +1,7 @@
 -- Telegram activity feed: security events, alerts, admin actions, notification copies; switches
 \ir _helpers.sql
+-- Message contents of order steps / copies are still built; the 0045 filter (payments only) is lifted for this file.
+alter table public.notifications_outbox disable trigger notifications_outbox_telegram_filter;
 -- These tests check the order-progress Telegram messages: switch them on (default is off).
 insert into public.website_settings (key, value, is_public) values ('telegram_feed', '{"order_progress": true, "notifications": true}', false)
   on conflict (key) do update set value = public.website_settings.value || excluded.value;

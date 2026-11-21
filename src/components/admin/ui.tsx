@@ -15,7 +15,8 @@ export function PageHeader({ title, description, actions }: { title: string; des
   );
 }
 
-export function Panel({ title, children, className, actions }: { title?: string; children: React.ReactNode; className?: string; actions?: React.ReactNode }) {
+/** `scroll`: long content scrolls inside the panel (fixed height) instead of stretching the page. */
+export function Panel({ title, children, className, actions, scroll }: { title?: string; children: React.ReactNode; className?: string; actions?: React.ReactNode; scroll?: boolean }) {
   return (
     <section className={cn("rounded-xl border bg-card shadow-xs", className)}>
       {(title || actions) && (
@@ -24,9 +25,56 @@ export function Panel({ title, children, className, actions }: { title?: string;
           {actions}
         </div>
       )}
-      <div className="p-4">{children}</div>
+      <div className={cn("p-4", scroll && "max-h-[60vh] overflow-y-auto overscroll-contain")}>{children}</div>
     </section>
   );
+}
+
+export interface SubTab { key: string; label: string; count?: number }
+
+/** The tab picked in the URL (?tab=), or the first one. */
+export function pickTab<T extends SubTab>(tabs: readonly T[], value: string | string[] | undefined): T["key"] {
+  const v = Array.isArray(value) ? value[0] : value;
+  return (tabs.find((t) => t.key === v) ?? tabs[0]).key;
+}
+
+/**
+ * Sub-sections of a page, side by side (left to right). Stays visible under the
+ * top bar while the page scrolls; scrolls sideways on phones. Each tab is a link
+ * (?tab=…), so the browser's back button and shared links work.
+ */
+export function SubTabs({ base, tabs, active, param = "tab", keep, level = 1 }: { base: string; tabs: readonly SubTab[]; active: string; param?: string; keep?: Record<string, string | undefined>; level?: 1 | 2 }) {
+  const href = (key: string) => {
+    const q = new URLSearchParams();
+    for (const [k, v] of Object.entries(keep ?? {})) if (v) q.set(k, v);
+    q.set(param, key);
+    return `${base}?${q}`;
+  };
+  return (
+    <nav aria-label={level === 1 ? "Sections" : "Sub-sections"}
+      className={cn("print:hidden", level === 1
+        ? "sticky top-16 z-20 -mx-4 mb-5 border-b bg-background/95 px-4 backdrop-blur sm:-mx-6 sm:px-6"
+        : "mb-4 rounded-lg border bg-card px-1")}>
+      <ul className="flex gap-1 overflow-x-auto">
+        {tabs.map((t) => (
+          <li key={t.key} className="shrink-0">
+            <Link href={href(t.key)} aria-current={t.key === active ? "page" : undefined}
+              className={cn("-mb-px flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm whitespace-nowrap",
+                t.key === active ? "border-primary font-medium text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}>
+              {t.label}
+              {t.count !== undefined && t.count > 0 && <span className="rounded-full bg-muted px-1.5 text-xs tabular-nums text-muted-foreground">{t.count}</span>}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
+/** A fixed-height box whose content scrolls inside it; with `search`, a filter box above (rows: <tr> or [data-row]). */
+export function Frame({ children, className, search }: { children: React.ReactNode; className?: string; search?: string }) {
+  const box = <div className={cn("max-h-[60vh] overflow-y-auto overscroll-contain rounded-xl border bg-card p-4", className)} tabIndex={0}>{children}</div>;
+  return search ? <Searchable placeholder={search}>{box}</Searchable> : box;
 }
 
 /** `scroll`: long lists stay in a box of fixed height that scrolls on its own, with the column titles kept visible. */
