@@ -34,7 +34,7 @@ describe("sales report Excel", () => {
     expect(wb.worksheets.map((w) => w.name)).toEqual(["Summary", "By bank account", "By day", "Verified by", "Top products", "Cancelled after payment"]);
     const s = wb.getWorksheet("Summary")!;
     const col = s.getColumn(1).values;
-    expect(s.getCell(col.indexOf("MONEY INTO YOUR BANK (bank-paid orders + top-ups)"), 2).value).toBe(10000);
+    expect(s.getCell(col.indexOf("MONEY IN (bank-paid orders + in-store sales + top-ups)"), 2).value).toBe(10000);
     expect(s.getCell(col.indexOf("Sales (paid orders)"), 2).value).toBe(9000);
     expect(wb.getWorksheet("By bank account")!.getCell("G2").value).toBe(10000);
   });

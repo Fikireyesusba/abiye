@@ -95,3 +95,22 @@ export async function sendGroupTest(_prev: ActionResult | null, fd: FormData): P
   revalidatePath("/admin/notifications");
   return r.failed ? fail("Test message could not be delivered — see the error below.") : ok(`Test message sent to the ${group} group.`);
 }
+
+/**
+ * Remove sent / failed notifications of a date range (Warsaw days, inclusive) — only after this admin
+ * downloaded their Excel export in the last 30 minutes (checked by the database). Waiting messages are kept.
+ */
+export async function clearNotifications(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("settings.manage");
+  const from = String(fd.get("from") ?? "");
+  const to = String(fd.get("to") ?? "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to) || to < from) return fail("Choose the dates (from ≤ to).");
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("admin_clear_notifications", { p_from: from, p_to: to });
+  if (error) {
+    if (error.message === "invalid_request") return fail("Download the Excel export of these dates first (same or wider dates), then clear within 30 minutes.");
+    return dbError(error);
+  }
+  revalidatePath("/admin/notifications");
+  return ok(`Cleared ${data} notification${data === 1 ? "" : "s"} from ${from} to ${to}. Messages still waiting were kept.`);
+}

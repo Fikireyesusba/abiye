@@ -31,7 +31,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("orders")
-    .select("id, order_number, customer_name, customer_phone, fulfillment_method, city, total_etb, status, payment_status, created_at, assigned_to", { count: "exact" })
+    .select("id, order_number, customer_name, customer_phone, fulfillment_method, city, total_etb, status, payment_status, created_at, assigned_to, channel", { count: "exact" })
     .order("created_at", { ascending: false })
     .range((page - 1) * PAGE, page * PAGE - 1);
   // Searching by number / phone also finds unpaid checkouts (e.g. a customer calling about one).
@@ -87,12 +87,13 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
       <Table scroll head={["Order", "Customer", "Fulfillment", "Total", "Status", "Payment", "Placed"]} empty="No orders match.">
         {orders.map((o) => (
           <tr key={o.id} className="hover:bg-muted/40">
-            <Td><Link href={`/admin/orders/${o.id}`} className="font-medium text-primary hover:underline">{o.order_number}</Link></Td>
+            <Td><Link href={`/admin/orders/${o.id}`} className="font-medium text-primary hover:underline">{o.order_number}</Link>
+              {o.channel === "in_store" && <span className="ml-2 rounded-full bg-accent/20 px-2 py-0.5 text-xs font-medium">In store</span>}</Td>
             <Td>
               <span className="block">{o.customer_name}</span>
               <span className="block text-xs text-muted-foreground">{formatEthiopianPhone(o.customer_phone)}</span>
             </Td>
-            <Td>{o.fulfillment_method === "pickup" ? "Pickup" : `Delivery · ${o.city}`}</Td>
+            <Td>{o.channel === "in_store" ? "Sold at the shop" : o.fulfillment_method === "pickup" ? "Pickup" : `Delivery · ${o.city}`}</Td>
             <Td className="tabular-nums">{formatETB(toSantim(o.total_etb))}</Td>
             <Td><StatusBadge kind="order" status={o.status} /></Td>
             <Td><StatusBadge kind="payment" status={o.payment_status} /></Td>

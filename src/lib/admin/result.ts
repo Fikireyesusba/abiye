@@ -29,6 +29,10 @@ const ADMIN_MESSAGES: Record<string, string> = {
   cannot_modify_self: "You cannot change your own role or status.",
   last_super_admin: "At least one active Super Admin is required.",
   invalid_parent_category: "The parent must be a top-level category in the same department.",
+  service_unavailable: "This service is paused (Admin → Manage services).",
+  product_unavailable: "A product is no longer available.",
+  invalid_quantity: "Check the quantities (1–1000).",
+  invalid_amount: "Check the amount (the discount must be lower than the total).",
 };
 
 /** FormData → plain object of strings (files excluded). */

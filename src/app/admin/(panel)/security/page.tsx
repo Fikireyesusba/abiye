@@ -4,7 +4,7 @@ import { AlertTriangle, CheckCircle2, ShieldAlert, XCircle } from "lucide-react"
 import { ActionForm } from "@/components/admin/action-form";
 import { DatabaseUpdateNeeded, PageHeader, Panel, StatCard, SubTabs, Table, Td, fieldClass, isMissingDbFunction } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
-import { blockEmail, markSecurityReviewed, unblockEmail } from "@/lib/admin/security-actions";
+import { blockEmail, clearReviewedList, markSecurityReviewed, unblockEmail } from "@/lib/admin/security-actions";
 import { requirePermission } from "@/lib/auth/guards";
 import { first } from "@/lib/catalog/search";
 import { formatDateTime } from "@/lib/datetime";
@@ -250,11 +250,14 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
     const { data } = await supabase.rpc("admin_security_reviews", { p_limit: 50 });
     if (!data?.length) return null;
     return (
-      <Panel title="Recently reviewed" className="mt-6">
-        <ul className="space-y-1 text-sm">
+      <Panel title="Recently reviewed" className="mt-6" scroll
+        actions={canBlock && <ActionForm action={clearReviewedList} hidden={{ all: "1" }} submitLabel="Clear list" variant="outline" size="sm" className="space-y-0"
+          confirm="Clear the whole “Recently reviewed” list? The reviews stay in force (the alerts do not come back), and they remain in the Activity log." />}>
+        <ul className="divide-y text-sm" data-testid="reviewed-list">
           {data.map((r) => (
-            <li key={`${r.subject_type}:${r.subject}`} className="break-all">
-              <span className="font-medium">{r.subject}</span> <span className="text-muted-foreground">({r.subject_type}) · {formatDateTime(r.reviewed_at, "en")} by {r.reviewed_by_name ?? "—"}{r.note ? ` · ${r.note}` : ""}</span>
+            <li key={`${r.subject_type}:${r.subject}`} className="flex flex-wrap items-center gap-2 py-1.5 break-all">
+              <span className="min-w-0 flex-1"><span className="font-medium">{r.subject}</span> <span className="text-muted-foreground">({r.subject_type}) · {formatDateTime(r.reviewed_at, "en")} by {r.reviewed_by_name ?? "—"}{r.note ? ` · ${r.note}` : ""}</span></span>
+              {canBlock && <ActionForm action={clearReviewedList} hidden={{ type: r.subject_type, subject: r.subject }} submitLabel="Clear" variant="outline" size="sm" className="space-y-0" />}
             </li>
           ))}
         </ul>

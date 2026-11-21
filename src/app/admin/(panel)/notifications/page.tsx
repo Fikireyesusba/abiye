@@ -3,7 +3,9 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
 import { PageHeader, Panel, SubTabs, Table, Td, fieldClass, pickTab } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
-import { retryAllFailed, retryNotification, saveTelegramFeed, sendGroupTest, sendSecurityTest, sendTestNotification } from "@/lib/admin/notification-actions";
+import { clearNotifications, retryAllFailed, retryNotification, saveTelegramFeed, sendGroupTest, sendSecurityTest, sendTestNotification } from "@/lib/admin/notification-actions";
+import { Download, FileSpreadsheet } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { describe } from "@/lib/telegram/format";
 import { archivePastReceipts, saveReceiptArchive, sendArchiveTest } from "@/lib/admin/archive-actions";
 import { Input } from "@/components/ui/input";
@@ -72,6 +74,7 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
   const { data: feedRaw } = await supabase.rpc("admin_telegram_feed");
   const feed = (feedRaw ?? null) as { security: boolean; admin: boolean; notifications: boolean; order_progress?: boolean; printing_requests?: boolean } | null;
   const today = zoneToday();
+  const monthAgo = new Date(Date.parse(`${today}T00:00:00Z`) - 30 * 86400000).toISOString().slice(0, 10);
   const sp = await searchParams;
   const TABS = [
     { key: "messages", label: "Messages", count: problems },
@@ -220,6 +223,28 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
       </>)}
 
       {tab === "messages" && (<>
+      <details className="mb-4 rounded-lg border bg-card p-4" data-testid="notif-export-clear">
+        <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium"><FileSpreadsheet className="size-4 text-primary" aria-hidden /> Export to Excel &amp; clear</summary>
+        <div className="mt-3 grid gap-4 lg:grid-cols-2">
+          <form method="get" action="/admin/notifications/export" className="space-y-2">
+            <p className="text-sm font-medium">1. Export</p>
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="text-sm">From<input type="date" name="from" required defaultValue={monthAgo} max={today} className={`${fieldClass} mt-1 block`} /></label>
+              <label className="text-sm">To<input type="date" name="to" required defaultValue={today} max={today} className={`${fieldClass} mt-1 block`} /></label>
+              <Button type="submit"><Download /> Download .xlsx</Button>
+            </div>
+          </form>
+          <ActionForm action={clearNotifications} submitLabel="Clear these notifications" variant="destructive" size="sm"
+            confirm="Permanently remove the sent / failed notifications of these dates? (Allowed only after you downloaded their Excel export.)">
+            <p className="text-sm font-medium">2. Clear (within 30 minutes of the export)</p>
+            <div className="flex flex-wrap gap-3">
+              <label className="text-sm">From<input type="date" name="from" required defaultValue={monthAgo} max={today} className={`${fieldClass} mt-1 block`} /></label>
+              <label className="text-sm">To<input type="date" name="to" required defaultValue={today} max={today} className={`${fieldClass} mt-1 block`} /></label>
+            </div>
+            <p className="text-xs text-muted-foreground">Any dates. Messages still waiting to be sent are kept. The clearing is recorded in the Activity log.</p>
+          </ActionForm>
+        </div>
+      </details>
       <p className="mb-3 text-sm text-muted-foreground">
         The latest {rows.length} messages, newest first. Pick a category above. Failed messages are retried automatically (1, 2, 4… minutes); after the last attempt press <strong>Retry</strong>.
         {problems > 0 && <span className="font-medium text-destructive"> {problems} need attention.</span>}

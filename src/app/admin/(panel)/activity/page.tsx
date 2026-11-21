@@ -41,7 +41,6 @@ export default async function ActivityPage({ searchParams }: PageProps<"/admin/a
   const now = wallClock(new Date())!.getTime(); // Warsaw wall clock
   const today = zoneToday();
   const monthAgo = new Date(now - 30 * 86400000).toISOString().slice(0, 10);
-  const clearMax = new Date(now - 31 * 86400000).toISOString().slice(0, 10);
   const sp = await searchParams;
   const catParam = first(sp.cat) ?? "";
   const cat = CATS.find((c) => c.key === catParam)?.key ?? "";
@@ -63,7 +62,7 @@ export default async function ActivityPage({ searchParams }: PageProps<"/admin/a
 
   return (
     <>
-      <PageHeader title="Activity log" description="Every important change: who did it and when. Entries cannot be edited; only a Super Admin can clear entries older than 30 days." />
+      <PageHeader title="Activity log" description="Every important change: who did it and when. Entries cannot be edited; a Super Admin can clear any dates after exporting them to Excel." />
       <div className="mb-4 grid gap-3 lg:grid-cols-2">
         <details className="rounded-lg border bg-card p-4">
           <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium"><FileSpreadsheet className="size-4 text-primary" aria-hidden /> Export to Excel</summary>
@@ -81,14 +80,14 @@ export default async function ActivityPage({ searchParams }: PageProps<"/admin/a
         </details>
         {canClear && (
           <details className="rounded-lg border border-destructive/30 bg-card p-4">
-            <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium text-destructive"><Trash2 className="size-4" aria-hidden /> Clear old entries</summary>
+            <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium text-destructive"><Trash2 className="size-4" aria-hidden /> Clear entries (any dates)</summary>
             <ActionForm action={clearActivityLog} submitLabel="Clear entries" variant="destructive" size="sm" className="mt-3"
-              confirm="Permanently remove these activity entries? Make sure you downloaded the Excel export first.">
-              <p className="text-xs text-muted-foreground">Removes entries created <strong>before</strong> the chosen date. The last 30 days are always kept, and every clearing is recorded permanently.</p>
-              <label className="text-sm">Clear everything before
-                <input type="date" name="before" required max={clearMax} defaultValue={clearMax} className={`${fieldClass} mt-1 block w-auto`} />
-              </label>
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="exported" required className="size-4 accent-[var(--primary)]" /> I downloaded an Excel export of these entries</label>
+              confirm="Permanently remove the activity entries of these dates? (Allowed only after you downloaded their Excel export.)">
+              <p className="text-xs text-muted-foreground"><strong>Step 1:</strong> Export to Excel (left) with the same dates and “All areas”. <strong>Step 2:</strong> clear here within 30 minutes. Any dates can be cleared; every clearing and every export is recorded permanently.</p>
+              <div className="flex flex-wrap gap-3">
+                <label className="text-sm">From<input type="date" name="from" required max={today} defaultValue={monthAgo} className={`${fieldClass} mt-1 block w-auto`} /></label>
+                <label className="text-sm">To<input type="date" name="to" required max={today} defaultValue={today} className={`${fieldClass} mt-1 block w-auto`} /></label>
+              </div>
             </ActionForm>
           </details>
         )}

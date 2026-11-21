@@ -37,6 +37,7 @@ Paste each file's full contents (GitHub → file → **Raw** → copy) into a ne
 29. `supabase/migrations/20261120000046_warsaw_gmail_printing_cancel.sql`
 30. `supabase/migrations/20261120000047_age_sex.sql`
 31. `supabase/migrations/20261120000048_manage_services.sql`
+32. `supabase/migrations/20261120000049_instore_clear_tools.sql`
 
 Each should say "Success. No rows returned". If Supabase warns about RLS, choose "Run without RLS" (the files enable it themselves).
 

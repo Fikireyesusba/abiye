@@ -58,3 +58,16 @@ export async function markSecurityReviewed(_prev: ActionResult | null, fd: FormD
   const n = Number(data ?? 0);
   return ok(`${n} alert${n === 1 ? "" : "s"} cleared. ${n === 1 ? "It" : "They"} will show again only if something new happens.`);
 }
+
+/** Super Admin: remove one entry (or all) from the "Recently reviewed" list. The review itself stays, so the alert does not return. */
+export async function clearReviewedList(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("security.manage");
+  const type = fd.get("type") === "email" ? "email" : fd.get("type") === "customer" ? "customer" : null;
+  const subject = String(fd.get("subject") ?? "").trim().slice(0, 320);
+  if (fd.get("all") !== "1" && (!type || !subject)) return fail("Invalid request.");
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("admin_clear_reviewed_list", fd.get("all") === "1" ? {} : { p_type: type!, p_subject: subject });
+  if (error) return dbError(error);
+  revalidatePath("/admin/security");
+  return ok(fd.get("all") === "1" ? `Cleared ${data} from the list.` : "Removed from the list.");
+}

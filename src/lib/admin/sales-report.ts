@@ -7,7 +7,8 @@ export interface SalesReport {
   to: string;
   totals: {
     orders_placed: number; orders_paid: number; sales: number; products_sales: number; printing_sales: number; delivery_fees: number;
-    discounts: number; average_order: number; paid_by_bank: number; paid_by_wallet: number; topups_count: number; topups_amount: number;
+    discounts: number; average_order: number; paid_by_bank: number; paid_by_wallet: number;
+    in_store_sales?: number; in_store_count?: number; in_store_cash?: number; in_store_mobile?: number; in_store_bank?: number; topups_count: number; topups_amount: number;
     cash_in: number; cancelled_after_payment_count: number; cancelled_after_payment_bank: number; wallet_refunds: number;
   };
   by_bank: { bank: string; account: string; orders: number; orders_amount: number; topups: number; topups_amount: number; total: number }[];
@@ -64,10 +65,14 @@ export async function buildSalesWorkbook(r: SalesReport, meta: { business: strin
     ["  discounts given", -n(t.discounts), true],
     ["Average paid order", n(t.average_order), true],
     ["", ""],
-    ["Paid by bank transfer", n(t.paid_by_bank), true],
+    ["Paid by bank transfer (online orders)", n(t.paid_by_bank), true],
+    [`In-store sales (${n(t.in_store_count ?? 0)})`, n(t.in_store_sales ?? 0), true],
+    ["  cash", n(t.in_store_cash ?? 0), true],
+    ["  mobile money", n(t.in_store_mobile ?? 0), true],
+    ["  bank transfer", n(t.in_store_bank ?? 0), true],
     ["Paid with customer balance", n(t.paid_by_wallet), true],
     ["Wallet top-ups verified", n(t.topups_amount), true],
-    ["MONEY INTO YOUR BANK (bank-paid orders + top-ups)", n(t.cash_in), true],
+    ["MONEY IN (bank-paid orders + in-store sales + top-ups)", n(t.cash_in), true],
     ["", ""],
     ["Cancelled after payment (orders)", n(t.cancelled_after_payment_count)],
     ["  bank transfers to refund", n(t.cancelled_after_payment_bank), true],

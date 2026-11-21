@@ -76,6 +76,7 @@ export const ADMIN_ROUTES: ReadonlyArray<{ href: string; label: string; anyOf: r
   { href: "/admin", label: "Dashboard", anyOf: ["dashboard.view"] },
   { href: "/admin/orders", label: "Orders", anyOf: ["orders.view_all", "orders.view_assigned"] },
   { href: "/admin/payments", label: "Payments", anyOf: ["payments.view"] },
+  { href: "/admin/in-store", label: "In-store sales", anyOf: ["orders.manage"] },
   { href: "/admin/wallet", label: "Wallet", anyOf: ["wallet.manage"] },
   { href: "/admin/printing", label: "Printing", anyOf: ["printing.view"] },
   { href: "/admin/products", label: "Products", anyOf: ["products.view"] },

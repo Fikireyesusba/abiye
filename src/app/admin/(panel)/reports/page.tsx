@@ -78,9 +78,15 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
         </Panel>
         <Panel title="Money in">
           <dl className="text-sm">
-            <Row label="Orders paid by bank transfer" value={etb(t.paid_by_bank)} />
+            <Row label="Online orders paid by bank transfer" value={etb(t.paid_by_bank)} />
+            {Number(t.in_store_count ?? 0) > 0 && (
+              <>
+                <Row label={`In-store sales (${t.in_store_count})`} value={etb(t.in_store_sales ?? 0)} />
+                <Row label="Cash · Mobile money · Bank transfer" value={`${etb(t.in_store_cash ?? 0)} · ${etb(t.in_store_mobile ?? 0)} · ${etb(t.in_store_bank ?? 0)}`} muted />
+              </>
+            )}
             <Row label={`Wallet top-ups verified (${t.topups_count})`} value={etb(t.topups_amount)} />
-            <Row label="Money into your bank" value={etb(t.cash_in)} strong />
+            <Row label="Money in" value={etb(t.cash_in)} strong />
             <Row label="Orders paid with customer balance" value={etb(t.paid_by_wallet)} />
             <p className="pt-1 text-xs text-muted-foreground">Balance payments are not new money: it arrived earlier as top-ups.</p>
             {(t.cancelled_after_payment_count > 0 || Number(t.wallet_refunds) > 0) && (
