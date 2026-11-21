@@ -13,6 +13,7 @@ import { formatETB, toSantim } from "@/lib/money";
 import { WALLET_MAX_ETB } from "@/lib/wallet/limits";
 import { getMyWallet } from "@/lib/wallet/queries";
 import type { Locale } from "@/i18n/config";
+import { ServiceNotice, serviceOn } from "@/components/shop/service-notice";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("wallet");
@@ -56,7 +57,8 @@ export default async function WalletPage() {
               <li>3. {t("step3")}</li>
             </ol>
           ) : <p className="text-sm text-muted-foreground">{t("noBank")}</p>}
-          {bank && <TopupForm maxAmount={room} />}
+          <ServiceNotice service="wallet" />
+          {bank && (await serviceOn("wallet")) && <TopupForm maxAmount={room} />}
         </CardContent>
       </Card>
 

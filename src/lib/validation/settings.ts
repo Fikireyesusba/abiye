@@ -9,7 +9,19 @@ const localized = z.object({ en: z.string().max(500), am: z.string().max(500) })
 const longText = z.object({ en: z.string().max(30000), am: z.string().max(30000) });
 const optionalUrl = z.url({ protocol: /^https$/ }).nullable();
 
+/** Customer services that can be switched off (Admin → Manage services). */
+export const SERVICE_KEYS = ["shop", "printing", "wallet", "reviews", "signup"] as const;
+export type ServiceKey = (typeof SERVICE_KEYS)[number];
+
 export const settingsSchemas = {
+  services: z.object({
+    shop: z.boolean().default(true),
+    printing: z.boolean().default(true),
+    wallet: z.boolean().default(true),
+    reviews: z.boolean().default(true),
+    signup: z.boolean().default(true),
+    note: localized.default({ en: "", am: "" }),
+  }),
   business: z.object({
     name: localized,
     tagline: localized,

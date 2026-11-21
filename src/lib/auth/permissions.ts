@@ -89,6 +89,7 @@ export const ADMIN_ROUTES: ReadonlyArray<{ href: string; label: string; anyOf: r
   { href: "/admin/reports", label: "Sales reports", anyOf: ["analytics.view"] },
   { href: "/admin/staff", label: "Staff", anyOf: ["staff.manage"] },
   { href: "/admin/notifications", label: "Notifications", anyOf: ["settings.manage"] },
+  { href: "/admin/services", label: "Manage services", anyOf: ["settings.manage"] },
   { href: "/admin/settings", label: "Settings", anyOf: ["settings.manage", "bank_accounts.manage"] },
   { href: "/admin/activity", label: "Activity log", anyOf: ["audit.view"] },
   { href: "/admin/security", label: "Security", anyOf: ["audit.view"] },

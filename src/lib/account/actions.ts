@@ -14,6 +14,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ethiopianPhoneSchema } from "@/lib/validation/checkout";
 import { getCustomerUser, getSignedInUserId, safeNext } from "./session";
 import { maxBirthDate } from "@/lib/age";
+import { getSiteSettings } from "@/lib/catalog/settings";
 
 /** Error codes are translation keys under "account.errors". */
 export type AccountState = { error?: string; ok?: string; email?: string; name?: string };
@@ -42,10 +43,10 @@ export async function signUpCustomer(_prev: AccountState, fd: FormData): Promise
     await recordSecurityEvent("rate_limited", { email: values.email, metadata: { where: "signup" } });
     return { ...values, error: "rateLimited" };
   }
-  if (await isEmailBlocked(values.email)) {
-    await recordSecurityEvent("signup_blocked", { email: values.email });
-    return { ...values, error: "blocked" };
-  }
+  // Blocked email: refused quietly (no alert, no event — it is already handled).
+  if (await isEmailBlocked(values.email)) return { ...values, error: "blocked" };
+  // New accounts paused (Admin → Manage services).
+  if (!(await getSiteSettings()).services.signup) return { ...values, error: "signupPaused" };
 
   const supabase = await createSupabaseServerClient();
   // New accounts: Gmail addresses only (the database refuses others as well).
@@ -82,10 +83,8 @@ export async function signInCustomer(_prev: AccountState, fd: FormData): Promise
     await recordSecurityEvent("rate_limited", { email: addr, metadata: { where: "customer_login" } });
     return { email: addr, error: "rateLimited" };
   }
-  if (await isEmailBlocked(addr)) {
-    await recordSecurityEvent("login_blocked", { email: addr });
-    return { email: addr, error: "blocked" };
-  }
+  // Blocked email: refused quietly (no alert, no event — it is already handled).
+  if (await isEmailBlocked(addr)) return { email: addr, error: "blocked" };
   const supabase = await createSupabaseServerClient();
   const { data: signedIn, error } = await supabase.auth.signInWithPassword({ email: addr, password: pw });
   if (!error && signedIn.user) {

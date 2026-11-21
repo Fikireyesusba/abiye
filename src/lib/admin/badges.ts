@@ -1,6 +1,7 @@
 import "server-only";
 import type { AdminContext } from "@/lib/auth/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { isCustomerAlert, isEmailAlert } from "./security-alerts";
 
 /** Things waiting for an admin's action, per menu entry (only what this role may see; RLS applies). */
 export type AdminBadges = Partial<Record<"/admin/payments" | "/admin/wallet" | "/admin/orders" | "/admin/printing" | "/admin/notifications" | "/admin/security" | "/admin/inventory" | "/admin/reviews", number>>;
@@ -27,8 +28,8 @@ export async function getAdminBadges(ctx: AdminContext): Promise<AdminBadges> {
     // Active security alerts (same as Security → Active alerts): high-risk emails + suspicious customers not yet reviewed / blocked.
     has("audit.view")
       ? Promise.all([
-          Promise.resolve(supabase.rpc("admin_suspicious_emails", { p_days: 7 })).then((r) => (r.data ?? []).filter((e) => e.score >= 6 && !e.blocked).length, () => 0),
-          Promise.resolve(supabase.rpc("admin_suspicious_customers", { p_days: 30 })).then((r) => (r.data ?? []).filter((c) => !c.blocked && !c.deactivated).length, () => 0),
+          Promise.resolve(supabase.rpc("admin_suspicious_emails", { p_days: 7 })).then((r) => (r.data ?? []).filter(isEmailAlert).length, () => 0),
+          Promise.resolve(supabase.rpc("admin_suspicious_customers", { p_days: 30 })).then((r) => (r.data ?? []).filter(isCustomerAlert).length, () => 0),
         ]).then(([a, b]) => a + b)
       : 0,
     // Active products at or below their low-stock level (incl. sold out).

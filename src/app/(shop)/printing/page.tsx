@@ -10,6 +10,7 @@ import { getDeliveryZones, getPrintingPrices } from "@/lib/catalog/queries";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import { formatETB, toSantim } from "@/lib/money";
 import type { Locale } from "@/i18n/config";
+import { ServiceNotice } from "@/components/shop/service-notice";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("pages");
@@ -74,7 +75,8 @@ export default async function PrintingPage() {
             </li>
           ))}
         </ol>
-        {user ? (
+        <ServiceNotice service="printing" />
+        {!s.services.printing ? null : user ? (
         <PrintForm
           defaults={{ fullName: account?.full_name ?? "", phone: account?.phone ? formatEthiopianPhone(account.phone) : "" }}
           rules={prices}

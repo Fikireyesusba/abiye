@@ -13,6 +13,7 @@ import { pushConfigured } from "@/lib/push/dispatch";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { securityTelegramConfig, telegramConfig } from "@/lib/telegram/dispatch";
 import { cn } from "@/lib/utils";
+import { HIGH_RISK, isCustomerAlert, isEmailAlert } from "@/lib/admin/security-alerts";
 
 export const metadata: Metadata = { title: "Security" };
 
@@ -44,6 +45,19 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
   const supabase = await createSupabaseServerClient();
   const probe = await supabase.rpc("admin_system_health");
   if (isMissingDbFunction(probe.error)) return <DatabaseUpdateNeeded title="Security" migration="20261120000027_security_monitoring.sql" />;
+  // Red counts on the tabs that hold active alerts.
+  const [{ data: allEmails }, { data: allCustomers }] = await Promise.all([
+    supabase.rpc("admin_suspicious_emails", { p_days: 7 }),
+    supabase.rpc("admin_suspicious_customers", { p_days: 30 }),
+  ]);
+  const emailAlertCount = (allEmails ?? []).filter(isEmailAlert).length;
+  const customerAlertCount = (allCustomers ?? []).filter(isCustomerAlert).length;
+  const tabs = TABS.map((x) => ({
+    ...x,
+    ...(x.key === "alerts" ? { count: emailAlertCount + customerAlertCount, alert: true }
+      : x.key === "emails" ? { count: emailAlertCount, alert: true }
+      : x.key === "customers" ? { count: customerAlertCount, alert: true } : {}),
+  }));
 
   const BlockForm = ({ email, compact }: { email?: string; compact?: boolean }) => (
     <ActionForm action={blockEmail} hidden={email ? { email } : undefined} submitLabel="Block" variant="destructive" size="sm"
@@ -60,7 +74,7 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
   return (
     <>
       <PageHeader title="Security & health" description="Suspicious sign-ins (with the email that was used), risky customer behaviour, blocked emails and the health of the website." />
-      <SubTabs base="/admin/security" tabs={TABS} active={tab} />
+      <SubTabs base="/admin/security" tabs={tabs} active={tab} />
       {tab === "alerts" && <Alerts />}
       {tab === "overview" && <Overview />}
       {tab === "emails" && <><Emails /><Reviewed /></>}
@@ -76,8 +90,8 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
       supabase.rpc("admin_suspicious_emails", { p_days: 7 }),
       supabase.rpc("admin_suspicious_customers", { p_days: 30 }),
     ]);
-    const emailAlerts = (emails ?? []).filter((e) => e.score >= 6 && !e.blocked);
-    const customerAlerts = (customers ?? []).filter((c) => !c.blocked && !c.deactivated);
+    const emailAlerts = (emails ?? []).filter(isEmailAlert);
+    const customerAlerts = (customers ?? []).filter(isCustomerAlert);
     const total = emailAlerts.length + customerAlerts.length;
     const Actions = ({ type, subject, email, staff }: { type: "email" | "customer"; subject: string; email: string; staff?: boolean }) =>
       canBlock ? (
@@ -202,13 +216,13 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
         <p className="mb-3 text-sm text-muted-foreground">Every email used in a failed or blocked sign-in in the last 7 days, riskiest first. Admin attempts weigh more; “networks” counts different internet connections. Checked one and it is fine? <strong>Mark as reviewed</strong> clears it (and the red badge) until something new happens.</p>
         <Table scroll head={["Email used", "Admin fails", "Code fails", "Customer fails", "Blocked tries", "Networks", "Last seen", "Action"]} empty="No failed sign-ins in the last 7 days.">
           {(data ?? []).map((r) => (
-            <tr key={r.email} className={cn("align-top", r.score >= 6 && !r.blocked && "bg-destructive/5")}>
+            <tr key={r.email} className={cn("align-top", isEmailAlert(r) && "bg-destructive/5")}>
               <Td className="max-w-[16rem] break-all">
                 <span className="font-medium">{r.email}</span>
                 <span className="mt-1 flex flex-wrap gap-1">
                   {r.is_staff && <Badge variant="info">staff account</Badge>}
                   {!r.has_account && <Badge variant="secondary">no account</Badge>}
-                  {r.score >= 6 && !r.blocked && <Badge variant="destructive"><AlertTriangle className="size-3" /> high risk</Badge>}
+                  {isEmailAlert(r) && <Badge variant="destructive"><AlertTriangle className="size-3" /> {r.score >= HIGH_RISK ? "high risk" : "active alert"}</Badge>}
                   {r.blocked && <Badge variant="outline">blocked</Badge>}
                 </span>
               </Td>

@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  ToggleRight,
   BarChart3, Bell, Boxes, ShieldAlert, Wallet, Clock, History, Megaphone, CreditCard, FolderTree, LayoutDashboard, Menu, Package, Printer, Settings, ShoppingCart, UserCog, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/admin/staff": UserCog,
   "/admin/notifications": Bell,
   "/admin/settings": Settings,
+  "/admin/services": ToggleRight,
   "/admin/follow-up": Clock,
   "/admin/promotions": Megaphone,
   "/admin/analytics": BarChart3,

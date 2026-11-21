@@ -25,6 +25,8 @@ function build(key: SettingsKey, f: Record<string, string>, current: Record<stri
     }
     case "hours":
       return pair(f, "hours");
+    case "services":
+      return { shop: f.shop === "on", printing: f.printing === "on", wallet: f.wallet === "on", reviews: f.reviews === "on", signup: f.signup === "on", note: pair(f, "note") };
     case "social":
       return { facebook: nullable(f.facebook), instagram: nullable(f.instagram), tiktok: nullable(f.tiktok), telegram: nullable(f.telegram) };
     case "delivery":

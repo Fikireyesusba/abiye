@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { AuthCard } from "@/components/account/auth-card";
 import { SignUpForm } from "@/components/account/auth-forms";
 import { getCustomerUser, safeNext } from "@/lib/account/session";
+import { ServiceNotice, serviceOn } from "@/components/shop/service-notice";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("account");
@@ -16,7 +17,7 @@ export default async function SignUpPage({ searchParams }: PageProps<"/account/s
   const t = await getTranslations("account");
   return (
     <AuthCard title={t("signUpTitle")} intro={t("signUpIntro")}>
-      <SignUpForm next={next} />
+      {(await serviceOn("signup")) ? <SignUpForm next={next} /> : <ServiceNotice service="signup" />}
     </AuthCard>
   );
 }

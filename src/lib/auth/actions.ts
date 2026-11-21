@@ -6,7 +6,7 @@ import { z } from "zod";
 import { clientIpKey, rateLimitAll } from "@/lib/security/rate-limit";
 import { sha256Hex } from "@/lib/security/tokens";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { recordSecurityEvent } from "@/lib/security/events";
+import { isEmailBlocked, recordSecurityEvent } from "@/lib/security/events";
 import { isStaffAccount } from "./mfa";
 import { safeAdminRedirect } from "./safe-redirect";
 
@@ -29,6 +29,9 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
     await recordSecurityEvent("rate_limited", { email, metadata: { where: "admin_login" } });
     return { error: "Too many sign-in attempts. Please wait 15 minutes and try again.", email };
   }
+
+  // Blocked email: refused quietly, without trying the password (no alert, no event).
+  if (await isEmailBlocked(email)) return { error: "You're not allowed to use this website.", email };
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);

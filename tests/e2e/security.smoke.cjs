@@ -80,7 +80,7 @@ const toast = (page, text) => page.waitForSelector(`[data-sonner-toast]:has-text
     await s.check("input[name=acceptTerms]");
     await s.click("form button[type=submit]");
     await s.waitForSelector("form [role=alert]");
-    check((await s.locator("form [role=alert]").innerText()).includes("cannot be used"), "blocked email cannot sign up");
+    check((await s.locator("form [role=alert]").innerText()).includes("not allowed"), "blocked email cannot sign up");
 
     // ---- customer: failed sign-ins, then blocked → signed out, cannot sign in or order
     const c = await (await b.newContext()).newPage();
@@ -105,7 +105,7 @@ const toast = (page, text) => page.waitForSelector(`[data-sonner-toast]:has-text
     await c.fill("#password", "SecCust2026x");
     await c.click("form button[type=submit]");
     await c.waitForSelector("form [role=alert]");
-    check((await c.locator("form [role=alert]").innerText()).includes("cannot be used"), "blocked customer cannot sign in");
+    check((await c.locator("form [role=alert]").innerText()).includes("not allowed"), "blocked customer cannot sign in");
     // Isolate the email rule: lift the deactivation and the sign-in ban for this one check.
     sql(`update customer_accounts set deactivated_at = null where id = '${cid}'; update auth.users set banned_until = null where id = '${cid}'`);
     let refused = false;

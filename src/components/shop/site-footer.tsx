@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { Clock, Landmark, Mail, MapPin, Phone } from "lucide-react";
-import { getPublicBankAccounts } from "@/lib/catalog/bank-info";
+import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import { InstallAppButton } from "@/components/pwa/pwa";
 import { socialLinks, SocialIconRow } from "./social-links";
 import { getSiteSettings } from "@/lib/catalog/settings";
@@ -9,43 +8,19 @@ import { formatEthiopianPhone, normalizeEthiopianPhone } from "@/lib/validation/
 import type { Locale } from "@/i18n/config";
 
 export async function SiteFooter() {
-  const [s, t, locale, banks] = await Promise.all([getSiteSettings(), getTranslations(), getLocale() as Promise<Locale>, getPublicBankAccounts()]);
+  const [s, t, locale] = await Promise.all([getSiteSettings(), getTranslations(), getLocale() as Promise<Locale>]);
   const name = s.business.name[locale] || s.business.name.en;
   const phone = normalizeEthiopianPhone(s.contact.phone);
   const links = socialLinks(s);
-  const primaryBank = banks[0];
 
   return (
     <footer className="mt-16 border-t bg-sidebar text-sidebar-foreground">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="space-y-3">
-          <p className="text-lg font-semibold">{name}</p>
-          <p className="text-sm opacity-80">{s.business.tagline[locale] || s.business.tagline.en}</p>
-          <p className="text-xs opacity-70">{t("footer.payments")}</p>
-          {primaryBank && (
-            <p className="flex items-start gap-2 text-xs opacity-85">
-              <Landmark className="mt-0.5 size-4 shrink-0" aria-hidden />
-              <span>{primaryBank.bank_name} · <span className="font-mono">{primaryBank.account_number}</span><br />{primaryBank.account_holder}</span>
-            </p>
-          )}
-          <SocialIconRow links={links.filter((l) => l.external)} className="pt-1" />
-        </div>
-        <nav className="space-y-3 text-sm" aria-label={t("footer.shop")}>
-          <p className="font-semibold">{t("footer.shop")}</p>
-          <ul className="space-y-2 opacity-85">
-            {(["shop", "cosmetics", "electronics", "printing"] as const).map((k) => (
-              <li key={k}>
-                <Link href={`/${k}`} className="hover:underline">
-                  {t(`nav.${k}`)}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+      {/* Help and the shop's contact details side by side (also on phones); no bank / shop details here. */}
+      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-8 px-4 py-10 lg:grid-cols-[1fr_1fr_1fr]">
         <nav className="space-y-3 text-sm" aria-label={t("footer.help")}>
           <p className="font-semibold">{t("footer.help")}</p>
           <ul className="space-y-2 opacity-85">
-            {([["help", "/help"], ["trackOrder", "/track-order"], ["about", "/about"], ["contact", "/contact"], ["privacy", "/privacy"], ["terms", "/terms"]] as const).map(([k, href]) => (
+            {([["help", "/help"], ["about", "/about"], ["privacy", "/privacy"], ["terms", "/terms"]] as const).map(([k, href]) => (
               <li key={k}>
                 <Link href={href} className="hover:underline">
                   {t(`nav.${k}`)}
@@ -64,9 +39,9 @@ export async function SiteFooter() {
               </li>
             )}
             {s.contact.email && (
-              <li className="flex gap-2">
+              <li className="flex min-w-0 gap-2">
                 <Mail className="mt-0.5 size-4 shrink-0" aria-hidden />
-                <a href={`mailto:${s.contact.email}`} className="break-all hover:underline">{s.contact.email}</a>
+                <a href={`mailto:${s.contact.email}`} className="min-w-0 break-all hover:underline">{s.contact.email}</a>
               </li>
             )}
             {(s.contact.address[locale] || s.contact.address.en) && (
@@ -82,7 +57,10 @@ export async function SiteFooter() {
               </li>
             )}
           </ul>
-          <div className="space-y-2 pt-2">
+          <SocialIconRow links={links.filter((l) => l.external)} className="pt-1" />
+        </div>
+        <div className="col-span-2 space-y-3 text-sm lg:col-span-1">
+          <div className="space-y-2">
             <p className="font-semibold">{t("pwa.helpTitle")}</p>
             <InstallAppButton variant="default" className="bg-accent text-accent-foreground hover:bg-accent/90 [&:is(p)]:bg-transparent [&:is(p)]:text-current [&:is(p)]:opacity-85" />
           </div>

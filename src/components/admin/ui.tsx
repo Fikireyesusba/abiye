@@ -30,7 +30,7 @@ export function Panel({ title, children, className, actions, scroll }: { title?:
   );
 }
 
-export interface SubTab { key: string; label: string; count?: number }
+export interface SubTab { key: string; label: string; count?: number; alert?: boolean }
 
 /** The tab picked in the URL (?tab=), or the first one. */
 export function pickTab<T extends SubTab>(tabs: readonly T[], value: string | string[] | undefined): T["key"] {
@@ -62,7 +62,10 @@ export function SubTabs({ base, tabs, active, param = "tab", keep, level = 1 }: 
               className={cn("-mb-px flex items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm whitespace-nowrap",
                 t.key === active ? "border-primary font-medium text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}>
               {t.label}
-              {t.count !== undefined && t.count > 0 && <span className="rounded-full bg-muted px-1.5 text-xs tabular-nums text-muted-foreground">{t.count}</span>}
+              {t.count !== undefined && t.count > 0 && (
+                <span className={cn("rounded-full px-1.5 text-xs tabular-nums", t.alert ? "bg-destructive font-semibold text-white" : "bg-muted text-muted-foreground")}
+                  aria-label={t.alert ? `${t.count} active alert${t.count === 1 ? "" : "s"}` : undefined}>{t.count}</span>
+              )}
             </Link>
           </li>
         ))}

@@ -16,6 +16,7 @@ import { OtherAccountNotice } from "@/components/account/other-account";
 import { getJobForCustomer, readJobAccess } from "@/lib/printing/access";
 import { formatEthiopianPhone } from "@/lib/validation/phone";
 import type { Locale } from "@/i18n/config";
+import { ServiceNotice, serviceOn } from "@/components/shop/service-notice";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
@@ -95,7 +96,7 @@ export default async function PrintJobPage({ params, searchParams }: PageProps<"
                   )}
                   <div className="flex justify-between border-t pt-2 text-lg font-semibold"><dt>{t("printJob.total")}</dt><dd className="tabular-nums">{etb(job.total_etb)}</dd></div>
                 </dl>
-                {payable && <AddPrintingToCart jobId={job.id} accessToken={token} />}
+                {payable && ((await serviceOn("printing")) ? <AddPrintingToCart jobId={job.id} accessToken={token} /> : <ServiceNotice service="printing" />)}
                 {job.order && (
                   <p className="text-sm">
                     {t("printJob.inOrder", { number: job.order.order_number })} ·{" "}

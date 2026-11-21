@@ -197,6 +197,7 @@
     "promo_limit_reached": "This promo code has reached its usage limit.",
     "promo_already_used": "You have already used this promo code.",
     "staff_account": "Staff accounts cannot place orders. Please shop with a separate personal email.",
+    "service_unavailable": "This service is temporarily unavailable. Please try again later.",
     "wallet_insufficient": "Your balance does not cover this order. Pay by bank transfer instead.",
     "wallet_limit": "This top-up would take your balance above the 10,000 ETB limit.",
     "topup_pending_limit": "You already have 3 top-ups waiting for verification. Please wait until we check them.",
@@ -211,6 +212,7 @@
     "skipToContent": "Skip to content"
   },
   "home": {
+    "createAccount": "Create account",
     "shopNow": "Shop now",
     "browse": "Browse {department}",
     "departments": "Shop by Category",
@@ -227,6 +229,14 @@
     "code": "Code: {code}",
     "percentOff": "{value}% off",
     "amountOff": "{amount} off"
+  },
+  "services": {
+    "off_shop": "Ordering products is temporarily unavailable.",
+    "off_printing": "Printing orders are temporarily unavailable.",
+    "off_wallet": "Wallet top-ups and paying with your balance are temporarily unavailable.",
+    "off_reviews": "Writing reviews is temporarily unavailable.",
+    "off_signup": "Creating new accounts is temporarily unavailable.",
+    "unavailable": "Temporarily unavailable"
   },
   "catalog": {
     "allProducts": "All products",
@@ -529,8 +539,9 @@
       "deactivated": "This account has been deactivated. Please contact us if you think this is a mistake.",
       "staffAccount": "This is a staff account. Staff accounts cannot be used on the shop — please sign up with a separate personal email to shop.",
       "dateOfBirth": "Please enter a real date of birth (you must be at least 10 years old).",
+      "signupPaused": "Creating new accounts is temporarily unavailable. Please try again later.",
       "gmailOnly": "Please use a Gmail address (ending in @gmail.com). Other email addresses cannot be used for new accounts.",
-      "blocked": "This email cannot be used on this website. If you think this is a mistake, please contact us.",
+      "blocked": "You're not allowed to use this website. If you think this is a mistake, please contact us.",
       "phone": "Please enter a valid Ethiopian mobile number.",
       "linkExpired": "Your reset link has expired. Please request a new one.",
       "generic": "Something went wrong. Please try again.",

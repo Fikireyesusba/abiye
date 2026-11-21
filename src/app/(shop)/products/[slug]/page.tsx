@@ -17,6 +17,7 @@ import { getProductBySlug, getRelatedProducts } from "@/lib/catalog/queries";
 import { parseSlug } from "@/lib/catalog/search";
 import { publicImageUrl } from "@/lib/storage";
 import { localized, type Locale } from "@/i18n/config";
+import { ServiceNotice, serviceOn } from "@/components/shop/service-notice";
 
 async function load(params: Promise<{ slug: string }>) {
   const slug = parseSlug((await params).slug);
@@ -114,7 +115,8 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
             )}
           </p>
 
-          {available === 0 ? <NotifyMe productId={product.id} slug={product.slug} /> : <AddToCart productId={product.id} available={available} showQuantity />}
+          {available === 0 ? <NotifyMe productId={product.id} slug={product.slug} />
+            : (await serviceOn("shop")) ? <AddToCart productId={product.id} available={available} showQuantity /> : <ServiceNotice service="shop" />}
 
           {description && (
             <section className="space-y-2 border-t pt-5">
@@ -162,7 +164,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
               </ul>
             )}
           </div>
-          <ReviewBox productId={product.id} />
+          {(await serviceOn("reviews")) ? <ReviewBox productId={product.id} /> : <ServiceNotice service="reviews" />}
         </div>
       </section>
 

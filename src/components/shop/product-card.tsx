@@ -9,10 +9,11 @@ import { publicImageUrl } from "@/lib/storage";
 import { AddToCart } from "./add-to-cart";
 import { discountPercent, Price } from "./price";
 import { ProductImage } from "./product-image";
+import { getSiteSettings } from "@/lib/catalog/settings";
 
 export const LOW_STOCK = 5;
 
-export function ProductCard({ product, priority, rating }: { product: ProductCardData; priority?: boolean; rating?: Rating }) {
+export function ProductCard({ product, priority, rating, orderingOff }: { product: ProductCardData; priority?: boolean; rating?: Rating; orderingOff?: boolean }) {
   const locale = useLocale() as Locale;
   const t = useTranslations();
   const name = localized(product, "name", locale);
@@ -60,18 +61,20 @@ export function ProductCard({ product, priority, rating }: { product: ProductCar
             </span>
           )}
         </div>
-        <AddToCart productId={product.id} available={available} compact />
+        {orderingOff
+          ? <p className="rounded-md bg-muted px-2 py-1.5 text-center text-xs text-muted-foreground">{t("services.unavailable")}</p>
+          : <AddToCart productId={product.id} available={available} compact />}
       </div>
     </article>
   );
 }
 
 export async function ProductGrid({ products, priorityCount = 0 }: { products: ProductCardData[]; priorityCount?: number }) {
-  const ratings = await getRatings(products.map((p) => p.id));
+  const [ratings, settings] = await Promise.all([getRatings(products.map((p) => p.id)), getSiteSettings()]);
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
       {products.map((p, i) => (
-        <ProductCard key={p.id} product={p} priority={i < priorityCount} rating={ratings.get(p.id)} />
+        <ProductCard key={p.id} product={p} priority={i < priorityCount} rating={ratings.get(p.id)} orderingOff={!settings.services.shop} />
       ))}
     </div>
   );

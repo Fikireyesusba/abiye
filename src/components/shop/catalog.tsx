@@ -8,6 +8,7 @@ import { localized, type Locale } from "@/i18n/config";
 import { cn } from "@/lib/utils";
 import { ProductGrid } from "./product-card";
 import { SortSelect } from "./sort-select";
+import { ServiceNotice } from "./service-notice";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -64,6 +65,7 @@ export async function Catalog({
         {description && <p className="max-w-2xl text-muted-foreground">{description}</p>}
         {q && <p className="text-sm text-muted-foreground">{t("searchResultsFor", { query: q })}</p>}
       </header>
+      <ServiceNotice service="shop" className="mb-5" />
 
       {subcategories.length > 0 && (
         <nav aria-label={t("categories")} className="-mx-4 mb-5 overflow-x-auto px-4">
