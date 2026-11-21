@@ -81,12 +81,12 @@ export async function retryAllFailed(): Promise<ActionResult> {
 /** Test message for the stock or receipts group. */
 export async function sendGroupTest(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   await requirePermission("settings.manage");
-  const group = fd.get("group") === "stock" ? "stock" : fd.get("group") === "receipts" ? "receipts" : null;
+  const raw = fd.get("group");
+  const group = raw === "stock" || raw === "receipts" || raw === "printing" ? raw : null;
   if (!group) return fail("Invalid request.");
   if (!groupConfig(group)) {
-    return fail(group === "stock"
-      ? "The stock group is not configured (TELEGRAM_STOCK_BOT_TOKEN / TELEGRAM_STOCK_CHAT_ID)."
-      : "The receipts group is not configured (TELEGRAM_RECEIPTS_BOT_TOKEN / TELEGRAM_RECEIPTS_CHAT_ID).");
+    const v = group.toUpperCase();
+    return fail(`The ${group} group is not configured (TELEGRAM_${v}_BOT_TOKEN / TELEGRAM_${v}_CHAT_ID).`);
   }
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc("admin_queue_group_test", { p_group: group });

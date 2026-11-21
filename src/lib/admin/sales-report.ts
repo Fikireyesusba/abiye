@@ -1,5 +1,6 @@
 import ExcelJS from "exceljs";
 import { DATE, MONEY, styleSheet } from "./order-export";
+import { wallClock } from "@/lib/datetime";
 
 export interface SalesReport {
   from: string;
@@ -19,7 +20,7 @@ export interface SalesReport {
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH = /^\d{4}-\d{2}$/;
 
-/** "day" + YYYY-MM-DD, or "month" + YYYY-MM → inclusive Addis Ababa date range. Falls back to today / this month. */
+/** "day" + YYYY-MM-DD, or "month" + YYYY-MM → inclusive Warsaw-time date range. Falls back to today / this month. */
 export function reportRange(kind: string | undefined, value: string | undefined, today: string): { kind: "day" | "month"; from: string; to: string; value: string } {
   if (kind === "month") {
     const m = value && MONTH.test(value) && value <= today.slice(0, 7) ? value : today.slice(0, 7);
@@ -50,9 +51,9 @@ export async function buildSalesWorkbook(r: SalesReport, meta: { business: strin
   s.columns = [{ width: 44 }, { width: 22 }];
   const rows: [string, string | number | Date, boolean?][] = [
     [`${meta.business} — ${meta.title}`, ""],
-    ["Period (Ethiopia time)", `${r.from} to ${r.to}`],
+    ["Period (Warsaw time)", `${r.from} to ${r.to}`],
     ["Exported by", meta.generatedBy],
-    ["Exported at", new Date(meta.generatedAt.getTime() + 3 * 3600 * 1000)],
+    ["Exported at", wallClock(meta.generatedAt)!],
     ["", ""],
     ["Orders placed", n(t.orders_placed)],
     ["Orders paid (payment verified in the period)", n(t.orders_paid)],
@@ -109,7 +110,7 @@ export async function buildSalesWorkbook(r: SalesReport, meta: { business: strin
   const cx = wb.addWorksheet("Cancelled after payment");
   cx.columns = [{ header: "Order", width: 12 }, { header: "Customer", width: 24 }, { header: "Paid by", width: 16 }, { header: "Total", width: 14 }, { header: "Cancelled", width: 18 }];
   for (const c of r.cancelled_after_payment) {
-    cx.addRow([c.order_number, c.customer, c.method === "wallet" ? "Balance (refunded)" : "Bank — refund due", n(c.total), new Date(Date.parse(c.cancelled_at) + 3 * 3600 * 1000)]);
+    cx.addRow([c.order_number, c.customer, c.method === "wallet" ? "Balance (refunded)" : "Bank — refund due", n(c.total), wallClock(c.cancelled_at)!]);
   }
   styleSheet(cx, [4], [5]);
   return Buffer.from(await wb.xlsx.writeBuffer());

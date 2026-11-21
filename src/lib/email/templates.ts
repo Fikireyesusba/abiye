@@ -3,6 +3,7 @@
  * account emails). Pure functions: no I/O, all values HTML-escaped.
  */
 import { formatETB, toSantim } from "@/lib/money";
+import { APP_TIME_ZONE } from "@/lib/datetime";
 
 export interface EmailContext {
   appUrl: string;
@@ -29,7 +30,7 @@ const money = (v: unknown, locale: "en" | "am") => (v === undefined || v === nul
 
 function addis(iso: unknown, locale: "en" | "am") {
   if (typeof iso !== "string") return "";
-  return new Intl.DateTimeFormat(locale === "am" ? "am-ET" : "en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Addis_Ababa" }).format(new Date(iso));
+  return new Intl.DateTimeFormat(locale === "am" ? "am-ET" : "en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: APP_TIME_ZONE }).format(new Date(iso));
 }
 
 interface Part {

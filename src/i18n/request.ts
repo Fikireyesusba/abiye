@@ -1,6 +1,7 @@
 import { cookies, headers } from "next/headers";
 import { getRequestConfig } from "next-intl/server";
 import { defaultLocale, isLocale, LOCALE_COOKIE, type Locale } from "./config";
+import { APP_TIME_ZONE } from "@/lib/datetime";
 
 /**
  * Locale resolution without URL prefixes (routes stay exactly as specified):
@@ -19,7 +20,7 @@ export default getRequestConfig(async () => {
   }
   return {
     locale,
-    timeZone: "Africa/Addis_Ababa",
+    timeZone: APP_TIME_ZONE,
     messages: (await import(`../../messages/${locale}.json`)).default,
   };
 });

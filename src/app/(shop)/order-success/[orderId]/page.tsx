@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { AlertTriangle, Bell, CheckCircle2, Clock, Landmark, XCircle } from "lucide-react";
 import { CopyButton } from "@/components/shop/copy-button";
+import { CancelOrder } from "@/components/shop/cancel-order";
 import { PaymentForm } from "@/components/shop/payment-form";
 import { StatusBadge } from "@/components/status/status-badge";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,9 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
   const viewer = vapid && !["completed", "cancelled", "expired"].includes(order.status) ? await getCustomerUser() : null;
   const expired = order.status === "expired" || (["awaiting_payment", "payment_rejected"].includes(order.status) && new Date(order.payment_due_at) < new Date());
   const canPay = ["awaiting_payment", "payment_rejected"].includes(order.status) && !expired;
+  const me = await getCustomerUser();
+  // Only the account that placed the order can cancel it (checked again by the database).
+  const viewerOwns = !!me && !!(await authorizeCustomerOrder(order.id, { userId: me.id }));
   const lastRejection = order.status === "payment_rejected" ? order.submissions.find((s) => s.status === "rejected") : null;
   const bank = order.bank_snapshot;
   const appUrl = process.env.APP_URL ?? "";
@@ -141,6 +145,11 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
                 <p className="text-xs text-muted-foreground">{t("checkout.verificationNote")}</p>
               </CardContent>
             </Card>
+          )}
+
+          {/* The customer may cancel until staff approve the payment. */}
+          {viewerOwns && ["awaiting_payment", "pending_verification", "payment_rejected"].includes(order.status) && !expired && (
+            <CancelOrder orderId={order.id} />
           )}
 
           {(trackingCode || (canPay && privateLink)) && (

@@ -4,6 +4,7 @@ import { getAdminContext } from "@/lib/auth/guards";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { zoneToday } from "@/lib/datetime";
 
 export const maxDuration = 60;
 
@@ -12,7 +13,7 @@ export async function GET(request: Request) {
   const ctx = await getAdminContext();
   if (!ctx || !ctx.permissions.has("analytics.view")) return new NextResponse("Not found", { status: 404 });
   const url = new URL(request.url);
-  const today = new Date(new Date().getTime() + 3 * 3600 * 1000).toISOString().slice(0, 10);
+  const today = zoneToday();
   const range = reportRange(url.searchParams.get("kind") ?? undefined, url.searchParams.get("value") ?? undefined, today);
   if (!(await rateLimit(`export:sales:${ctx.userId}`, 30, 3600))) return new NextResponse("Too many exports. Try again later.", { status: 429 });
   const supabase = await createSupabaseServerClient();

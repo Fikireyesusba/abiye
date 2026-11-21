@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { actionLabel, describeChanges, waitingFor } from "@/lib/admin/activity";
-import { fromAddisInput, toAddisInput } from "@/lib/datetime";
+import { fromZoneInput, toZoneInput, zoneDayStartIso, zoneStamp, zoneToday } from "@/lib/datetime";
 
 describe("activity labels", () => {
   it("labels known actions and falls back to readable text", () => {
@@ -34,11 +34,17 @@ describe("waitingFor", () => {
   });
 });
 
-describe("Addis Ababa datetime inputs", () => {
+describe("Warsaw time inputs (with summer time)", () => {
   it("round-trips through UTC+3", () => {
-    expect(fromAddisInput("2026-11-20T09:00")).toBe("2026-11-20T06:00:00.000Z");
-    expect(toAddisInput("2026-11-20T06:00:00.000Z")).toBe("2026-11-20T09:00");
-    expect(fromAddisInput("")).toBeNull();
-    expect(fromAddisInput("nonsense")).toBeNull();
+    expect(fromZoneInput("2026-11-20T09:00")).toBe("2026-11-20T08:00:00.000Z"); // winter: UTC+1
+    expect(toZoneInput("2026-11-20T08:00:00.000Z")).toBe("2026-11-20T09:00");
+    expect(fromZoneInput("2026-07-01T09:00")).toBe("2026-07-01T07:00:00.000Z"); // summer: UTC+2
+    expect(toZoneInput("2026-07-01T07:00:00.000Z")).toBe("2026-07-01T09:00");
+    expect(fromZoneInput("")).toBeNull();
+    expect(fromZoneInput("nonsense")).toBeNull();
+    expect(zoneDayStartIso("2026-11-20")).toBe("2026-11-19T23:00:00.000Z");
+    expect(zoneDayStartIso("2026-07-01")).toBe("2026-06-30T22:00:00.000Z");
+    expect(zoneStamp("2026-03-29T01:30:00Z")).toBe("2026-03-29 03:30"); // after the switch to summer time
+    expect(zoneToday(new Date("2026-11-20T23:30:00Z"))).toBe("2026-11-21");
   });
 });

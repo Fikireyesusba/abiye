@@ -8,7 +8,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendMedia, sendMessage, type SendResult, type TelegramConfig } from "./client";
 import { buildMessage, CAPTION_LIMIT, MESSAGE_LIMIT, truncate, type OutboxRow } from "./format";
 
-const ATTACHMENT_BUCKETS = new Set(["payment-receipts"]);
+const ATTACHMENT_BUCKETS = new Set(["payment-receipts", "printing-files"]);
 const FEED_EVENTS = new Set(["security_event", "security_alert", "admin_action", "notification_copy", "security_test", "stock_test", "receipts_test"]);
 
 /** Orders & payments group (first bot). */
@@ -18,7 +18,8 @@ export function telegramConfig(): TelegramConfig | null {
   return { token: env.TELEGRAM_BOT_TOKEN, chatId: env.TELEGRAM_ADMIN_CHAT_ID, apiBase: env.TELEGRAM_API_BASE ?? "https://api.telegram.org" };
 }
 
-export type TelegramGroup = "orders" | "security" | "stock" | "receipts";
+export type TelegramGroup = "orders" | "security" | "stock" | "receipts" | "printing";
+export const TELEGRAM_GROUPS = ["orders", "security", "stock", "receipts", "printing"] as const;
 
 function configFrom(token: string | undefined, chatId: string | undefined): TelegramConfig | null {
   if (!token || !chatId) return null;
@@ -33,6 +34,7 @@ export function groupConfig(group: TelegramGroup): TelegramConfig | null {
     case "security": return configFrom(env.TELEGRAM_SECURITY_BOT_TOKEN, env.TELEGRAM_SECURITY_CHAT_ID);
     case "stock": return configFrom(env.TELEGRAM_STOCK_BOT_TOKEN, env.TELEGRAM_STOCK_CHAT_ID);
     case "receipts": return configFrom(env.TELEGRAM_RECEIPTS_BOT_TOKEN, env.TELEGRAM_RECEIPTS_CHAT_ID);
+    case "printing": return configFrom(env.TELEGRAM_PRINTING_BOT_TOKEN, env.TELEGRAM_PRINTING_CHAT_ID);
   }
 }
 
@@ -45,6 +47,13 @@ export function securityTelegramConfig(): TelegramConfig | null {
 
 async function deliver(cfg: TelegramConfig, row: OutboxRow): Promise<SendResult> {
   const msg = buildMessage(row, getServerEnv().APP_URL);
+  // Printing documents: always as a file, with the customer's file name.
+  if (row.event_type === "printing_document" && msg.attachment) {
+    const { data: blob } = await getSupabaseAdmin().storage.from(msg.attachment.bucket).download(msg.attachment.path);
+    if (!blob) return { ok: false, kind: "permanent", error: "document no longer in storage" };
+    const name = String(row.payload.file_name ?? msg.attachment.path.split("/").pop() ?? "document").replace(/[\\/\r\n]/g, "_").slice(0, 120);
+    return sendMedia(cfg, "document", blob, name, truncate(msg.text, CAPTION_LIMIT));
+  }
   if (msg.attachment && ATTACHMENT_BUCKETS.has(msg.attachment.bucket) && msg.text.length <= CAPTION_LIMIT) {
     const { data: blob } = await getSupabaseAdmin().storage.from(msg.attachment.bucket).download(msg.attachment.path);
     if (blob) {
@@ -76,7 +85,7 @@ export interface DispatchSummary {
  * "dead" after max attempts; nothing about the order itself is affected.
  */
 export async function dispatchNotifications(limit = 20): Promise<DispatchSummary> {
-  const results = await Promise.all((["orders", "security", "stock", "receipts"] as const).map((g) => dispatchGroup(g, limit)));
+  const results = await Promise.all(TELEGRAM_GROUPS.map((g) => dispatchGroup(g, limit)));
   return results.reduce((a, r) => ({ configured: a.configured || r.configured, sent: a.sent + r.sent, failed: a.failed + r.failed }), { configured: false, sent: 0, failed: 0 });
 }
 
@@ -116,7 +125,7 @@ export async function dispatchGroup(group: TelegramGroup | boolean, limit = 20):
 
 /** Send queued staff Telegram messages right after the current response (security events, admin actions). */
 export function telegramSoon() {
-  if (!(["orders", "security", "stock", "receipts"] as const).some((g) => groupConfig(g))) return;
+  if (!TELEGRAM_GROUPS.some((g) => groupConfig(g))) return;
   after(async () => {
     try {
       await dispatchNotifications(20);

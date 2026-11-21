@@ -90,7 +90,8 @@ export function SignUpForm({ next }: { next: string }) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">{t("email")}</Label>
-          <Input id="email" name="email" type="email" autoComplete="email" required defaultValue={state.email} />
+          <Input id="email" name="email" type="email" autoComplete="email" required defaultValue={state.email} placeholder="name@gmail.com" aria-describedby="email-hint" />
+          <p id="email-hint" className="text-xs text-muted-foreground">{t("gmailHint")}</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">{t("password")}</Label>

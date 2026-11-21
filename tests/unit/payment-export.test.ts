@@ -31,7 +31,7 @@ describe("payments Excel export", () => {
     expect(ws.getCell("G2").value).toBe("አበበ ከበደ");
     expect(ws.getCell("J2").value).toBe(1000);
     expect(String(ws.getCell("Q3").value)).toContain("Reference also used");
-    expect((ws.getCell("B2").value as Date).toISOString()).toBe("2026-11-19T11:30:00.000Z"); // 11:30 Addis time
+    expect((ws.getCell("B2").value as Date).toISOString()).toBe("2026-11-19T09:30:00.000Z"); // 09:30 Warsaw time
     const sum = wb.getWorksheet("Summary")!;
     const col = sum.getColumn(1).values;
     expect(sum.getCell(col.indexOf("Order payments verified"), 2).value).toBe(1);

@@ -1,4 +1,5 @@
 import ExcelJS from "exceljs";
+import { wallClock } from "@/lib/datetime";
 
 export interface ExportOrder {
   order_number: string;
@@ -22,7 +23,7 @@ export interface ExportOrder {
 
 export interface ExportMeta {
   business: string;
-  from: string; // YYYY-MM-DD (Ethiopia time)
+  from: string; // YYYY-MM-DD (Warsaw time)
   to: string;
   filter: string;
   generatedBy: string;
@@ -33,8 +34,8 @@ export const MONEY = '#,##0.00 "ETB"';
 export const DATE = "yyyy-mm-dd hh:mm";
 export const label = (s: string) => s.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase());
 
-/** Excel shows the stored clock time: store Addis Ababa wall-clock time (UTC+3, no DST). */
-export const addis = (iso: string | null) => (iso ? new Date(Date.parse(iso) + 3 * 3600 * 1000) : null);
+/** Excel shows the stored clock time: store the Warsaw wall-clock time. */
+export const addis = (iso: string | null) => wallClock(iso);
 
 export function styleSheet(ws: ExcelJS.Worksheet, moneyCols: number[], dateCols: number[]) {
   const header = ws.getRow(1);
@@ -60,7 +61,7 @@ export async function buildOrdersWorkbook(orders: ExportOrder[], meta: ExportMet
   sum.columns = [{ width: 34 }, { width: 22 }];
   const rows: [string, string | number | Date][] = [
     [`${meta.business} — orders export`, ""],
-    ["Period (Ethiopia time)", `${meta.from} to ${meta.to}`],
+    ["Period (Warsaw time)", `${meta.from} to ${meta.to}`],
     ["Filter", meta.filter],
     ["Exported by", meta.generatedBy],
     ["Exported at", addis(meta.generatedAt.toISOString())!],

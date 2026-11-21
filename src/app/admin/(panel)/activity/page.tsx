@@ -8,7 +8,7 @@ import { clearActivityLog } from "@/lib/admin/audit-actions";
 import { ENTITY_LABELS, actionLabel, describeChanges, entityLabel } from "@/lib/admin/activity";
 import { requirePermission } from "@/lib/auth/guards";
 import { first } from "@/lib/catalog/search";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateTime, wallClock, zoneToday } from "@/lib/datetime";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Activity log" };
@@ -38,8 +38,8 @@ function entityHref(type: string, id: string | null): string | null {
 export default async function ActivityPage({ searchParams }: PageProps<"/admin/activity">) {
   const ctx = await requirePermission("audit.view");
   const canClear = ctx.permissions.has("audit.manage");
-  const now = new Date().getTime() + 3 * 3600 * 1000; // Addis Ababa
-  const today = new Date(now).toISOString().slice(0, 10);
+  const now = wallClock(new Date())!.getTime(); // Warsaw wall clock
+  const today = zoneToday();
   const monthAgo = new Date(now - 30 * 86400000).toISOString().slice(0, 10);
   const clearMax = new Date(now - 31 * 86400000).toISOString().slice(0, 10);
   const sp = await searchParams;

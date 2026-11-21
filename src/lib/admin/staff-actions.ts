@@ -22,6 +22,8 @@ export async function inviteStaff(_prev: ActionResult | null, fd: FormData): Pro
     .safeParse({ ...formObject(fd), email: String(fd.get("email") ?? "").trim().toLowerCase() });
   if (!parsed.success) return fail("Enter a valid email, name and role.");
   const { email, fullName, role: roleKey } = parsed.data;
+  const { data: allowed } = await (await createSupabaseServerClient()).rpc("signup_email_allowed", { p_email: email });
+  if (allowed === false) return fail("Only Gmail addresses (@gmail.com) can be used for new accounts.");
 
   const password = tempPassword();
   const admin = getSupabaseAdmin();

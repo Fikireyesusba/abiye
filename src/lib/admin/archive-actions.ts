@@ -8,10 +8,11 @@ import { emailConfigured } from "@/lib/email/dispatch";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { dbError, fail, ok, type ActionResult } from "./result";
+import { zoneDayStartIso } from "@/lib/datetime";
 
 const EMAIL = /^[^\s@]{1,64}@[^\s@]+\.[a-z]{2,}$/i;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
-const addisStart = (day: string) => new Date(Date.parse(`${day}T00:00:00+03:00`)).toISOString();
+const addisStart = zoneDayStartIso; // midnight (Warsaw time) as an ISO timestamp
 const nextDay = (day: string) => new Date(Date.parse(`${day}T00:00:00Z`) + 86400000).toISOString().slice(0, 10);
 
 async function currentAddress(): Promise<string | null> {

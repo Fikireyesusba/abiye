@@ -42,6 +42,9 @@ export async function signUpCustomer(_prev: AccountState, fd: FormData): Promise
   }
 
   const supabase = await createSupabaseServerClient();
+  // New accounts: Gmail addresses only (the database refuses others as well).
+  const { data: allowed } = await supabase.rpc("signup_email_allowed", { p_email: values.email });
+  if (allowed === false) return { ...values, error: "gmailOnly" };
   const { error } = await supabase.auth.signUp({
     email: values.email,
     password: String(fd.get("password")),
@@ -52,6 +55,7 @@ export async function signUpCustomer(_prev: AccountState, fd: FormData): Promise
   });
   if (error && !/already|registered/i.test(error.message)) {
     if (/password/i.test(error.message)) return { ...values, error: "weakPassword" };
+    if (/email_domain_not_allowed|Database error saving new user/i.test(error.message)) return { ...values, error: "gmailOnly" };
     console.error("[account] sign-up failed:", error.code ?? error.status);
     return { ...values, error: "generic" };
   }

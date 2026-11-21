@@ -1110,6 +1110,9 @@ isOneToOne: false
 "create_printing_job_for_user":
 { Args: { "p_input": Json,"p_user_id": string }; Returns: Json
                            },
+"customer_cancel_order":
+{ Args: { "p_order_id": string,"p_reason"?: string }; Returns: undefined
+                           },
 "delete_my_product_review":
 { Args: { "p_product_id": string }; Returns: undefined
                            },
@@ -1177,6 +1180,9 @@ isOneToOne: false
                            },
 "session_is_current":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"signup_email_allowed":
+{ Args: { "p_email": string }; Returns: boolean
                            },
 "storage_orphans":
 { Args: { "p_limit"?: number,"p_min_age"?: string }; Returns: {

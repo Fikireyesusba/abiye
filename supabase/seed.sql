@@ -83,3 +83,8 @@ insert into public.printing_price_rules (color_mode, paper_size, sides, price_pe
   ('color', 'A4', 'double', 10.00, 4),
   ('bw',    'A3', 'single', 8.00, 5),
   ('color', 'A3', 'single', 25.00, 6);
+
+-- LOCAL ONLY: test accounts use example / test domains; production allows @gmail.com only (migration 0046).
+insert into public.website_settings (key, value, is_public)
+values ('signup_email_domains', '{"domains": ["gmail.com", "example.com", "test.local", "abiye.local", "evil.test", "example.org"]}', false)
+on conflict (key) do update set value = excluded.value;

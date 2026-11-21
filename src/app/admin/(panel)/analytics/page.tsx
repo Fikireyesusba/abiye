@@ -9,6 +9,7 @@ import { first } from "@/lib/catalog/search";
 import { formatETB, toSantim } from "@/lib/money";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
+import { zoneToday } from "@/lib/datetime";
 
 export const metadata: Metadata = { title: "Analytics" };
 
@@ -36,8 +37,6 @@ const RANGES = [
   { key: "12m", label: "12 months", days: 365, bucket: "month" },
 ] as const;
 
-/** Today's date in Addis Ababa (YYYY-MM-DD). */
-const addisToday = () => new Date(Date.now() + 3 * 3600 * 1000).toISOString().slice(0, 10);
 const shiftDays = (iso: string, days: number) => new Date(Date.parse(`${iso}T00:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const etb = (n: number | null) => (n === null ? "—" : formatETB(toSantim(n)));
@@ -52,7 +51,7 @@ function bucketLabel(day: string, bucket: Analytics["bucket"], full = false) {
 export default async function AnalyticsPage({ searchParams }: PageProps<"/admin/analytics">) {
   await requirePermission("analytics.view", "reports.operational");
   const sp = await searchParams;
-  const today = addisToday();
+  const today = zoneToday();
   const preset = RANGES.find((r) => r.key === first(sp.range)) ?? (first(sp.from) ? null : RANGES[1]);
   let from = preset ? shiftDays(today, -(preset.days - 1)) : (first(sp.from) ?? "");
   let to = preset ? today : (first(sp.to) ?? "");
@@ -83,7 +82,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/admin/
 
   return (
     <>
-      <PageHeader title="Analytics" description={`${from} to ${to} (Ethiopia time). Sales count when the payment is verified.${a.money ? "" : " Money figures are visible to Super Admins."}`} />
+      <PageHeader title="Analytics" description={`${from} to ${to} (Warsaw time). Sales count when the payment is verified.${a.money ? "" : " Money figures are visible to Super Admins."}`} />
       <div className="mb-6 flex flex-wrap items-end gap-2">
         <nav aria-label="Period" className="flex flex-wrap gap-2">
           {RANGES.map((r) => (

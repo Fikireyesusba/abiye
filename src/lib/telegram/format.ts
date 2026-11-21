@@ -4,6 +4,7 @@
  * name or note inject links/formatting into the staff chat.
  */
 import { actionLabel, entityLabel } from "@/lib/admin/activity";
+import { APP_TIME_LABEL, zoneStamp } from "@/lib/datetime";
 export function esc(value: unknown): string {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -84,6 +85,8 @@ export function describe(row: OutboxRow): [string, string] {
     case "security_test": return ["Security group", "Test message"];
     case "stock_test": return ["Stock group", "Test message"];
     case "receipts_test": return ["Receipts group", "Test message"];
+    case "printing_test": return ["Printing group", "Test message"];
+    case "printing_document": return ["Printing", "Document to print (paid)"];
     case "receipt_record": return [p.kind === "wallet_topup" ? "Wallet top-up receipt" : "Payment receipt", p.result === "rejected" ? "Rejected" : "Verified"];
     case "payment_resubmitted": return ["Payments", "Receipt resubmitted"];
     case "printing_request": return ["Printing", "New printing request"];
@@ -104,7 +107,7 @@ export function describe(row: OutboxRow): [string, string] {
 }
 
 const addisTime = (iso: unknown) =>
-  typeof iso === "string" ? `${new Date(Date.parse(iso) + 3 * 3600 * 1000).toISOString().slice(0, 16).replace("T", " ")} (Ethiopia)` : "";
+  typeof iso === "string" ? `${zoneStamp(iso)} (${APP_TIME_LABEL})` : "";
 const short = (v: unknown, n = 300) => {
   const s = typeof v === "string" ? v : v === null || v === undefined ? "" : JSON.stringify(v);
   return s.length > n ? `${s.slice(0, n - 1)}…` : s;
@@ -363,6 +366,23 @@ function buildBody(row: OutboxRow, appUrl: string): BuiltMessage {
         ].join("\n") + (p.order_id ? admin(`/admin/orders/${p.order_id}`) : ""),
       };
     }
+    case "printing_document":
+      return {
+        attachment,
+        text: [
+          `🖨️ <b>PRINT — PAID</b> · ${esc(p.job_number)} · file ${esc(p.n)} of ${esc(p.of)}`,
+          "",
+          line("File", p.file_name),
+          ...(p.pages ? [line("Pages in this file", p.pages)] : []),
+          line("Print", `${p.color_mode === "color" ? "Colour" : "Black & white"} · ${p.paper_size} · ${p.sides === "double" ? "double-sided" : "single-sided"} · ${p.copies} cop${Number(p.copies) === 1 ? "y" : "ies"}`),
+          ...(p.page_count ? [line("Pages in the job", p.page_count)] : []),
+          line("Customer", [p.customer, phone(p.phone)].filter(Boolean).join(" · ")),
+          line("Hand-over", p.fulfillment === "delivery" ? "Delivery" : "Pickup at the shop"),
+          ...(p.notes ? [line("Customer note", p.notes)] : []),
+        ].join("\n") + (p.job_id ? admin(`/admin/printing/${p.job_id}`) : ""),
+      };
+    case "printing_test":
+      return { attachment: null, text: `✅ <b>Test message — printing group</b>\n\nThe documents of each printing job will arrive here once its payment is approved.\n${line("Requested by", p.requested_by)}` };
     case "stock_test":
       return { attachment: null, text: `✅ <b>Test message — stock group</b>\n\nLow-stock and sold-out alerts will arrive here.\n${line("Requested by", p.requested_by)}` };
     case "receipts_test":

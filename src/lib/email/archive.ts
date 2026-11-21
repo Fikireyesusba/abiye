@@ -3,6 +3,7 @@ import { getSiteSettings } from "@/lib/catalog/settings";
 import { getServerEnv } from "@/lib/env";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { emailConfigured } from "./dispatch";
+import { APP_TIME_LABEL, zoneStamp } from "@/lib/datetime";
 
 /**
  * Receipt archive: every verified / rejected payment receipt (orders and wallet top-ups) is emailed,
@@ -34,11 +35,7 @@ export interface ArchivePayload {
 const esc = (v: unknown) =>
   String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 const etb = (v: unknown) => (v === null || v === undefined || v === "" ? "" : `${Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB`);
-const addis = (iso: unknown) => {
-  if (typeof iso !== "string" || !iso) return "";
-  const d = new Date(Date.parse(iso) + 3 * 3600 * 1000);
-  return `${d.toISOString().slice(0, 16).replace("T", " ")} (Ethiopia)`;
-};
+const addis = (iso: unknown) => (typeof iso !== "string" || !iso ? "" : `${zoneStamp(iso)} (${APP_TIME_LABEL})`);
 const EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "application/pdf": "pdf" };
 
 /** Subject, body and attachment file name for one archived receipt. Pure; all values escaped. */

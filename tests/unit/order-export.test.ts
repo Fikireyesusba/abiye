@@ -20,7 +20,7 @@ describe("orders Excel export", () => {
     expect(ws.rowCount).toBe(3);
     expect(ws.getCell("E2").value).toBe("አበበ ከበደ");
     expect(ws.getCell("O2").value).toBe(1000);
-    expect((ws.getCell("B2").value as Date).toISOString()).toBe("2026-11-19T10:30:00.000Z"); // shown as 10:30 Addis time
+    expect((ws.getCell("B2").value as Date).toISOString()).toBe("2026-11-19T08:30:00.000Z"); // shown as 08:30 Warsaw time
     const sum = wb.getWorksheet("Summary")!;
     const find = (label: string) => sum.getColumn(1).values.findIndex((v) => v === label);
     expect(sum.getCell(find("Verified revenue"), 2).value).toBe(1000);

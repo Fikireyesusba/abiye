@@ -4,12 +4,13 @@ import { getAdminContext } from "@/lib/auth/guards";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { zoneDayStartIso } from "@/lib/datetime";
 
 export const maxDuration = 60;
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_ROWS = 50000;
-const addisStart = (day: string) => new Date(Date.parse(`${day}T00:00:00+03:00`)).toISOString();
+const addisStart = zoneDayStartIso; // midnight (Warsaw time) as an ISO timestamp
 const nextDay = (day: string) => new Date(Date.parse(`${day}T00:00:00Z`) + 86400000).toISOString().slice(0, 10);
 const FILTERS = { all: "Verified and rejected", verified: "Verified only", rejected: "Rejected only" } as const;
 

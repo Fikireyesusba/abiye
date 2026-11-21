@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { requirePermission } from "@/lib/auth/guards";
 import { first } from "@/lib/catalog/search";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateTime, zoneToday } from "@/lib/datetime";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Payments" };
@@ -38,8 +38,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/admin/p
     refs.filter((r) => new Set((refRows ?? []).filter((x) => x.transaction_reference?.toLowerCase() === r).map((x) => x.order_id)).size > 1),
   );
   const canTopups = ctx.permissions.has("wallet.manage");
-  const now = new Date().getTime() + 3 * 3600 * 1000; // Addis Ababa
-  const today = new Date(now).toISOString().slice(0, 10);
+  const today = zoneToday();
   const monthStart = `${today.slice(0, 8)}01`;
 
   return (
@@ -67,7 +66,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/admin/p
         <p className="mt-2 text-xs text-muted-foreground">
           Sheets: Summary (counts and amounts), Order payments{canTopups ? " and Wallet top-ups" : ""}. Each row: result, when and by whom it was decided, the reason for rejections,
           order, customer (name, phone, email), amount, bank account, bank reference, receipt and warnings (reused reference or receipt, amount mismatch).
-          Dates in Ethiopia time. The file contains customer contact details — store it safely. Each export is recorded in the Activity log.
+          Dates in Warsaw time. The file contains customer contact details — store it safely. Each export is recorded in the Activity log.
         </p>
       </details>
       <SubTabs base="/admin/payments" param="status" tabs={TABS} active={status} />

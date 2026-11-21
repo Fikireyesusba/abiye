@@ -16,7 +16,7 @@ const sql = (q) => execSync(`psql -Atq -v ON_ERROR_STOP=1 "${DB}"`, { input: q }
 const results = [];
 const check = (ok, msg) => results.push(`${ok ? "ok  " : "FAIL"} - ${msg}`);
 const RUN = Date.now().toString(36);
-const today = new Date(Date.now() + 3 * 3600 * 1000).toISOString().slice(0, 10);
+const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw" }).format(new Date()); // Warsaw date
 
 (async () => {
   sql("delete from rate_limits");
@@ -28,7 +28,7 @@ const today = new Date(Date.now() + 3 * 3600 * 1000).toISOString().slice(0, 10);
     'customer',jsonb_build_object('full_name','ሰላም ተስፋዬ ${RUN}','phone','+251911223399'),'fulfillment',jsonb_build_object('method','pickup'),
     'items',jsonb_build_array(jsonb_build_object('type','product','product_id','20000000-0000-0000-0000-000000000007','quantity',2))))`);
   const number = sql(`select order_number from orders where idempotency_key = '${key}'`);
-  const expected = Number(sql(`select count(*) from orders where created_at >= '${today}T00:00:00+03:00'`));
+  const expected = Number(sql(`select count(*) from orders where created_at >= (timestamp '${today} 00:00' at time zone 'Europe/Warsaw')`));
 
   const b = await chromium.launch();
   try {
@@ -57,7 +57,7 @@ const today = new Date(Date.now() + 3 * 3600 * 1000).toISOString().slice(0, 10);
       "export recorded in the Activity log");
 
     // paid-only filter
-    const paidExpected = Number(sql(`select count(*) from orders where created_at >= '${today}T00:00:00+03:00' and payment_status = 'verified'`));
+    const paidExpected = Number(sql(`select count(*) from orders where created_at >= (timestamp '${today} 00:00' at time zone 'Europe/Warsaw') and payment_status = 'verified'`));
     const paid = await p.request.get(`${B}/admin/orders/export?from=${today}&to=${today}&status=paid`);
     const wb2 = new ExcelJS.Workbook();
     await wb2.xlsx.load(await paid.body());

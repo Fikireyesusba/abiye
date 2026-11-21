@@ -18,7 +18,7 @@ const check = (ok, msg) => results.push(`${ok ? "ok  " : "FAIL"} - ${msg}`);
 const RUN = Date.now().toString(36);
 const STARTED = new Date().toISOString();
 const ZONE = "40000000-0000-0000-0000-000000000001";
-const addisDay = (offsetDays = 0) => new Date(Date.now() + 3 * 3600 * 1000 + offsetDays * 86400000).toISOString().slice(0, 10);
+const addisDay = (offsetDays = 0) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw" }).format(new Date(Date.now() + offsetDays * 86400000));
 
 (async () => {
   sql("delete from rate_limits; update products set stock_quantity = 80 where sku = 'SMP-CH-001'");
@@ -86,6 +86,17 @@ const addisDay = (offsetDays = 0) => new Date(Date.now() + 3 * 3600 * 1000 + off
     await c.waitForURL(/order-success/);
     check(sql(`select default_address from customer_accounts where id = '${uid}'`) === "Kazanchis, building 5", "the latest delivery address is remembered");
 
+    // ---- the customer cancels before the payment is approved
+    const cancelId = c.url().split("/order-success/")[1].split("?")[0];
+    const stockBefore = Number(sql("select stock_quantity from products where sku = 'SMP-CH-001'"));
+    await c.click("button:has-text('Cancel order')");
+    await c.fill("textarea", "Ordered by mistake");
+    await c.click("button:has-text('Yes, cancel the order')");
+    await c.waitForSelector("text=This order was cancelled");
+    check(sql(`select status from orders where id = '${cancelId}'`) === "cancelled", "customer cancelled their unpaid order");
+    check(Number(sql("select stock_quantity from products where sku = 'SMP-CH-001'")) === stockBefore + 1, "its stock was released");
+    check(await c.locator("button:has-text('Cancel order')").count() === 0, "no cancel button once cancelled");
+
     // ---- activity log export
     const o = await (await b.newContext({ acceptDownloads: true, viewport: { width: 1280, height: 1000 } })).newPage();
     o.on("dialog", (d) => d.accept());
@@ -98,7 +109,7 @@ const addisDay = (offsetDays = 0) => new Date(Date.now() + 3 * 3600 * 1000 + off
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.readFile(await dl.path());
     const ws = wb.getWorksheet("Activity log");
-    const expected = Number(sql(`select count(*) from audit_logs where created_at >= '${addisDay(0)}T00:00:00+03:00'`));
+    const expected = Number(sql(`select count(*) from audit_logs where created_at >= (timestamp '${addisDay(0)} 00:00' at time zone 'Europe/Warsaw')`));
     check(Math.abs(ws.rowCount - 1 - expected) <= 1, `today's entries exported (${ws.rowCount - 1} / ~${expected})`);
     let found = false;
     ws.eachRow((r) => { if (String(r.getCell(4).value).includes("Profile updated") && String(r.getCell(6).value).includes(email)) found = true; });

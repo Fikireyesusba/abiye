@@ -7,7 +7,7 @@ import { Field, Frame, PageHeader, Panel, SubTabs, fieldClass, pickTab } from "@
 import { Badge } from "@/components/ui/badge";
 import { assignPromotion, deleteBanner, deletePromotion, savePromotion, unassignPromotion } from "@/lib/admin/promotion-actions";
 import { requirePermission } from "@/lib/auth/guards";
-import { formatDateTime, toAddisInput } from "@/lib/datetime";
+import { formatDateTime, toZoneInput } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
 import { publicImageUrl } from "@/lib/storage";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -59,8 +59,8 @@ function PromotionFields({ p, categories, products }: { p?: Promo; categories: O
       </Field>
       <Field label="Minimum order (ETB)" htmlFor={`pmin-${id}`} hint="Basket subtotal before delivery"><input id={`pmin-${id}`} name="min_order_etb" type="number" min={0} step="0.01" defaultValue={p?.min_order_etb ?? 0} className={fieldClass} /></Field>
       <Field label="Usage limit (optional)" htmlFor={`pmax-${id}`} hint="Total orders that can use the code"><input id={`pmax-${id}`} name="max_redemptions" type="number" min={1} defaultValue={p?.max_redemptions ?? ""} className={fieldClass} /></Field>
-      <Field label="Starts (optional)" htmlFor={`pst-${id}`}><input id={`pst-${id}`} name="starts_at" type="datetime-local" defaultValue={toAddisInput(p?.starts_at)} className={fieldClass} /></Field>
-      <Field label="Ends (optional)" htmlFor={`pen-${id}`}><input id={`pen-${id}`} name="ends_at" type="datetime-local" defaultValue={toAddisInput(p?.ends_at)} className={fieldClass} /></Field>
+      <Field label="Starts (optional)" htmlFor={`pst-${id}`}><input id={`pst-${id}`} name="starts_at" type="datetime-local" defaultValue={toZoneInput(p?.starts_at)} className={fieldClass} /></Field>
+      <Field label="Ends (optional)" htmlFor={`pen-${id}`}><input id={`pen-${id}`} name="ends_at" type="datetime-local" defaultValue={toZoneInput(p?.ends_at)} className={fieldClass} /></Field>
       <div className="space-y-2 text-sm sm:col-span-2 lg:col-span-3">
         <label className="flex items-center gap-2"><input type="checkbox" name="is_active" defaultChecked={p?.is_active ?? true} className="size-4 accent-[var(--primary)]" /> Active</label>
         <label className="flex items-center gap-2"><input type="checkbox" name="once_per_customer" defaultChecked={p?.once_per_customer ?? true} className="size-4 accent-[var(--primary)]" /> One use per customer account</label>
@@ -107,7 +107,7 @@ export default async function PromotionsPage({ searchParams }: PageProps<"/admin
 
   return (
     <>
-      <PageHeader title="Promotions & banners" description="Promo codes customers can use at checkout, offers on the homepage, and homepage banners. Times are Ethiopia time." />
+      <PageHeader title="Promotions & banners" description="Promo codes customers can use at checkout, offers on the homepage, and homepage banners. Times are Warsaw time." />
 
       <SubTabs base="/admin/promotions" tabs={TABS} active={tab} />
       {tab === "new" && (
@@ -199,7 +199,7 @@ export default async function PromotionsPage({ searchParams }: PageProps<"/admin
                   <details>
                     <summary className="cursor-pointer text-sm text-primary">Edit</summary>
                     <div className="mt-3 space-y-3">
-                      <BannerForm b={{ ...b, starts: toAddisInput(b.starts_at), ends: toAddisInput(b.ends_at) }} />
+                      <BannerForm b={{ ...b, starts: toZoneInput(b.starts_at), ends: toZoneInput(b.ends_at) }} />
                       <ActionForm action={deleteBanner} hidden={{ id: b.id }} submitLabel="Delete banner" variant="outline" size="sm" confirm="Delete this banner?" />
                     </div>
                   </details>

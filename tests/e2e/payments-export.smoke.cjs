@@ -16,7 +16,7 @@ const sql = (q) => execSync(`psql -Atq -v ON_ERROR_STOP=1 "${DB}"`, { input: q }
 const results = [];
 const check = (ok, msg) => results.push(`${ok ? "ok  " : "FAIL"} - ${msg}`);
 const RUN = Date.now().toString(36);
-const today = new Date(Date.now() + 3 * 3600 * 1000).toISOString().slice(0, 10);
+const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw" }).format(new Date()); // Warsaw date
 const asOwner = (q) => sql(`begin; select set_config('request.jwt.claims', json_build_object('sub', (select id from auth.users where email = '${OWNER.email}'), 'role', 'authenticated', 'aal', 'aal2')::text, true);
   set local role authenticated; ${q}; commit;`);
 
@@ -47,8 +47,8 @@ const rowsOf = (ws) => { const out = []; ws.eachRow((r, i) => { if (i > 1) out.p
   const pending = paidOrder(cid, `FTP${RUN}`);
   asOwner(`select public.admin_review_payment('${ok.sub}', 'verified')`);
   asOwner(`select public.admin_review_payment('${bad.sub}', 'rejected', 'Amount not found in bank statement')`);
-  const expected = Number(sql(`select count(*) from payment_submissions where status in ('verified','rejected') and reviewed_at >= '${today}T00:00:00+03:00'`));
-  const expectedTopups = Number(sql(`select count(*) from wallet_topups where status in ('verified','rejected') and reviewed_at >= '${today}T00:00:00+03:00'`));
+  const expected = Number(sql(`select count(*) from payment_submissions where status in ('verified','rejected') and reviewed_at >= (timestamp '${today} 00:00' at time zone 'Europe/Warsaw')`));
+  const expectedTopups = Number(sql(`select count(*) from wallet_topups where status in ('verified','rejected') and reviewed_at >= (timestamp '${today} 00:00' at time zone 'Europe/Warsaw')`));
 
   const b = await chromium.launch();
   try {

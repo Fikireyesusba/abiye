@@ -4,6 +4,7 @@ import { getAdminContext } from "@/lib/auth/guards";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { zoneStamp } from "@/lib/datetime";
 
 export const maxDuration = 60;
 const MAX_ROWS_PER_AREA = 100_000;
@@ -34,7 +35,7 @@ export async function GET() {
     p_kind: "all", p_metadata: { sheets: data.length, rows: data.reduce((n, d) => n + d.rows.length, 0) },
   });
   if (logError) return new NextResponse("Could not record the export. Try again.", { status: 500 });
-  const day = new Date(Date.now() + 3 * 3600 * 1000).toISOString().slice(0, 16).replace(/[T:]/g, "-");
+  const day = zoneStamp(new Date()).replace(/[ :]/g, "-");
   return new NextResponse(new Uint8Array(file), {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

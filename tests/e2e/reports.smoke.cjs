@@ -15,7 +15,7 @@ const sql = (q) => execSync(`psql -Atq -v ON_ERROR_STOP=1 "${DB}"`, { input: q }
 const results = [];
 const check = (ok, msg) => results.push(`${ok ? "ok  " : "FAIL"} - ${msg}`);
 const RUN = Date.now().toString(36);
-const today = new Date(Date.now() + 3 * 3600 * 1000).toISOString().slice(0, 10);
+const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw" }).format(new Date()); // Warsaw date
 const asOwner = (q) => sql(`begin; select set_config('request.jwt.claims', json_build_object('sub', (select id from auth.users where email = '${OWNER.email}'), 'role', 'authenticated', 'aal', 'aal2')::text, true);
   set local role authenticated; ${q}; commit;`);
 const etb = (n) => `${Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 })} ETB`;

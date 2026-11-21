@@ -32,6 +32,13 @@ async function loadAccount(userId: string) {
 
 const userIdSchema = z.object({ userId: z.guid() });
 
+/** New accounts: Gmail addresses only (the database refuses others as well). */
+async function emailDomainAllowed(email: string): Promise<boolean> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.rpc("signup_email_allowed", { p_email: email });
+  return data !== false;
+}
+
 export async function sendCustomerPasswordReset(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   const { limited } = await guard("reset");
   if (limited) return fail("Too many requests. Try again later.");
@@ -64,6 +71,7 @@ export async function inviteCustomer(_prev: ActionResult | null, fd: FormData): 
   const parsed = inviteSchema.safeParse({ ...formObject(fd), email: String(fd.get("email") ?? "").trim().toLowerCase() });
   if (!parsed.success) return fail("Enter a valid email address.");
   const { email, fullName } = parsed.data;
+  if (!(await emailDomainAllowed(email))) return fail("Only Gmail addresses (@gmail.com) can be used for new accounts.");
   return sendInvite(email, fullName);
 }
 

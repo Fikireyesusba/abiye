@@ -28,7 +28,7 @@ describe("customer emails", () => {
     expect(e.html).toContain("1000123456789");
     expect(e.html).toContain("Abiye Trading");
     expect(e.html).toContain("/order-success/11111111-1111-1111-1111-111111111111");
-    expect(e.text).toContain("12:00"); // 09:00 UTC = 12:00 Addis Ababa
+    expect(e.text).toContain("10:00"); // 09:00 UTC = 10:00 Warsaw time (winter)
   });
   it("escapes everything that comes from data", () => {
     const e = buildCustomerEmail({ event_type: "customer_order_payment_rejected", payload: { ...order, note: '<script>alert("x")</script> & co' } }, ctx)!;

@@ -4,12 +4,13 @@ import { ENTITY_LABELS, actionLabel, describeChanges, entityLabel } from "@/lib/
 import { getAdminContext } from "@/lib/auth/guards";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { wallClock, zoneDayStartIso } from "@/lib/datetime";
 
 export const maxDuration = 60;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
-const addisStart = (day: string) => new Date(Date.parse(`${day}T00:00:00+03:00`)).toISOString();
+const addisStart = zoneDayStartIso; // midnight (Warsaw time) as an ISO timestamp
 const nextDay = (day: string) => new Date(Date.parse(`${day}T00:00:00Z`) + 86400000).toISOString().slice(0, 10);
-const addis = (iso: string) => new Date(Date.parse(iso) + 3 * 3600 * 1000);
+const addis = (iso: string) => wallClock(iso)!;
 
 /** Activity log → Excel (.xlsx). Super Admin (audit.view); the export itself is recorded. */
 export async function GET(request: Request) {

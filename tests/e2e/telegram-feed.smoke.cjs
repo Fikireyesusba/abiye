@@ -20,6 +20,7 @@ const TOKEN = "7000000001:AAFakeTokenForLocalTestsOnly_abcdefghijk";
 const SEC_TOKEN = "7000000002:AAFakeSecurityTokenForLocalTestsOnly_abcd";
 const STOCK_TOKEN = "7000000003:AAFakeStockTokenForLocalTestsOnly_abcdefg";
 const REC_TOKEN = "7000000004:AAFakeReceiptsTokenForLocalTestsOnly_abcde";
+const PRINT_TOKEN = "7000000005:AAFakePrintingTokenForLocalTestsOnly_abcd";
 const KEY = "re_TestKeyForLocalOnly_1234567890";
 const OWNER = { email: "owner@abiye.local", password: process.env.ADMIN_E2E_PASSWORD ?? "LocalDevOwner2026" };
 const results = [];
@@ -33,6 +34,8 @@ const secMsgs = [];
 const orderMsgs = [];
 const stockMsgs = [];
 const recMsgs = [];
+const printMsgs = [];
+const printFiles = [];
 const tgServer = http.createServer((req, res) => {
   const chunks = [];
   req.on("data", (c) => chunks.push(c));
@@ -45,7 +48,8 @@ const tgServer = http.createServer((req, res) => {
       return res.end(JSON.stringify({ ok: false, error_code: 400, description: "Bad Request: not enough rights to send text messages to the chat" }));
     }
     tg.push(text ?? "");
-    ({ [SEC_TOKEN]: secMsgs, [STOCK_TOKEN]: stockMsgs, [REC_TOKEN]: recMsgs }[token] ?? orderMsgs).push(text ?? "");
+    ({ [SEC_TOKEN]: secMsgs, [STOCK_TOKEN]: stockMsgs, [REC_TOKEN]: recMsgs, [PRINT_TOKEN]: printMsgs }[token] ?? orderMsgs).push(text ?? "");
+    if (token === PRINT_TOKEN) printFiles.push(body.match(/filename="([^"]+)"/)?.[1] ?? "");
     res.writeHead(200, { "content-type": "application/json" });
     res.end(JSON.stringify({ ok: true, result: { message_id: tg.length } }));
   });
@@ -73,6 +77,7 @@ const cron = () => fetch(`${B}/api/cron/notifications`, { headers: { authorizati
     env: { ...process.env, TELEGRAM_BOT_TOKEN: TOKEN, TELEGRAM_ADMIN_CHAT_ID: "-100123", TELEGRAM_API_BASE: `http://127.0.0.1:${TG_PORT}`,
            TELEGRAM_SECURITY_BOT_TOKEN: SEC_TOKEN, TELEGRAM_SECURITY_CHAT_ID: "-100456",
            TELEGRAM_STOCK_BOT_TOKEN: STOCK_TOKEN, TELEGRAM_STOCK_CHAT_ID: "-100789", TELEGRAM_RECEIPTS_BOT_TOKEN: REC_TOKEN, TELEGRAM_RECEIPTS_CHAT_ID: "-100321",
+           TELEGRAM_PRINTING_BOT_TOKEN: PRINT_TOKEN, TELEGRAM_PRINTING_CHAT_ID: "-100654",
            RESEND_API_KEY: KEY, EMAIL_FROM: "Abiye <orders@example.com>", EMAIL_API_BASE: `http://127.0.0.1:${MAIL_PORT}`, APP_URL: B },
     stdio: ["ignore", "pipe", "pipe"], detached: true,
   });
@@ -160,6 +165,26 @@ const cron = () => fetch(`${B}/api/cron/notifications`, { headers: { authorizati
     await o.goto(`${B}/admin/notifications?tab=messages`);
     check(await o.locator("nav[aria-label=Sub-sections] a:has-text('Security & admin')").count() === 1 && await o.locator("nav[aria-label=Sub-sections] a:has-text('Payments & wallet')").count() === 1, "notifications grouped by category");
     await o.goto(`${B}/admin/notifications?tab=telegram`);
+
+    // ---- printing group: documents only once the payment is approved
+    const jobId = sql("select gen_random_uuid()");
+    sql(`insert into printing_jobs (id, user_id, access_token_hash, customer_name, customer_phone, color_mode, paper_size, sides, copies, page_count, total_etb, status)
+         values ('${jobId}', '${cid}', encode(sha256('pj${RUN}'::bytea),'hex'), 'Print Buyer', '+251911223393', 'color', 'A4', 'double', 2, 4, 80, 'payment_verification');
+         insert into printing_files (job_id, storage_path, original_name, mime_type, size_bytes, sha256, page_count)
+         values ('${jobId}', 'e2e/${RUN}/thesis.pdf', 'My thesis.pdf', 'application/pdf', 20, encode(sha256('doc${RUN}'::bytea),'hex'), 4);`);
+    const up = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/printing-files/e2e/${RUN}/thesis.pdf`, {
+      method: "POST", headers: { apikey: process.env.SUPABASE_SECRET_KEY, authorization: `Bearer ${process.env.SUPABASE_SECRET_KEY}`, "content-type": "application/pdf" },
+      body: Buffer.from("%PDF-1.4 test document"),
+    });
+    check(up.ok, "test document stored");
+    await cron();
+    await sleep(1000);
+    check(printMsgs.length === 0, "nothing sent to the printing group before the payment is approved");
+    sql(`update printing_jobs set status = 'printing' where id = '${jobId}'`);
+    await cron();
+    check(await waitFor(() => printMsgs.some((t) => t.includes("PRINT — PAID") && t.includes("My thesis.pdf") && t.includes("double-sided"))), "paid job: document sent to the printing group with the print options");
+    check(printFiles.includes("My thesis.pdf"), "as a file with the customer's file name");
+    check(!orderMsgs.some((t) => t.includes("PRINT — PAID")) && !recMsgs.some((t) => t.includes("PRINT — PAID")), "only in the printing group");
 
     // ---- bot without rights → hint + Retry all failed
     rightsError = true;

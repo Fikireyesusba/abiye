@@ -89,7 +89,17 @@ describe("Telegram activity feed", () => {
     expect(m.text).toContain("x&lt;y&gt;@example.com");
     expect(m.text).toContain("× 4");
     expect(m.text).toContain("Where: data_reset");
-    expect(m.text).toContain("2026-11-20 10:00 (Ethiopia)");
+    expect(m.text).toContain("2026-11-20 08:00 (Warsaw time)");
+  });
+  it("printing document: file, print options and customer, with the file attached", () => {
+    const m = buildMessage({ ...row("printing_document", { job_id: "j1", job_number: "PR-10001", file_name: "thesis<1>.pdf", n: 1, of: 2, pages: 12,
+      color_mode: "bw", paper_size: "A4", sides: "single", copies: 3, customer: "Abebe", phone: "+251911223344", fulfillment: "pickup" }),
+      attachment_bucket: "printing-files", attachment_path: "jobs/j1/a.pdf" }, "https://shop.example");
+    expect(m.text).toContain("PRINT — PAID");
+    expect(m.text).toContain("file 1 of 2");
+    expect(m.text).toContain("thesis&lt;1&gt;.pdf");
+    expect(m.text).toContain("Black &amp; white · A4 · single-sided · 3 copies");
+    expect(m.attachment).toEqual({ bucket: "printing-files", path: "jobs/j1/a.pdf" });
   });
   it("high-risk alert, admin action and notification copy", () => {
     const a = buildMessage(row("security_alert", { email: "bad@example.com", score: 9, is_staff: true, last_kind: "admin_login_failed" }), "");

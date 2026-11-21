@@ -68,6 +68,14 @@ async function emailLink(to, subjectPart) {
   await p.click("form button[type=submit]");
   await p.waitForSelector("[role=alert]:has-text('accept the terms')");
   check(true, "sign-up requires accepting the terms");
+  // only Gmail addresses (local tests also allow example / test domains)
+  await p.fill("#email", `buyer-${RUN}@outlook.com`);
+  await p.check("input[name=acceptTerms]");
+  await p.click("form button[type=submit]");
+  await p.waitForSelector("[role=alert]:has-text('Gmail')");
+  check(sql(`select count(*) from auth.users where email = 'buyer-${RUN}@outlook.com'`) === "0", "non-Gmail address refused at sign-up");
+  await p.fill("#email", email);
+  await p.uncheck("input[name=acceptTerms]");
   await p.fill("#password", "Selam2026pass"); // password fields are cleared after an error (by design)
   await p.fill("#confirm", "Selam2026pass");
   await p.check("input[name=acceptTerms]");

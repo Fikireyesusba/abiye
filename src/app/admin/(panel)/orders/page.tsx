@@ -8,7 +8,7 @@ import { ORDER_STATUSES } from "@/lib/admin/order-flow";
 import { parseOrderSearch } from "@/lib/admin/search";
 import { requirePermission } from "@/lib/auth/guards";
 import { first, parsePage } from "@/lib/catalog/search";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateTime, zoneToday } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatEthiopianPhone } from "@/lib/validation/phone";
@@ -26,7 +26,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
   const search = parseOrderSearch(first(sp.q));
   const page = parsePage(first(sp.page));
 
-  const today = new Date(new Date().getTime() + 3 * 3600 * 1000).toISOString().slice(0, 10); // Addis Ababa
+  const today = zoneToday();
   const monthStart = `${today.slice(0, 8)}01`;
   const supabase = await createSupabaseServerClient();
   let query = supabase
@@ -72,7 +72,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
             </label>
             <Button type="submit"><Download /> Download .xlsx</Button>
           </form>
-          <p className="mt-2 text-xs text-muted-foreground">Sheets: Summary, Orders (one row per order) and Items. Dates in Ethiopia time. The file contains customer phone numbers and addresses — store it safely. Each export is recorded in the Activity log.</p>
+          <p className="mt-2 text-xs text-muted-foreground">Sheets: Summary, Orders (one row per order) and Items. Dates in Warsaw time. The file contains customer phone numbers and addresses — store it safely. Each export is recorded in the Activity log.</p>
         </details>
       )}
       <form method="get" className="mb-4 flex flex-wrap gap-2">

@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission } from "@/lib/auth/guards";
 import { dispatchSoon } from "@/lib/telegram/dispatch";
-import { fromAddisInput } from "@/lib/datetime";
+import { fromZoneInput } from "@/lib/datetime";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PRODUCT_IMAGE_TYPES, validateUpload } from "@/lib/validation/upload";
 import { dbError, fail, formObject, ok, type ActionResult } from "./result";
@@ -46,8 +46,8 @@ export async function savePromotion(_prev: ActionResult | null, fd: FormData): P
   const parsed = promotionSchema.safeParse(formObject(fd));
   if (!parsed.success) return fail(parsed.error.issues.find((i) => i.code === "custom" || i.message.includes(":"))?.message ?? "Please check the highlighted values.");
   const v = parsed.data;
-  const starts = fromAddisInput(v.starts_at);
-  const ends = fromAddisInput(v.ends_at);
+  const starts = fromZoneInput(v.starts_at);
+  const ends = fromZoneInput(v.ends_at);
   if (starts && ends && ends <= starts) return fail("The end must be after the start.");
   const row = {
     title_en: v.title_en, title_am: v.title_am, description_en: v.description_en, description_am: v.description_am,
@@ -121,8 +121,8 @@ export async function saveBanner(_prev: ActionResult | null, fd: FormData): Prom
       return fail("That file is not a valid JPG, PNG or WebP image (max 5 MB).");
     }
   }
-  const starts = fromAddisInput(v.starts_at);
-  const ends = fromAddisInput(v.ends_at);
+  const starts = fromZoneInput(v.starts_at);
+  const ends = fromZoneInput(v.ends_at);
   if (starts && ends && ends <= starts) return fail("The end must be after the start.");
   const row = {
     title_en: v.title_en, title_am: v.title_am, subtitle_en: v.subtitle_en, subtitle_am: v.subtitle_am,

@@ -8,7 +8,7 @@ import { describe } from "@/lib/telegram/format";
 import { archivePastReceipts, saveReceiptArchive, sendArchiveTest } from "@/lib/admin/archive-actions";
 import { Input } from "@/components/ui/input";
 import { requirePermission } from "@/lib/auth/guards";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateTime, zoneToday } from "@/lib/datetime";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { groupConfig, securityTelegramConfig, telegramConfig } from "@/lib/telegram/dispatch";
 import { emailConfigured } from "@/lib/email/dispatch";
@@ -26,6 +26,7 @@ const CATEGORIES = [
   { key: "orders", label: "Orders & printing", hint: "Printing requests to quote (and older order-step messages)", group: "orders" },
   { key: "stock", label: "Stock", hint: "Low stock and sold out", group: "stock" },
   { key: "receipts", label: "Receipt files", hint: "Every verified / rejected receipt, with the file", group: "receipts" },
+  { key: "printing", label: "Printing documents", hint: "Each document of a printing job, once its payment is approved", group: "printing" },
   { key: "security", label: "Security & admin", hint: "Security events, 🚨 alerts, admin sign-ins and sensitive admin actions", group: "security" },
   { key: "customers", label: "Customer messages", hint: "Emails and phone notifications to customers, receipt-archive emails (and their copies in Telegram)", group: "orders" },
   { key: "other", label: "Tests", hint: "Test messages", group: "orders" },
@@ -36,6 +37,7 @@ function categoryOf(r: Pick<Row, "channel" | "event_type">): (typeof CATEGORIES)
   if (["new_order", "payment_resubmitted", "payment_verified", "payment_rejected", "wallet_topup", "wallet_order_paid"].includes(r.event_type)) return "payments";
   if (["low_stock", "out_of_stock", "stock_test"].includes(r.event_type)) return "stock";
   if (["receipt_record", "receipts_test"].includes(r.event_type)) return "receipts";
+  if (["printing_document", "printing_test"].includes(r.event_type)) return "printing";
   if (r.event_type === "test_message") return "other";
   return "orders";
 }
@@ -44,6 +46,7 @@ const LIST_LABEL: Record<string, string> = {
   security_event: "Security event", security_alert: "🚨 Security alert", admin_action: "Admin action",
   notification_copy: "Copy of a customer message", security_test: "Test message (security group)", test_message: "Test message (orders group)",
   stock_test: "Test message (stock group)", receipts_test: "Test message (receipts group)", receipt_record: "Receipt file",
+  printing_test: "Test message (printing group)", printing_document: "Document to print",
 };
 const CHANNEL_LABEL: Record<string, string> = { telegram: "Telegram", email: "Email", push: "Phone", archive: "Archive email" };
 const TONE = { sent: "success", pending: "secondary", processing: "info", failed: "warning", dead: "destructive" } as const;
@@ -54,6 +57,7 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
   const securityConfigured = !!securityTelegramConfig();
   const stockConfigured = !!groupConfig("stock");
   const receiptsConfigured = !!groupConfig("receipts");
+  const printingConfigured = !!groupConfig("printing");
   const emailOn = emailConfigured();
   const pushOn = pushConfigured();
   const pushProblems = pushSetupProblems();
@@ -67,7 +71,7 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
   const archive = (archiveRaw ?? null) as { email: string | null; sent: number; waiting: number; dead: number; last_sent_at: string | null; last_error: string | null } | null;
   const { data: feedRaw } = await supabase.rpc("admin_telegram_feed");
   const feed = (feedRaw ?? null) as { security: boolean; admin: boolean; notifications: boolean; order_progress?: boolean; printing_requests?: boolean } | null;
-  const today = new Date(new Date().getTime() + 3 * 3600 * 1000).toISOString().slice(0, 10);
+  const today = zoneToday();
   const sp = await searchParams;
   const TABS = [
     { key: "messages", label: "Messages", count: problems },
@@ -191,6 +195,14 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
           <p className="mb-3 text-xs text-muted-foreground">The receipt file of every verified or rejected payment and top-up, with order, amount, reference, bank account, customer, who decided and why — in addition to the receipt-archive email.</p>
           <ActionForm action={sendGroupTest} hidden={{ group: "receipts" }} submitLabel="Send test message" variant="outline" size="sm" />
         </Panel>
+        <Panel title="Printing group">
+          <p className="mb-2 flex items-center gap-2 text-sm">
+            {printingConfigured ? <CheckCircle2 className="size-5 text-success" aria-hidden /> : <XCircle className="size-5 text-destructive" aria-hidden />}
+            {printingConfigured ? "Connected (TELEGRAM_PRINTING_BOT_TOKEN / TELEGRAM_PRINTING_CHAT_ID)." : "Not connected — create a bot and a group for printing, then set TELEGRAM_PRINTING_BOT_TOKEN and TELEGRAM_PRINTING_CHAT_ID in Vercel and redeploy. Until then documents wait 2 days, then are dropped (they stay on the printing job page)."}
+          </p>
+          <p className="mb-3 text-xs text-muted-foreground">Each document of a printing job, as a file ready to print, with the print options and customer — sent only once the payment is approved. Nothing is sent for unpaid jobs.</p>
+          <ActionForm action={sendGroupTest} hidden={{ group: "printing" }} submitLabel="Send test message" variant="outline" size="sm" />
+        </Panel>
       </div>
       {feed && (
         <Panel title="Telegram activity feed" className="mb-6">
@@ -226,7 +238,7 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
       <SubTabs base="/admin/notifications" param="cat" level={2} keep={{ tab: "messages" }} active={cat.key}
         tabs={cats.map((c) => ({ key: c.key, label: c.failed ? `${c.label} · ${c.failed} failed` : c.label, count: c.list.length }))} />
       <section data-category={cat.key} className="space-y-2">
-        <p className="text-xs text-muted-foreground">{cat.hint}{cat.key !== "customers" && ` · ${({ security: "Security group", stock: stockConfigured ? "Stock group" : "Orders & payments group (until a stock bot is set)", receipts: "Receipts group", orders: "Orders & payments group" } as Record<string, string>)[cat.group]}`}
+        <p className="text-xs text-muted-foreground">{cat.hint}{cat.key !== "customers" && ` · ${({ security: "Security group", stock: stockConfigured ? "Stock group" : "Orders & payments group (until a stock bot is set)", receipts: "Receipts group", printing: "Printing group", orders: "Orders & payments group" } as Record<string, string>)[cat.group]}`}
           {cat.waiting > 0 && <Badge variant="info" className="ml-2">{cat.waiting} waiting</Badge>}</p>
         <Table scroll head={["#", "Event", "Via", "About", "Status", "Attempts", "Created", "Last error", ""]} empty="Nothing yet.">
           {cat.list.map((r) => (

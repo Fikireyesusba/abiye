@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { reportRange, reportTitle, type SalesReport } from "@/lib/admin/sales-report";
 import { requirePermission } from "@/lib/auth/guards";
 import { first } from "@/lib/catalog/search";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateTime, zoneToday } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
@@ -27,7 +27,7 @@ function Row({ label, value, strong, muted }: { label: string; value: string | n
 export default async function ReportsPage({ searchParams }: PageProps<"/admin/reports">) {
   const ctx = await requirePermission("analytics.view");
   const sp = await searchParams;
-  const today = new Date(new Date().getTime() + 3 * 3600 * 1000).toISOString().slice(0, 10);
+  const today = zoneToday();
   const range = reportRange(first(sp.kind), first(sp.value), today);
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("admin_sales_report", { p_from: range.from, p_to: range.to });
@@ -41,7 +41,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
   return (
     <>
       <div className="print:hidden">
-        <PageHeader title="Sales reports" description="Money is counted on the day the payment was verified (Ethiopia time), so the figures match your bank statement. Print or export to Excel for your accountant." />
+        <PageHeader title="Sales reports" description="Money is counted on the day the payment was verified (Warsaw time), so the figures match your bank statement. Print or export to Excel for your accountant." />
         <div className="mb-6 flex flex-wrap items-end gap-3">
           <form method="get" className="flex flex-wrap items-end gap-2">
             <input type="hidden" name="kind" value="day" />
@@ -61,7 +61,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
       </div>
 
       <h2 className="mb-1 text-xl font-semibold">{title}</h2>
-      <p className="mb-5 text-sm text-muted-foreground">Period {r.from} to {r.to} (Ethiopia time) · printed by {ctx.fullName} · {formatDateTime(new Date().toISOString(), "en")}</p>
+      <p className="mb-5 text-sm text-muted-foreground">Period {r.from} to {r.to} (Warsaw time) · printed by {ctx.fullName} · {formatDateTime(new Date().toISOString(), "en")}</p>
 
       <div className="grid gap-4 lg:grid-cols-2 print:grid-cols-2">
         <Panel title="Sales">

@@ -4,7 +4,7 @@ vi.mock("server-only", () => ({}));
 const { buildArchiveEmail } = await import("@/lib/email/archive");
 
 describe("receipt archive email", () => {
-  it("summarises a rejected payment with reason, reviewer and Addis time; escapes HTML", () => {
+  it("summarises a rejected payment with reason, reviewer and Warsaw time; escapes HTML", () => {
     const m = buildArchiveEmail({
       kind: "order_payment", result: "rejected", number: "ET-1042", amount_etb: 1850, order_total_etb: 1850, reference: "FT26112ABC",
       customer_name: "<b>Abebe</b>", customer_phone: "+251911223344", customer_email: "a@example.com", bank_name: "CBE", account_number: "1000123",
@@ -16,7 +16,7 @@ describe("receipt archive email", () => {
     expect(m.html).toContain("&lt;b&gt;Abebe&lt;/b&gt;");
     expect(m.html).not.toContain("<b>Abebe</b>");
     expect(m.text).toContain("Reason: Not in bank statement");
-    expect(m.text).toContain("Decided: 2026-11-20 10:30 (Ethiopia)");
+    expect(m.text).toContain("Decided: 2026-11-20 08:30 (Warsaw time)");
     expect(m.text).toContain("Decided by: Owner");
     expect(m.text).toContain("(attached)");
   });
