@@ -84,6 +84,7 @@ const OK = "20000000-0000-0000-0000-000000000007";
     // ---- admin: rating shown, Excel export, clear after export
     await o.goto(`${B}/admin/support?tab=all`);
     check((await o.locator("[data-testid=rating-avg]").count()) === 1, "average rating shown");
+    check((await o.locator("main").innerText()).includes("Thanks!"), "the customer's rating feedback is shown in the list");
     const [dl] = await Promise.all([o.waitForEvent("download"), o.click("[data-testid=tickets-export]")]);
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.readFile(await dl.path());

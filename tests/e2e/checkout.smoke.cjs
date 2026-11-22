@@ -55,7 +55,8 @@ function resetSampleStock() {
   const errors = [];
   p.on("pageerror", (e) => errors.push(e.message));
 
-  // ---- Checkout
+  // ---- Checkout (an account without name / phone yet: they are entered once here, then locked)
+  sql(`update customer_accounts set full_name = null, phone = null where id = (select id from auth.users where email = '${CUSTOMER.email}')`);
   await p.goto(B + "/");
   await p.evaluate(([a, c]) => {
     localStorage.setItem("cart:v1", JSON.stringify([{ type: "product", productId: a, quantity: 2 }, { type: "product", productId: c, quantity: 1 }]));
@@ -77,6 +78,8 @@ function resetSampleStock() {
   await p.click("button[type=submit]");
   await p.waitForURL(/\/order-success\//, { timeout: 20000 });
   const orderId = p.url().split("/order-success/")[1].split("?")[0];
+  check(sql(`select full_name || '|' || phone from customer_accounts where id = (select id from auth.users where email = '${CUSTOMER.email}')`) === "Abebe Kebede|+251911223344",
+    "name and phone entered once are saved to the account");
   check(!p.url().includes("t="), "order page URL contains no access token");
   check((await p.locator("h1").textContent()).startsWith("Order ET-"), "redirected to order confirmation");
   const orderNumber = (await p.locator("h1").textContent()).replace("Order ", "");
@@ -168,12 +171,15 @@ function resetSampleStock() {
   await p.goto(B + "/checkout");
   await p.waitForSelector("text=Order summary");
   await p.check("label:has-text('I agree') input[type=checkbox]");
-  await p.fill("#fullName", "Test Pickup");
-  await p.fill("#phone", "0722334455");
+  check(await p.locator("#fullName[readonly]").count() === 1 && await p.locator("#phone[readonly]").count() === 1
+    && await p.inputValue("#fullName") === "Abebe Kebede", "next order: name and phone from the account, not editable");
+  await p.evaluate(() => { document.querySelector("#fullName").removeAttribute("readonly"); });
+  await p.fill("#fullName", "Someone Else");
   await p.check("input[type=radio] >> nth=1");
   await p.click("button[type=submit]");
   await p.waitForURL(/\/order-success\//);
   const order2 = p.url().split("/order-success/")[1];
+  check(sql(`select customer_name from orders where id = '${order2}'`) === "Abebe Kebede", "a name changed in the browser is ignored: the account's name is used");
   check((await p.locator("text=Free").count()) > 0, "pickup order has free delivery");
   sql(`update orders set payment_due_at = now() - interval '1 minute' where id = '${order2}'`);
   const noAuth = await fetch(`${B}/api/cron/expire-orders`);

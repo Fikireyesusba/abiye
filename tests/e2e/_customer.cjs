@@ -24,4 +24,10 @@ async function loginCustomer(page, base, email, password, next = "/account") {
   await page.waitForURL((u) => !u.pathname.startsWith("/account/login"), { timeout: 15000 });
 }
 
-module.exports = { ensureCustomer, loginCustomer };
+/** Checkout / printing contact fields come from the account (read-only once set): fill only when editable. */
+async function fillIfEditable(page, selector, value) {
+  const el = page.locator(selector);
+  if ((await el.getAttribute("readonly")) === null) await el.fill(value);
+}
+
+module.exports = { ensureCustomer, loginCustomer, fillIfEditable };

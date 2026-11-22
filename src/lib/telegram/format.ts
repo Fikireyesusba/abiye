@@ -93,6 +93,7 @@ export function describe(row: OutboxRow): [string, string] {
     case "support_test": return ["Support group", "Test message"];
     case "support_ticket": return ["Support", "New ticket"];
     case "support_reply": return ["Support", "Customer replied"];
+    case "support_rating": return ["Support", "Ticket rated"];
     case "printing_document": return ["Printing", p.stage === "payment_submitted" ? "Document (payment submitted)" : "Document to print (paid)"];
     case "receipt_record": return [p.kind === "wallet_topup" ? "Wallet top-up receipt" : "Payment receipt", p.result === "rejected" ? "Rejected" : "Verified"];
     case "payment_resubmitted": return ["Payments", "Receipt resubmitted"];
@@ -406,6 +407,21 @@ function buildBody(row: OutboxRow, appUrl: string): BuiltMessage {
           line("User ID", p.user_id ?? "—"),
           "",
           esc(short(isNew ? p.details : p.message, 1500)),
+        ].join("\n") + (p.ticket_id ? admin(`/admin/support/${p.ticket_id}`) : ""),
+      };
+    }
+    case "support_rating": {
+      const n = Math.max(1, Math.min(5, Number(p.rating) || 0));
+      return {
+        attachment: null,
+        text: [
+          `⭐ <b>TICKET RATED ${n}/5</b> ${"★".repeat(n)}${"☆".repeat(5 - n)}`,
+          "",
+          line("Ticket", p.number),
+          line("Subject", p.subject),
+          line("User ID", p.user_id ?? "—"),
+          ...(p.assigned ? [line("Handled by", p.assigned)] : []),
+          line("Feedback", p.feedback ?? "—"),
         ].join("\n") + (p.ticket_id ? admin(`/admin/support/${p.ticket_id}`) : ""),
       };
     }

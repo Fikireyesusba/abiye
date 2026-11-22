@@ -9,7 +9,7 @@ const { spawn, execSync } = require("child_process");
 const { chromium } = require("playwright");
 const { adminLogin } = require("./_admin.cjs");
 const { PDFDocument } = require("pdf-lib");
-const { ensureCustomer, loginCustomer } = require("./_customer.cjs");
+const { ensureCustomer, loginCustomer, fillIfEditable } = require("./_customer.cjs");
 
 if (!/127\.0\.0\.1|localhost/.test(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")) throw new Error("Local Supabase only");
 const DB = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
@@ -83,6 +83,8 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
     const p = await (await b.newContext()).newPage();
     await ensureCustomer("telegram-e2e@example.com", "Telegram2026e2e");
     await loginCustomer(p, B, "telegram-e2e@example.com", "Telegram2026e2e");
+    // The account's own name / phone are used for orders (with HTML in it: must be escaped in Telegram).
+    sql(`update customer_accounts set full_name = '<a href="https://phish.example">Click</a> & Co', phone = '+251911765432' where id = (select id from auth.users where email = 'telegram-e2e@example.com')`);
 
     // ---- 1. New order + receipt → photo with caption, sent immediately (no cron)
     await p.goto(B);
@@ -93,8 +95,8 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
     await p.goto(`${B}/checkout`);
     await p.waitForSelector("text=Order summary");
     await p.check("label:has-text('I agree') input[type=checkbox]");
-    await p.fill("#fullName", '<a href="https://phish.example">Click</a> & Co');
-    await p.fill("#phone", "0911 76 54 32");
+    await fillIfEditable(p, "#fullName", '<a href="https://phish.example">Click</a> & Co');
+    await fillIfEditable(p, "#phone", "0911 76 54 32");
     await p.fill("#addressLine", "Bole, near Edna Mall");
     await p.click("button[type=submit]");
     await p.waitForURL(/order-success/);
@@ -122,8 +124,8 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
     await p.goto(`${B}/printing`);
     const doc = await PDFDocument.create(); doc.addPage(); doc.addPage();
     await p.setInputFiles("#print-files", { name: "cv.pdf", mimeType: "application/pdf", buffer: Buffer.from(await doc.save()) });
-    await p.fill("#pfullName", "Outage Test");
-    await p.fill("#pphone", "0911 44 33 22");
+    await fillIfEditable(p, "#pfullName", "Outage Test");
+    await fillIfEditable(p, "#pphone", "0911 44 33 22");
     await p.click("aside button[type=submit]");
     await p.waitForURL(/printing\/jobs/);
     check(/PR-\d+/.test(await p.locator("h1").textContent()), "printing request succeeds while Telegram is down");

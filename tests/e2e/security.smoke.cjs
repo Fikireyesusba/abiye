@@ -6,7 +6,7 @@
 const { chromium } = require("playwright");
 const { execSync } = require("child_process");
 const { adminLogin } = require("./_admin.cjs");
-const { ensureCustomer, loginCustomer } = require("./_customer.cjs");
+const { ensureCustomer, loginCustomer, fillIfEditable } = require("./_customer.cjs");
 
 const B = process.env.BASE_URL ?? "http://localhost:3100";
 const DB = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
@@ -73,7 +73,7 @@ const toast = (page, text) => page.waitForSelector(`[data-sonner-toast]:has-text
     // ---- blocked email cannot sign up
     const s = await (await b.newContext()).newPage();
     await s.goto(`${B}/account/signup`);
-    await s.fill("#fullName", "Bad Actor");
+    await fillIfEditable(s, "#fullName", "Bad Actor");
     await s.fill("#email", attacker);
     await s.fill("#password", "BadActor2026x");
     await s.fill("#confirm", "BadActor2026x");

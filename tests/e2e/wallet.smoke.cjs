@@ -7,7 +7,7 @@ const { chromium } = require("playwright");
 const { execSync } = require("child_process");
 const zlib = require("zlib");
 const { adminLogin } = require("./_admin.cjs");
-const { ensureCustomer, loginCustomer } = require("./_customer.cjs");
+const { ensureCustomer, loginCustomer, fillIfEditable } = require("./_customer.cjs");
 
 const B = process.env.BASE_URL ?? "http://localhost:3100";
 const DB = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
@@ -95,8 +95,8 @@ async function requestTopup(page, amount, seed) {
     }, CHARGER);
     await c.goto(`${B}/checkout`);
     await c.waitForSelector("text=Pay with my balance");
-    await c.fill("#fullName", "Wallet Customer");
-    await c.fill("#phone", "0911 22 77 88");
+    await fillIfEditable(c, "#fullName", "Wallet Customer");
+    await fillIfEditable(c, "#phone", "0911 22 77 88");
     await c.check("text=Pay with my balance");
     await c.check("label:has-text('I agree') input[type=checkbox]");
     await c.click("button:has-text('Place order')");

@@ -47,7 +47,7 @@ export async function GET(request: Request) {
       columns: [
         { header: "Ticket", width: 9 }, { header: "User ID", width: 9 }, { header: "Topic", width: 16 }, { header: "Subject", width: 28 }, { header: "Details", width: 60 },
         { header: "Order", width: 12 }, { header: "Status", width: 18 }, { header: "Assigned to", width: 18 }, { header: "Opened", width: 17 }, { header: "Last message", width: 17 },
-        { header: "Messages", width: 9 }, { header: "Resolved", width: 17 }, { header: "Closed", width: 17 }, { header: "Rating (1-5)", width: 11 }, { header: "Rating comment", width: 40 },
+        { header: "Messages", width: 9 }, { header: "Resolved", width: 17 }, { header: "Closed", width: 17 }, { header: "Rating (1-5)", width: 11 }, { header: "Rating feedback", width: 40 },
       ],
       rows: (data ?? []).map((r) => [r.ticket_number, r.member_id ?? "", TICKET_TOPIC[r.category] ?? r.category, r.subject, r.details, r.order_number ?? "",
         TICKET_LABEL[r.status] ?? r.status, r.assigned_name ?? "", at(r.created_at), at(r.last_message_at), Number(r.messages), at(r.resolved_at), at(r.closed_at),

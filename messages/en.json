@@ -68,7 +68,9 @@
     "receipt": "Payment receipt (JPG, PNG or PDF, max 10 MB)",
     "submitPayment": "Submit payment proof",
     "verificationNote": "We will verify your transfer against our bank account. Your order is confirmed only after verification.",
-    "branch": "Branch"
+    "branch": "Branch",
+    "fromAccount": "Your name and phone come from your account and cannot be changed here. To change them, contact us (Support & feedback).",
+    "setOnce": "The details you enter here are saved to your account and cannot be changed later."
   },
   "fulfillment": {
     "delivery": "Delivery",

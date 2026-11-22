@@ -1,4 +1,5 @@
 "use server";
+import { accountContact } from "@/lib/account/contact";
 import { getCustomerUser } from "@/lib/account/session";
 import { toAppError, type AppErrorCode } from "@/lib/errors";
 import { clientIpKey, rateLimitAll } from "@/lib/security/rate-limit";
@@ -89,11 +90,13 @@ export async function placeOrder(input: unknown): Promise<PlaceOrderResult> {
     return { ok: false, error: Object.keys(fieldErrors).length ? Object.values(fieldErrors)[0]! : "invalid_request", fieldErrors };
   }
   const v = parsed.data;
+  // Name and phone come from the account (not editable at checkout).
+  const contact = await accountContact(user.id, { fullName: v.fullName, phone: v.phone });
 
   const ip = await clientIpKey();
   const allowed = await rateLimitAll([
     [`checkout:ip:${ip}`, 10, 600],
-    [`checkout:phone:${sha256Hex(v.phone).slice(0, 32)}`, 5, 600],
+    [`checkout:phone:${sha256Hex(contact.phone).slice(0, 32)}`, 5, 600],
   ]);
   if (!allowed) return { ok: false, error: "rate_limited" };
 
@@ -127,7 +130,7 @@ export async function placeOrder(input: unknown): Promise<PlaceOrderResult> {
       access_token_hash: sha256Hex(accessToken),
       tracking_code_hash: sha256Hex(trackingCode),
       locale: v.locale,
-      customer: { full_name: v.fullName, phone: v.phone },
+      customer: { full_name: contact.fullName, phone: contact.phone },
       fulfillment: {
         method: v.fulfillment,
         delivery_zone_id: v.fulfillment === "delivery" ? v.deliveryZoneId : null,
@@ -148,10 +151,10 @@ export async function placeOrder(input: unknown): Promise<PlaceOrderResult> {
   }
 
   const result = data as { order_id: string; order_number: string };
-  // Remember the contact details on the customer's account for next time.
+  // Details the account did not have yet are saved once (then locked); the delivery address is remembered.
   const supabase = await createSupabaseServerClient();
   await supabase.from("customer_accounts").update({
-    full_name: v.fullName, phone: v.phone,
+    ...contact.save,
     ...(v.fulfillment === "delivery" && v.deliveryZoneId && v.addressLine ? { default_zone_id: v.deliveryZoneId, default_address: v.addressLine } : {}),
   }).eq("id", user.id);
   // On an idempotent replay the DB rotated the hashes to these new tokens, so they are valid either way.

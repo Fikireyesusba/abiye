@@ -24,6 +24,9 @@ select pg_temp.throws(format($$select public.customer_rate_ticket(%L, 5)$$, (sel
 select pg_temp.ok((select count(*) from public.support_tickets) = 1, 'a closed ticket is still visible for 24 h');
 reset role;
 select pg_temp.ok((select rating from public.support_tickets where id = (select (r ->> 'ticket_id')::uuid from t_tk)) = 4, 'rating stored');
+select pg_temp.ok(exists (select 1 from public.audit_logs where action = 'ticket_rated' and after_data ->> 'feedback' = 'Quick answer'), 'rating feedback in the activity log');
+select pg_temp.ok((select payload ->> 'feedback' from public.notifications_outbox where event_type = 'support_rating') = 'Quick answer'
+  and private.telegram_group('support_rating') = 'support', 'rating and feedback sent to the support group');
 update public.support_tickets set closed_at = now() - interval '25 hours' where id = (select (r ->> 'ticket_id')::uuid from t_tk);
 select pg_temp.login(:customer);
 select pg_temp.ok((select count(*) from public.support_tickets) = 0 and (select count(*) from public.support_ticket_messages) = 0, 'closed > 24 h ago: gone from the customer app');

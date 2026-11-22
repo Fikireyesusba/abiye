@@ -8,7 +8,7 @@ const http = require("http");
 const { spawn, execSync } = require("child_process");
 const { chromium } = require("playwright");
 const { adminLogin } = require("./_admin.cjs");
-const { ensureCustomer, loginCustomer } = require("./_customer.cjs");
+const { ensureCustomer, loginCustomer, fillIfEditable } = require("./_customer.cjs");
 
 if (!/127\.0\.0\.1|localhost/.test(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")) throw new Error("Local Supabase only");
 const DB = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
@@ -81,8 +81,8 @@ const asManager = (q) => {
     });
     await p.goto(`${B}/checkout`);
     await p.waitForSelector("text=Order summary");
-    await p.fill("#fullName", "Email Customer");
-    await p.fill("#phone", "0911 22 66 77");
+    await fillIfEditable(p, "#fullName", "Email Customer");
+    await fillIfEditable(p, "#phone", "0911 22 66 77");
     await p.check("label:has-text('I agree') input[type=checkbox]");
     await p.click("button:has-text('Place order')");
     await p.waitForURL(/order-success/);

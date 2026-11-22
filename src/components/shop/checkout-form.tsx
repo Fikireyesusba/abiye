@@ -229,6 +229,7 @@ export function CheckoutForm({
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="fullName">{t("checkout.fullName")}</Label>
               <Input id="fullName" name="fullName" autoComplete="name" required maxLength={120} value={form.fullName} onChange={set("fullName")}
+                readOnly={!!defaults.fullName} className={defaults.fullName ? "bg-muted" : undefined}
                 aria-invalid={!!fieldErrors.fullName} aria-describedby={fieldErrors.fullName ? "fullName-error" : undefined} />
               {fieldError("fullName")}
             </div>
@@ -236,9 +237,13 @@ export function CheckoutForm({
               <Label htmlFor="phone">{t("checkout.phone")}</Label>
               <Input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" required maxLength={20}
                 placeholder={t("checkout.phoneHint")} value={form.phone} onChange={set("phone")}
+                readOnly={!!defaults.phone} className={defaults.phone ? "bg-muted" : undefined}
                 aria-invalid={!!fieldErrors.phone} aria-describedby={fieldErrors.phone ? "phone-error" : undefined} />
               {fieldError("phone")}
             </div>
+            <p className="text-xs text-muted-foreground sm:col-span-2" data-testid="contact-note">
+              {defaults.fullName && defaults.phone ? t("checkout.fromAccount") : t("checkout.setOnce")}
+            </p>
           </CardContent>
         </Card>
 

@@ -59,7 +59,7 @@ export default async function SupportTicketsPage({ searchParams }: PageProps<"/a
           <a href={`/admin/exports/download?${new URLSearchParams({ kind: "support", from: from || `${today.slice(0, 7)}-01`, to: to || today })}`} data-testid="tickets-export"><Download /> Excel</a>
         </Button>
       </form>
-      <Table scroll head={["Ticket", "User", "Topic", "Status", "Assigned", "Last message", "Rating"]} empty="No tickets here.">
+      <Table scroll head={["Ticket", "User", "Topic", "Status", "Assigned", "Last message", "Rating & feedback"]} empty="No tickets here.">
         {list.map((r) => (
           <tr key={r.id} data-row>
             <Td>
@@ -71,7 +71,7 @@ export default async function SupportTicketsPage({ searchParams }: PageProps<"/a
             <Td><Badge variant={TICKET_VARIANT[r.status] ?? "secondary"}>{TICKET_LABEL[r.status] ?? r.status}</Badge></Td>
             <Td className="text-xs">{r.assigned_name ?? "—"}</Td>
             <Td className="text-xs whitespace-nowrap">{formatDateTime(r.last_message_at, "en")}<span className="block text-muted-foreground">{r.messages} message(s)</span></Td>
-            <Td className="text-xs whitespace-nowrap">{r.rating ? <span title={r.rating_comment ?? ""}>{"★".repeat(r.rating)}<span className="text-muted-foreground">{"★".repeat(5 - r.rating)}</span></span> : "—"}</Td>
+            <Td className="max-w-[14rem] text-xs">{r.rating ? <><span className="whitespace-nowrap">{"★".repeat(r.rating)}<span className="text-muted-foreground">{"★".repeat(5 - r.rating)}</span></span>{r.rating_comment && <span className="block break-words text-muted-foreground" data-testid="rating-feedback">“{r.rating_comment}”</span>}</> : "—"}</Td>
           </tr>
         ))}
       </Table>

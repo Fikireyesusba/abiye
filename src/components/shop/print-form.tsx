@@ -182,13 +182,16 @@ export function PrintForm({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="pfullName">{t("checkout.fullName")}</Label>
-              <Input id="pfullName" autoComplete="name" required maxLength={120} value={contact.fullName} onChange={(e) => setContact((c) => ({ ...c, fullName: e.target.value }))} />
+              <Input id="pfullName" autoComplete="name" required maxLength={120} value={contact.fullName} onChange={(e) => setContact((c) => ({ ...c, fullName: e.target.value }))}
+                readOnly={!!defaults.fullName} className={defaults.fullName ? "bg-muted" : undefined} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="pphone">{t("checkout.phone")}</Label>
               <Input id="pphone" type="tel" inputMode="tel" autoComplete="tel" required maxLength={20} placeholder={t("checkout.phoneHint")}
-                value={contact.phone} onChange={(e) => setContact((c) => ({ ...c, phone: e.target.value }))} />
+                value={contact.phone} onChange={(e) => setContact((c) => ({ ...c, phone: e.target.value }))}
+                readOnly={!!defaults.phone} className={defaults.phone ? "bg-muted" : undefined} />
             </div>
+            <p className="text-xs text-muted-foreground sm:col-span-2">{defaults.fullName && defaults.phone ? t("checkout.fromAccount") : t("checkout.setOnce")}</p>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="pnotes">{t("printing.notes")}</Label>
               <Textarea id="pnotes" rows={2} maxLength={1000} placeholder={t("printing.notesHint")} value={contact.notes} onChange={(e) => setContact((c) => ({ ...c, notes: e.target.value }))} />

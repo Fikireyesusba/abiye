@@ -11,7 +11,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const zlib = require("zlib");
-const { ensureCustomer, loginCustomer } = require("./_customer.cjs");
+const { ensureCustomer, loginCustomer, fillIfEditable } = require("./_customer.cjs");
 
 const B = process.env.BASE_URL ?? "http://localhost:3100";
 const DB = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
@@ -123,8 +123,8 @@ async function watchCsp(context) {
     await cp.waitForSelector(`text=${CODE} applied`);
     const total = await cp.locator("dl div:has(dt:text-is('Total')) dd").textContent();
     check(total === "1,530 ETB", `checkout shows the discounted total (${total})`);
-    await cp.fill("#fullName", "Promo Buyer");
-    await cp.fill("#phone", "0911223377");
+    await fillIfEditable(cp, "#fullName", "Promo Buyer");
+    await fillIfEditable(cp, "#phone", "0911223377");
     await cp.check("label:has-text('I agree') input[type=checkbox]");
     await cp.click("button:has-text('Place order')");
     await cp.waitForURL(/\/order-success\//, { timeout: 20000 });

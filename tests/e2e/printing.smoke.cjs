@@ -7,7 +7,7 @@ const { chromium } = require("playwright");
 const { adminLogin } = require("./_admin.cjs");
 const { execSync } = require("child_process");
 const { PDFDocument } = require("pdf-lib");
-const { ensureCustomer, loginCustomer } = require("./_customer.cjs");
+const { ensureCustomer, loginCustomer, fillIfEditable } = require("./_customer.cjs");
 
 const B = process.env.BASE_URL ?? "http://localhost:3100";
 const DB = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
@@ -27,13 +27,13 @@ async function pdf(pages) {
 const toast = (page, text) => page.waitForSelector(`[data-sonner-toast]:has-text("${text}")`, { timeout: 15000 });
 
 async function fillContact(p, name, phone) {
-  await p.fill("#pfullName", name);
-  await p.fill("#pphone", phone);
+  await fillIfEditable(p, "#pfullName", name);
+  await fillIfEditable(p, "#pphone", phone);
 }
 
 (async () => {
   // Leftovers of interrupted earlier runs would make the job lists ambiguous.
-  sql("update printing_jobs set status = 'cancelled' where customer_name in ('Yonas Docx', 'Meron Print') and status in ('awaiting_quote', 'awaiting_payment')");
+  sql("update printing_jobs set status = 'cancelled' where (customer_name in ('Yonas Docx', 'Meron Print') or user_id = (select id from auth.users where email = 'printing-e2e@example.com')) and status in ('awaiting_quote', 'awaiting_payment')");
   sql("delete from rate_limits; update printing_price_rules set price_per_page_etb = 3, is_active = true where color_mode = 'bw' and paper_size = 'A4' and sides = 'single'");
   const b = await chromium.launch();
   const ctx = await b.newContext({ viewport: { width: 1280, height: 1000 } });
@@ -104,8 +104,8 @@ async function fillContact(p, name, phone) {
   await p.waitForSelector("text=Order summary");
   await p.check("label:has-text('Pick up from shop') input[type=radio]");
   await p.check("label:has-text('I agree') input[type=checkbox]");
-  await p.fill("#fullName", "Meron Print");
-  await p.fill("#phone", "0911556677");
+  await fillIfEditable(p, "#fullName", "Meron Print");
+  await fillIfEditable(p, "#phone", "0911556677");
   await p.click("button[type=submit]");
   await p.waitForURL(/\/order-success\//, { timeout: 20000 });
   const orderId = p.url().split("/order-success/")[1];
@@ -120,7 +120,7 @@ async function fillContact(p, name, phone) {
   a.on("dialog", (d) => d.accept());
   await adminLogin(a, B, OWNER.email, OWNER.password);
   await a.goto(`${B}/admin/printing`);
-  check((await a.locator(`tr:has-text("Yonas Docx")`).count()) === 1, "Word job listed under Needs action");
+  check((await a.locator(`tr:has-text("${sql(`select job_number from printing_jobs where id = '${job2}'`)}")`).count()) === 1, "Word job listed under Needs action");
   await a.goto(`${B}/admin/printing/${job2}`);
   const dl = await a.locator("a:has-text('Download')").getAttribute("href");
   const dlRes = await fetch(dl);

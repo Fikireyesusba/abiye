@@ -1,11 +1,13 @@
 "use server";
 import { z } from "zod";
+import { accountContact } from "@/lib/account/contact";
 import { getCustomerUser } from "@/lib/account/session";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import { toAppError, type AppErrorCode } from "@/lib/errors";
 import { clientIpKey, rateLimitAll } from "@/lib/security/rate-limit";
 import { generateAccessToken, sha256Hex } from "@/lib/security/tokens";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { dispatchSoon } from "@/lib/telegram/dispatch";
 import { ethiopianPhoneSchema } from "@/lib/validation/checkout";
 import { PRINT_TYPES, validateUpload, type DetectedType } from "@/lib/validation/upload";
@@ -79,11 +81,13 @@ export async function submitPrintJob(input: unknown): Promise<SubmitPrintResult>
     return { ok: false, error: map[field] ?? "invalid_request", field };
   }
   const v = parsed.data;
+  // Name and phone come from the account (not editable).
+  const contact = await accountContact(user.id, { fullName: v.fullName, phone: v.phone });
   const settings = await getSiteSettings();
   if (v.copies > settings.printing.max_copies) return { ok: false, error: "too_many_copies", field: "copies" };
 
   const ip = await clientIpKey();
-  if (!(await rateLimitAll([[`print-submit:ip:${ip}`, 10, 3600], [`print-submit:phone:${sha256Hex(v.phone).slice(0, 32)}`, 10, 3600]]))) {
+  if (!(await rateLimitAll([[`print-submit:ip:${ip}`, 10, 3600], [`print-submit:phone:${sha256Hex(contact.phone).slice(0, 32)}`, 10, 3600]]))) {
     return { ok: false, error: "rate_limited" };
   }
 
@@ -126,7 +130,7 @@ export async function submitPrintJob(input: unknown): Promise<SubmitPrintResult>
   const { error } = await db.rpc("create_printing_job_for_user", {
     p_user_id: user.id,
     p_input: {
-      id: v.jobId, access_token_hash: sha256Hex(token), customer: { full_name: v.fullName, phone: v.phone },
+      id: v.jobId, access_token_hash: sha256Hex(token), customer: { full_name: contact.fullName, phone: contact.phone },
       color_mode: v.colorMode, paper_size: v.paperSize, sides: v.sides, copies: v.copies,
       fulfillment_method: v.fulfillment, customer_notes: v.notes || null, files,
     },
@@ -137,6 +141,7 @@ export async function submitPrintJob(input: unknown): Promise<SubmitPrintResult>
     if (appError.code === "unexpected") console.error("[printing] create_printing_job failed:", error.code, error.message);
     return { ok: false, error: appError.code };
   }
+  if (Object.keys(contact.save).length) await (await createSupabaseServerClient()).from("customer_accounts").update(contact.save).eq("id", user.id);
   await rememberJobAccess(v.jobId, token);
   dispatchSoon();
   return { ok: true, jobId: v.jobId };
