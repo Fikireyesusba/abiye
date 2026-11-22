@@ -251,7 +251,7 @@ async function toast(page, text) {
   check((await shop.locator(`text=${hours}`).count()) > 0, "opening hours change is live on the shop");
 
   await p.goto(`${B}/admin/settings?tab=delivery`);
-  const delForm = p.locator("form:has(input[name=payment_window_hours])");
+  const delForm = p.locator("form:has(input[name=payment_window_minutes])");
   await delForm.locator("input[name=delivery_enabled]").uncheck();
   await delForm.locator("input[name=pickup_enabled]").uncheck();
   await submitIn(p, delForm);
