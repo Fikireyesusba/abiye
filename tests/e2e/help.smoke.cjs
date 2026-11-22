@@ -21,7 +21,7 @@ const check = (ok, msg) => results.push(`${ok ? "ok  " : "FAIL"} - ${msg}`);
     await d.click("header button[aria-controls=account-menu]");
     check(await d.locator("#account-menu a[href='/help']").count() === 1 && await d.locator("footer a[href='/help']").count() === 1, "linked from the profile menu and footer");
     const txt = await d.locator("main").innerText();
-    check(!/\{\w+\}/.test(txt) && /\d+ hours/.test(txt), "settings values filled in (payment window, file limits)");
+    check(!/\{\w+\}/.test(txt) && /\d+ minutes/.test(txt), "settings values filled in (payment window, file limits)");
     await d.click("nav a[href='#paying']");
     check(d.url().endsWith("#paying"), "contents link jumps to the section");
     await d.click("details summary >> nth=0");
