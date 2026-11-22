@@ -166,10 +166,10 @@ const cron = () => fetch(`${B}/api/cron/notifications`, { headers: { authorizati
     check(await o.locator("nav[aria-label=Sub-sections] a:has-text('Security & admin')").count() === 1 && await o.locator("nav[aria-label=Sub-sections] a:has-text('Payments & wallet')").count() === 1, "notifications grouped by category");
     await o.goto(`${B}/admin/notifications?tab=telegram`);
 
-    // ---- printing group: documents only once the payment is approved
+    // ---- printing group: documents as soon as the payment is submitted (not before)
     const jobId = sql("select gen_random_uuid()");
     sql(`insert into printing_jobs (id, user_id, access_token_hash, customer_name, customer_phone, color_mode, paper_size, sides, copies, page_count, total_etb, status)
-         values ('${jobId}', '${cid}', encode(sha256('pj${RUN}'::bytea),'hex'), 'Print Buyer', '+251911223393', 'color', 'A4', 'double', 2, 4, 80, 'payment_verification');
+         values ('${jobId}', '${cid}', encode(sha256('pj${RUN}'::bytea),'hex'), 'Print Buyer', '+251911223393', 'color', 'A4', 'double', 2, 4, 80, 'awaiting_payment');
          insert into printing_files (job_id, storage_path, original_name, mime_type, size_bytes, sha256, page_count)
          values ('${jobId}', 'e2e/${RUN}/thesis.pdf', 'My thesis.pdf', 'application/pdf', 20, encode(sha256('doc${RUN}'::bytea),'hex'), 4);`);
     const up = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/printing-files/e2e/${RUN}/thesis.pdf`, {
@@ -179,12 +179,12 @@ const cron = () => fetch(`${B}/api/cron/notifications`, { headers: { authorizati
     check(up.ok, "test document stored");
     await cron();
     await sleep(1000);
-    check(printMsgs.length === 0, "nothing sent to the printing group before the payment is approved");
-    sql(`update printing_jobs set status = 'printing' where id = '${jobId}'`);
+    check(printMsgs.length === 0, "nothing sent to the printing group before the payment is submitted");
+    sql(`update printing_jobs set status = 'payment_verification' where id = '${jobId}'`);
     await cron();
-    check(await waitFor(() => printMsgs.some((t) => t.includes("PRINT — PAID") && t.includes("My thesis.pdf") && t.includes("double-sided"))), "paid job: document sent to the printing group with the print options");
+    check(await waitFor(() => printMsgs.some((t) => t.includes("PAYMENT SUBMITTED") && t.includes("My thesis.pdf") && t.includes("double-sided"))), "payment submitted: document sent to the printing group with the print options");
     check(printFiles.includes("My thesis.pdf"), "as a file with the customer's file name");
-    check(!orderMsgs.some((t) => t.includes("PRINT — PAID")) && !recMsgs.some((t) => t.includes("PRINT — PAID")), "only in the printing group");
+    check(!orderMsgs.some((t) => t.includes("PRINT —")) && !recMsgs.some((t) => t.includes("PRINT —")), "only in the printing group");
 
     // ---- every Excel export: a copy (the file) in the receipts group
     const tday = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw" }).format(new Date());
