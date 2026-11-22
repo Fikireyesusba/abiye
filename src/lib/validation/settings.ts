@@ -49,6 +49,7 @@ export const settingsSchemas = {
     delivery_enabled: z.boolean(),
     free_delivery_threshold_etb: z.number().nonnegative().nullable(),
     payment_window_hours: z.int().min(1).max(168),
+    payment_window_minutes: z.int().min(5).max(10080),
   }),
   printing: z.object({
     service_charge_etb: z.number().nonnegative().max(10000),

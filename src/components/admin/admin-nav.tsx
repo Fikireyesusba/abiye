@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Store, ToggleRight, LifeBuoy, MonitorSmartphone,
+  Store, ToggleRight, LifeBuoy, MonitorSmartphone, FileSpreadsheet,
   BarChart3, Bell, Boxes, ShieldAlert, Wallet, Clock, History, Megaphone, CreditCard, FolderTree, LayoutDashboard, Menu, Package, Printer, Settings, ShoppingCart, UserCog, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/admin/security": ShieldAlert,
   "/admin/support": LifeBuoy,
   "/admin/users": MonitorSmartphone,
+  "/admin/exports": FileSpreadsheet,
 };
 
 export interface NavItem {

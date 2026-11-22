@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ArrowRight, BadgeCheck, Printer, ShieldCheck, Smartphone, Sparkles, Truck, UserPlus } from "lucide-react";
+import { ArrowRight, BadgeCheck, Printer, ShieldCheck, Smartphone, Sparkles, Truck, LogIn, UserPlus } from "lucide-react";
 import { getCustomerUser } from "@/lib/account/session";
 import { ProductGrid } from "@/components/shop/product-card";
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,7 @@ export default async function HomePage() {
     getHomepageBanners(),
     getHomepagePromotions(),
   ]);
-  // Signed-out visitors get a "Create account" button.
+  // Signed-out visitors get "Sign in" and "Create account" buttons.
   const viewer = await getCustomerUser();
   const pick = (v: { en: string; am: string }) => v[locale] || v.en;
   const heroImage = publicImageUrl("site-assets", s.homepage.hero_image_path);
@@ -67,6 +67,11 @@ export default async function HomePage() {
             <Button size="lg" variant="outline" className="border-white/30 bg-transparent text-sidebar-foreground hover:bg-white/10 hover:text-sidebar-foreground" asChild>
               <Link href="/printing">{t("nav.printing")}</Link>
             </Button>
+            {!viewer && (
+              <Button size="lg" variant="outline" className="border-white/30 bg-white/10 text-sidebar-foreground hover:bg-white/20 hover:text-sidebar-foreground" asChild>
+                <Link href="/account/login" data-testid="home-signin"><LogIn /> {t("home.signIn")}</Link>
+              </Button>
+            )}
             {!viewer && s.services.signup && (
               <Button size="lg" variant="outline" className="border-white/30 bg-white/10 text-sidebar-foreground hover:bg-white/20 hover:text-sidebar-foreground" asChild>
                 <Link href="/account/signup"><UserPlus /> {t("home.createAccount")}</Link>

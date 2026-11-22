@@ -1,6 +1,6 @@
 /**
  * Customer help guide (EN + AM). Placeholders filled from live settings:
- * {name} business name, {hours} payment window, {days} printing file retention,
+ * {name} business name, {minutes} payment window, {days} printing file retention,
  * {mb} max printing file size, {receiptMb} receipt size limit.
  */
 type L = { en: string; am: string };
@@ -82,8 +82,8 @@ export const HELP: HelpSection[] = [
         { en: "Have a promo code? Enter it and tap “Apply” — the discount appears in the total.", am: "የቅናሽ ኮድ አለዎት? ያስገቡት እና «ተግብር»ን ይንኩ — ቅናሹ በድምሩ ላይ ይታያል።" },
         { en: "Tick “I agree to the terms and conditions” and tap “Place order”.", am: "«በውሎቹ እስማማለሁ»ን ምልክት አድርገው «ትዕዛዝ አስገባ»ን ይንኩ።" },
       ] },
-      { kind: "tip", text: { en: "The price shown when you place the order is the price you pay, even if our prices change later. Items are reserved for you for {hours} hours while you pay.",
-        am: "ትዕዛዝ ሲያስገቡ የሚታየው ዋጋ ዋጋችን በኋላ ቢቀየርም የሚከፍሉት ዋጋ ነው። ሲከፍሉ ዕቃዎቹ ለ{hours} ሰዓታት ይያዙልዎታል።" } },
+      { kind: "tip", text: { en: "The price shown when you place the order is the price you pay, even if our prices change later. Items are held for you for {minutes} minutes while you pay; items only in the basket are not held — the first to pay gets them.",
+        am: "ትዕዛዝ ሲያስገቡ የሚታየው ዋጋ ዋጋችን በኋላ ቢቀየርም የሚከፍሉት ዋጋ ነው። ሲከፍሉ ዕቃዎቹ ለ{minutes} ደቂቃዎች ይያዙልዎታል፤ ጋሪ ውስጥ ብቻ ያሉ ዕቃዎች አይያዙም — መጀመሪያ የከፈለ ያገኛቸዋል።" } },
     ],
   },
   {
@@ -99,8 +99,8 @@ export const HELP: HelpSection[] = [
         { en: "Take a screenshot of the receipt (or save the PDF).", am: "የደረሰኙን ፎቶ (screenshot) ያንሱ (ወይም PDF ያስቀምጡ)።" },
         { en: "On your order page tap “Submit payment proof”: add the transaction reference (usually starts with FT…) and upload the receipt (JPG, PNG or PDF, up to {receiptMb} MB).", am: "በትዕዛዝ ገጽዎ ላይ «የክፍያ ማረጋገጫ አስገባ»ን ይንኩ፦ የግብይት ማጣቀሻ ቁጥሩን (ብዙውን ጊዜ በFT… ይጀምራል) ያስገቡ እና ደረሰኙን (JPG፣ PNG ወይም PDF፣ እስከ {receiptMb} MB) ይጫኑ።" },
       ] },
-      { kind: "tip", text: { en: "Pay within {hours} hours. If we do not receive the payment in time, the order expires and the items are released — you can simply order again.",
-        am: "በ{hours} ሰዓታት ውስጥ ይክፈሉ። ክፍያው በጊዜው ካልደረሰን ትዕዛዙ ጊዜው ያልፍበታል፣ ዕቃዎቹም ይለቀቃሉ — እንደገና ማዘዝ ይችላሉ።" } },
+      { kind: "tip", text: { en: "Pay within {minutes} minutes. If we do not receive the payment in time, the order expires and the items are released — you can simply order again.",
+        am: "በ{minutes} ደቂቃዎች ውስጥ ይክፈሉ። ክፍያው በጊዜው ካልደረሰን ትዕዛዙ ጊዜው ያልፍበታል፣ ዕቃዎቹም ይለቀቃሉ — እንደገና ማዘዝ ይችላሉ።" } },
       { kind: "tip", text: { en: "Pay only to the bank account shown on our website or in our emails. We never ask for your password or bank PIN.",
         am: "በድረ-ገጻችን ወይም በኢሜይሎቻችን ላይ ወደሚታየው የባንክ ሂሳብ ብቻ ይክፈሉ። የይለፍ ቃልዎን ወይም የባንክ ፒንዎን በፍጹም አንጠይቅም።" } },
     ],
@@ -211,7 +211,7 @@ export const HELP: HelpSection[] = [
         { q: { en: "The link in the email says I must sign in.", am: "በኢሜይሉ ውስጥ ያለው ሊንክ እንድገባ ይጠይቀኛል።" },
           a: { en: "That keeps your order private. Sign in with the account you ordered with and you go straight to the order.", am: "ይህ ትዕዛዝዎን የግል ያደርገዋል። ባዘዙበት መለያ ይግቡ፣ በቀጥታ ወደ ትዕዛዙ ይወስድዎታል።" } },
         { q: { en: "My order expired. What now?", am: "ትዕዛዜ ጊዜው አልፎበታል። አሁን ምን ላድርግ?" },
-          a: { en: "The payment did not arrive within {hours} hours, so the items were released. Place the order again. If you already paid, contact us with your receipt.", am: "ክፍያው በ{hours} ሰዓታት ውስጥ ስላልደረሰ ዕቃዎቹ ተለቀዋል። እንደገና ያዝዙ። አስቀድመው ከፍለው ከሆነ ከደረሰኝዎ ጋር ያግኙን።" } },
+          a: { en: "The payment did not arrive within {minutes} minutes, so the items were released. Place the order again. If you already paid, contact us with your receipt.", am: "ክፍያው በ{minutes} ደቂቃዎች ውስጥ ስላልደረሰ ዕቃዎቹ ተለቀዋል። እንደገና ያዝዙ። አስቀድመው ከፍለው ከሆነ ከደረሰኝዎ ጋር ያግኙን።" } },
         { q: { en: "Is my information safe?", am: "መረጃዬ ደህንነቱ የተጠበቀ ነው?" },
           a: { en: "Yes. Receipts and documents are stored privately and only our staff can see them. Read our Privacy policy for details.", am: "አዎ። ደረሰኞች እና ሰነዶች በግል ይቀመጣሉ፣ ሊያያቸው የሚችሉት ሰራተኞቻችን ብቻ ናቸው። ለዝርዝሩ የግላዊነት ፖሊሲያችንን ያንብቡ።" } },
       ] },

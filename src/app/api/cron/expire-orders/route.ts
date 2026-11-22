@@ -19,6 +19,8 @@ export async function GET(request: Request) {
   // Customer emails for the expired orders.
   const emails = Number(data) > 0 ? await dispatchCustomerEmails(50) : null;
   const push = Number(data) > 0 ? await dispatchCustomerPush(50) : null;
-  await recordCronRun("expire-orders", true, { expired: data });
-  return NextResponse.json({ expired: data, emails, push });
+  // Support tickets waiting 48 h for the customer's answer are closed (also done when the support pages open).
+  const { data: closed } = await getSupabaseAdmin().rpc("close_stale_tickets");
+  await recordCronRun("expire-orders", true, { expired: data, tickets_closed: closed ?? 0 });
+  return NextResponse.json({ expired: data, emails, push, tickets_closed: closed ?? 0 });
 }

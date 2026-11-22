@@ -210,7 +210,7 @@ async function DeliveryTab({ s, supabase }: { s: Awaited<ReturnType<typeof getSi
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Free delivery from (ETB)" hint="Empty = never free"><Input name="free_delivery_threshold_etb" type="number" min={0} step="0.01" defaultValue={s.delivery.free_delivery_threshold_etb ?? ""} /></Field>
-            <Field label="Payment window (hours)" hint="Unpaid orders expire after this and stock is released"><Input name="payment_window_hours" type="number" min={1} max={168} required defaultValue={s.delivery.payment_window_hours} /></Field>
+            <Field label="Payment window (minutes)" hint="Unpaid orders are released after this and their stock is free for the next buyer (first to pay gets it)"><Input name="payment_window_minutes" type="number" min={5} max={10080} required defaultValue={s.delivery.payment_window_minutes ?? 30} /></Field>
           </div>
         </ActionForm>
       </Panel>

@@ -763,14 +763,14 @@ isOneToOne: false
                   ]
                 },"support_tickets": {
                   Row: {
-                    "assigned_to": string | null,"category": string,"closed_at": string | null,"created_at": string,"details": string,"id": string,"last_message_at": string,"order_id": string | null,"order_number": string | null,"resolved_at": string | null,"status": string,"subject": string,"ticket_number": string,"updated_at": string,"user_id": string
+                    "assigned_to": string | null,"category": string,"closed_at": string | null,"created_at": string,"details": string,"id": string,"last_message_at": string,"order_id": string | null,"order_number": string | null,"rated_at": string | null,"rating": number | null,"rating_comment": string | null,"resolved_at": string | null,"status": string,"subject": string,"ticket_number": string,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "assigned_to"?: string | null,"category": string,"closed_at"?: string | null,"created_at"?: string,"details": string,"id"?: string,"last_message_at"?: string,"order_id"?: string | null,"order_number"?: string | null,"resolved_at"?: string | null,"status"?: string,"subject": string,"ticket_number"?: string,"updated_at"?: string,"user_id": string
+                    "assigned_to"?: string | null,"category": string,"closed_at"?: string | null,"created_at"?: string,"details": string,"id"?: string,"last_message_at"?: string,"order_id"?: string | null,"order_number"?: string | null,"rated_at"?: string | null,"rating"?: number | null,"rating_comment"?: string | null,"resolved_at"?: string | null,"status"?: string,"subject": string,"ticket_number"?: string,"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "assigned_to"?: string | null,"category"?: string,"closed_at"?: string | null,"created_at"?: string,"details"?: string,"id"?: string,"last_message_at"?: string,"order_id"?: string | null,"order_number"?: string | null,"resolved_at"?: string | null,"status"?: string,"subject"?: string,"ticket_number"?: string,"updated_at"?: string,"user_id"?: string
+                    "assigned_to"?: string | null,"category"?: string,"closed_at"?: string | null,"created_at"?: string,"details"?: string,"id"?: string,"last_message_at"?: string,"order_id"?: string | null,"order_number"?: string | null,"rated_at"?: string | null,"rating"?: number | null,"rating_comment"?: string | null,"resolved_at"?: string | null,"status"?: string,"subject"?: string,"ticket_number"?: string,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -909,6 +909,9 @@ isOneToOne: false
                            },
 "admin_clear_reviewed_list":
 { Args: { "p_subject"?: string,"p_type"?: string }; Returns: number
+                           },
+"admin_clear_tickets":
+{ Args: { "p_from": string,"p_to": string }; Returns: number
                            },
 "admin_create_instore_sale":
 { Args: { "p_customer_name"?: string,"p_customer_phone"?: string,"p_discount_etb"?: number,"p_idempotency_key"?: string,"p_items": Json,"p_note"?: string,"p_payment_method": string }; Returns: Json
@@ -1087,7 +1090,7 @@ isOneToOne: false
                            },
 "admin_support_tickets":
 { Args: { "p_from"?: string,"p_limit"?: number,"p_search"?: string,"p_status"?: string,"p_to"?: string }; Returns: {
-              "assigned_name": string,"category": string,"created_at": string,"customer_name": string,"email": string,"id": string,"last_message_at": string,"member_id": string,"messages": number,"order_id": string,"order_number": string,"status": string,"subject": string,"ticket_number": string,"user_id": string
+              "assigned_name": string,"category": string,"closed_at": string,"created_at": string,"customer_name": string,"details": string,"email": string,"id": string,"last_message_at": string,"member_id": string,"messages": number,"order_id": string,"order_number": string,"rating": number,"rating_comment": string,"resolved_at": string,"status": string,"subject": string,"ticket_number": string,"user_id": string
             }[]
                            },
 "admin_suspicious_customers":
@@ -1249,6 +1252,9 @@ isOneToOne: false
         isOneToOne: false
         isSetofReturn: true
       } },
+"close_stale_tickets":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "complete_notification":
 { Args: { "p_error"?: string,"p_id": number,"p_success": boolean }; Returns: undefined
                            },
@@ -1269,6 +1275,9 @@ isOneToOne: false
                            },
 "customer_create_ticket":
 { Args: { "p_category": string,"p_details": string,"p_order_number": string,"p_subject": string }; Returns: Json
+                           },
+"customer_rate_ticket":
+{ Args: { "p_comment"?: string,"p_rating": number,"p_ticket_id": string }; Returns: undefined
                            },
 "customer_reply_ticket":
 { Args: { "p_body": string,"p_ticket_id": string }; Returns: undefined

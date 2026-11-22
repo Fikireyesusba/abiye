@@ -24,6 +24,7 @@ export default async function SupportPage() {
   const [t, locale] = await Promise.all([getTranslations(), getLocale() as Promise<Locale>]);
   // RLS: only this customer's own tickets and orders.
   const supabase = await createSupabaseServerClient();
+  await supabase.rpc("close_stale_tickets"); // waiting 48 h for an answer → closed
   const [{ data: tickets }, { data: orders }] = await Promise.all([
     supabase.from("support_tickets").select("id, ticket_number, subject, status, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
     supabase.from("orders").select("order_number").eq("user_id", user.id).order("created_at", { ascending: false }).limit(30),

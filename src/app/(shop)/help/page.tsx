@@ -26,7 +26,7 @@ export default async function HelpPage() {
   const [t, tp, locale, s] = await Promise.all([getTranslations("help"), getTranslations("pwa"), getLocale() as Promise<Locale>, getSiteSettings()]);
   const vars: Record<string, string> = {
     name: s.business.name[locale] || s.business.name.en,
-    hours: String(s.delivery.payment_window_hours),
+    minutes: String(s.delivery.payment_window_minutes ?? 30),
     days: String(s.printing.retention_days),
     mb: String(s.printing.max_file_mb),
     receiptMb: String(RECEIPT_MAX_BYTES / 1024 / 1024),

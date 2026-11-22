@@ -95,6 +95,7 @@ export default async function SupportTicketAdminPage({ params }: PageProps<"/adm
               <div>Topic: {TICKET_TOPIC[k.category] ?? k.category}</div>
               {k.order_number && <div>Order: {k.order_id ? <Link href={`/admin/orders/${k.order_id}`} className="text-primary hover:underline">{k.order_number}</Link> : k.order_number}</div>}
               <div>Assigned to: {k.assigned_to ? names.get(k.assigned_to) ?? "staff" : "nobody"}</div>
+              <div>Rating: {k.rating ? <>{"★".repeat(k.rating)} ({k.rating}/5){k.rating_comment && <span className="block text-muted-foreground">“{k.rating_comment}”</span>}</> : "not rated"}</div>
               {k.resolved_at && <div>Resolved: {formatDateTime(k.resolved_at, "en")}</div>}
               {k.closed_at && <div>Closed: {formatDateTime(k.closed_at, "en")}</div>}
             </dl>

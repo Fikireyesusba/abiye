@@ -229,7 +229,8 @@
     "until": "እስከ {date}",
     "code": "ኮድ፦ {code}",
     "percentOff": "{value}% ቅናሽ",
-    "amountOff": "{amount} ቅናሽ"
+    "amountOff": "{amount} ቅናሽ",
+    "signIn": "ይግቡ"
   },
   "services": {
     "off_shop": "ምርቶችን ማዘዝ ለጊዜው አይቻልም።",
@@ -306,7 +307,8 @@
     "itemTotal": "የዕቃ ድምር",
     "setQuantity": "ወደ {count} ቀይር",
     "deliveryAtCheckout": "ማድረስ ወይም ከሱቅ መውሰድ በክፍያ ጊዜ ይመረጣል፤ የማድረሻ ክፍያውም እዚያ ይታያል።",
-    "itemsTotal": "የዕቃዎች ድምር"
+    "itemsTotal": "የዕቃዎች ድምር",
+    "soldOutRemoved": "ተሽጠው ስላለቁ ከጋሪዎ ተወግደዋል፦ {items}። ጋሪ ውስጥ ያሉ ዕቃዎች አይያዙም — መጀመሪያ የከፈለ ያገኛቸዋል።"
   },
   "footer": {
     "shop": "ሱቅ",
@@ -726,9 +728,17 @@
     "reply": "መልዕክትዎ",
     "sendReply": "ላክ",
     "replySent": "መልዕክቱ ተልኳል።",
-    "closedNote": "ይህ ጥያቄ ተዘግቷል። ተጨማሪ እርዳታ ከፈለጉ እባክዎ አዲስ ሪፖርት ይክፈቱ።",
+    "closedNote": "ይህ ጥያቄ ተዘግቷል። ከተዘጋ ከ24 ሰዓት በኋላ ከዚህ ይጠፋል። ተጨማሪ እርዳታ ከፈለጉ አዲስ ሪፖርት ይክፈቱ።",
     "back": "ሁሉም ጥያቄዎቼ",
     "created": "የተላከው {date}",
-    "orderLabel": "ትዕዛዝ"
+    "orderLabel": "ትዕዛዝ",
+    "rateTitle": "አገልግሎታችን እንዴት ነበር?",
+    "rateText": "እባክዎ ለጥያቄ {number} የሰጠነውን ድጋፍ ይገምግሙ።",
+    "rateStars": "{count} ኮከብ",
+    "rateComment": "የሚጨምሩት ነገር አለ? (አማራጭ)",
+    "rateSend": "ግምገማ ላክ",
+    "rateThanks": "ስለ ግምገማዎ እናመሰግናለን!",
+    "rateClose": "ዝጋ",
+    "yourRating": "የእርስዎ ግምገማ፦ {count} / 5"
   }
 }

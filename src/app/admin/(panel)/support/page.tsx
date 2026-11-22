@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Download } from "lucide-react";
 import { DatabaseUpdateNeeded, PageHeader, SubTabs, Table, Td, fieldClass, isMissingDbFunction, pickTab } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { UserIdLink } from "@/components/admin/user-id";
@@ -30,6 +31,7 @@ export default async function SupportTicketsPage({ searchParams }: PageProps<"/a
   const from = DAY.test(first(sp.from) ?? "") ? first(sp.from)! : "";
   const to = DAY.test(first(sp.to) ?? "") ? first(sp.to)! : "";
   const supabase = await createSupabaseServerClient();
+  await supabase.rpc("close_stale_tickets"); // waiting 48 h for the customer → closed
   const { data: all, error } = await supabase.rpc("admin_support_tickets", {
     p_search: q || undefined, p_from: from ? zoneDayStartIso(from) : undefined, p_to: to ? zoneDayStartIso(nextDay(to)) : undefined, p_limit: 1000,
   });
@@ -39,9 +41,12 @@ export default async function SupportTicketsPage({ searchParams }: PageProps<"/a
   const tab = pickTab(tabs, sp.tab);
   const list = tab === "all" ? rows : rows.filter((r) => r.status === tab);
   const today = zoneToday();
+  const rated = rows.filter((r) => r.rating);
+  const avg = rated.length ? (rated.reduce((n, r) => n + Number(r.rating), 0) / rated.length).toFixed(1) : null;
   return (
     <>
       <PageHeader title="Support tickets" description="Issues and feedback sent by signed-in customers (Support & feedback). Answer them here: the customer gets an email and a phone notification." />
+      {avg && <p className="mb-3 text-sm" data-testid="rating-avg">Customer rating: <strong>{avg} / 5</strong> ★ from {rated.length} rated ticket(s){q || from || to ? " (this search)" : ""}.</p>}
       <SubTabs base="/admin/support" tabs={tabs} active={tab} keep={{ q: q || undefined, from: from || undefined, to: to || undefined }} />
       <form method="get" className="mb-4 flex flex-wrap items-end gap-2">
         <input type="hidden" name="tab" value={tab} />
@@ -50,8 +55,11 @@ export default async function SupportTicketsPage({ searchParams }: PageProps<"/a
         <label className="text-sm">To<input type="date" name="to" defaultValue={to} max={today} className={`${fieldClass} mt-1 block`} /></label>
         <Button type="submit" variant="outline">Show</Button>
         {(q || from || to) && <Button asChild variant="ghost"><Link href={`/admin/support?tab=${tab}`}>Clear</Link></Button>}
+        <Button asChild variant="outline" className="ml-auto">
+          <a href={`/admin/exports/download?${new URLSearchParams({ kind: "support", from: from || `${today.slice(0, 7)}-01`, to: to || today })}`} data-testid="tickets-export"><Download /> Excel</a>
+        </Button>
       </form>
-      <Table scroll head={["Ticket", "User", "Topic", "Status", "Assigned", "Last message"]} empty="No tickets here.">
+      <Table scroll head={["Ticket", "User", "Topic", "Status", "Assigned", "Last message", "Rating"]} empty="No tickets here.">
         {list.map((r) => (
           <tr key={r.id} data-row>
             <Td>
@@ -63,6 +71,7 @@ export default async function SupportTicketsPage({ searchParams }: PageProps<"/a
             <Td><Badge variant={TICKET_VARIANT[r.status] ?? "secondary"}>{TICKET_LABEL[r.status] ?? r.status}</Badge></Td>
             <Td className="text-xs">{r.assigned_name ?? "—"}</Td>
             <Td className="text-xs whitespace-nowrap">{formatDateTime(r.last_message_at, "en")}<span className="block text-muted-foreground">{r.messages} message(s)</span></Td>
+            <Td className="text-xs whitespace-nowrap">{r.rating ? <span title={r.rating_comment ?? ""}>{"★".repeat(r.rating)}<span className="text-muted-foreground">{"★".repeat(5 - r.rating)}</span></span> : "—"}</Td>
           </tr>
         ))}
       </Table>

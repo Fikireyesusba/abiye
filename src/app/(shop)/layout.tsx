@@ -6,6 +6,8 @@ import { InstallBanner } from "@/components/pwa/pwa";
 import { PushClaim } from "@/components/pwa/push-claim";
 import { AppOpenPing } from "@/components/pwa/app-open-ping";
 import { getCustomerUser } from "@/lib/account/session";
+import { RatePrompt } from "@/components/shop/rate-ticket";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { CartSync } from "@/components/shop/cart-sync";
 import { SiteFooter } from "@/components/shop/site-footer";
 import { SiteHeader } from "@/components/shop/site-header";
@@ -26,6 +28,11 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ShopLayout({ children }: LayoutProps<"/">) {
   const [t, viewer] = await Promise.all([getTranslations("account"), getCustomerUser()]);
+  // A resolved / closed ticket not rated yet: ask for 1–5 stars (RLS: own tickets, closed ones for 24 h).
+  const { data: toRate } = viewer
+    ? await (await createSupabaseServerClient()).from("support_tickets").select("id, ticket_number").eq("user_id", viewer.id)
+        .in("status", ["resolved", "closed"]).is("rating", null).order("updated_at", { ascending: false }).limit(1).maybeSingle()
+    : { data: null };
   return (
     <>
       <IdleSignOut minutes={IDLE_MINUTES.customer} kind="customer" warning={{ text: t("idleWarning"), stay: t("idleStay") }} />
@@ -39,6 +46,7 @@ export default async function ShopLayout({ children }: LayoutProps<"/">) {
       <InstallBanner />
       <PushClaim />
       <AppOpenPing account={viewer?.id ?? ""} />
+      <RatePrompt ticket={toRate ? { id: toRate.id, number: toRate.ticket_number } : null} />
     </>
   );
 }

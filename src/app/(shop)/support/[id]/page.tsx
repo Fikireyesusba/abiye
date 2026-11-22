@@ -5,6 +5,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { SupportReplyForm } from "@/components/shop/support-form";
+import { RateTicketForm } from "@/components/shop/rate-ticket";
 import { requireCustomer } from "@/lib/account/session";
 import { formatDateTime } from "@/lib/datetime";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -25,7 +26,7 @@ export default async function SupportTicketPage({ params }: PageProps<"/support/
   // RLS: the customer's own ticket, and only the messages meant for them (no internal notes).
   const supabase = await createSupabaseServerClient();
   const { data: k } = await supabase.from("support_tickets")
-    .select("id, ticket_number, category, subject, details, status, order_id, order_number, created_at").eq("id", id).eq("user_id", user.id).maybeSingle();
+    .select("id, ticket_number, category, subject, details, status, order_id, order_number, created_at, rating").eq("id", id).eq("user_id", user.id).maybeSingle();
   if (!k) notFound();
   const { data: messages } = await supabase.from("support_ticket_messages").select("id, from_staff, body, created_at").eq("ticket_id", k.id).eq("internal", false).order("id");
   return (
@@ -49,6 +50,16 @@ export default async function SupportTicketPage({ params }: PageProps<"/support/
           </li>
         ))}
       </ol>
+      {["resolved", "closed"].includes(k.status) && (
+        <div className="mb-6 rounded-xl border bg-card p-5">
+          {k.rating ? <p className="text-sm font-medium" data-testid="my-rating">{t("support.yourRating", { count: k.rating })} {"★".repeat(k.rating)}</p> : (
+            <>
+              <h2 className="mb-2 font-semibold">{t("support.rateTitle")}</h2>
+              <RateTicketForm ticketId={k.id} />
+            </>
+          )}
+        </div>
+      )}
       {k.status === "closed" ? <p className="text-sm text-muted-foreground">{t("support.closedNote")}</p> : <SupportReplyForm ticketId={k.id} />}
     </div>
   );

@@ -32,7 +32,7 @@ function build(key: SettingsKey, f: Record<string, string>, current: Record<stri
     case "delivery":
       return {
         pickup_enabled: f.pickup_enabled === "on", delivery_enabled: f.delivery_enabled === "on",
-        free_delivery_threshold_etb: num(f.free_delivery_threshold_etb), payment_window_hours: Number(f.payment_window_hours),
+        free_delivery_threshold_etb: num(f.free_delivery_threshold_etb), payment_window_minutes: Number(f.payment_window_minutes), payment_window_hours: Math.max(1, Math.ceil(Number(f.payment_window_minutes) / 60)),
       };
     case "printing":
       return { service_charge_etb: Number(f.service_charge_etb), max_file_mb: Number(f.max_file_mb), max_copies: Number(f.max_copies), retention_days: Number(f.retention_days) };

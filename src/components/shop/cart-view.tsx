@@ -17,7 +17,7 @@ import { Price } from "./price";
 import { ProductImage } from "./product-image";
 
 export function CartView() {
-  const { items, productItems, details, error } = useCartDetails();
+  const { items, productItems, details, error, removed } = useCartDetails();
   const locale = useLocale() as Locale;
   const t = useTranslations();
   const lines = useMemo(() => {
@@ -37,8 +37,16 @@ export function CartView() {
     return items.filter((i) => i.type === "printing").map((i) => ({ id: i.printingJobId, job: byId.get(i.printingJobId) ?? null }));
   }, [items, details]);
 
+  const removedNotice = removed.length > 0 && (
+    <p role="status" className="mb-4 flex items-center gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm" data-testid="soldout-removed">
+      <AlertTriangle className="size-4 shrink-0" aria-hidden /> {t("cartPage.soldOutRemoved", { items: removed.filter(Boolean).join(", ") || "—" })}
+    </p>
+  );
+
   if (items.length === 0) {
     return (
+      <>
+      {removedNotice}
       <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed py-20 text-center">
         <ShoppingBag className="size-12 text-muted-foreground" aria-hidden />
         <p className="text-lg">{t("cart.empty")}</p>
@@ -46,6 +54,7 @@ export function CartView() {
           <Link href="/shop">{t("cartPage.continueShopping")}</Link>
         </Button>
       </div>
+      </>
     );
   }
 
@@ -80,6 +89,8 @@ export function CartView() {
   const hasIssues = lines.some((l) => l.unavailable || l.short) || printLines.some((l) => !l.job?.payable);
 
   return (
+    <>
+    {removedNotice}
     <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem]">
       <ul className="divide-y rounded-xl border bg-card">
         {lines.map(({ item, product, unavailable, short }) => {
@@ -199,5 +210,6 @@ export function CartView() {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 }

@@ -64,3 +64,20 @@ export async function replyTicket(_prev: ReplyState, fd: FormData): Promise<Repl
   revalidatePath(`/support/${parsed.data.ticketId}`);
   return { ok: true, submitted };
 }
+
+export type RateState = { error?: AppErrorCode; ok?: boolean };
+
+/** 1–5 stars (optional comment) for a resolved / closed ticket. */
+export async function rateTicket(_prev: RateState, fd: FormData): Promise<RateState> {
+  const user = await getCustomerUser();
+  if (!user) return { error: "login_required" };
+  const parsed = z.object({ ticketId: z.guid(), rating: z.coerce.number().int().min(1).max(5), comment: z.string().trim().max(500).optional() })
+    .safeParse({ ticketId: fd.get("ticketId"), rating: fd.get("rating"), comment: fd.get("comment") ?? undefined });
+  if (!parsed.success) return { error: "invalid_request" };
+  if (!(await rateLimit(`ticket-rate:${user.id}`, 20, 3600))) return { error: "rate_limited" };
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("customer_rate_ticket", { p_ticket_id: parsed.data.ticketId, p_rating: parsed.data.rating, p_comment: parsed.data.comment || undefined });
+  if (error) return { error: toAppError(error).code };
+  revalidatePath(`/support/${parsed.data.ticketId}`);
+  return { ok: true };
+}

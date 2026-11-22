@@ -33,3 +33,18 @@ export async function updateTicket(_prev: ActionResult | null, fd: FormData): Pr
   revalidatePath("/admin", "layout");
   return ok(d.message ? (d.internal ? "Internal note saved." : "Reply sent to the customer.") : "Ticket updated.");
 }
+
+/** Delete closed / resolved tickets opened in a date range — only after they were exported (checked by the database). */
+export async function clearTickets(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("support.manage");
+  const day = /^\d{4}-\d{2}-\d{2}$/;
+  const from = String(fd.get("from") ?? ""), to = String(fd.get("to") ?? "");
+  if (!day.test(from) || !day.test(to) || to < from) return fail("Choose a valid date range.");
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("admin_clear_tickets", { p_from: from, p_to: to });
+  if (error) return error.message === "invalid_request"
+    ? fail("Download the Support tickets Excel export of these dates first (same or wider dates), then clear within 30 minutes.") : dbError(error);
+  revalidatePath("/admin/support");
+  revalidatePath("/admin/exports");
+  return ok(`Cleared ${data ?? 0} closed ticket(s).`);
+}

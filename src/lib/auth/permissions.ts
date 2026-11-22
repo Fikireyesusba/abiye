@@ -101,5 +101,6 @@ export const ADMIN_ROUTES: ReadonlyArray<{ href: string; label: string; anyOf: r
   { href: "/admin/activity", label: "Activity log", anyOf: ["audit.view"] },
   { href: "/admin/security", label: "Security", anyOf: ["audit.view"] },
   { href: "/admin/users", label: "Signed-in users", anyOf: ["security.manage", "customers.view"] },
+  { href: "/admin/exports", label: "Excel exports", anyOf: ["orders.view_all", "payments.view", "customers.view", "products.view", "wallet.manage", "printing.view", "support.view", "audit.view", "settings.manage", "security.manage", "data.manage"] },
   { href: "/admin/data", label: "Export & reset", anyOf: ["data.manage"] },
 ];

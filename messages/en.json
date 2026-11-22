@@ -229,7 +229,8 @@
     "until": "Until {date}",
     "code": "Code: {code}",
     "percentOff": "{value}% off",
-    "amountOff": "{amount} off"
+    "amountOff": "{amount} off",
+    "signIn": "Sign in"
   },
   "services": {
     "off_shop": "Ordering products is temporarily unavailable.",
@@ -306,7 +307,8 @@
     "itemTotal": "Item total",
     "setQuantity": "Set to {count}",
     "deliveryAtCheckout": "Delivery or pickup is chosen at checkout, where you also see the delivery fee.",
-    "itemsTotal": "Items total"
+    "itemsTotal": "Items total",
+    "soldOutRemoved": "Sold out and removed from your basket: {items}. Items are not reserved in the basket — the first to pay gets them."
   },
   "footer": {
     "shop": "Shop",
@@ -726,9 +728,17 @@
     "reply": "Your message",
     "sendReply": "Send",
     "replySent": "Message sent.",
-    "closedNote": "This ticket is closed. Please open a new report if you need more help.",
+    "closedNote": "This ticket is closed. It disappears from here 24 hours after closing. Open a new report if you need more help.",
     "back": "All my tickets",
     "created": "Sent {date}",
-    "orderLabel": "Order"
+    "orderLabel": "Order",
+    "rateTitle": "How did we do?",
+    "rateText": "Please rate our support for ticket {number}.",
+    "rateStars": "{count, plural, one {# star} other {# stars}}",
+    "rateComment": "Anything to add? (optional)",
+    "rateSend": "Send rating",
+    "rateThanks": "Thank you for your rating!",
+    "rateClose": "Close",
+    "yourRating": "Your rating: {count} / 5"
   }
 }

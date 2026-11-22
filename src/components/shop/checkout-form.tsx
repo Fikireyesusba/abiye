@@ -51,7 +51,7 @@ export function CheckoutForm({
   const t = useTranslations();
   const locale = useLocale() as Locale;
   const router = useRouter();
-  const { items, productItems, details, error: loadError, refresh } = useCartDetails();
+  const { items, productItems, details, error: loadError, refresh, removed } = useCartDetails();
   // The account's saved delivery city/address prefill checkout (a choice made on this device wins).
   const [prefs, setPrefs] = useState<FulfillmentPrefs>(() => {
     const p = readFulfillmentPrefs();
@@ -215,6 +215,11 @@ export function CheckoutForm({
   return (
     <form onSubmit={submit} noValidate className="grid items-start gap-6 lg:grid-cols-[1fr_24rem]">
       <div className="min-w-0 space-y-6">
+        {removed.length > 0 && (
+          <p role="status" className="flex items-center gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm" data-testid="soldout-removed">
+            <AlertTriangle className="size-4 shrink-0" aria-hidden /> {t("cartPage.soldOutRemoved", { items: removed.filter(Boolean).join(", ") || "—" })}
+          </p>
+        )}
         <Card>
           <CardHeader>
             <CardTitle>{t("checkoutPage.contact")}</CardTitle>

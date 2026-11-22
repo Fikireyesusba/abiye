@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getCartDetails, type CartDetails } from "./actions";
-import { useCart, type CartPrintingItem, type CartProductItem } from "./store";
+import { cart, useCart, type CartPrintingItem, type CartProductItem } from "./store";
 
 /** Live server data for whatever is in the basket (shared by cart + checkout). */
 export function useCartDetails() {
@@ -28,6 +28,27 @@ export function useCartDetails() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, nonce]);
 
+  // Sold out (or no longer sold): taken out of the basket; more than what is left: reduced.
+  // A basket never holds stock — whoever pays first gets the item.
+  const [removed, setRemoved] = useState<string[]>([]);
+  useEffect(() => {
+    const details = result?.key === key ? result.details : undefined;
+    if (!details) return;
+    const byId = new Map(details.products.map((p) => [p.id, p]));
+    const gone: string[] = [];
+    for (const item of productItems) {
+      const p = byId.get(item.productId);
+      if (!p || (p.available !== null && p.available <= 0)) {
+        cart.remove(item.productId);
+        gone.push(p?.name_en ?? "");
+      } else if (p.available !== null && p.available < item.quantity) {
+        cart.setQuantity(item.productId, p.available);
+      }
+    }
+    if (gone.length) queueMicrotask(() => setRemoved((r) => [...r, ...gone]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
+
   const refresh = useCallback(() => setNonce((n) => n + 1), []);
   return {
     items,
@@ -37,5 +58,7 @@ export function useCartDetails() {
     details: result?.details ?? null,
     error: result?.key === key && !!result.error,
     refresh,
+    /** Products just removed because they sold out (names, for a notice). */
+    removed,
   };
 }
