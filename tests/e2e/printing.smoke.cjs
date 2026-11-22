@@ -61,7 +61,7 @@ async function fillContact(p, name, phone) {
   check(sql(`select page_count || '/' || page_count_source || '/' || total_etb || '/' || status from printing_jobs where id = '${job1}'`) === "3/auto/60.00/awaiting_payment",
     "server recounted pages and priced the job (60 ETB)");
   check(sql(`select count(*) from storage.objects where bucket_id = 'printing-files' and name like 'jobs/${job1}/%'`) === "1", "document stored in the private bucket");
-  check(sql(`select count(*) from notifications_outbox where dedupe_key = 'printing_job:${job1}'`) === "1", "staff notification queued");
+  check(sql(`select count(*) from notifications_outbox where dedupe_key = 'printing_job:${job1}'`) === "0", "no staff alert yet (only once the payment is submitted)");
   const priv = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/printing-files/${sql(`select storage_path from printing_files where job_id = '${job1}'`)}`);
   check(priv.status >= 400, `customer document not publicly reachable (${priv.status})`);
   check((await p.locator("text=60 ETB").count()) > 0 && (await p.locator("button:has-text('Add to basket')").count()) === 1, "job page shows price and Add to basket");
