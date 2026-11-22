@@ -110,27 +110,36 @@ select pg_temp.ok((select payment_status from public.orders where id = (select i
 reset role;
 
 -- ----------------------------------------------------------- admin review
+-- Rejection (0053): the order is cancelled automatically and its stock released.
+set role service_role;
+select public.create_order_for_user('cccccccc-0000-0000-0000-000000000001', pg_temp.order_payload('b0000000-0000-0000-0000-000000000009', jsonb_build_array(
+  jsonb_build_object('type', 'product', 'product_id', :charger, 'quantity', 2))));
+create temp table t_o3 as select id from public.orders where idempotency_key = 'b0000000-0000-0000-0000-000000000009';
+create temp table t_stock as select stock_quantity as q from public.products where id = :charger;
+grant select on t_stock to authenticated;
+grant select on t_o3 to authenticated;
+select public.submit_payment(jsonb_build_object('order_id', (select id from t_o3),
+  'access_token_hash', pg_temp.hash('tok-b0000000-0000-0000-0000-000000000009'), 'transaction_reference', 'FT2611ABC123',
+  'receipt', jsonb_build_object('path', 'orders/o3/r1.png', 'mime', 'image/png', 'size', 90000, 'sha256', repeat('b', 64))));
+select pg_temp.ok((select (payload ->> 'reference_seen_before')::boolean from public.notifications_outbox
+                   where event_type = 'new_order' and payload ->> 'order_id' = (select id::text from t_o3)),
+  'reused transaction reference is flagged for the reviewer');
+reset role;
 select pg_temp.login(:manager);
-create temp table t_sub as select id from public.payment_submissions where order_id = (select id from t_o1);
+create temp table t_sub as select id from public.payment_submissions where order_id = (select id from t_o3);
 grant select on t_sub to service_role;
 select pg_temp.throws(format($$select public.admin_review_payment(%L, 'rejected')$$, (select id from t_sub)),
   'note_required', 'rejection requires a reason');
 select public.admin_review_payment((select id from t_sub), 'rejected', 'Amount not found in bank statement');
-select pg_temp.ok((select status = 'payment_rejected' and payment_status = 'rejected' from public.orders where id = (select id from t_o1)),
-  'rejected payment moves order to Payment Rejected');
+select pg_temp.ok((select status = 'cancelled' and payment_status = 'rejected' from public.orders where id = (select id from t_o3)),
+  'rejected payment cancels the order automatically');
+select pg_temp.ok((select stock_quantity from public.products where id = :charger) = (select q from t_stock) + 2, 'its stock is released');
 select pg_temp.throws(format($$select public.admin_review_payment(%L, 'verified')$$, (select id from t_sub)),
   'already_reviewed', 'a submission cannot be reviewed twice');
 reset role;
-
-set role service_role;
-select public.submit_payment(jsonb_build_object('order_id', (select id from t_o1),
-  'access_token_hash', pg_temp.hash('tok-b0000000-0000-0000-0000-000000000001'), 'transaction_reference', 'FT2611ABC123',
-  'receipt', jsonb_build_object('path', 'orders/o1/r2.png', 'mime', 'image/png', 'size', 90000, 'sha256', repeat('b', 64))));
-select pg_temp.ok((select count(*) from public.notifications_outbox where event_type = 'payment_resubmitted') = 1,
-  'resubmission triggers a distinct notification');
-select pg_temp.ok((select (payload ->> 'reference_seen_before')::boolean from public.notifications_outbox where event_type = 'payment_resubmitted'),
-  'reused transaction reference is flagged for the reviewer');
-reset role;
+select pg_temp.ok((select count(*) from public.notifications_outbox where channel = 'email' and payload ->> 'order_id' = (select id::text from t_o3)
+                   and event_type in ('customer_order_payment_rejected', 'customer_order_cancelled')) = 1,
+  'the customer gets one message (payment not verified — order cancelled)');
 
 select pg_temp.login(:manager);
 select public.admin_review_payment((select id from public.payment_submissions where order_id = (select id from t_o1) and status = 'pending'),

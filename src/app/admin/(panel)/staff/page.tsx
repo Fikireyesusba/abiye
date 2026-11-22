@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ActionForm } from "@/components/admin/action-form";
 import { Field, Frame, PageHeader, Panel, SubTabs, Table, Td, fieldClass, pickTab } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
+import { UserIdLink } from "@/components/admin/user-id";
 import { Input } from "@/components/ui/input";
 import { deleteRole, inviteStaff, removeStaff, resetStaffMfa, resetStaffPassword, saveRole, setMemberPermissions, updateStaff, updateStaffDetails } from "@/lib/admin/staff-actions";
 import { maxBirthDate, personSummary } from "@/lib/age";
@@ -77,13 +78,13 @@ export default async function StaffPage({ searchParams }: PageProps<"/admin/staf
       <PageHeader title="Staff" description="Who can sign in to this dashboard and what they can do." />
       <SubTabs base="/admin/staff" tabs={TABS} active={tab} />
       {tab === "team" && (
-        <Table scroll head={["Name", "Role", "Access", "Password", "Two-step login", "Delete"]}>
+        <Table scroll head={["User", "Role", "Access", "Password", "Two-step login", "Delete"]}>
           {current.map((p) => {
             const self = p.id === ctx.userId;
             const roleKey = (p.role as unknown as { key: string } | null)?.key ?? "staff";
             return (
               <tr key={p.id}>
-                <Td><span className="font-medium">{p.full_name}</span>{self && <Badge variant="secondary" className="ml-2">you</Badge>}<span className="block text-xs text-muted-foreground">{email.get(p.id)}</span><span className="block font-mono text-xs tracking-wider text-muted-foreground" data-testid="member-id">User ID {memberId.get(p.id) ?? "—"}</span>{personSummary(p.sex, p.date_of_birth) && <span className="block text-xs text-muted-foreground">{personSummary(p.sex, p.date_of_birth)}</span>}</Td>
+                <Td><UserIdLink id={memberId.get(p.id)} />{self && <Badge variant="secondary" className="ml-2">you</Badge>}</Td>
                 <Td>
                   {self ? ROLES.find((r) => r.key === roleKey)?.label : (
                     <ActionForm action={updateStaff} hidden={{ userId: p.id, active: String(p.is_active) }} submitLabel="Save" size="sm" variant="outline" className="flex flex-wrap gap-2 space-y-0">
@@ -150,7 +151,7 @@ export default async function StaffPage({ searchParams }: PageProps<"/admin/staf
           <Panel title={`Deleted staff (${removed.length})`} scroll>
             {removed.length === 0 && <p className="text-sm text-muted-foreground">Nobody has been deleted.</p>}
             <ul className="space-y-1 text-sm text-muted-foreground">
-              {removed.map((p) => <li key={p.id} className="break-words">{p.full_name} · {email.get(p.id)} · deleted {formatDateTime(p.removed_at!, "en")}</li>)}
+              {removed.map((p) => <li key={p.id} className="break-words"><UserIdLink id={memberId.get(p.id)} /> · deleted {formatDateTime(p.removed_at!, "en")}</li>)}
             </ul>
             <p className="mt-2 text-xs text-muted-foreground">Kept only so the history shows who did what. Their email address cannot be used for a new account.</p>
           </Panel>
@@ -215,7 +216,7 @@ export default async function StaffPage({ searchParams }: PageProps<"/admin/staf
             const mine = new Set((personal ?? []).filter((x) => x.profile_id === p.id).map((x) => x.permission_key));
             return (
               <details key={p.id} data-row className="rounded-xl border bg-card p-4" data-member={email.get(p.id)}>
-                <summary className="cursor-pointer text-sm"><span className="font-medium">{p.full_name}</span> <span className="text-muted-foreground">· {email.get(p.id)} · {set?.label}{mine.size ? ` · +${mine.size} personal` : ""}</span></summary>
+                <summary className="cursor-pointer text-sm"><span className="font-mono font-medium">User ID {memberId.get(p.id) ?? "—"}</span> <span className="text-muted-foreground">· {set?.label}{mine.size ? ` · +${mine.size} personal` : ""}</span></summary>
                 <ActionForm action={setMemberPermissions} hidden={{ userId: p.id }} submitLabel="Save personal permissions" size="sm" className="mt-3 space-y-3">
                   {permBoxes((k) => mine.has(k) || !!set?.perms.has(k), (k) => !!set?.perms.has(k))}
                 </ActionForm>

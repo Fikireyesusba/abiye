@@ -26,9 +26,16 @@ reset role;
 select pg_temp.ok((select payload ->> 'note' from public.notifications_outbox where event_type = 'customer_order_payment_rejected') = 'Amount not in the bank statement',
   'payment rejected: email includes the reason');
 
+select pg_temp.ok(pg_temp.emails('customer_order_cancelled') = 0 and (select status from public.orders where id = (select id from t_o)) = 'cancelled',
+  'rejected payment cancels the order; no second "cancelled" email');
+
+-- A new order goes through the steps.
 set role service_role;
+truncate t_o;
+insert into t_o select (public.create_order_for_user(:customer, pg_temp.order_payload('e6000000-0000-0000-0000-000000000002',
+  jsonb_build_array(jsonb_build_object('type', 'product', 'product_id', :charger, 'quantity', 1)))) ->> 'order_id')::uuid;
 select public.submit_payment(jsonb_build_object('order_id', (select id from t_o),
-  'access_token_hash', pg_temp.hash('tok-e6000000-0000-0000-0000-000000000001'),
+  'access_token_hash', pg_temp.hash('tok-e6000000-0000-0000-0000-000000000002'),
   'receipt', jsonb_build_object('path', 'orders/e6/r2.jpg', 'mime', 'image/jpeg', 'size', 1000, 'sha256', repeat('f', 64))));
 reset role;
 select pg_temp.login(:manager);

@@ -9,7 +9,6 @@ import { requirePermission } from "@/lib/auth/guards";
 import { first } from "@/lib/catalog/search";
 import { formatDateTime } from "@/lib/datetime";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { formatEthiopianPhone } from "@/lib/validation/phone";
 
 export const metadata: Metadata = { title: "Customers" };
 
@@ -41,15 +40,12 @@ export default async function CustomersPage({ searchParams }: PageProps<"/admin/
         <input name="q" defaultValue={q} placeholder="Email, name, phone or User ID" maxLength={60} className={`${fieldClass} max-w-xs`} aria-label="Search customers" />
         <Button type="submit" variant="outline">Search</Button>
       </form>
-      <Table scroll head={["Customer", "Phone", "Status", "Orders", "Joined"]} empty="No customers found.">
+      <Table scroll head={["User", "Status", "Orders", "Joined"]} empty="No customers found.">
         {(accounts ?? []).map((a) => (
           <tr key={a.id} className="hover:bg-muted/40">
             <Td>
-              <Link href={`/admin/customers/${a.id}`} className="font-medium text-primary hover:underline">{a.full_name || "—"}</Link>
-              <span className="block text-xs break-all text-muted-foreground">{a.email}</span>
-              <span className="block font-mono text-xs tracking-wider text-muted-foreground" data-testid="member-id">User ID {a.member_id}</span>
+              <Link href={`/admin/customers/${a.id}`} className="font-mono font-medium text-primary hover:underline" data-testid="member-id">User ID {a.member_id}</Link>
             </Td>
-            <Td>{a.phone ? formatEthiopianPhone(a.phone) : "—"}</Td>
             <Td>{a.deactivated_at ? <Badge variant="destructive">Deactivated</Badge> : a.email_confirmed_at ? <Badge variant="success">Confirmed</Badge> : <Badge variant="warning">Not confirmed</Badge>}</Td>
             <Td className="tabular-nums">{a.order_count}{a.last_order_at && <span className="block text-xs text-muted-foreground">last {formatDateTime(a.last_order_at, "en")}</span>}</Td>
             <Td className="text-xs text-muted-foreground">{formatDateTime(a.created_at, "en")}</Td>

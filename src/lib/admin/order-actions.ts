@@ -23,11 +23,7 @@ export async function reviewPayment(_prev: ActionResult | null, fd: FormData): P
   if (error) return dbError(error);
   dispatchSoon();
   revalidatePath("/admin", "layout");
-  if (decision === "verified") return ok("Payment verified — order confirmed.");
-  // An order with printing is cancelled on rejection and its documents are deleted (they stay in Telegram).
-  const { data: sub } = await supabase.from("payment_submissions").select("order:orders(status)").eq("id", submissionId).maybeSingle();
-  const cancelled = (sub?.order as { status?: string } | null)?.status === "cancelled";
-  return ok(cancelled ? "Payment rejected — the order had printing, so it was cancelled and the documents were deleted from storage (they stay in Telegram)." : "Payment rejected — customer can resubmit.");
+  return ok(decision === "verified" ? "Payment verified — order confirmed." : "Payment rejected — the order was cancelled automatically (stock released; printing documents deleted from storage, kept in Telegram).");
 }
 
 export async function updateOrderStatus(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {

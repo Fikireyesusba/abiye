@@ -46,8 +46,8 @@ const RUN = Date.now().toString(36);
     await adminLogin(o, B, OWNER.email, OWNER.password);
     await o.goto(`${B}/admin/customers?q=${mid}`);
     const rows = o.locator("tbody tr");
-    check(await rows.count() === 1 && (await rows.first().innerText()).includes(email) && (await rows.first().innerText()).includes(mid),
-      "customers: search by User ID finds exactly that customer, ID shown");
+    check(await rows.count() === 1 && !(await rows.first().innerText()).includes(email) && (await rows.first().innerText()).includes(mid),
+      "customers: search by User ID finds exactly that customer; only the User ID is listed");
     await o.goto(`${B}/admin/customers/${uid}`);
     check((await o.locator("main").innerText()).includes(`User ID ${mid}`), "customer page shows the member ID");
     await o.goto(`${B}/admin/staff`);

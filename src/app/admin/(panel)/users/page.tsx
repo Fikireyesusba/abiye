@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Download } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
 import { DatabaseUpdateNeeded, PageHeader, StatCard, SubTabs, Table, Td, fieldClass, isMissingDbFunction, pickTab } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
+import { UserIdLink } from "@/components/admin/user-id";
 import { Button } from "@/components/ui/button";
 import { signOutUser } from "@/lib/admin/session-actions";
 import { requirePermission } from "@/lib/auth/guards";
@@ -58,18 +60,22 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/user
         {extra}
         <Button type="submit" variant="outline">Show</Button>
         {(q || sp.from || sp.to || sp.before) && <Button asChild variant="ghost"><Link href={`/admin/users?tab=${tab}`}>Clear</Link></Button>}
+        {canSessions && (
+          <Button asChild variant="outline" className="ml-auto">
+            <a href={`/admin/users/export?${new URLSearchParams(Object.entries({ tab, q, from: day(sp.from), to: day(sp.to), before: day(sp.before) }).filter(([, v]) => v))}`} data-testid="users-export">
+              <Download /> Excel
+            </a>
+          </Button>
+        )}
       </form>
     );
   }
 
-  function Person({ r }: { r: { user_id: string | null; member_id: string | null; full_name: string | null; email: string | null; is_staff: boolean; role_name?: string | null } }) {
-    const name = r.full_name || r.email || "—";
+  function Person({ r }: { r: { user_id: string | null; member_id: string | null; is_staff: boolean; role_name?: string | null } }) {
     return (
       <>
-        {r.user_id && !r.is_staff ? <Link href={`/admin/customers/${r.user_id}`} className="font-medium text-primary hover:underline">{name}</Link> : <span className="font-medium">{name}</span>}
+        <UserIdLink id={r.member_id} />
         {r.is_staff && <Badge variant="secondary" className="ml-2">{r.role_name ?? "Staff"}</Badge>}
-        <span className="block text-xs break-all text-muted-foreground">{r.email}</span>
-        {r.member_id && <Link href={`/admin/activity?q=${r.member_id}`} className="block font-mono text-xs text-primary hover:underline" data-testid="user-id">User ID {r.member_id}</Link>}
       </>
     );
   }
@@ -87,7 +93,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/user
           <StatCard label="Staff signed in" value={new Set(rows.filter((r) => r.is_staff).map((r) => r.user_id)).size} />
         </div>
         <Search />
-        <Table scroll head={["Person", "Signed in", "Last active", "Device", ""]} empty="Nobody is signed in.">
+        <Table scroll head={["User", "Signed in", "Last active", "Device", ""]} empty="Nobody is signed in.">
           {rows.map((r) => (
             <tr key={r.session_id} data-row>
               <Td><Person r={r} /></Td>
@@ -97,7 +103,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/user
               <Td>
                 {r.user_id !== ctx.userId && (
                   <ActionForm action={signOutUser} hidden={{ userId: r.user_id }} submitLabel="Sign out" variant="destructive" size="sm"
-                    confirm={`Sign out ${r.full_name || r.email}? They must sign in again on every device.`} className="space-y-0" />
+                    confirm={`Sign out User ID ${r.member_id}? They must sign in again on every device.`} className="space-y-0" />
                 )}
               </Td>
             </tr>
@@ -123,7 +129,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/user
           <label className="text-sm">Or: not signed in since<input type="date" name="before" defaultValue={before} max={today} className={`${fieldClass} mt-1 block`} /></label>
         </>} />
         <p className="mb-2 text-sm text-muted-foreground" data-testid="last-count">{rows.length} account(s){from || to ? ` signed in ${from || "…"} to ${to || "…"}` : ""}{before ? ` not signed in since ${before}` : ""}.</p>
-        <Table scroll head={["Person", "Last sign-in", "Account created", "Now"]} empty="No accounts match.">
+        <Table scroll head={["User", "Last sign-in", "Account created", "Now"]} empty="No accounts match.">
           {rows.map((r) => (
             <tr key={r.user_id} data-row>
               <Td><Person r={r} /></Td>
@@ -138,7 +144,8 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/user
   }
 
   function Installs() {
-    const rows = probe.data ?? [];
+    const needle = q.toLowerCase();
+    const rows = (probe.data ?? []).filter((r) => !needle || r.member_id === q || (r.email ?? "").toLowerCase().includes(needle) || (r.full_name ?? "").toLowerCase().includes(needle));
     const accounts = new Set(rows.filter((r) => r.user_id).map((r) => r.user_id));
     const byPlatform = rows.reduce<Record<string, number>>((m, r) => ({ ...m, [r.platform]: (m[r.platform] ?? 0) + 1 }), {});
     return (
@@ -148,8 +155,9 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/user
           <StatCard label="People (signed in on it)" value={accounts.size} />
           <StatCard label="By device" value={<span className="text-base">{Object.entries(byPlatform).map(([k, n]) => `${PLATFORM[k] ?? k} ${n}`).join(" · ") || "—"}</span>} />
         </div>
+        <Search />
         <p className="mb-3 text-sm text-muted-foreground">A device is counted the first time the installed app (home-screen shortcut) is opened on it. If nobody signed in on that device yet, it shows as “Not signed in”.</p>
-        <Table scroll head={["Person", "Device", "Installed (first opened)", "Last opened", "Opens"]} empty="Nobody has opened the installed app yet.">
+        <Table scroll head={["User", "Device", "Installed (first opened)", "Last opened", "Opens"]} empty="Nobody has opened the installed app yet.">
           {rows.map((r) => (
             <tr key={r.device_id} data-row>
               <Td>{r.user_id ? <Person r={r} /> : <span className="text-muted-foreground">Not signed in</span>}</Td>

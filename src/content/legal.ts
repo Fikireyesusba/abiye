@@ -34,7 +34,7 @@ export const terms: Record<"en" | "am", LegalSection[]> = {
   en: [
     { heading: "Orders", body: "Placing an order reserves the items for the payment window shown at checkout. If payment is not submitted in time, the order expires and the items are released." },
     { heading: "Prices", body: "All prices are in Ethiopian Birr (ETB). The price confirmed at checkout is the price you pay, even if our prices change later." },
-    { heading: "Payment", body: "We accept bank transfer to the account shown at checkout. Your order is confirmed only after our team verifies the transfer in our bank account. A receipt image alone is not proof of payment. We may reject payments that cannot be verified; you can then resubmit." },
+    { heading: "Payment", body: "We accept bank transfer to the account shown at checkout. Your order is confirmed only after our team verifies the transfer in our bank account. A receipt image alone is not proof of payment. If a payment cannot be verified it is rejected and the order is cancelled automatically; you are welcome to place a new order." },
     { heading: "Delivery and pickup", body: "Delivery fees depend on your city and are shown before you order. Delivery times are estimates. Pickup orders can be collected at our shop once marked ready." },
     { heading: "Printing services", body: "Printing prices are calculated from page count, copies, paper size, color and sides. Where we cannot count pages automatically, we send a quote before you pay. You are responsible for having the right to print the documents you upload." },
     { heading: "Cancellations and returns", body: "Contact us as soon as possible to cancel. Items must be returned unused and in original packaging, unless faulty. Hygiene-sensitive cosmetics cannot be returned once opened. Refunds for verified payments are made by bank transfer." },
@@ -43,7 +43,7 @@ export const terms: Record<"en" | "am", LegalSection[]> = {
   am: [
     { heading: "ትዕዛዞች", body: "ትዕዛዝ ማስገባት ዕቃዎቹን በክፍያ ጊዜ ውስጥ ለእርስዎ ይይዛል። ክፍያ በጊዜው ካልገባ ትዕዛዙ ጊዜው ያልፍበታል እና ዕቃዎቹ ይለቀቃሉ።" },
     { heading: "ዋጋዎች", body: "ሁሉም ዋጋዎች በኢትዮጵያ ብር ናቸው። በክፍያ ጊዜ የተረጋገጠው ዋጋ ዋጋችን ቢቀየርም የሚከፍሉት ዋጋ ነው።" },
-    { heading: "ክፍያ", body: "በክፍያ ጊዜ ወደሚታየው ሂሳብ የሚደረግ የባንክ ዝውውር እንቀበላለን። ትዕዛዝዎ የሚረጋገጠው ቡድናችን ዝውውሩን በባንክ ሂሳባችን ካረጋገጠ በኋላ ብቻ ነው። የደረሰኝ ምስል ብቻውን የክፍያ ማረጋገጫ አይደለም። ሊረጋገጡ የማይችሉ ክፍያዎችን ውድቅ ልናደርግ እንችላለን፤ ከዚያ እንደገና ማስገባት ይችላሉ።" },
+    { heading: "ክፍያ", body: "በክፍያ ጊዜ ወደሚታየው ሂሳብ የሚደረግ የባንክ ዝውውር እንቀበላለን። ትዕዛዝዎ የሚረጋገጠው ቡድናችን ዝውውሩን በባንክ ሂሳባችን ካረጋገጠ በኋላ ብቻ ነው። የደረሰኝ ምስል ብቻውን የክፍያ ማረጋገጫ አይደለም። ሊረጋገጥ የማይችል ክፍያ ውድቅ ይደረጋል፤ ትዕዛዙም በራሱ ይሰረዛል። አዲስ ትዕዛዝ ማዘዝ ይችላሉ።" },
     { heading: "ማድረስ እና መውሰድ", body: "የማድረሻ ክፍያ በከተማዎ ላይ የተመሰረተ ሲሆን ከማዘዝዎ በፊት ይታያል። የማድረሻ ጊዜዎች ግምቶች ናቸው። የመውሰጃ ትዕዛዞች ዝግጁ ከተባሉ በኋላ ከሱቃችን ሊወሰዱ ይችላሉ።" },
     { heading: "የህትመት አገልግሎቶች", body: "የህትመት ዋጋ በገጽ ብዛት፣ በቅጂ፣ በወረቀት መጠን፣ በቀለም እና በገጽ ይሰላል። ገጾችን በራስ-ሰር መቁጠር በማንችልበት ጊዜ ከክፍያ በፊት የዋጋ ግምት እንልካለን። የሚጭኗቸውን ሰነዶች የማሳተም መብት እንዳለዎት ማረጋገጥ የእርስዎ ኃላፊነት ነው።" },
     { heading: "ስረዛ እና መመለስ", body: "ለመሰረዝ በተቻለ ፍጥነት ያግኙን። ዕቃዎች ጉድለት ከሌለባቸው በስተቀር ያልተጠቀሙባቸው እና በመጀመሪያ ማሸጊያቸው መመለስ አለባቸው። ለንጽህና ስሜታዊ የሆኑ የውበት ምርቶች ከተከፈቱ በኋላ መመለስ አይችሉም። ለተረጋገጡ ክፍያዎች ተመላሽ በባንክ ዝውውር ይደረጋል።" },

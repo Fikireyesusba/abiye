@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { UserIdLink } from "@/components/admin/user-id";
 import { notFound } from "next/navigation";
 import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
@@ -51,8 +52,7 @@ export default async function TopupDetailPage({ params }: PageProps<"/admin/wall
             <div><dt className="text-muted-foreground">Into account</dt><dd>{bank.bank_name ?? "—"} · <span className="font-mono">{bank.account_number ?? ""}</span></dd></div>
             <div><dt className="text-muted-foreground">Reference</dt><dd className="font-mono">{r.transaction_reference ?? "—"}</dd></div>
             <div><dt className="text-muted-foreground">Customer</dt><dd>
-              <Link href={`/admin/customers/${r.user_id}`} className="text-primary underline underline-offset-2">{c?.full_name || c?.email || "Customer"}</Link>
-              {c?.email && <span className="block text-xs text-muted-foreground">{c.email}</span>}
+              <UserIdLink id={c?.member_id} />
             </dd></div>
           </dl>
           {!!sameReceipt && (

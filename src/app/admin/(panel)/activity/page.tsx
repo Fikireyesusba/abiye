@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { UserIdLink } from "@/components/admin/user-id";
 import { PageHeader, Table, Td, fieldClass, DatabaseUpdateNeeded, isMissingDbFunction } from "@/components/admin/ui";
 import { Download, FileSpreadsheet, Trash2 } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
@@ -139,15 +140,15 @@ export default async function ActivityPage({ searchParams }: PageProps<"/admin/a
             <tr key={r.id} className="align-top">
               <Td className="text-xs whitespace-nowrap text-muted-foreground">{formatDateTime(r.created_at, "en")}</Td>
               <Td>
-                {r.actor_name ?? <span className="text-muted-foreground">System</span>}
+                {r.actor_member_id ? <UserIdLink id={r.actor_member_id} /> : <span className="text-muted-foreground">{r.actor_id ? "—" : "System"}</span>}
                 {r.actor_role && <span className="block text-xs text-muted-foreground">{r.actor_role.replaceAll("_", " ")}</span>}
-                {r.actor_member_id && <Link href={`/admin/activity?q=${r.actor_member_id}`} className="block font-mono text-xs text-primary hover:underline" data-testid="actor-user-id">User ID {r.actor_member_id}</Link>}
               </Td>
               <Td><span className="font-medium">{actionLabel(r.action)}</span><span className="block text-xs text-muted-foreground">{entityLabel(r.entity_type)}</span></Td>
               <Td className="max-w-[14rem] text-xs break-all">
-                {href ? <Link href={href} className="text-primary hover:underline">{r.entity_label || r.entity_id}</Link> : (r.entity_label || r.entity_id || "—")}
-                {r.subject_member_id && r.subject_member_id !== r.actor_member_id && (
-                  <Link href={`/admin/activity?q=${r.subject_member_id}`} className="block font-mono text-primary hover:underline" data-testid="subject-user-id">Customer User ID {r.subject_member_id}</Link>
+                {(r.entity_type === "customer_account" || r.entity_type === "profiles") && r.subject_member_id ? <UserIdLink id={r.subject_member_id} />
+                  : href ? <Link href={href} className="text-primary hover:underline">{r.entity_label || r.entity_id}</Link> : (r.entity_label || r.entity_id || "—")}
+                {r.subject_member_id && r.subject_member_id !== r.actor_member_id && r.entity_type !== "customer_account" && r.entity_type !== "profiles" && (
+                  <span className="block" data-testid="subject-user-id">Customer <UserIdLink id={r.subject_member_id} /></span>
                 )}
               </Td>
               <Td className="max-w-md text-xs break-words text-muted-foreground">

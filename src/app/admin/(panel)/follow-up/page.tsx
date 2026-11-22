@@ -3,6 +3,8 @@ import Link from "next/link";
 import { DatabaseUpdateNeeded, PageHeader, SubTabs, Table, Td, isMissingDbFunction, pickTab } from "@/components/admin/ui";
 import { StatusBadge } from "@/components/status/status-badge";
 import { waitingFor } from "@/lib/admin/activity";
+import { UserIdLink } from "@/components/admin/user-id";
+import { memberIds } from "@/lib/admin/member-ids";
 import { requirePermission } from "@/lib/auth/guards";
 import { first } from "@/lib/catalog/search";
 import { formatETB, toSantim } from "@/lib/money";
@@ -19,13 +21,11 @@ type Row = {
   reference: string | null; entity_id: string | null; amount_etb: number | null; item_count: number | null; status: string | null; items: unknown;
 };
 
-function Contact({ r }: { r: Row }) {
+function Contact({ r, ids }: { r: Row; ids: Map<string, string> }) {
   const wa = r.phone ? `https://wa.me/${r.phone.replace(/^\+/, "")}` : null;
   return (
     <>
-      {r.user_id ? <Link href={`/admin/customers/${r.user_id}`} className="font-medium text-primary underline underline-offset-2">{r.full_name || r.email || "Customer"}</Link>
-        : <span className="font-medium">{r.full_name || "Guest"}</span>}
-      {r.email && <span className="block text-xs break-all text-muted-foreground">{r.email}</span>}
+      {r.user_id ? <UserIdLink id={ids.get(r.user_id)} /> : <span className="font-medium">Guest</span>}
       {r.phone && (
         <span className="block text-xs">
           <a href={`tel:${r.phone}`} className="text-primary underline underline-offset-2">{formatEthiopianPhone(r.phone)}</a>
@@ -46,6 +46,7 @@ export default async function FollowUpPage({ searchParams }: PageProps<"/admin/f
   if (isMissingDbFunction(error)) return <DatabaseUpdateNeeded title="Stalled checkouts" migration="20261120000018_customer_account_management.sql" />;
   if (error) throw new Error("Could not load stalled checkouts");
   const rows = (data ?? []) as Row[];
+  const ids = await memberIds(rows.map((r) => r.user_id));
   const now = new Date();
   const orders = rows.filter((r) => r.kind === "unpaid_order");
   const printing = rows.filter((r) => r.kind === "unpaid_printing");
@@ -80,7 +81,7 @@ export default async function FollowUpPage({ searchParams }: PageProps<"/admin/f
         <Table scroll head={["Customer", "Order", "Total", "Status", "Waiting"]} empty="None.">
           {orders.map((r) => (
             <tr key={`o-${r.entity_id}`} className="align-top">
-              <Td><Contact r={r} /></Td>
+              <Td><Contact r={r} ids={ids} /></Td>
               <Td>{canOpenOrders ? <Link href={`/admin/orders/${r.entity_id}`} className="text-primary underline underline-offset-2">{r.reference}</Link> : r.reference}
                 <span className="block text-xs text-muted-foreground">{r.item_count} item(s)</span></Td>
               <Td className="tabular-nums">{money(r.amount_etb)}</Td>
@@ -99,7 +100,7 @@ export default async function FollowUpPage({ searchParams }: PageProps<"/admin/f
             const items = Array.isArray(r.items) ? (r.items as { name: string; quantity: number }[]) : [];
             return (
               <tr key={`b-${r.user_id}`} className="align-top">
-                <Td><Contact r={r} /></Td>
+                <Td><Contact r={r} ids={ids} /></Td>
                 <Td className="text-xs"><ul>{items.map((i, n) => <li key={n}>{i.quantity} × {i.name}</li>)}</ul></Td>
                 <Td className="tabular-nums">{money(r.amount_etb)}</Td>
                 <Td className="tabular-nums">{waitingFor(r.since, now)}</Td>
@@ -115,7 +116,7 @@ export default async function FollowUpPage({ searchParams }: PageProps<"/admin/f
         <Table scroll head={["Customer", "Job", "Price", "Waiting"]} empty="None.">
           {printing.map((r) => (
             <tr key={`p-${r.entity_id}`} className="align-top">
-              <Td><Contact r={r} /></Td>
+              <Td><Contact r={r} ids={ids} /></Td>
               <Td>{canOpenPrinting ? <Link href={`/admin/printing/${r.entity_id}`} className="text-primary underline underline-offset-2">{r.reference}</Link> : r.reference}</Td>
               <Td className="tabular-nums">{money(r.amount_etb)}</Td>
               <Td className="tabular-nums">{waitingFor(r.since, now)}</Td>

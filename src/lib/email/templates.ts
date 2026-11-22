@@ -96,14 +96,14 @@ function spec(row: EmailRow, ctx: EmailContext): Spec | null {
       };
     case "customer_order_payment_rejected":
       return {
-        subject: `We could not verify your payment for order ${n} / ክፍያ አልተረጋገጠም`,
-        en: { title: `We could not verify your payment for order ${n}.`, lines: [
+        subject: `Payment not verified — order ${n} cancelled / ክፍያ አልተረጋገጠም — ትዕዛዝ ተሰርዟል`,
+        en: { title: `We could not verify your payment for order ${n}, so the order was cancelled.`, lines: [
           p.note ? `Reason: ${esc(p.note)}` : "",
-          "Please check the transfer and submit a new receipt on the order page." ].filter(Boolean) },
-        am: { title: `ለትዕዛዝ ${n} ክፍያዎን ማረጋገጥ አልቻልንም።`, lines: [
+          "The items were released. If you did pay, contact us with your bank receipt; otherwise you are welcome to place a new order." ].filter(Boolean) },
+        am: { title: `ለትዕዛዝ ${n} ክፍያዎን ማረጋገጥ ስላልቻልን ትዕዛዙ ተሰርዟል።`, lines: [
           p.note ? `ምክንያት፦ ${esc(p.note)}` : "",
-          "እባክዎ ዝውውሩን ያረጋግጡ እና በትዕዛዝ ገጹ ላይ አዲስ ደረሰኝ ያስገቡ።" ].filter(Boolean) },
-        button: { href: orderUrl, en: "Submit a new receipt", am: "አዲስ ደረሰኝ ያስገቡ" },
+          "ዕቃዎቹ ተለቀዋል። ከፍለው ከሆነ በባንክ ደረሰኝዎ ያግኙን፤ ካልሆነ አዲስ ትዕዛዝ ማዘዝ ይችላሉ።" ].filter(Boolean) },
+        button: viewOrder,
       };
     case "customer_order_ready_for_pickup":
       return {

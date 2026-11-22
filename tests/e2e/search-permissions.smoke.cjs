@@ -10,6 +10,7 @@ const { ensureCustomer } = require("./_customer.cjs");
 const B = process.env.BASE_URL ?? "http://localhost:3100";
 const DB = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 const OWNER = { email: "owner@abiye.local", password: process.env.ADMIN_E2E_PASSWORD ?? "LocalDevOwner2026" };
+const midOf = (e) => sql(`select a.member_id from customer_accounts a join auth.users u on u.id = a.id where u.email = '${e}'`);
 const results = [];
 const check = (ok, msg) => results.push(`${ok ? "ok  " : "FAIL"} - ${msg}`);
 const RUN = Date.now().toString(36);
@@ -59,7 +60,7 @@ const toast = (p, t) => p.waitForSelector(`[data-sonner-toast]:has-text("${t}")`
     const uid = await ensureCustomer(mail, "PermE2E2026x");
     sql(`insert into profiles (id, full_name, role_id) values ('${uid}', 'Perm Person', (select id from admin_roles where key = 'staff'))`);
     await o.goto(`${B}/admin/staff`);
-    const row = o.locator(`tr:has-text("${mail}")`);
+    const row = o.locator(`tr:has-text("User ID ${midOf(mail)}")`);
     await row.locator("select[name=role]").selectOption(roleKey);
     await row.locator("form:has(select[name=role]) button[type=submit]").click();
     await toast(o, "updated");

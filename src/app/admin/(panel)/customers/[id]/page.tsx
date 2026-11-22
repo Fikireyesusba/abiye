@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SignInPanel } from "@/components/admin/sign-in-panel";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -72,7 +73,7 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
   return (
     <>
       <Link href="/admin/customers" className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /> Customers</Link>
-      <PageHeader title={c.full_name || c.email} description={`User ID ${c.member_id ?? "—"} · ${c.email} · joined ${formatDateTime(c.created_at, "en")}`}
+      <PageHeader title={`User ID ${c.member_id ?? "—"}`} description={`${c.full_name || "No name"} · ${c.email} · joined ${formatDateTime(c.created_at, "en")}`}
         actions={
           <div className="flex flex-wrap gap-2">
             {c.deactivated_at && <Badge variant="destructive">Deactivated</Badge>}
@@ -121,6 +122,7 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
             )}
           </Panel>
           <div className="space-y-6">
+            <SignInPanel ctx={ctx} userId={c.id} memberId={c.member_id} lastSignIn={c.last_sign_in_at} />
             {ctx.permissions.has("analytics.view") && <Panel title="Verified spend"><p className="text-2xl font-semibold">{formatETB(toSantim(verified))}</p></Panel>}
             <Panel title="Delivery addresses" scroll>
               {addresses.length ? <ul className="space-y-2 text-sm">{addresses.map((a) => <li key={a}>{a}</li>)}</ul> : <p className="text-sm text-muted-foreground">None yet.</p>}

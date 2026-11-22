@@ -115,16 +115,15 @@ function resetSampleStock() {
   const publicTry = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/payment-receipts/${objectPath}`);
   check(publicTry.status >= 400, `receipt not reachable via public URL (${publicTry.status})`);
 
-  // ---- Admin rejects → customer resubmits
+  // ---- Admin rejects → the order is cancelled automatically
   sql(`begin; set local role authenticated; select set_config('request.jwt.claims', '{"sub":"${MANAGER}","role":"authenticated","aal":"aal2"}', true);
        select admin_review_payment((select id from payment_submissions where order_id = '${orderId}' and status = 'pending'), 'rejected', 'Amount not received'); commit;`);
   await p.reload();
   await p.waitForSelector("text=We could not verify your payment");
   check((await p.locator("text=Amount not received").count()) > 0, "rejection reason shown to customer");
-  await p.setInputFiles("#receipt", realPng);
-  await p.click("button:has-text('Submit payment proof')");
-  await p.waitForSelector("text=We are verifying your payment", { timeout: 20000 });
-  check(sql(`select count(*) from notifications_outbox where event_type = 'payment_resubmitted' and payload->>'order_id' = '${orderId}'`) === "1", "resubmission notification queued");
+  check(sql(`select status || '/' || payment_status from orders where id = '${orderId}'`) === "cancelled/rejected" && await p.locator("#receipt").count() === 0,
+    "rejected payment cancels the order (no new receipt can be sent)");
+  check(Number(sql(`select stock_quantity from products where id = '${PERFUME}'`)) === stockBefore, "its stock is released");
 
   // ---- Private link on another device
   const other = await b.newContext();
@@ -146,7 +145,7 @@ function resetSampleStock() {
   await p.click("button[type=submit]");
   await p.waitForSelector(`h2:text("${orderNumber}")`);
   const html = await p.content();
-  check(html.includes("Pending verification"), "tracking shows status of the customer's own order");
+  check(html.includes("Cancelled"), "tracking shows status of the customer's own order");
   check(!html.includes("Abebe") && !html.includes("911223344") && !html.includes("Bole"), "tracking reveals no name/phone/address");
   check(await p.locator("#trackingCode").count() === 0, "no tracking code asked");
   const otherOrder = sql("select order_number from orders where user_id is distinct from (select id from auth.users where email = '" + CUSTOMER.email + "') order by created_at desc limit 1");

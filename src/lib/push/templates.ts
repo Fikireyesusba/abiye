@@ -28,8 +28,8 @@ export function buildPush(event: string, p: Record<string, unknown>, locale: Loc
       return m([`Payment received ✓`, `Order ${n} is confirmed. We are preparing it.`],
         [`ክፍያ ተረጋግጧል ✓`, `ትዕዛዝ ${n} ጸድቋል። እያዘጋጀን ነው።`], order);
     case "customer_order_payment_rejected":
-      return m([`Payment not verified`, `Order ${n}: ${p.note ? String(p.note).slice(0, 80) : "please upload a new receipt."}`],
-        [`ክፍያ አልተረጋገጠም`, `ትዕዛዝ ${n}፦ ${p.note ? String(p.note).slice(0, 80) : "እባክዎ አዲስ ደረሰኝ ይጫኑ።"}`], order);
+      return m([`Payment not verified — order cancelled`, `Order ${n}${p.note ? `: ${String(p.note).slice(0, 80)}` : " was cancelled."}`],
+        [`ክፍያ አልተረጋገጠም — ትዕዛዝ ተሰርዟል`, `ትዕዛዝ ${n}${p.note ? `፦ ${String(p.note).slice(0, 80)}` : " ተሰርዟል።"}`], order);
     case "customer_order_ready_for_pickup":
       return m([`Ready for pickup`, `Order ${n} is ready at our shop.`], [`ለመውሰድ ዝግጁ ነው`, `ትዕዛዝ ${n} በሱቃችን ዝግጁ ነው።`], order);
     case "customer_order_out_for_delivery":

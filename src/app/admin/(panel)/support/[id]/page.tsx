@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
 import { PageHeader, Panel, fieldClass } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
+import { UserIdLink } from "@/components/admin/user-id";
 import { updateTicket } from "@/lib/admin/support-actions";
 import { TICKET_LABEL, TICKET_TOPIC, TICKET_VARIANT } from "@/lib/admin/support";
 import { requirePermission } from "@/lib/auth/guards";
@@ -46,7 +47,7 @@ export default async function SupportTicketAdminPage({ params }: PageProps<"/adm
               {(messages ?? []).map((m) => (
                 <li key={m.id} className={cn("rounded-lg border p-3 text-sm", m.internal ? "border-dashed bg-warning/10" : m.from_staff ? "bg-primary/5" : "bg-card")}>
                   <p className="mb-1 text-xs text-muted-foreground">
-                    {m.from_staff ? (names.get(m.author_id ?? "") ?? "Staff") : (row?.customer_name || "Customer")}
+                    {m.from_staff ? (names.get(m.author_id ?? "") ?? "Staff") : `Customer (User ID ${row?.member_id ?? "—"})`}
                     {m.internal && <Badge variant="warning" className="ml-2">Internal note</Badge>} · {formatDateTime(m.created_at, "en")}
                   </p>
                   <p className="whitespace-pre-wrap">{m.body}</p>
@@ -85,7 +86,7 @@ export default async function SupportTicketAdminPage({ params }: PageProps<"/adm
             <dl className="space-y-1 text-sm">
               <div>{k.user_id ? <Link href={`/admin/customers/${k.user_id}`} className="font-medium text-primary hover:underline">{row?.customer_name || row?.email}</Link> : "—"}</div>
               <div className="break-all text-muted-foreground">{row?.email}</div>
-              <div className="font-mono" data-testid="ticket-user-id">User ID {row?.member_id ?? "—"}</div>
+              <div data-testid="ticket-user-id"><UserIdLink id={row?.member_id} /></div>
               {row?.member_id && <Link href={`/admin/activity?q=${row.member_id}`} className="text-xs text-primary hover:underline">Their activity</Link>}
             </dl>
           </Panel>

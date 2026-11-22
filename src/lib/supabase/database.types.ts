@@ -941,6 +941,11 @@ isOneToOne: false
 "admin_delete_role":
 { Args: { "p_role_id": number }; Returns: undefined
                            },
+"admin_find_user":
+{ Args: { "p_member_id": string }; Returns: {
+              "is_staff": boolean,"member_id": string,"user_id": string
+            }[]
+                           },
 "admin_is_staff_account":
 { Args: { "p_user_id": string }; Returns: boolean
                            },

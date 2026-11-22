@@ -4,6 +4,8 @@ import { AlertTriangle } from "lucide-react";
 import { PageHeader, SubTabs, Table, Td, fieldClass } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { UserIdLink } from "@/components/admin/user-id";
+import { memberIds } from "@/lib/admin/member-ids";
 import { requirePermission } from "@/lib/auth/guards";
 import { first } from "@/lib/catalog/search";
 import { formatDateTime } from "@/lib/datetime";
@@ -32,6 +34,7 @@ export default async function WalletAdminPage({ searchParams }: PageProps<"/admi
   async function Balances({ q }: { q: string }) {
     const { data } = await supabase.rpc("admin_wallet_balances", { p_search: q || undefined, p_limit: 200 });
     const total = (data ?? []).reduce((s, r) => s + Number(r.balance_etb), 0);
+    const ids = await memberIds((data ?? []).map((r) => r.user_id));
     return (
       <>
         <form method="get" className="mb-4 flex gap-2">
@@ -40,10 +43,10 @@ export default async function WalletAdminPage({ searchParams }: PageProps<"/admi
           <Button type="submit" variant="outline">Search</Button>
         </form>
         <p className="mb-3 text-sm text-muted-foreground">Total customer balances (money you owe as shop credit): <strong className="text-foreground">{etb(total)}</strong></p>
-        <Table scroll head={["Customer", "Balance", "Last activity"]} empty="No customer balances yet.">
+        <Table scroll head={["User", "Balance", "Last activity"]} empty="No customer balances yet.">
           {(data ?? []).map((r) => (
             <tr key={r.user_id}>
-              <Td><Link href={`/admin/customers/${r.user_id}`} className="font-medium text-primary underline underline-offset-2">{r.full_name || r.email}</Link><span className="block text-xs text-muted-foreground">{r.email}</span></Td>
+              <Td><UserIdLink id={ids.get(r.user_id)} /></Td>
               <Td className="tabular-nums">{etb(r.balance_etb)}</Td>
               <Td className="text-xs text-muted-foreground">{r.last_activity ? formatDateTime(r.last_activity, "en") : "—"}</Td>
             </tr>

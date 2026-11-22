@@ -220,11 +220,12 @@ async function emailLink(to, subjectPart) {
     body: JSON.stringify({ email: pending, password: "Pending2026x", data: { full_name: "Pending Person" } }),
   });
   await a.goto(`${B}/admin/customers?q=${encodeURIComponent(pending)}`);
-  check((await a.locator(`tr:has-text("${pending}"):has-text("Not confirmed")`).count()) === 1, "new sign-up without orders appears under Customers as 'Not confirmed'");
+  const midOf = (e) => sql(`select a.member_id from customer_accounts a join auth.users u on u.id = a.id where u.email = '${e}'`);
+  check((await a.locator(`tr:has-text("User ID ${midOf(pending)}"):has-text("Not confirmed")`).count()) === 1 && (await a.locator(`text=${pending}`).count()) === 0, "new sign-up without orders appears under Customers as 'Not confirmed'");
   await a.goto(`${B}/admin/customers?q=${encodeURIComponent(strangerEmail)}`);
-  check((await a.locator(`tr:has-text("${strangerEmail}"):has-text("Confirmed")`).count()) === 1, "confirmed account with no orders is listed");
+  check((await a.locator(`tr:has-text("User ID ${midOf(strangerEmail)}"):has-text("Confirmed")`).count()) === 1, "confirmed account with no orders is listed");
   await a.goto(`${B}/admin/customers?q=${encodeURIComponent(email)}`);
-  await a.locator(`tr:has-text("${email}") a`).first().click();
+  await a.locator(`tr:has-text("User ID ${midOf(email)}") a`).first().click();
   await a.waitForURL(/\/admin\/customers\/[0-9a-f-]{36}$/);
   const emailShown = (await a.locator(`text=${email}`).count()) >= 1;
   await a.click("nav[aria-label=Sections] a:has-text('Orders')");

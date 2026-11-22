@@ -115,7 +115,7 @@ export const HELP: HelpSection[] = [
       { kind: "statuses", items: [
         { status: "awaiting_payment", text: { en: "We are waiting for your bank transfer and receipt.", am: "የባንክ ዝውውርዎን እና ደረሰኝዎን እየጠበቅን ነው።" } },
         { status: "pending_verification", text: { en: "We received your receipt and are checking the payment.", am: "ደረሰኝዎን ተቀብለናል፣ ክፍያውን እያረጋገጥን ነው።" } },
-        { status: "payment_rejected", text: { en: "We could not find the payment. The reason is shown — check the transfer and upload a new receipt.", am: "ክፍያውን ማግኘት አልቻልንም። ምክንያቱ ይታያል — ዝውውሩን አረጋግጠው አዲስ ደረሰኝ ይጫኑ።" } },
+        { status: "payment_rejected", text: { en: "We could not find the payment, so the order was cancelled automatically. The reason is shown — you can place a new order.", am: "ክፍያውን ማግኘት ስላልቻልን ትዕዛዙ በራሱ ተሰርዟል። ምክንያቱ ይታያል — አዲስ ትዕዛዝ ማዘዝ ይችላሉ።" } },
         { status: "confirmed", text: { en: "Payment verified — your order is confirmed.", am: "ክፍያ ተረጋግጧል — ትዕዛዝዎ ጸድቋል።" } },
         { status: "processing", text: { en: "We are preparing your order.", am: "ትዕዛዝዎን እያዘጋጀን ነው።" } },
         { status: "ready_for_pickup", text: { en: "Ready — come to our shop to collect it.", am: "ዝግጁ ነው — ከሱቃችን ይውሰዱት።" } },

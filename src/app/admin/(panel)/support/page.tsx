@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { DatabaseUpdateNeeded, PageHeader, SubTabs, Table, Td, fieldClass, isMissingDbFunction, pickTab } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
+import { UserIdLink } from "@/components/admin/user-id";
 import { Button } from "@/components/ui/button";
 import { requirePermission } from "@/lib/auth/guards";
 import { first } from "@/lib/catalog/search";
@@ -50,17 +51,14 @@ export default async function SupportTicketsPage({ searchParams }: PageProps<"/a
         <Button type="submit" variant="outline">Show</Button>
         {(q || from || to) && <Button asChild variant="ghost"><Link href={`/admin/support?tab=${tab}`}>Clear</Link></Button>}
       </form>
-      <Table scroll head={["Ticket", "Customer", "Topic", "Status", "Assigned", "Last message"]} empty="No tickets here.">
+      <Table scroll head={["Ticket", "User", "Topic", "Status", "Assigned", "Last message"]} empty="No tickets here.">
         {list.map((r) => (
           <tr key={r.id} data-row>
             <Td>
               <Link href={`/admin/support/${r.id}`} className="font-medium text-primary hover:underline">{r.ticket_number}</Link>
               <span className="block max-w-xs truncate text-xs">{r.subject}</span>
             </Td>
-            <Td>
-              {r.customer_name || r.email}
-              <span className="block font-mono text-xs text-muted-foreground">User ID {r.member_id ?? "—"}</span>
-            </Td>
+            <Td><UserIdLink id={r.member_id} /></Td>
             <Td className="text-xs">{TICKET_TOPIC[r.category] ?? r.category}{r.order_number && <span className="block font-mono">{r.order_number}</span>}</Td>
             <Td><Badge variant={TICKET_VARIANT[r.status] ?? "secondary"}>{TICKET_LABEL[r.status] ?? r.status}</Badge></Td>
             <Td className="text-xs">{r.assigned_name ?? "—"}</Td>

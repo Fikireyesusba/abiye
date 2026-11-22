@@ -17,6 +17,7 @@ const DB = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 if (!/127\.0\.0\.1|localhost/.test(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")) throw new Error("Local Supabase only");
 const OWNER = { email: "owner@abiye.local", password: process.env.ADMIN_E2E_PASSWORD ?? "LocalDevOwner2026" };
 const sql = (q) => execSync(`psql -Atq -v ON_ERROR_STOP=1 "${DB}"`, { input: q }).toString().trim().split("\n").pop() ?? "";
+const midOf = (e) => sql(`select a.member_id from customer_accounts a join auth.users u on u.id = a.id where u.email = '${e}'`);
 const results = [];
 const check = (ok, msg) => results.push(`${ok ? "ok  " : "FAIL"} - ${msg}`);
 const RUN = Date.now().toString(36);
@@ -167,7 +168,7 @@ async function toast(page, text) {
   await toast(p, "parent must be");
   check(true, "subcategory under a different department refused");
 
-  // ---- Payments: reject → resubmit → verify
+  // ---- Payments: reject (order cancelled) / verify
   const o1 = makeOrder("pay", { pay: true });
   await p.goto(`${B}/admin/payments`);
   check(await p.locator(`a:has-text("${o1.number}")`).count() === 1 && await p.locator("button:has-text('Verify payment')").count() === 0, "payments list shows only the order number");
@@ -180,22 +181,22 @@ async function toast(page, text) {
   await card.locator("textarea[name=note]").fill("Transfer not found in CBE statement");
   await submitIn(p, card.locator("form:has(button:has-text('Reject'))"));
   await toast(p, "Payment rejected");
-  check(sql(`select status || '/' || payment_status from orders where id = '${o1.id}'`) === "payment_rejected/rejected", "payment rejected");
-  submit(o1.id, o1.key, "resub");
+  check(sql(`select status || '/' || payment_status from orders where id = '${o1.id}'`) === "cancelled/rejected", "payment rejected → order cancelled automatically");
+  const o1b = makeOrder("pay2", { pay: true });
   await p.goto(`${B}/admin/payments`);
-  await p.click(`a:has-text("${o1.number}")`);
+  await p.click(`a:has-text("${o1b.number}")`);
   await submitIn(p, p.locator("main form:has(button:has-text('Verify payment'))"));
   await toast(p, "Payment verified");
-  check(sql(`select status || '/' || payment_status from orders where id = '${o1.id}'`) === "confirmed/verified", "payment verified → order confirmed");
-  check(sql(`select count(*) from audit_logs where action = 'payment_verified' and actor_id = (select id from auth.users where email = '${OWNER.email}') and metadata->>'order_number' = '${o1.number}'`) === "1",
+  check(sql(`select status || '/' || payment_status from orders where id = '${o1b.id}'`) === "confirmed/verified", "payment verified → order confirmed");
+  check(sql(`select count(*) from audit_logs where action = 'payment_verified' and actor_id = (select id from auth.users where email = '${OWNER.email}') and metadata->>'order_number' = '${o1b.number}'`) === "1",
     "verification audit-logged with the verifier");
 
   // ---- Fulfillment + assignment + notes
-  await p.goto(`${B}/admin/orders/${o1.id}`);
+  await p.goto(`${B}/admin/orders/${o1b.id}`);
   await p.locator("select[name=assignee]").selectOption(staffId);
   await submitIn(p, p.locator("form:has(select[name=assignee])"));
   await toast(p, "Order assigned");
-  await p.goto(`${B}/admin/orders/${o1.id}?tab=history`);
+  await p.goto(`${B}/admin/orders/${o1b.id}?tab=history`);
   await p.fill("textarea[name=body]", "Customer prefers afternoon delivery");
   await submitIn(p, p.locator("form:has(textarea[name=body])"));
   await toast(p, "Note added");
@@ -208,21 +209,21 @@ async function toast(page, text) {
   const o2 = makeOrder("unassigned");
   await s.goto(`${B}/admin/orders`);
   const staffRows = await s.locator("tbody tr").allTextContents();
-  check(staffRows.length === 1 && staffRows[0].includes(o1.number), "staff list shows only their assigned order");
+  check(staffRows.length === 1 && staffRows[0].includes(o1b.number), "staff list shows only their assigned order");
   for (const pathname of ["/admin/products", "/admin/settings", "/admin/payments", "/admin/staff", `/admin/orders/${o2.id}`]) {
     check((await s.goto(B + pathname)).status() === 404, `staff gets 404 on ${pathname.replace(o2.id, "<other order>")}`);
   }
   await s.goto(`${B}/admin/orders`);
   const nav = await s.locator("nav[aria-label=Admin]").textContent();
   check(!nav.includes("Payments") && !nav.includes("Settings"), "staff navigation hides restricted sections");
-  await s.goto(`${B}/admin/orders/${o1.id}`);
+  await s.goto(`${B}/admin/orders/${o1b.id}`);
   check((await s.locator("text=Payment evidence").count()) === 0, "staff cannot see payment receipts");
   check((await s.locator("button:has-text('Cancel order')").count()) === 0, "staff cannot cancel orders");
   await submitIn(s, s.locator("form:has(button:has-text('Start processing'))"));
   await toast(s, "status updated");
   await submitIn(s, s.locator("form:has(button:has-text('Mark out for delivery'))"));
   await toast(s, "status updated");
-  check(sql(`select status from orders where id = '${o1.id}'`) === "out_for_delivery", "staff moves assigned order through fulfillment");
+  check(sql(`select status from orders where id = '${o1b.id}'`) === "out_for_delivery", "staff moves assigned order through fulfillment");
 
   // ---- Manager: no revenue, no bank accounts, no staff
   const mctx = await b.newContext();
@@ -265,7 +266,7 @@ async function toast(page, text) {
   check(sql(`select fee_etb from delivery_zones where name_en = 'Dire Dawa ${RUN}'`) === "600.00", "delivery city added");
 
   // Bank change: new orders use it, old orders keep their snapshot
-  const oldNumber = sql(`select bank_snapshot->>'account_number' from orders where id = '${o1.id}'`);
+  const oldNumber = sql(`select bank_snapshot->>'account_number' from orders where id = '${o1b.id}'`);
   const auditBefore = Number(sql(`select count(*) from audit_logs where entity_type = 'bank_accounts' and action = 'update'`));
   await p.goto(`${B}/admin/settings?tab=banks`);
   const bankForm = p.locator("form:has(input[value='1000000000000'])");
@@ -274,7 +275,7 @@ async function toast(page, text) {
   await toast(p, "Bank account saved");
   const o3 = makeOrder("newbank");
   check(sql(`select bank_snapshot->>'account_number' from orders where id = '${o3.id}'`) === "1000123456789", "new order shows the updated bank account");
-  check(sql(`select bank_snapshot->>'account_number' from orders where id = '${o1.id}'`) === oldNumber, "existing order keeps its original bank details");
+  check(sql(`select bank_snapshot->>'account_number' from orders where id = '${o1b.id}'`) === oldNumber, "existing order keeps its original bank details");
   check(Number(sql(`select count(*) from audit_logs where entity_type = 'bank_accounts' and action = 'update'`)) === auditBefore + 1
     && sql(`select after_data->>'account_number' from audit_logs where entity_type = 'bank_accounts' order by id desc limit 1`) === "1000123456789",
     "bank change audit-logged");
@@ -283,7 +284,7 @@ async function toast(page, text) {
 
   // ---- Deactivate staff → immediate loss of access
   await p.goto(`${B}/admin/staff`);
-  const srow = p.locator(`tr:has-text("${staffEmail}")`);
+  const srow = p.locator(`tr:has-text("User ID ${midOf(staffEmail)}")`);
   await submitIn(p, srow.locator("form:has(button:has-text('Deactivate'))"));
   await toast(p, "Access removed");
   await srow.locator("button:has-text('Reactivate')").waitFor({ timeout: 10000 });
@@ -305,7 +306,7 @@ async function toast(page, text) {
   check(sql(`select banned_until > now() + interval '10 years' from auth.users where id = '${staffId}'`) === "t", "deleted: sign-in blocked");
   check(sql(`select count(*) from orders where assigned_to = '${staffId}' and status not in ('completed','cancelled','expired')`) === "0", "deleted: open orders unassigned");
   await p.goto(`${B}/admin/staff`);
-  check(await p.locator(`tr:has-text("${staffEmail}")`).count() === 0 && await p.locator("nav a:has-text('Deleted staff')").count() === 1, "deleted staff leave the list (kept under Deleted staff)");
+  check(await p.locator(`tr:has-text("User ID ${midOf(staffEmail)}")`).count() === 0 && await p.locator("nav a:has-text('Deleted staff')").count() === 1, "deleted staff leave the list (kept under Deleted staff)");
   const gone = await (await b.newContext()).newPage();
   await gone.goto(`${B}/admin/login`);
   await gone.fill("#email", staffEmail);
@@ -315,14 +316,14 @@ async function toast(page, text) {
   check(gone.url().includes("/admin/login"), "deleted staff cannot sign in");
 
   // Super admin cannot demote themselves
-  check((await p.locator(`tr:has-text("${OWNER.email}") select[name=role]`).count()) === 0, "own row has no role controls (no self-demotion)");
+  check((await p.locator(`tr:has-text("User ID ${midOf(OWNER.email)}") select[name=role]`).count()) === 0, "own row has no role controls (no self-demotion)");
 
   // ---- Phone-width layout of every admin page
   const phone = await b.newContext({ viewport: { width: 390, height: 844 } });
   await phone.addCookies(await ctx.cookies());
   const ph = await phone.newPage();
   const wide = [];
-  for (const pathname of ["/admin", "/admin/orders", `/admin/orders/${o1.id}`, "/admin/payments", "/admin/products", `/admin/products/${productId}/edit`,
+  for (const pathname of ["/admin", "/admin/orders", `/admin/orders/${o1b.id}`, "/admin/payments", "/admin/products", `/admin/products/${productId}/edit`,
     "/admin/categories", "/admin/inventory", "/admin/customers", "/admin/staff", "/admin/settings", "/admin/settings?tab=banks", "/admin/settings?tab=delivery", "/admin/account"]) {
     await ph.goto(B + pathname);
     if (await ph.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)) wide.push(pathname);

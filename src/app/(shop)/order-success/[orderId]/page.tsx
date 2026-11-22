@@ -71,7 +71,8 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
   const me = await getCustomerUser();
   // Only the account that placed the order can cancel it (checked again by the database).
   const viewerOwns = !!me && !!(await authorizeCustomerOrder(order.id, { userId: me.id }));
-  const lastRejection = order.status === "payment_rejected" ? order.submissions.find((s) => s.status === "rejected") : null;
+  // A rejected payment cancels the order: show why.
+  const lastRejection = ["payment_rejected", "cancelled"].includes(order.status) && order.payment_status === "rejected" ? order.submissions.find((s) => s.status === "rejected") : null;
   const bank = order.bank_snapshot;
   const appUrl = process.env.APP_URL ?? "";
   const privateLink = accessToken ? `${appUrl}/order-success/${order.id}?t=${accessToken}` : null;
@@ -94,7 +95,7 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
           {expired && (
             <Banner tone="muted" icon={<Clock className="size-5" />} title={t("order.expiredTitle")} text={t("order.expiredText")} />
           )}
-          {order.status === "cancelled" && <Banner tone="muted" icon={<XCircle className="size-5" />} title={t("order.cancelledTitle")} />}
+          {order.status === "cancelled" && !lastRejection && <Banner tone="muted" icon={<XCircle className="size-5" />} title={t("order.cancelledTitle")} />}
           {order.status === "pending_verification" && (
             <Banner tone="info" icon={<Clock className="size-5" />} title={t("order.pendingTitle")} text={t("order.pendingText")} />
           )}
