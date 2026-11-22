@@ -117,7 +117,7 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 
 ## User ID (6 digits), signed-in users, app installs, printing on payment, Support tickets (requested 2026-11-22)
 
-Migration **0052**. SQL `99zzv_*` (+ 30/99zzk/99zzp/99zzu updated; test stub auth.sessions gains not_after/refreshed_at/user_agent/ip); browser `test:smoke:support-sessions` (new, 22), member-id updated.
+Migration **0052**. SQL `99zzv_*` (+ 30/99zzk/99zzp/99zzu updated; test stub auth.sessions gains not_after/refreshed_at/user_agent/ip); browser `test:smoke:support-sessions` (new, 22), member-id, printing, telegram, telegram-feed, profile-activity updated. Full run 37/37 (idle-signout flaky in full runs, passes alone).
 - **User ID**: `member_id` is now 6 digits (100000–999999), labelled "User ID" everywhere. Activity log shows "User ID" of who did it and "Customer User ID" of whom it concerns (`private.subject_user`: order / payment / printing job / top-up / ticket / account); a 6-digit search lists everything by or about that person; also in the Excel export.
 - **Signed-in users** (`/admin/users`, security.manage): Signed in now (`admin_signed_in_users`, from auth.sessions, with device) + **Sign out** (`admin_sign_out_user` deletes their sessions → tokens die at once via `session_alive`); Last sign-in for every account with From/To or "not signed in since" (`admin_last_sign_ins`).
 - **App installs** (same page, customers.view): `app_installs` (device, account, platform, first/last opened, opens). `AppOpenPing` (shop + admin layouts) calls `recordAppOpen` once a day per device+account when running as the installed app or on `appinstalled`; server action validates + rate-limits, then `record_app_install` (service_role only).

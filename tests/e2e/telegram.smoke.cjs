@@ -170,7 +170,7 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
     check(received.slice(beforeTest).some((x) => x.text?.includes("Test message — orders & payments group")), "test message delivered");
     const deadId = sql(`select id from notifications_outbox where payload->>'job_number' = '${jobNumber}'`);
     sql(`update notifications_outbox set status = 'dead', last_error = '400 Bad Request: chat not found' where id = ${deadId}`);
-    await a.goto(`${B}/admin/notifications?tab=messages&cat=orders`);
+    await a.goto(`${B}/admin/notifications?tab=messages&cat=payments`);
     await a.locator(`tr:has(td:text-is("${deadId}")) button:has-text("Retry")`).click();
     await a.waitForSelector('[data-sonner-toast]:has-text("re-sent")');
     check(sql(`select status from notifications_outbox where id = ${deadId}`) === "sent", "admin retry re-sends a dead message");
