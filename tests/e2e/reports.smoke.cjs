@@ -54,7 +54,7 @@ const etb = (n) => `${Number(n).toLocaleString("en-US", { maximumFractionDigits:
     check(days === Number(today.slice(8, 10)), `month shows each day up to today (${days})`);
 
     // Excel
-    const [dl] = await Promise.all([o.waitForEvent("download"), o.click("a:has-text('Excel')")]);
+    const [dl] = await Promise.all([o.waitForEvent("download"), o.click("main a:has-text('Excel')")]);
     check(dl.suggestedFilename() === `sales-month-${today.slice(0, 7)}.xlsx`, `file ${dl.suggestedFilename()}`);
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.readFile(await dl.path());
