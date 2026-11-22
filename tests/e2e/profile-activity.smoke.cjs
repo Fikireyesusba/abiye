@@ -116,7 +116,7 @@ const addisDay = (offsetDays = 0) => new Intl.DateTimeFormat("en-CA", { timeZone
     const expected = Number(sql(`select count(*) from audit_logs where created_at >= (timestamp '${addisDay(0)} 00:00' at time zone 'Europe/Warsaw')`));
     check(Math.abs(ws.rowCount - 1 - expected) <= 1, `today's entries exported (${ws.rowCount - 1} / ~${expected})`);
     let found = false;
-    ws.eachRow((r) => { if (String(r.getCell(4).value).includes("Profile updated") && String(r.getCell(6).value).includes(email)) found = true; });
+    ws.eachRow((r) => { if (String(r.getCell(5).value).includes("Profile updated") && String(r.getCell(7).value).includes(email)) found = true; });
     check(found, "the customer's change is in the Excel file with who/what/item");
     check(sql("select count(*) from audit_logs where action = 'export_activity' and created_at > now() - interval '2 minutes'") >= "1", "export recorded");
 
