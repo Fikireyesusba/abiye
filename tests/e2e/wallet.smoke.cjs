@@ -80,7 +80,7 @@ async function requestTopup(page, amount, seed) {
     await m.goto(`${B}/admin/wallet`);
     await m.click(`a[href='/admin/wallet/${sql(`select id from wallet_topups where user_id = '${uid}' and status = 'pending' order by created_at desc limit 1`)}']`);
     await m.waitForURL(/\/admin\/wallet\/[0-9a-f-]{36}$/);
-    check(await m.locator("main").getByText(email).count() >= 1, "top-up page shows the customer");
+    check(await m.locator("main").getByText(`User ID ${sql(`select member_id from customer_accounts where id = '${uid}'`)}`).count() >= 1, "top-up page shows the customer's User ID");
     const card = m.locator("main");
     check(await card.locator("img, a").count() >= 1, "receipt preview shown to the manager");
     await card.locator("button:has-text('Verify and add to balance')").click();
