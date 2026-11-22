@@ -86,7 +86,7 @@ const asManager = (q) => {
     await p.check("label:has-text('I agree') input[type=checkbox]");
     await p.click("button:has-text('Place order')");
     await p.waitForURL(/order-success/);
-    const orderId = p.url().split("/order-success/")[1].split("?")[0];
+    let orderId = p.url().split("/order-success/")[1].split("?")[0];
     const number = sql(`select order_number from orders where id = '${orderId}'`);
     check(await waitFor(() => mails(email, number).length === 1), "order placed: email sent right away");
     const placed = mails(email, number)[0];
@@ -106,8 +106,7 @@ const asManager = (q) => {
     check(await fresh.locator("#receipt").count() === 1, "after signing in the customer lands on the order with the receipt upload");
 
     // ---- 2. Payment rejected (with reason) then verified, via the admin UI
-    const key = sql(`select access_token_hash from orders where id = '${orderId}'`);
-    const submit = (n) => sql(`set role service_role; select public.submit_payment(jsonb_build_object('order_id','${orderId}','access_token_hash','${key}',
+    const submit = (n) => sql(`set role service_role; select public.submit_payment(jsonb_build_object('order_id','${orderId}','access_token_hash','${sql(`select access_token_hash from orders where id = '${orderId}'`)}',
       'receipt',jsonb_build_object('path','orders/${orderId}/r${n}.png','mime','image/png','size',100,'sha256',encode(sha256('${RUN}${n}'::bytea),'hex'))))`);
     submit(1);
     const a = await (await b.newContext({ viewport: { width: 1280, height: 1000 } })).newPage();
@@ -117,8 +116,18 @@ const asManager = (q) => {
     await a.fill("textarea[aria-label='Rejection reason']", "Amount not in our bank statement");
     await a.click("button:has-text('Reject')");
     await a.waitForSelector("[data-sonner-toast]");
-    check(await waitFor(() => mails(email, "could not verify").length === 1), "payment rejected: email sent");
-    check(mails(email, "could not verify")[0]?.html.includes("Amount not in our bank statement"), "rejection email includes the reason");
+    check(await waitFor(() => mails(email, "Payment not verified").length === 1), "payment rejected: email sent (order cancelled)");
+    check(mails(email, "Payment not verified")[0]?.html.includes("Amount not in our bank statement"), "rejection email includes the reason");
+    await sleep(1500);
+    check(mails(email, "was cancelled").length === 0 && sql(`select status from orders where id = '${orderId}'`) === "cancelled", "order cancelled automatically, no second email");
+    // A new order for the rest of the steps.
+    await p.evaluate(() => localStorage.setItem("cart:v1", JSON.stringify([{ type: "product", productId: "20000000-0000-0000-0000-000000000007", quantity: 1 }])));
+    await p.goto(`${B}/checkout`);
+    await p.waitForSelector("text=Order summary");
+    await p.check("label:has-text('I agree') input[type=checkbox]");
+    await p.click("button:has-text('Place order')");
+    await p.waitForURL(/order-success/);
+    orderId = p.url().split("/order-success/")[1].split("?")[0];
     submit(2);
     await a.goto(`${B}/admin/orders/${orderId}`);
     await a.click("button:has-text('Verify payment')");
