@@ -99,13 +99,11 @@ function resetSampleStock() {
   check((await p.locator('main s').first().textContent()) === '3,300 ETB', 'admin price change visible immediately');
   require('child_process').execSync(`psql -q "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -c "update products set price_etb = 3200 where slug = 'sample-oud-perfume-100ml'"`);
 
-  // Over-stock: 5 requested, 3 available -> checkout blocked until fixed
+  // Over-stock: 5 requested, 3 available -> the basket is lowered to what is left automatically
   await p.evaluate(() => localStorage.setItem('cart:v1', JSON.stringify([{type:'product',productId:'20000000-0000-0000-0000-000000000003',quantity:5}])));
-  await p.goto(B + '/cart'); await p.waitForSelector('text=Only 3 in stock.');
-  check(await p.locator('button:has-text("Proceed to checkout")').isDisabled(), 'checkout blocked when quantity exceeds stock');
-  await p.click('button:has-text("Set to 3")');
+  await p.goto(B + '/cart');
   await p.waitForSelector('a:has-text("Proceed to checkout")');
-  check(true, 'one-tap fix enables checkout');
+  check(await p.evaluate(() => JSON.parse(localStorage.getItem('cart:v1'))[0].quantity) === 3, 'quantity above the stock is lowered to what is left (3)');
   check((await p.locator('dl div:has(dt:text-is("Items total")) dd').textContent()) === '2,040 ETB', 'items total after fix = 3×680 = 2,040 ETB');
 
   // No active delivery city → checkout offers pickup only (no empty city list)

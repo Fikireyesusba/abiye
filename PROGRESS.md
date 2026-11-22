@@ -117,7 +117,7 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 
 ## Sign in on home, ticket rating / 24 h / 48 h, 30-minute orders, Excel exports page (requested 2026-11-22)
 
-Migration **0054**. SQL `99zzw_*` (+98 export kinds); browser `test:smoke:exports-tickets` (new, 14).
+Migration **0054**. SQL `99zzw_*` (+98 export kinds); browser `test:smoke:exports-tickets` (new, 14); storefront/admin/help/reports updated. Full run: all 38 suites pass (idle-signout only flaky inside a full run, passes alone).
 - **Home**: signed-out visitors see "Sign in" and "Create account".
 - **Tickets**: customers see a closed ticket for 24 h after closing (RLS on tickets + messages; reply/rate refused after); `close_stale_tickets()` closes tickets waiting 48 h for the customer (system message + customer email) — called when the customer or admin support pages open and by the daily expire-orders cron. **Rating** 1–5 + comment (`customer_rate_ticket`, once, resolved/closed only): pop-up `RatePrompt` in the shop layout (dismissed per device via localStorage) and a rating box on the ticket page; admin list shows stars + average; detail shows the comment.
 - **Orders**: `payment_window_minutes` (default 30, Settings → Delivery "Payment window (minutes)") sets `payment_due_at` on insert (`orders_payment_window`); `create_order_for_user` runs `expire_unpaid_orders()` first, so stock of overdue unpaid orders goes to the next buyer. A basket never holds stock; `useCartDetails` removes sold-out / withdrawn products from the basket (and lowers quantities) with a notice on cart + checkout. Help texts use {minutes}.
