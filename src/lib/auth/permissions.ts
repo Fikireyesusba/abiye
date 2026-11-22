@@ -33,6 +33,8 @@ export const PERMISSIONS = [
   "audit.manage",
   "reviews.manage",
   "data.manage",
+  "support.view",
+  "support.manage",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -86,6 +88,7 @@ export const ADMIN_ROUTES: ReadonlyArray<{ href: string; label: string; anyOf: r
   { href: "/admin/categories", label: "Categories", anyOf: ["categories.manage"] },
   { href: "/admin/inventory", label: "Inventory", anyOf: ["inventory.manage"] },
   { href: "/admin/customers", label: "Customers", anyOf: ["customers.view"] },
+  { href: "/admin/support", label: "Support tickets", anyOf: ["support.view"] },
   { href: "/admin/follow-up", label: "Stalled checkouts", anyOf: ["customers.view"] },
   { href: "/admin/promotions", label: "Promotions", anyOf: ["promotions.manage"] },
   { href: "/admin/reviews", label: "Reviews", anyOf: ["reviews.manage"] },
@@ -97,5 +100,6 @@ export const ADMIN_ROUTES: ReadonlyArray<{ href: string; label: string; anyOf: r
   { href: "/admin/settings", label: "Settings", anyOf: ["settings.manage", "bank_accounts.manage"] },
   { href: "/admin/activity", label: "Activity log", anyOf: ["audit.view"] },
   { href: "/admin/security", label: "Security", anyOf: ["audit.view"] },
+  { href: "/admin/users", label: "Signed-in users", anyOf: ["security.manage", "customers.view"] },
   { href: "/admin/data", label: "Export & reset", anyOf: ["data.manage"] },
 ];

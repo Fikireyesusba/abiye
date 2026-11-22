@@ -38,7 +38,7 @@ export default async function CustomersPage({ searchParams }: PageProps<"/admin/
         </details>
       )}
       <form method="get" className="mb-4 flex gap-2">
-        <input name="q" defaultValue={q} placeholder="Email, name, phone or member ID" maxLength={60} className={`${fieldClass} max-w-xs`} aria-label="Search customers" />
+        <input name="q" defaultValue={q} placeholder="Email, name, phone or User ID" maxLength={60} className={`${fieldClass} max-w-xs`} aria-label="Search customers" />
         <Button type="submit" variant="outline">Search</Button>
       </form>
       <Table scroll head={["Customer", "Phone", "Status", "Orders", "Joined"]} empty="No customers found.">
@@ -47,7 +47,7 @@ export default async function CustomersPage({ searchParams }: PageProps<"/admin/
             <Td>
               <Link href={`/admin/customers/${a.id}`} className="font-medium text-primary hover:underline">{a.full_name || "—"}</Link>
               <span className="block text-xs break-all text-muted-foreground">{a.email}</span>
-              <span className="block font-mono text-xs tracking-wider text-muted-foreground" data-testid="member-id">ID {a.member_id}</span>
+              <span className="block font-mono text-xs tracking-wider text-muted-foreground" data-testid="member-id">User ID {a.member_id}</span>
             </Td>
             <Td>{a.phone ? formatEthiopianPhone(a.phone) : "—"}</Td>
             <Td>{a.deactivated_at ? <Badge variant="destructive">Deactivated</Badge> : a.email_confirmed_at ? <Badge variant="success">Confirmed</Badge> : <Badge variant="warning">Not confirmed</Badge>}</Td>

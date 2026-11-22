@@ -47,6 +47,11 @@ interface Spec {
   details?: [string, string][]; // [label, value] — language-neutral
 }
 
+const TICKET_STATUS: Record<string, [string, string]> = {
+  open: ["Open", "ክፍት"], in_progress: ["In progress", "በሂደት ላይ"], waiting_customer: ["Waiting for your answer", "መልስዎን በመጠበቅ ላይ"],
+  resolved: ["Resolved", "ተፈቷል"], closed: ["Closed", "ተዘግቷል"],
+};
+
 function spec(row: EmailRow, ctx: EmailContext): Spec | null {
   const p = row.payload;
   const n = esc(p.order_number ?? p.job_number);
@@ -149,6 +154,17 @@ function spec(row: EmailRow, ctx: EmailContext): Spec | null {
         am: { title: `የህትመት ስራ ${n} ዝግጁ ነው።`, lines: [pickup ? "ከሱቃችን መውሰድ ይችላሉ።" : "በቅርቡ እናደርሳለን።"] },
         button: { href: jobUrl, en: "View job", am: "ስራውን ይመልከቱ" },
       };
+    case "customer_ticket_update": {
+      const st = TICKET_STATUS[String(p.status)] ?? ["Updated", "ተዘምኗል"];
+      return {
+        subject: `Support ticket ${esc(p.number)}: ${p.message ? "new reply" : esc(st[0].toLowerCase())} / የድጋፍ ጥያቄ`,
+        en: { title: p.message ? `We replied to your support ticket ${esc(p.number)} (${esc(p.subject)}).` : `Your support ticket ${esc(p.number)} is now: ${esc(st[0])}.`,
+              lines: [p.message ? `<em>${esc(p.message)}</em>` : "", `Status: <strong>${esc(st[0])}</strong>`].filter(Boolean) },
+        am: { title: p.message ? `ለድጋፍ ጥያቄዎ ${esc(p.number)} መልስ ሰጥተናል።` : `የድጋፍ ጥያቄዎ ${esc(p.number)} ሁኔታ፦ ${esc(st[1])}።`,
+              lines: [`ሁኔታ፦ <strong>${esc(st[1])}</strong>`] },
+        button: { href: `${ctx.appUrl}/support/${esc(p.ticket_id)}`, en: "Open the ticket", am: "ጥያቄውን ይክፈቱ" },
+      };
+    }
     case "customer_topup_verified":
       return {
         subject: `Balance topped up: +${totalEn || esc(money(p.amount_etb, "en"))} / ቀሪ ሂሳብ ተሞልቷል`,

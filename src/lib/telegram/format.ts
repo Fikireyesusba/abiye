@@ -72,6 +72,10 @@ const PRINT_STEP: Record<string, string> = {
   awaiting_payment: "Price quoted (awaiting payment)", printing: "Paid — printing", ready: "Ready for pickup",
   completed: "Collected / delivered (completed)", cancelled: "Cancelled",
 };
+const SUPPORT_TOPIC: Record<string, string> = {
+  order: "An order", payment: "A payment", delivery: "Delivery or pickup", printing: "Printing service", wallet: "My balance",
+  account: "My account", product: "A product", app: "Website or app problem", other: "Other",
+};
 const titleCase = (s: string) => s.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase());
 
 /** [service, event name] for any outbox row. */
@@ -86,7 +90,10 @@ export function describe(row: OutboxRow): [string, string] {
     case "stock_test": return ["Stock group", "Test message"];
     case "receipts_test": return ["Receipts group", "Test message"];
     case "printing_test": return ["Printing group", "Test message"];
-    case "printing_document": return ["Printing", "Document to print (paid)"];
+    case "support_test": return ["Support group", "Test message"];
+    case "support_ticket": return ["Support", "New ticket"];
+    case "support_reply": return ["Support", "Customer replied"];
+    case "printing_document": return ["Printing", p.stage === "payment_submitted" ? "Document (payment submitted)" : "Document to print (paid)"];
     case "receipt_record": return [p.kind === "wallet_topup" ? "Wallet top-up receipt" : "Payment receipt", p.result === "rejected" ? "Rejected" : "Verified"];
     case "payment_resubmitted": return ["Payments", "Receipt resubmitted"];
     case "printing_request": return ["Printing", "New printing request"];
@@ -370,7 +377,9 @@ function buildBody(row: OutboxRow, appUrl: string): BuiltMessage {
       return {
         attachment,
         text: [
-          `🖨️ <b>PRINT — PAID</b> · ${esc(p.job_number)} · file ${esc(p.n)} of ${esc(p.of)}`,
+          p.stage === "payment_submitted"
+            ? `🖨️ <b>PRINT — PAYMENT SUBMITTED</b> (print once the payment is verified) · ${esc(p.job_number)} · file ${esc(p.n)} of ${esc(p.of)}`
+            : `🖨️ <b>PRINT — PAID</b> · ${esc(p.job_number)} · file ${esc(p.n)} of ${esc(p.of)}`,
           "",
           line("File", p.file_name),
           ...(p.pages ? [line("Pages in this file", p.pages)] : []),
@@ -381,8 +390,29 @@ function buildBody(row: OutboxRow, appUrl: string): BuiltMessage {
           ...(p.notes ? [line("Customer note", p.notes)] : []),
         ].join("\n") + (p.job_id ? admin(`/admin/printing/${p.job_id}`) : ""),
       };
+    case "support_ticket":
+    case "support_reply": {
+      const isNew = row.event_type === "support_ticket";
+      return {
+        attachment: null,
+        text: [
+          isNew ? "🆘 <b>NEW SUPPORT TICKET</b>" : "💬 <b>CUSTOMER REPLIED</b>",
+          "",
+          line("Ticket", p.number),
+          ...(isNew ? [line("Topic", SUPPORT_TOPIC[String(p.category)] ?? p.category)] : []),
+          line("Subject", p.subject),
+          ...(p.order_number ? [line("Order", p.order_number)] : []),
+          line("Customer", [p.customer, p.email].filter(Boolean).join(" · ") || "—"),
+          line("User ID", p.user_id ?? "—"),
+          "",
+          esc(short(isNew ? p.details : p.message, 1500)),
+        ].join("\n") + (p.ticket_id ? admin(`/admin/support/${p.ticket_id}`) : ""),
+      };
+    }
+    case "support_test":
+      return { attachment: null, text: `✅ <b>Test message — support group</b>\n\nNew support tickets and customer replies will arrive here.\n${line("Requested by", p.requested_by)}` };
     case "printing_test":
-      return { attachment: null, text: `✅ <b>Test message — printing group</b>\n\nThe documents of each printing job will arrive here once its payment is approved.\n${line("Requested by", p.requested_by)}` };
+      return { attachment: null, text: `✅ <b>Test message — printing group</b>\n\nThe documents of each printing job will arrive here as soon as the customer submits the payment.\n${line("Requested by", p.requested_by)}` };
     case "stock_test":
       return { attachment: null, text: `✅ <b>Test message — stock group</b>\n\nLow-stock and sold-out alerts will arrive here.\n${line("Requested by", p.requested_by)}` };
     case "receipts_test":

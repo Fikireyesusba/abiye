@@ -4,6 +4,8 @@ import { IdleSignOut } from "@/components/security/idle-sign-out";
 import { IDLE_MINUTES } from "@/lib/security/idle";
 import { InstallBanner } from "@/components/pwa/pwa";
 import { PushClaim } from "@/components/pwa/push-claim";
+import { AppOpenPing } from "@/components/pwa/app-open-ping";
+import { getCustomerUser } from "@/lib/account/session";
 import { CartSync } from "@/components/shop/cart-sync";
 import { SiteFooter } from "@/components/shop/site-footer";
 import { SiteHeader } from "@/components/shop/site-header";
@@ -23,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ShopLayout({ children }: LayoutProps<"/">) {
-  const t = await getTranslations("account");
+  const [t, viewer] = await Promise.all([getTranslations("account"), getCustomerUser()]);
   return (
     <>
       <IdleSignOut minutes={IDLE_MINUTES.customer} kind="customer" warning={{ text: t("idleWarning"), stay: t("idleStay") }} />
@@ -36,6 +38,7 @@ export default async function ShopLayout({ children }: LayoutProps<"/">) {
       <CartSync />
       <InstallBanner />
       <PushClaim />
+      <AppOpenPing account={viewer?.id ?? ""} />
     </>
   );
 }

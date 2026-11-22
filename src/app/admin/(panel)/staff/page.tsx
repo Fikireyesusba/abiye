@@ -17,7 +17,7 @@ const AREA: Record<string, string> = {
   dashboard: "Dashboard", orders: "Orders", payments: "Payments", wallet: "Wallet", printing: "Printing", products: "Products",
   categories: "Products", inventory: "Products", customers: "Customers", promotions: "Promotions", reviews: "Reviews",
   analytics: "Reports", reports: "Reports", settings: "Settings", bank_accounts: "Settings", staff: "Staff", audit: "Activity & security",
-  security: "Activity & security", data: "Export & reset",
+  security: "Activity & security", data: "Export & reset", support: "Support",
 };
 
 export default async function StaffPage({ searchParams }: PageProps<"/admin/staff">) {
@@ -83,7 +83,7 @@ export default async function StaffPage({ searchParams }: PageProps<"/admin/staf
             const roleKey = (p.role as unknown as { key: string } | null)?.key ?? "staff";
             return (
               <tr key={p.id}>
-                <Td><span className="font-medium">{p.full_name}</span>{self && <Badge variant="secondary" className="ml-2">you</Badge>}<span className="block text-xs text-muted-foreground">{email.get(p.id)}</span><span className="block font-mono text-xs tracking-wider text-muted-foreground" data-testid="member-id">ID {memberId.get(p.id) ?? "—"}</span>{personSummary(p.sex, p.date_of_birth) && <span className="block text-xs text-muted-foreground">{personSummary(p.sex, p.date_of_birth)}</span>}</Td>
+                <Td><span className="font-medium">{p.full_name}</span>{self && <Badge variant="secondary" className="ml-2">you</Badge>}<span className="block text-xs text-muted-foreground">{email.get(p.id)}</span><span className="block font-mono text-xs tracking-wider text-muted-foreground" data-testid="member-id">User ID {memberId.get(p.id) ?? "—"}</span>{personSummary(p.sex, p.date_of_birth) && <span className="block text-xs text-muted-foreground">{personSummary(p.sex, p.date_of_birth)}</span>}</Td>
                 <Td>
                   {self ? ROLES.find((r) => r.key === roleKey)?.label : (
                     <ActionForm action={updateStaff} hidden={{ userId: p.id, active: String(p.is_active) }} submitLabel="Save" size="sm" variant="outline" className="flex flex-wrap gap-2 space-y-0">
@@ -131,7 +131,7 @@ export default async function StaffPage({ searchParams }: PageProps<"/admin/staf
         <Frame search="Search staff…" className="space-y-3 bg-transparent p-0">
           {current.map((p) => (
             <div key={p.id} data-row className="rounded-xl border bg-card p-4">
-              <p className="mb-2 text-sm font-medium">{p.full_name} <span className="font-normal text-muted-foreground">· ID {memberId.get(p.id) ?? "—"} · {email.get(p.id)}{personSummary(p.sex, p.date_of_birth) && ` · ${personSummary(p.sex, p.date_of_birth)}`}</span></p>
+              <p className="mb-2 text-sm font-medium">{p.full_name} <span className="font-normal text-muted-foreground">· User ID {memberId.get(p.id) ?? "—"} · {email.get(p.id)}{personSummary(p.sex, p.date_of_birth) && ` · ${personSummary(p.sex, p.date_of_birth)}`}</span></p>
               <ActionForm action={updateStaffDetails} hidden={{ userId: p.id }} submitLabel="Save" size="sm" variant="outline" className="grid items-end gap-2 space-y-0 sm:grid-cols-[1fr_10rem_10rem_8rem_auto]">
                 <label className="text-xs">Full name<input name="fullName" required maxLength={120} defaultValue={p.full_name} className={`${fieldClass} mt-1 h-9`} /></label>
                 <label className="text-xs">Phone<input name="phone" type="tel" maxLength={20} defaultValue={p.phone ?? ""} placeholder="0911 234 567" className={`${fieldClass} mt-1 h-9`} /></label>

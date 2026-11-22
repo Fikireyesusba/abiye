@@ -14,6 +14,9 @@ const ACTION_LABELS: Record<string, string> = {
   topup_verified: "Wallet top-up verified",
   topup_rejected: "Wallet top-up rejected",
   wallet_adjusted: "Wallet balance corrected",
+  ticket_created: "Support ticket opened",
+  ticket_updated: "Support ticket updated",
+  user_signed_out: "Signed out by an admin",
   email_blocked: "Email blocked",
   export_activity: "Activity log exported to Excel",
   export_payments: "Payments exported to Excel",
@@ -59,6 +62,7 @@ const ACTION_LABELS: Record<string, string> = {
 
 export const ENTITY_LABELS: Record<string, string> = {
   customer_account: "Customer account",
+  support_ticket: "Support ticket",
   order: "Order",
   payment_submission: "Payment",
   printing_job: "Printing job",

@@ -4,7 +4,7 @@ import { buildContentSecurityPolicy } from "@/lib/security/csp";
 import { ACTIVE_COOKIE, IDLE_MINUTES, SESSION_COOKIE } from "@/lib/security/idle";
 
 /** Paths that read the Supabase session (cookie refresh needed). */
-const SESSION_PATHS = [/^\/track-order$/, /^\/admin(\/|$)/, /^\/account(\/|$)/, /^\/checkout$/, /^\/order-success\//, /^\/printing(\/|$)/];
+const SESSION_PATHS = [/^\/track-order$/, /^\/support(\/|$)/, /^\/admin(\/|$)/, /^\/account(\/|$)/, /^\/checkout$/, /^\/order-success\//, /^\/printing(\/|$)/];
 
 /**
  * Runs before every page:

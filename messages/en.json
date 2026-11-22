@@ -30,7 +30,8 @@
     "contact": "Contact",
     "privacy": "Privacy",
     "terms": "Terms",
-    "help": "Help"
+    "help": "Help",
+    "support": "Support & feedback"
   },
   "cart": {
     "title": "Your basket",
@@ -457,7 +458,7 @@
     "retentionDone": "Your files have been deleted from our system."
   },
   "account": {
-    "memberId": "Member ID",
+    "memberId": "User ID",
     "personalDetails": "Personal details",
     "changeDetails": "Change delivery details",
     "cancel": "Cancel",
@@ -681,5 +682,53 @@
       "notEligible": "You can review a product after you have received it.",
       "failed": "Could not send. Please try again."
     }
+  },
+  "support": {
+    "title": "Support & feedback",
+    "intro": "Tell us about a problem or share feedback. We answer here and by email.",
+    "newTicket": "Report an issue",
+    "myTickets": "My tickets",
+    "none": "You have not sent any reports yet.",
+    "topic": "What is it about?",
+    "chooseTopic": "Choose a topic",
+    "topics": {
+      "order": "An order",
+      "payment": "A payment",
+      "delivery": "Delivery or pickup",
+      "printing": "Printing service",
+      "wallet": "My balance",
+      "account": "My account",
+      "product": "A product",
+      "app": "Website or app problem",
+      "other": "Something else (not in this list)"
+    },
+    "orderNumber": "Order number",
+    "orderNumberHint": "e.g. ET-10025 — find it under My account → My orders",
+    "orderOptional": "Order number (optional)",
+    "subject": "Short title",
+    "subjectHint": "What is the issue in a few words?",
+    "details": "Details",
+    "detailsHint": "Describe what happened, what you expected, and when. At least 10 characters.",
+    "send": "Send report",
+    "sending": "Sending…",
+    "sent": "Thank you — ticket {number} was created. We will answer soon.",
+    "status": {
+      "open": "Open",
+      "in_progress": "In progress",
+      "waiting_customer": "Waiting for your answer",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    },
+    "ticket": "Ticket {number}",
+    "conversation": "Conversation",
+    "you": "You",
+    "team": "Support team",
+    "reply": "Your message",
+    "sendReply": "Send",
+    "replySent": "Message sent.",
+    "closedNote": "This ticket is closed. Please open a new report if you need more help.",
+    "back": "All my tickets",
+    "created": "Sent {date}",
+    "orderLabel": "Order"
   }
 }

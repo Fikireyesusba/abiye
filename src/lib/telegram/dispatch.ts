@@ -5,6 +5,7 @@ import { dispatchCustomerEmails } from "@/lib/email/dispatch";
 import { dispatchReceiptArchive } from "@/lib/email/archive";
 import { dispatchCustomerPush } from "@/lib/push/dispatch";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { deleteDuePrintingFilesQuietly } from "@/lib/printing/retention";
 import { sendMedia, sendMessage, type SendResult, type TelegramConfig } from "./client";
 import { buildMessage, CAPTION_LIMIT, MESSAGE_LIMIT, truncate, type OutboxRow } from "./format";
 
@@ -18,8 +19,8 @@ export function telegramConfig(): TelegramConfig | null {
   return { token: env.TELEGRAM_BOT_TOKEN, chatId: env.TELEGRAM_ADMIN_CHAT_ID, apiBase: env.TELEGRAM_API_BASE ?? "https://api.telegram.org" };
 }
 
-export type TelegramGroup = "orders" | "security" | "stock" | "receipts" | "printing";
-export const TELEGRAM_GROUPS = ["orders", "security", "stock", "receipts", "printing"] as const;
+export type TelegramGroup = "orders" | "security" | "stock" | "receipts" | "printing" | "support";
+export const TELEGRAM_GROUPS = ["orders", "security", "stock", "receipts", "printing", "support"] as const;
 
 function configFrom(token: string | undefined, chatId: string | undefined): TelegramConfig | null {
   if (!token || !chatId) return null;
@@ -35,6 +36,7 @@ export function groupConfig(group: TelegramGroup): TelegramConfig | null {
     case "stock": return configFrom(env.TELEGRAM_STOCK_BOT_TOKEN, env.TELEGRAM_STOCK_CHAT_ID);
     case "receipts": return configFrom(env.TELEGRAM_RECEIPTS_BOT_TOKEN, env.TELEGRAM_RECEIPTS_CHAT_ID);
     case "printing": return configFrom(env.TELEGRAM_PRINTING_BOT_TOKEN, env.TELEGRAM_PRINTING_CHAT_ID);
+    case "support": return configFrom(env.TELEGRAM_SUPPORT_BOT_TOKEN, env.TELEGRAM_SUPPORT_CHAT_ID);
   }
 }
 
@@ -145,5 +147,7 @@ export function dispatchSoon() {
     if (archive.status === "rejected") console.error("[archive] dispatch failed:", (archive.reason as Error).message);
     // Copies of the customer messages just sent go to Telegram too.
     await dispatchNotifications().catch((e: Error) => console.error("[telegram] dispatch failed:", e.message));
+    // Printing documents of cancelled / rejected jobs: deleted once their Telegram copy has gone out.
+    await deleteDuePrintingFilesQuietly();
   });
 }

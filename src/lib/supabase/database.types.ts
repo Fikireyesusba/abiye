@@ -53,6 +53,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"app_installs": {
+                  Row: {
+                    "device_id": string,"first_seen": string,"last_seen": string,"opens": number,"platform": string,"user_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "device_id": string,"first_seen"?: string,"last_seen"?: string,"opens"?: number,"platform": string,"user_id"?: string | null
+                  }
+                  Update: {
+                    "device_id"?: string,"first_seen"?: string,"last_seen"?: string,"opens"?: number,"platform"?: string,"user_id"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"audit_logs": {
                   Row: {
                     "action": string,"actor_id": string | null,"actor_role": string | null,"after_data": Json | null,"before_data": Json | null,"created_at": string,"entity_id": string | null,"entity_type": string,"id": number,"metadata": NonNullable<Json>
@@ -727,6 +741,52 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"support_ticket_messages": {
+                  Row: {
+                    "author_id": string | null,"body": string,"created_at": string,"from_staff": boolean,"id": number,"internal": boolean,"ticket_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "author_id"?: string | null,"body": string,"created_at"?: string,"from_staff"?: boolean,"id"?: never,"internal"?: boolean,"ticket_id": string
+                  }
+                  Update: {
+                    "author_id"?: string | null,"body"?: string,"created_at"?: string,"from_staff"?: boolean,"id"?: never,"internal"?: boolean,"ticket_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "support_ticket_messages_ticket_id_fkey"
+      columns: ["ticket_id"]
+isOneToOne: false
+      referencedRelation: "support_tickets"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"support_tickets": {
+                  Row: {
+                    "assigned_to": string | null,"category": string,"closed_at": string | null,"created_at": string,"details": string,"id": string,"last_message_at": string,"order_id": string | null,"order_number": string | null,"resolved_at": string | null,"status": string,"subject": string,"ticket_number": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "assigned_to"?: string | null,"category": string,"closed_at"?: string | null,"created_at"?: string,"details": string,"id"?: string,"last_message_at"?: string,"order_id"?: string | null,"order_number"?: string | null,"resolved_at"?: string | null,"status"?: string,"subject": string,"ticket_number"?: string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "assigned_to"?: string | null,"category"?: string,"closed_at"?: string | null,"created_at"?: string,"details"?: string,"id"?: string,"last_message_at"?: string,"order_id"?: string | null,"order_number"?: string | null,"resolved_at"?: string | null,"status"?: string,"subject"?: string,"ticket_number"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "support_tickets_assigned_to_fkey"
+      columns: ["assigned_to"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "support_tickets_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"wallet_ledger": {
                   Row: {
                     "amount_etb": number,"balance_after_etb": number,"created_at": string,"created_by": string | null,"id": number,"kind": string,"note": string | null,"order_id": string | null,"topup_id": string | null,"user_id": string
@@ -789,7 +849,7 @@ isOneToOne: false
           Functions: {
             "admin_activity_by_category":
 { Args: { "p_before_id"?: number,"p_category"?: string,"p_from"?: string,"p_limit"?: number,"p_search"?: string,"p_to"?: string }; Returns: {
-              "action": string,"actor_id": string,"actor_name": string,"actor_role": string,"after_data": Json,"before_data": Json,"category": string,"created_at": string,"entity_id": string,"entity_label": string,"entity_type": string,"id": number,"metadata": Json
+              "action": string,"actor_id": string,"actor_member_id": string,"actor_name": string,"actor_role": string,"after_data": Json,"before_data": Json,"category": string,"created_at": string,"entity_id": string,"entity_label": string,"entity_type": string,"id": number,"metadata": Json,"subject_member_id": string
             }[]
                            },
 "admin_activity_categories":
@@ -799,7 +859,7 @@ isOneToOne: false
                            },
 "admin_activity_export":
 { Args: { "p_entity_type"?: string,"p_from": string,"p_to": string }; Returns: {
-              "action": string,"actor_name": string,"actor_role": string,"after_data": Json,"before_data": Json,"created_at": string,"entity_id": string,"entity_label": string,"entity_type": string,"id": number,"metadata": Json
+              "action": string,"actor_member_id": string,"actor_name": string,"actor_role": string,"after_data": Json,"before_data": Json,"created_at": string,"entity_id": string,"entity_label": string,"entity_type": string,"id": number,"metadata": Json,"subject_member_id": string
             }[]
                            },
 "admin_activity_log":
@@ -815,6 +875,11 @@ isOneToOne: false
                            },
 "admin_analytics":
 { Args: { "p_bucket"?: string,"p_from": string,"p_to": string }; Returns: Json
+                           },
+"admin_app_installs":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "device_id": string,"email": string,"first_seen": string,"full_name": string,"is_staff": boolean,"last_seen": string,"member_id": string,"opens": number,"platform": string,"user_id": string
+            }[]
                            },
 "admin_archive_past_receipts":
 { Args: { "p_from": string,"p_to": string }; Returns: number
@@ -878,6 +943,11 @@ isOneToOne: false
                            },
 "admin_is_staff_account":
 { Args: { "p_user_id": string }; Returns: boolean
+                           },
+"admin_last_sign_ins":
+{ Args: { "p_before"?: string,"p_from"?: string,"p_search"?: string,"p_to"?: string }; Returns: {
+              "created_at": string,"email": string,"full_name": string,"is_staff": boolean,"last_sign_in_at": string,"member_id": string,"role_name": string,"signed_in_now": boolean,"user_id": string
+            }[]
                            },
 "admin_log_customer_action":
 { Args: { "p_action": string,"p_metadata"?: Json,"p_user_id": string }; Returns: undefined
@@ -997,9 +1067,22 @@ isOneToOne: false
 "admin_set_telegram_feed":
 { Args: { "p_admin": boolean,"p_notifications": boolean,"p_order_progress"?: boolean,"p_printing_requests"?: boolean,"p_security": boolean }; Returns: undefined
                            },
+"admin_sign_out_user":
+{ Args: { "p_user_id": string }; Returns: number
+                           },
+"admin_signed_in_users":
+{ Args: { "p_search"?: string }; Returns: {
+              "email": string,"full_name": string,"ip": string,"is_staff": boolean,"last_active_at": string,"member_id": string,"role_name": string,"session_id": string,"signed_in_at": string,"user_agent": string,"user_id": string
+            }[]
+                           },
 "admin_stalled_checkouts":
 { Args: { "p_hours"?: number }; Returns: {
               "amount_etb": number,"email": string,"entity_id": string,"full_name": string,"item_count": number,"items": Json,"kind": string,"phone": string,"reference": string,"since": string,"status": string,"user_id": string
+            }[]
+                           },
+"admin_support_tickets":
+{ Args: { "p_from"?: string,"p_limit"?: number,"p_search"?: string,"p_status"?: string,"p_to"?: string }; Returns: {
+              "assigned_name": string,"category": string,"created_at": string,"customer_name": string,"email": string,"id": string,"last_message_at": string,"member_id": string,"messages": number,"order_id": string,"order_number": string,"status": string,"subject": string,"ticket_number": string,"user_id": string
             }[]
                            },
 "admin_suspicious_customers":
@@ -1037,6 +1120,9 @@ isOneToOne: false
                            },
 "admin_update_staff_details":
 { Args: { "p_date_of_birth": string,"p_full_name": string,"p_phone": string,"p_sex": string,"p_user_id": string }; Returns: undefined
+                           },
+"admin_update_ticket":
+{ Args: { "p_assigned_to"?: string,"p_internal"?: boolean,"p_message"?: string,"p_status"?: string,"p_ticket_id": string,"p_unassign"?: boolean }; Returns: undefined
                            },
 "admin_void_instore_sale":
 { Args: { "p_order_id": string,"p_reason": string }; Returns: undefined
@@ -1176,6 +1262,12 @@ isOneToOne: false
 "customer_cancel_order":
 { Args: { "p_order_id": string,"p_reason"?: string }; Returns: undefined
                            },
+"customer_create_ticket":
+{ Args: { "p_category": string,"p_details": string,"p_order_number": string,"p_subject": string }; Returns: Json
+                           },
+"customer_reply_ticket":
+{ Args: { "p_body": string,"p_ticket_id": string }; Returns: undefined
+                           },
 "delete_my_product_review":
 { Args: { "p_product_id": string }; Returns: undefined
                            },
@@ -1226,6 +1318,9 @@ isOneToOne: false
                            },
 "receipt_archive_email":
 { Args: Record<PropertyKey, never>; Returns: string
+                           },
+"record_app_install":
+{ Args: { "p_device_id": string,"p_platform": string,"p_user_id"?: string }; Returns: undefined
                            },
 "record_cron_run":
 { Args: { "p_detail"?: Json,"p_name": string,"p_ok": boolean }; Returns: undefined

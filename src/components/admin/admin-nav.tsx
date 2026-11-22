@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Store, ToggleRight,
+  Store, ToggleRight, LifeBuoy, MonitorSmartphone,
   BarChart3, Bell, Boxes, ShieldAlert, Wallet, Clock, History, Megaphone, CreditCard, FolderTree, LayoutDashboard, Menu, Package, Printer, Settings, ShoppingCart, UserCog, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,8 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/admin/analytics": BarChart3,
   "/admin/activity": History,
   "/admin/security": ShieldAlert,
+  "/admin/support": LifeBuoy,
+  "/admin/users": MonitorSmartphone,
 };
 
 export interface NavItem {
@@ -44,6 +46,7 @@ const BADGE_LABEL: Record<string, string> = {
   "/admin/printing": "printing jobs waiting for a quote or printing",
   "/admin/notifications": "failed Telegram notifications",
   "/admin/security": "high-risk emails to review",
+  "/admin/support": "open support tickets",
 };
 
 function Links({ items, onNavigate }: { items: NavItem[]; onNavigate?: boolean }) {

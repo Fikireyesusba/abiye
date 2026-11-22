@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isAuthorizedCron } from "@/lib/security/cron";
 import { recordCronRun } from "@/lib/security/events";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { deleteDuePrintingFiles } from "@/lib/printing/retention";
 
 /**
  * Daily storage maintenance:
@@ -14,21 +15,12 @@ export async function GET(request: Request) {
   const db = getSupabaseAdmin();
 
   let deleted = 0;
-  const { data: due, error } = await db.rpc("printing_files_due_for_deletion", { p_limit: 500 });
-  if (error) {
-    console.error("[cron] printing retention query failed:", error.message);
-    await recordCronRun("storage-maintenance", false, { error: "retention query failed" });
+  try {
+    deleted = await deleteDuePrintingFiles(500);
+  } catch (e) {
+    console.error("[cron] printing retention failed:", (e as Error).message);
+    await recordCronRun("storage-maintenance", false, { error: "retention failed" });
     return NextResponse.json({ error: "failed" }, { status: 500 });
-  }
-  if (due?.length) {
-    const { error: removeError } = await db.storage.from("printing-files").remove(due.map((f) => f.storage_path));
-    if (removeError) {
-      console.error("[cron] printing retention storage removal failed:", removeError.message);
-      return NextResponse.json({ error: "failed" }, { status: 500 });
-    }
-    const { data: marked, error: markError } = await db.rpc("mark_printing_files_deleted", { p_file_ids: due.map((f) => f.file_id) });
-    if (markError) return NextResponse.json({ error: "failed" }, { status: 500 });
-    deleted = Number(marked ?? 0);
   }
 
   let orphans = 0;

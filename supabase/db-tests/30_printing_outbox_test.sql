@@ -26,8 +26,8 @@ select pg_temp.ok((select status = 'awaiting_payment' and total_etb = 120 and pa
 select pg_temp.ok((select array_agg(to_status::text order by id) from public.printing_job_history
                    where job_id = 'c0000000-0000-0000-0000-000000000001') = array['submitted', 'awaiting_payment'],
   'printing job history: submitted → awaiting payment');
-select pg_temp.ok(exists (select 1 from public.notifications_outbox where dedupe_key = 'printing_job:c0000000-0000-0000-0000-000000000001'),
-  'new printing request notification queued');
+select pg_temp.ok(not exists (select 1 from public.notifications_outbox where dedupe_key = 'printing_job:c0000000-0000-0000-0000-000000000001'),
+  'no staff alert for a new printing request (only once its payment is submitted)');
 
 select public.create_printing_job_for_user('cccccccc-0000-0000-0000-000000000001', pg_temp.job_payload('c0000000-0000-0000-0000-000000000002', null));
 select pg_temp.ok((select status = 'awaiting_quote' and total_etb is null
@@ -83,9 +83,17 @@ select pg_temp.ok(exists (select 1 from public.audit_logs where action = 'paymen
 reset role;
 set role service_role;
 update public.printing_jobs set files_delete_after = now() - interval '1 day' where id = 'c0000000-0000-0000-0000-000000000001';
+select pg_temp.ok((select count(*) from public.printing_files_due_for_deletion(100) where job_id = 'c0000000-0000-0000-0000-000000000001') = 0,
+  'files are kept while their copy for the printing Telegram group is still waiting to be sent');
+reset role;
+update public.notifications_outbox set status = 'sent', sent_at = now() where dedupe_key like 'printing_document:%';
+set role service_role;
 select pg_temp.ok((select count(*) from public.printing_files_due_for_deletion(100) where job_id = 'c0000000-0000-0000-0000-000000000001') = 1,
   'completed job''s files become due after the retention period');
 select pg_temp.ok(public.mark_printing_files_deleted(array(select file_id from public.printing_files_due_for_deletion(100))) >= 1, 'files marked deleted');
+reset role;
+update public.notifications_outbox set status = 'pending', sent_at = null where dedupe_key like 'printing_document:%';
+set role service_role;
 select pg_temp.ok((select files_deleted_at is not null from public.printing_jobs where id = 'c0000000-0000-0000-0000-000000000001'),
   'job records that all its files are gone');
 select pg_temp.ok((select count(*) from public.printing_files_due_for_deletion(100)) = 0, 'nothing due twice');

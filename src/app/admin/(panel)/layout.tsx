@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { signOut } from "@/lib/auth/actions";
 import { requireAdmin } from "@/lib/auth/guards";
 import { ADMIN_ROUTES } from "@/lib/auth/permissions";
+import { AppOpenPing } from "@/components/pwa/app-open-ping";
 import { getAdminBadges } from "@/lib/admin/badges";
 import { AdminBadgesProvider, PendingPaymentsLink } from "@/components/admin/admin-badges";
 import { IdleSignOut } from "@/components/security/idle-sign-out";
@@ -31,6 +32,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
 
   return (
     <AdminBadgesProvider initial={badges}>
+    <AppOpenPing account={ctx.userId} />
     <div className="flex min-h-screen bg-muted/30 print:bg-white">
       <AdminSidebar items={items} />
       <div className="flex min-w-0 flex-1 flex-col">

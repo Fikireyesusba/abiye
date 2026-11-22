@@ -31,6 +31,7 @@ function entityHref(type: string, id: string | null): string | null {
     case "printing_job": return `/admin/printing/${id}`;
     case "customer_account": return `/admin/customers/${id}`;
     case "products": return `/admin/products/${id}`;
+    case "support_ticket": return `/admin/support/${id}`;
     default: return null;
   }
 }
@@ -120,7 +121,7 @@ export default async function ActivityPage({ searchParams }: PageProps<"/admin/a
       {cat && <p className="mb-3 text-sm text-muted-foreground"><strong className="text-foreground">{CATS.find((c) => c.key === cat)?.label}:</strong> {CATS.find((c) => c.key === cat)?.hint}</p>}
       <form method="get" className="mb-4 flex flex-wrap gap-2">
         {cat && <input type="hidden" name="cat" value={cat} />}
-        <input name="q" defaultValue={q} placeholder="Action, ID or person" maxLength={60} className={`${fieldClass} max-w-xs`} aria-label="Search activity" />
+        <input name="q" defaultValue={q} placeholder="User ID, action, ID or person" maxLength={60} className={`${fieldClass} max-w-xs`} aria-label="Search activity" />
         <label className="flex items-center gap-1 text-sm">From<input type="date" name="from" defaultValue={fromDay} max={today} className={`${fieldClass} w-auto`} aria-label="From date" /></label>
         <label className="flex items-center gap-1 text-sm">To<input type="date" name="to" defaultValue={toDay} max={today} className={`${fieldClass} w-auto`} aria-label="To date" /></label>
         <Button type="submit" variant="outline">Search</Button>
@@ -140,10 +141,14 @@ export default async function ActivityPage({ searchParams }: PageProps<"/admin/a
               <Td>
                 {r.actor_name ?? <span className="text-muted-foreground">System</span>}
                 {r.actor_role && <span className="block text-xs text-muted-foreground">{r.actor_role.replaceAll("_", " ")}</span>}
+                {r.actor_member_id && <Link href={`/admin/activity?q=${r.actor_member_id}`} className="block font-mono text-xs text-primary hover:underline" data-testid="actor-user-id">User ID {r.actor_member_id}</Link>}
               </Td>
               <Td><span className="font-medium">{actionLabel(r.action)}</span><span className="block text-xs text-muted-foreground">{entityLabel(r.entity_type)}</span></Td>
               <Td className="max-w-[14rem] text-xs break-all">
                 {href ? <Link href={href} className="text-primary hover:underline">{r.entity_label || r.entity_id}</Link> : (r.entity_label || r.entity_id || "—")}
+                {r.subject_member_id && r.subject_member_id !== r.actor_member_id && (
+                  <Link href={`/admin/activity?q=${r.subject_member_id}`} className="block font-mono text-primary hover:underline" data-testid="subject-user-id">Customer User ID {r.subject_member_id}</Link>
+                )}
               </Td>
               <Td className="max-w-md text-xs break-words text-muted-foreground">
                 {[...changes, ...notes].length === 0 ? "—" : (

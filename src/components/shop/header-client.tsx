@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { CircleHelp, Info, Languages, Mail, PackageSearch, ShoppingBag, UserRound } from "lucide-react";
+import { CircleHelp, Info, Languages, Mail, PackageSearch, ShoppingBag, UserRound, LifeBuoy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { setLocale } from "@/i18n/actions";
 import { useCartCount } from "@/lib/cart/store";
@@ -26,7 +26,7 @@ export function CartButton() {
   );
 }
 
-const MENU_ICONS: Record<string, typeof UserRound> = { "/account": UserRound, "/track-order": PackageSearch, "/about": Info, "/contact": Mail, "/help": CircleHelp };
+const MENU_ICONS: Record<string, typeof UserRound> = { "/account": UserRound, "/track-order": PackageSearch, "/support": LifeBuoy, "/about": Info, "/contact": Mail, "/help": CircleHelp };
 
 /** Profile icon (top right): My account, Track order, About, Contact and the language switch. */
 export function AccountMenu({ links }: { links: NavLink[] }) {

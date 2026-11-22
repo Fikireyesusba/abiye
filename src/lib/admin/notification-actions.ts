@@ -51,7 +51,7 @@ export async function saveTelegramFeed(_prev: ActionResult | null, fd: FormData)
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc("admin_set_telegram_feed", {
     p_security: fd.get("security") === "on", p_admin: fd.get("admin") === "on", p_notifications: fd.get("notifications") === "on",
-    p_order_progress: fd.get("order_progress") === "on", p_printing_requests: fd.get("printing_requests") === "on",
+    p_order_progress: fd.get("order_progress") === "on", p_printing_requests: false,
   });
   if (error) return dbError(error);
   revalidatePath("/admin/notifications");
@@ -82,7 +82,7 @@ export async function retryAllFailed(): Promise<ActionResult> {
 export async function sendGroupTest(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   await requirePermission("settings.manage");
   const raw = fd.get("group");
-  const group = raw === "stock" || raw === "receipts" || raw === "printing" ? raw : null;
+  const group = raw === "stock" || raw === "receipts" || raw === "printing" || raw === "support" ? raw : null;
   if (!group) return fail("Invalid request.");
   if (!groupConfig(group)) {
     const v = group.toUpperCase();

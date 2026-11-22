@@ -72,7 +72,7 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
   return (
     <>
       <Link href="/admin/customers" className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /> Customers</Link>
-      <PageHeader title={c.full_name || c.email} description={`Member ID ${c.member_id ?? "—"} · ${c.email} · joined ${formatDateTime(c.created_at, "en")}`}
+      <PageHeader title={c.full_name || c.email} description={`User ID ${c.member_id ?? "—"} · ${c.email} · joined ${formatDateTime(c.created_at, "en")}`}
         actions={
           <div className="flex flex-wrap gap-2">
             {c.deactivated_at && <Badge variant="destructive">Deactivated</Badge>}

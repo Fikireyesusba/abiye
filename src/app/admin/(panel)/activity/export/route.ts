@@ -46,24 +46,24 @@ export async function GET(request: Request) {
   wb.creator = ctx.fullName;
   const ws = wb.addWorksheet("Activity log");
   ws.columns = [
-    { header: "When", width: 17 }, { header: "Who", width: 22 }, { header: "Role", width: 12 }, { header: "What", width: 30 },
-    { header: "Area", width: 18 }, { header: "Item", width: 28 }, { header: "Changes", width: 60 }, { header: "Details", width: 40 }, { header: "Entry #", width: 9 },
+    { header: "When", width: 17 }, { header: "Who", width: 22 }, { header: "Who: User ID", width: 12 }, { header: "Role", width: 12 }, { header: "What", width: 30 },
+    { header: "Area", width: 18 }, { header: "Item", width: 28 }, { header: "Customer User ID", width: 14 }, { header: "Changes", width: 60 }, { header: "Details", width: 40 }, { header: "Entry #", width: 9 },
   ];
   for (const r of rows) {
     const meta = Object.entries((r.metadata ?? {}) as Record<string, unknown>)
       .filter(([, v]) => v !== null && typeof v !== "object").map(([k, v]) => `${k}: ${String(v)}`).join("\n");
     ws.addRow([
-      addis(r.created_at), r.actor_name ?? "System", (r.actor_role ?? "").replaceAll("_", " "), actionLabel(r.action), entityLabel(r.entity_type),
-      r.entity_label ?? r.entity_id ?? "", describeChanges(r.before_data, r.after_data, 40).join("\n"), meta, Number(r.id),
+      addis(r.created_at), r.actor_name ?? "System", r.actor_member_id ?? "", (r.actor_role ?? "").replaceAll("_", " "), actionLabel(r.action), entityLabel(r.entity_type),
+      r.entity_label ?? r.entity_id ?? "", r.subject_member_id ?? "", describeChanges(r.before_data, r.after_data, 40).join("\n"), meta, Number(r.id),
     ]);
   }
   const head = ws.getRow(1);
   head.font = { bold: true, color: { argb: "FFFFFFFF" } };
   head.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF14523F" } };
   ws.views = [{ state: "frozen", ySplit: 1 }];
-  ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: 9 } };
+  ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: 11 } };
   ws.getColumn(1).numFmt = "yyyy-mm-dd hh:mm";
-  for (const c of [7, 8]) ws.getColumn(c).alignment = { wrapText: true, vertical: "top" };
+  for (const c of [9, 10]) ws.getColumn(c).alignment = { wrapText: true, vertical: "top" };
 
   await supabase.rpc("admin_log_export", { p_kind: "activity", p_metadata: { from, to, type: entity ?? "all", rows: rows.length } });
   const file = await wb.xlsx.writeBuffer();

@@ -20,7 +20,7 @@ const RUN = Date.now().toString(36);
   const email = `member-${RUN}@example.com`;
   const uid = await ensureCustomer(email, "MemberE2E2026x");
   const mid = sql(`select member_id from customer_accounts where id = '${uid}'`);
-  check(/^[A-HJKMNP-Z2-9]{6}$/.test(mid), `new customer got a member ID (${mid})`);
+  check(/^[1-9][0-9]{5}$/.test(mid), `new customer got a member ID (${mid})`);
   const b = await chromium.launch();
   try {
     // ---- signed out: track order asks to sign in
@@ -44,15 +44,15 @@ const RUN = Date.now().toString(36);
     // ---- admin: list, search by ID, customer page, staff list
     const o = await (await b.newContext({ viewport: { width: 1280, height: 1000 } })).newPage();
     await adminLogin(o, B, OWNER.email, OWNER.password);
-    await o.goto(`${B}/admin/customers?q=${mid.toLowerCase()}`);
+    await o.goto(`${B}/admin/customers?q=${mid}`);
     const rows = o.locator("tbody tr");
     check(await rows.count() === 1 && (await rows.first().innerText()).includes(email) && (await rows.first().innerText()).includes(mid),
-      "customers: search by member ID finds exactly that customer, ID shown");
+      "customers: search by User ID finds exactly that customer, ID shown");
     await o.goto(`${B}/admin/customers/${uid}`);
-    check((await o.locator("main").innerText()).includes(`Member ID ${mid}`), "customer page shows the member ID");
+    check((await o.locator("main").innerText()).includes(`User ID ${mid}`), "customer page shows the member ID");
     await o.goto(`${B}/admin/staff`);
     const ownerMid = sql("select a.member_id from customer_accounts a join auth.users u on u.id = a.id where u.email = 'owner@abiye.local'");
-    check(/^[A-HJKMNP-Z2-9]{6}$/.test(ownerMid) && (await o.locator("main").innerText()).includes(`ID ${ownerMid}`), `staff list shows staff member IDs (${ownerMid})`);
+    check(/^[1-9][0-9]{5}$/.test(ownerMid) && (await o.locator("main").innerText()).includes(`User ID ${ownerMid}`), `staff list shows staff member IDs (${ownerMid})`);
   } catch (e) {
     check(false, `crashed: ${e.message.split("\n")[0]}`);
   } finally {

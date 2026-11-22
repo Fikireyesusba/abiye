@@ -51,7 +51,7 @@ export async function getCustomerAccount(userId: string) {
   const cols = "full_name, phone, accepted_terms_at, wallet_balance_etb, default_zone_id, default_address, date_of_birth, sex";
   const { data, error } = await supabase.from("customer_accounts").select(`member_id, ${cols}`).eq("id", userId).maybeSingle();
   if (error?.code === "42703") {
-    // Database not updated yet (migration 0051): everything except the member ID.
+    // Database not updated yet (migration 0051): everything except the User ID.
     const { data: old } = await supabase.from("customer_accounts").select(cols).eq("id", userId).maybeSingle();
     return old ? { ...old, member_id: null as string | null } : null;
   }

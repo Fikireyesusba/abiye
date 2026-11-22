@@ -46,6 +46,7 @@ export async function SiteHeader() {
   const secondary = [
     { href: "/account", label: t("account.title") },
     { href: "/track-order", label: t("nav.trackOrder") },
+    { href: "/support", label: t("nav.support") },
     { href: "/about", label: t("nav.about") },
     { href: "/contact", label: t("nav.contact") },
     { href: "/help", label: t("nav.help") },

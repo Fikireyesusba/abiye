@@ -12,7 +12,7 @@ select private.enqueue_notification('payment_resubmitted', 'x:5', '{}');
 select private.enqueue_notification('wallet_topup', 'x:6', '{}');
 select private.enqueue_notification('printing_request', 'x:7', '{}');
 select pg_temp.ok((select array_agg(event_type order by event_type) from public.notifications_outbox)
-                  = array['new_order', 'payment_resubmitted', 'payment_verified', 'printing_request', 'wallet_topup'], 'only payments / top-ups to verify, completed payments and printing requests');
+                  = array['new_order', 'payment_resubmitted', 'payment_verified', 'wallet_topup'], 'only payments / top-ups to verify and completed payments (no printing requests)');
 select pg_temp.login(:super);
 select public.admin_set_telegram_feed(true, true, false, true, false);
 reset role;

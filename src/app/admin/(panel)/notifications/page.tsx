@@ -61,6 +61,7 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
   const stockConfigured = !!groupConfig("stock");
   const receiptsConfigured = !!groupConfig("receipts");
   const printingConfigured = !!groupConfig("printing");
+  const supportConfigured = !!groupConfig("support");
   const emailOn = emailConfigured();
   const pushOn = pushConfigured();
   const pushProblems = pushSetupProblems();
@@ -217,8 +218,16 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
             {printingConfigured ? <CheckCircle2 className="size-5 text-success" aria-hidden /> : <XCircle className="size-5 text-destructive" aria-hidden />}
             {printingConfigured ? "Connected (TELEGRAM_PRINTING_BOT_TOKEN / TELEGRAM_PRINTING_CHAT_ID)." : "Not connected — create a bot and a group for printing, then set TELEGRAM_PRINTING_BOT_TOKEN and TELEGRAM_PRINTING_CHAT_ID in Vercel and redeploy. Until then documents wait 2 days, then are dropped (they stay on the printing job page)."}
           </p>
-          <p className="mb-3 text-xs text-muted-foreground">Each document of a printing job, as a file ready to print, with the print options and customer — sent only once the payment is approved. Nothing is sent for unpaid jobs.</p>
+          <p className="mb-3 text-xs text-muted-foreground">Each document of a printing job, as a file ready to print, with the print options and customer — sent as soon as the customer submits the payment (marked “payment submitted” until it is verified). Nothing is sent before that. If the payment is rejected, the documents are deleted from storage but stay here.</p>
           <ActionForm action={sendGroupTest} hidden={{ group: "printing" }} submitLabel="Send test message" variant="outline" size="sm" />
+        </Panel>
+        <Panel title="Support group">
+          <p className="mb-2 flex items-center gap-2 text-sm">
+            {supportConfigured ? <CheckCircle2 className="size-5 text-success" aria-hidden /> : <XCircle className="size-5 text-destructive" aria-hidden />}
+            {supportConfigured ? "Connected (TELEGRAM_SUPPORT_BOT_TOKEN / TELEGRAM_SUPPORT_CHAT_ID)." : "Not connected — create a bot and a group for support, then set TELEGRAM_SUPPORT_BOT_TOKEN and TELEGRAM_SUPPORT_CHAT_ID in Vercel and redeploy. Until then tickets are only in Support tickets."}
+          </p>
+          <p className="mb-3 text-xs text-muted-foreground">Every new support ticket (topic, order number, details, customer and User ID) and every customer reply.</p>
+          <ActionForm action={sendGroupTest} hidden={{ group: "support" }} submitLabel="Send test message" variant="outline" size="sm" />
         </Panel>
       </div>
       {feed && (
@@ -229,8 +238,6 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
               <span><strong>Security events and alerts</strong> → security group</span></label>
             <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="admin" defaultChecked={feed.admin} className="mt-0.5 size-4 accent-[var(--primary)]" />
               <span><strong>Sensitive admin actions</strong> (blocking, staff / roles / bank / settings changes, deactivations, wallet corrections, exports, resets) → security group</span></label>
-            <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="printing_requests" defaultChecked={feed.printing_requests ?? true} className="mt-0.5 size-4 accent-[var(--primary)]" />
-              <span><strong>Printing requests to quote</strong> → orders & payments group</span></label>
           </ActionForm>
         </Panel>
       )}

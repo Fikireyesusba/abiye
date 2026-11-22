@@ -4,13 +4,13 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isCustomerAlert, isEmailAlert } from "./security-alerts";
 
 /** Things waiting for an admin's action, per menu entry (only what this role may see; RLS applies). */
-export type AdminBadges = Partial<Record<"/admin/payments" | "/admin/wallet" | "/admin/orders" | "/admin/printing" | "/admin/notifications" | "/admin/security" | "/admin/inventory" | "/admin/reviews", number>>;
+export type AdminBadges = Partial<Record<"/admin/payments" | "/admin/wallet" | "/admin/orders" | "/admin/printing" | "/admin/notifications" | "/admin/security" | "/admin/inventory" | "/admin/reviews" | "/admin/support", number>>;
 
 export async function getAdminBadges(ctx: AdminContext): Promise<AdminBadges> {
   const supabase = await createSupabaseServerClient();
   const count = (q: PromiseLike<{ count: number | null }>) => Promise.resolve(q).then((r) => r.count ?? 0, () => 0);
   const has = (p: Parameters<AdminContext["permissions"]["has"]>[0]) => ctx.permissions.has(p);
-  const [payments, wallet, orders, printing, notifications, security, lowStock, reviews] = await Promise.all([
+  const [payments, wallet, orders, printing, notifications, security, lowStock, reviews, support] = await Promise.all([
     // Receipts waiting to be checked against the bank account.
     has("payments.view") ? count(supabase.from("payment_submissions").select("id", { count: "exact", head: true }).eq("status", "pending")) : 0,
     // Wallet top-ups waiting to be checked against the bank account.
@@ -36,6 +36,8 @@ export async function getAdminBadges(ctx: AdminContext): Promise<AdminBadges> {
     has("inventory.manage") ? Promise.resolve(supabase.rpc("admin_low_stock_count")).then((r) => Number(r.data ?? 0), () => 0) : 0,
     // Product reviews waiting for approval.
     has("reviews.manage") ? Promise.resolve(supabase.rpc("admin_product_reviews", { p_status: "pending", p_limit: 500 })).then((r) => (r.data ?? []).length, () => 0) : 0,
+    // Support tickets waiting for staff (new, or the customer answered).
+    has("support.view") ? count(supabase.from("support_tickets").select("id", { count: "exact", head: true }).eq("status", "open")) : 0,
   ]);
-  return { "/admin/payments": payments, "/admin/wallet": wallet, "/admin/orders": orders, "/admin/printing": printing, "/admin/notifications": notifications, "/admin/security": security, "/admin/inventory": lowStock, "/admin/reviews": reviews };
+  return { "/admin/payments": payments, "/admin/wallet": wallet, "/admin/orders": orders, "/admin/printing": printing, "/admin/notifications": notifications, "/admin/security": security, "/admin/inventory": lowStock, "/admin/reviews": reviews, "/admin/support": support };
 }

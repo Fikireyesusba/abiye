@@ -30,7 +30,8 @@
     "contact": "ያግኙን",
     "privacy": "ግላዊነት",
     "terms": "ውሎች",
-    "help": "እርዳታ"
+    "help": "እርዳታ",
+    "support": "ድጋፍ እና አስተያየት"
   },
   "cart": {
     "title": "የእርስዎ ቅርጫት",
@@ -457,7 +458,7 @@
     "retentionDone": "ፋይሎችዎ ከስርዓታችን ተሰርዘዋል።"
   },
   "account": {
-    "memberId": "የአባል መለያ ቁጥር",
+    "memberId": "የተጠቃሚ መለያ ቁጥር",
     "personalDetails": "የግል መረጃ",
     "changeDetails": "የማድረሻ መረጃን ቀይር",
     "cancel": "ሰርዝ",
@@ -681,5 +682,53 @@
       "notEligible": "ምርቱን ከተቀበሉ በኋላ አስተያየት መስጠት ይችላሉ።",
       "failed": "መላክ አልተቻለም። እባክዎ እንደገና ይሞክሩ።"
     }
+  },
+  "support": {
+    "title": "ድጋፍ እና አስተያየት",
+    "intro": "ችግር ካጋጠምዎ ወይም አስተያየት ካለዎት ይንገሩን። እዚህ እና በኢሜይል እንመልሳለን።",
+    "newTicket": "ችግር ሪፖርት ያድርጉ",
+    "myTickets": "የእኔ ጥያቄዎች",
+    "none": "እስካሁን ምንም ሪፖርት አልላኩም።",
+    "topic": "ስለምንድን ነው?",
+    "chooseTopic": "ርዕስ ይምረጡ",
+    "topics": {
+      "order": "ትዕዛዝ",
+      "payment": "ክፍያ",
+      "delivery": "ማድረስ ወይም መውሰድ",
+      "printing": "የህትመት አገልግሎት",
+      "wallet": "ቀሪ ሂሳቤ",
+      "account": "መለያዬ",
+      "product": "ምርት",
+      "app": "የድረ-ገጽ ወይም የመተግበሪያ ችግር",
+      "other": "ሌላ (በዝርዝሩ ውስጥ የሌለ)"
+    },
+    "orderNumber": "የትዕዛዝ ቁጥር",
+    "orderNumberHint": "ለምሳሌ ET-10025 — በየእኔ መለያ → የእኔ ትዕዛዞች ውስጥ ያገኙታል",
+    "orderOptional": "የትዕዛዝ ቁጥር (አማራጭ)",
+    "subject": "አጭር ርዕስ",
+    "subjectHint": "ችግሩ በጥቂት ቃላት ምንድን ነው?",
+    "details": "ዝርዝር",
+    "detailsHint": "ምን እንደተፈጠረ፣ ምን እንደጠበቁ እና መቼ እንደሆነ ይግለጹ። ቢያንስ 10 ፊደላት።",
+    "send": "ሪፖርት ላክ",
+    "sending": "በመላክ ላይ…",
+    "sent": "እናመሰግናለን — ጥያቄ {number} ተፈጥሯል። በቅርቡ እንመልሳለን።",
+    "status": {
+      "open": "ክፍት",
+      "in_progress": "በሂደት ላይ",
+      "waiting_customer": "መልስዎን በመጠበቅ ላይ",
+      "resolved": "ተፈቷል",
+      "closed": "ተዘግቷል"
+    },
+    "ticket": "ጥያቄ {number}",
+    "conversation": "ውይይት",
+    "you": "እርስዎ",
+    "team": "የድጋፍ ቡድን",
+    "reply": "መልዕክትዎ",
+    "sendReply": "ላክ",
+    "replySent": "መልዕክቱ ተልኳል።",
+    "closedNote": "ይህ ጥያቄ ተዘግቷል። ተጨማሪ እርዳታ ከፈለጉ እባክዎ አዲስ ሪፖርት ይክፈቱ።",
+    "back": "ሁሉም ጥያቄዎቼ",
+    "created": "የተላከው {date}",
+    "orderLabel": "ትዕዛዝ"
   }
 }
