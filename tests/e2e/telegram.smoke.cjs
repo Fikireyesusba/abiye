@@ -126,8 +126,11 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
     await p.fill("#pphone", "0911 44 33 22");
     await p.click("aside button[type=submit]");
     await p.waitForURL(/printing\/jobs/);
-    const jobNumber = (await p.locator("h1").textContent()).match(/PR-\d+/)[0];
-    check(true, "printing request succeeds while Telegram is down");
+    check(/PR-\d+/.test(await p.locator("h1").textContent()), "printing request succeeds while Telegram is down");
+    // A staff alert (new printing requests no longer alert staff, so use a payment alert) sent while Telegram is down.
+    const jobNumber = `ET-9${String(Date.now()).slice(-7)}`;
+    sql(`select private.enqueue_notification('new_order', 'e2e-outage-${RUN}', jsonb_build_object('order_number', '${jobNumber}', 'job_number', '${jobNumber}'))`);
+    await cron();
     check(await waitFor(() => sql(`select status from notifications_outbox where payload->>'job_number' = '${jobNumber}'`) === "failed"), "failed send recorded for retry");
     check(sql(`select attempts || '|' || (next_attempt_at > now()) || '|' || last_error from notifications_outbox where payload->>'job_number' = '${jobNumber}'`) === "1|true|502 Bad Gateway",
       "attempt counted, retry scheduled in the future, error stored");
@@ -138,7 +141,7 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
     const r = await (await cron()).json();
     check(r.sent >= 1 && sql(`select status from notifications_outbox where payload->>'job_number' = '${jobNumber}'`) === "sent", "cron delivers it once Telegram is back");
     const printMsgs = received.slice(before).filter((x) => x.text?.includes(jobNumber) && x.method === "sendMessage");
-    check(printMsgs.length === 2 && printMsgs[1].text.includes("NEW PRINTING REQUEST"), "exactly one failed + one successful delivery attempt (no duplicates)");
+    check(printMsgs.length === 2 && printMsgs[1].text.includes("NEW CUSTOMER ORDER"), "exactly one failed + one successful delivery attempt (no duplicates)");
 
     // ---- 3. Rate limit (429): stop the batch, nothing lost
     sql(`select private.enqueue_notification('test_message', 'e2e-rl-${RUN}-1', '{}'::jsonb); select private.enqueue_notification('test_message', 'e2e-rl-${RUN}-2', '{}'::jsonb);`);
