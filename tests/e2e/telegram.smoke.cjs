@@ -184,12 +184,7 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
     await a.waitForSelector('[data-sonner-toast]:has-text("Payment rejected")');
     await sleep(2500);
     check(!received.some((x) => x.text?.includes("PAYMENT REJECTED") && x.text.includes(orderNumber)), "no Telegram alert for a rejected payment (payments only: waiting / completed)");
-    a.on("dialog", (d) => d.accept());
-    await a.goto(`${B}/admin/orders/${subOrder}`);
-    await a.fill("textarea[name=note]", "Customer requested cancellation");
-    await a.locator("form:has(button:has-text('Cancel order')) button").click();
-    await a.waitForSelector('[data-sonner-toast]:has-text("status updated")');
-    await sleep(2500);
+    check(sql(`select status from orders where id = '${subOrder}'`) === "cancelled", "the rejected order was cancelled automatically");
     check(!received.some((x) => x.text?.includes("ORDER CANCELLED") && x.text.includes(orderNumber)), "no Telegram alert for a cancellation");
 
     // ---- 7. Secrets & auth
