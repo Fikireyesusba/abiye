@@ -121,13 +121,16 @@ const asManager = (q) => {
     await sleep(1500);
     check(mails(email, "was cancelled").length === 0 && sql(`select status from orders where id = '${orderId}'`) === "cancelled", "order cancelled automatically, no second email");
     // A new order for the rest of the steps.
-    await p.evaluate(() => localStorage.setItem("cart:v1", JSON.stringify([{ type: "product", productId: "20000000-0000-0000-0000-000000000007", quantity: 1 }])));
-    await p.goto(`${B}/checkout`);
-    await p.waitForSelector("text=Order summary");
-    await p.check("label:has-text('I agree') input[type=checkbox]");
-    await p.click("button:has-text('Place order')");
-    await p.waitForURL(/order-success/);
-    orderId = p.url().split("/order-success/")[1].split("?")[0];
+    await fresh.evaluate(() => {
+      localStorage.setItem("cart:v1", JSON.stringify([{ type: "product", productId: "20000000-0000-0000-0000-000000000007", quantity: 1 }]));
+      localStorage.setItem("checkout:prefs:v1", JSON.stringify({ method: "pickup", deliveryZoneId: null }));
+    });
+    await fresh.goto(`${B}/checkout`);
+    await fresh.waitForSelector("text=Order summary");
+    await fresh.check("label:has-text('I agree') input[type=checkbox]");
+    await fresh.click("button:has-text('Place order')");
+    await fresh.waitForURL(/order-success/);
+    orderId = fresh.url().split("/order-success/")[1].split("?")[0];
     submit(2);
     await a.goto(`${B}/admin/orders/${orderId}`);
     await a.click("button:has-text('Verify payment')");
