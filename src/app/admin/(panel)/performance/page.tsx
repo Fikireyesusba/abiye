@@ -55,9 +55,9 @@ export default async function PerformancePage({ searchParams }: PageProps<"/admi
         <label className="text-sm">From<input type="date" name="from" defaultValue={from} max={today} className={`${fieldClass} mt-1 block`} /></label>
         <label className="text-sm">To<input type="date" name="to" defaultValue={to} max={today} className={`${fieldClass} mt-1 block`} /></label>
         <Button type="submit" variant="outline">Show</Button>
-        <Button asChild variant="outline" className="ml-auto">
+        {ctx.role === "super_admin" && (<Button asChild variant="outline" className="ml-auto">
           <a href={`/admin/exports/download?${new URLSearchParams({ kind: "kpi", from, to })}`} data-testid="kpi-export"><Download /> Excel</a>
-        </Button>
+        </Button>)}
       </form>
 
       {tab === "kpis" && (

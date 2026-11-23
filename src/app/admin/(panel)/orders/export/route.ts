@@ -18,7 +18,7 @@ const nextDay = (day: string) => new Date(Date.parse(`${day}T00:00:00Z`) + 86400
 /** Orders → Excel (.xlsx). Needs orders.view_all; reads through the admin's own session (RLS). */
 export async function GET(request: Request) {
   const ctx = await getAdminContext();
-  if (!ctx || !ctx.permissions.has("orders.view_all")) return new NextResponse("Not found", { status: 404 });
+  if (!ctx || ctx.role !== "super_admin" || !ctx.permissions.has("orders.view_all")) return new NextResponse("Not found", { status: 404 });
   const url = new URL(request.url);
   const from = url.searchParams.get("from") ?? "";
   const to = url.searchParams.get("to") ?? "";

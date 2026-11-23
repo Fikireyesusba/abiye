@@ -13,7 +13,7 @@ const MAX_ROWS_PER_AREA = 100_000;
 /** Everything → one Excel file (Super Admin: data.manage). Recorded; a reset requires a recent one. */
 export async function GET() {
   const ctx = await getAdminContext();
-  if (!ctx || !ctx.permissions.has("data.manage")) return new NextResponse("Not found", { status: 404 });
+  if (!ctx || ctx.role !== "super_admin" || !ctx.permissions.has("data.manage")) return new NextResponse("Not found", { status: 404 });
   if (!(await rateLimit(`export:all:${ctx.userId}`, 10, 3600))) return new NextResponse("Too many exports. Try again later.", { status: 429 });
   const supabase = await createSupabaseServerClient();
   const data: { sheet: string; rows: Record<string, unknown>[] }[] = [];

@@ -656,7 +656,17 @@
     "notEnough": "Your balance ({amount}) does not cover this order.",
     "bankTransfer": "Bank transfer",
     "paidWithBalance": "Paid with your balance — the order is confirmed.",
-    "inReview": "Top-up being checked: {amount}. It is added to your balance as soon as we accept it."
+    "inReview": "Top-up being checked: {amount}. It is added to your balance as soon as we accept it.",
+    "topUpIntro": "Your balance: {balance}. You can add up to {room}. The money is added once we see it in our bank account.",
+    "bankTitle": "Our bank account",
+    "stepsTitle": "How to top up",
+    "stepAmount": "Decide how much to add (whole birr).",
+    "stepTransfer": "Transfer it from your bank or mobile banking to the account above.",
+    "stepReason": "Write this as the reason / remark of the transfer:",
+    "stepExact": "Type the exact same amount below — it must match the transfer to the birr.",
+    "stepReceipt": "Upload a screenshot or PDF of the receipt and send. We check it and add the money to your balance.",
+    "formTitle": "Amount and receipt",
+    "topUpNeeded": "Not enough balance — top up first"
   },
   "reviews": {
     "title": "Customer reviews",

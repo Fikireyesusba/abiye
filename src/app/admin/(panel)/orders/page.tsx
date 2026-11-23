@@ -58,7 +58,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
         title="Orders"
         description={`${ctx.permissions.has("orders.view_all") ? `${count ?? 0} orders` : `${count ?? 0} orders assigned to you`} · an order appears here once the customer has paid (receipt waiting for approval, or verified). Unpaid checkouts are under Stalled checkouts.`}
       />
-      {ctx.permissions.has("orders.view_all") && (
+      {ctx.permissions.has("orders.view_all") && ctx.role === "super_admin" && (
         <details className="mb-4 rounded-lg border bg-card p-4">
           <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium"><FileSpreadsheet className="size-4 text-primary" aria-hidden /> Export to Excel</summary>
           <form method="get" action="/admin/orders/export" className="mt-3 flex flex-wrap items-end gap-3">

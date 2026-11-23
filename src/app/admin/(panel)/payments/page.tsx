@@ -44,6 +44,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/admin/p
   return (
     <>
       <PageHeader title="Payments" description="Check every transfer in the bank account before verifying. A screenshot alone is not proof of payment." />
+      {ctx.role === "super_admin" && (
       <details className="mb-4 rounded-lg border bg-card p-4">
         <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium"><FileSpreadsheet className="size-4 text-primary" aria-hidden /> Export verified &amp; rejected payments to Excel</summary>
         <form method="get" action="/admin/payments/export" className="mt-3 flex flex-wrap items-end gap-3">
@@ -69,6 +70,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/admin/p
           Dates in Warsaw time. The file contains customer contact details — store it safely. Each export is recorded in the Activity log.
         </p>
       </details>
+      )}
       <SubTabs base="/admin/payments" param="status" tabs={TABS} active={status} />
       <Table scroll head={["Order", "Submitted", status === "pending" ? "Checks" : "Decided"]}
         empty={status === "pending" ? "No payments waiting for verification." : `No ${status} payments.`}>

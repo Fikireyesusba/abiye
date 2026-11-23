@@ -115,6 +115,14 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - Local dev: sign-ups + email confirmation on, local mail catcher on :54324 (dev:up no longer excludes it).
 - **Production TODO for the owner**: configure SMTP + email templates + URL configuration in Supabase (docs/DEPLOYMENT.md §2b).
 
+## Top-up page, wallet at checkout, Excel for Super Admin only (requested 2026-11-23)
+
+- Customer: **My balance → Top up** opens `/account/wallet/top-up` with Abiye's bank accounts (copy buttons), the steps (reason **"Top Up"**, type the **exact** amount, upload the receipt) and the request form.
+- Checkout: pay with the balance or by bank transfer; when the balance is too small a **Top up** link is shown.
+- Admin Wallet: one search (User ID, email/name on Balances; User ID, top-up number or reference on the top-up tabs); top-up lists show User ID and amount; **Excel** button for the Super Admin only.
+- **Every Excel download is Super Admin only** (with two-step sign-in): all export routes check the role, Excel buttons are hidden for other roles, the Excel exports page is hidden, and `admin_log_export` refuses anyone else (migration **0061** `20261123000061_super_admin_exports.sql`, which also lets the balances search match a User ID).
+- ⏳ Owner: paste **0061** into the Supabase SQL Editor.
+
 ## Telegram alerts: User ID only, type, who acted, suggested action (requested 2026-11-23)
 
 Migration **0060**: `notifications_outbox_telegram_enrich` (BEFORE INSERT, telegram) adds `user_id` (customer / account the alert is about — from order, printing job, top-up, ticket, audit entry, notification recipient or security email) and `by_user_id` (staff who acted — audit actor or decided_by).

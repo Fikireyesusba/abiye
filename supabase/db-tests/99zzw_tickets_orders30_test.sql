@@ -35,7 +35,9 @@ reset role;
 select pg_temp.login(:manager);
 select pg_temp.ok((select rating from public.admin_support_tickets() where id = (select (r ->> 'ticket_id')::uuid from t_tk)) = 4, 'staff still see it with the rating');
 
--- clearing: only after the export
+-- clearing: only after the export (Excel: Super Admin)
+reset role;
+select pg_temp.login(:super);
 select pg_temp.throws(format($$select public.admin_clear_tickets(%L, %L)$$, (now() at time zone 'Europe/Warsaw')::date, (now() at time zone 'Europe/Warsaw')::date), 'invalid_request', 'export first');
 select public.admin_log_export('support', jsonb_build_object('from', (now() at time zone 'Europe/Warsaw')::date, 'to', (now() at time zone 'Europe/Warsaw')::date));
 select pg_temp.ok(public.admin_clear_tickets((now() at time zone 'Europe/Warsaw')::date, (now() at time zone 'Europe/Warsaw')::date) = 1, 'closed tickets cleared after the export');

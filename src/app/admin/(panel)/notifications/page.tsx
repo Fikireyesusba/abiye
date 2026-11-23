@@ -55,7 +55,7 @@ const CHANNEL_LABEL: Record<string, string> = { telegram: "Telegram", email: "Em
 const TONE = { sent: "success", pending: "secondary", processing: "info", failed: "warning", dead: "destructive" } as const;
 
 export default async function NotificationsPage({ searchParams }: PageProps<"/admin/notifications">) {
-  await requirePermission("settings.manage");
+  const ctx = await requirePermission("settings.manage");
   const configured = !!telegramConfig();
   const securityConfigured = !!securityTelegramConfig();
   const stockConfigured = !!groupConfig("stock");
@@ -248,6 +248,7 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
       </>)}
 
       {tab === "messages" && (<>
+      {ctx.role === "super_admin" && (
       <details className="mb-4 rounded-lg border bg-card p-4" data-testid="notif-export-clear">
         <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium"><FileSpreadsheet className="size-4 text-primary" aria-hidden /> Export to Excel &amp; clear</summary>
         <div className="mt-3 grid gap-4 lg:grid-cols-2">
@@ -270,6 +271,7 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
           </ActionForm>
         </div>
       </details>
+      )}
       <p className="mb-3 text-sm text-muted-foreground">
         {searching ? `${rows.length} message${rows.length === 1 ? "" : "s"} found` : `The latest ${rows.length} messages`}, newest first. Pick a category above. Failed messages are retried automatically (1, 2, 4… minutes); after the last attempt press <strong>Retry</strong>.
         {problems > 0 && <span className="font-medium text-destructive"> {problems} need attention.</span>}

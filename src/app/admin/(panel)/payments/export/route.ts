@@ -18,7 +18,7 @@ const FILTERS = { all: "Verified and rejected", verified: "Verified only", rejec
 /** Reviewed (verified / rejected) payments → Excel. Needs payments.view; top-ups sheet only with wallet.manage. */
 export async function GET(request: Request) {
   const ctx = await getAdminContext();
-  if (!ctx || !ctx.permissions.has("payments.view")) return new NextResponse("Not found", { status: 404 });
+  if (!ctx || ctx.role !== "super_admin" || !ctx.permissions.has("payments.view")) return new NextResponse("Not found", { status: 404 });
   const url = new URL(request.url);
   const from = url.searchParams.get("from") ?? "";
   const to = url.searchParams.get("to") ?? "";

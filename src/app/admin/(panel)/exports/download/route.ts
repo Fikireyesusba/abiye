@@ -31,7 +31,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const kind = url.searchParams.get("kind") ?? "";
   const def = KINDS[kind];
-  if (!ctx || !def || !ctx.permissions.has(def.perm)) return new NextResponse("Not found", { status: 404 });
+  if (!ctx || ctx.role !== "super_admin" || !def || !ctx.permissions.has(def.perm)) return new NextResponse("Not found", { status: 404 });
   const from = url.searchParams.get("from") ?? "";
   const to = url.searchParams.get("to") ?? "";
   if (def.dated && (!DAY.test(from) || !DAY.test(to) || to < from)) return new NextResponse("Choose a valid date range.", { status: 400 });

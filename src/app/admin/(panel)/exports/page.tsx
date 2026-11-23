@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Download } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
 import { PageHeader, Panel, fieldClass } from "@/components/admin/ui";
@@ -31,12 +32,13 @@ const ITEMS: Item[] = [
 export default async function ExportsPage() {
   const ctx = await requirePermission("orders.view_all", "payments.view", "customers.view", "products.view", "wallet.manage", "printing.view",
     "support.view", "audit.view", "settings.manage", "security.manage", "data.manage", "kpi.view");
+  if (ctx.role !== "super_admin") notFound(); // Excel downloads: Super Admin only
   const today = zoneToday();
   const monthStart = `${today.slice(0, 7)}-01`;
   const items = ITEMS.filter((i) => ctx.permissions.has(i.perm));
   return (
     <>
-      <PageHeader title="Excel exports" description="Download your data as Excel (.xlsx). Every export is recorded in the activity log and a copy of the file is sent to the receipts Telegram group. Data can only be cleared after it was exported." />
+      <PageHeader title="Excel exports" description="Download your data as Excel (.xlsx) — Super Admin only. Every export is recorded in the activity log and a copy of the file is sent to the receipts Telegram group. Data can only be cleared after it was exported." />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" data-testid="exports">
         {items.map((i) => (
           <Panel key={i.title} title={i.title}>

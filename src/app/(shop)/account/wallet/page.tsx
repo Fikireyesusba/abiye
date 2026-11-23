@@ -1,18 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ArrowLeft, Wallet } from "lucide-react";
-import { TopupForm } from "@/components/account/topup-form";
-import { CopyButton } from "@/components/shop/copy-button";
+import { ArrowLeft, Plus, Wallet } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireCustomer } from "@/lib/account/session";
-import { getPublicBankAccounts } from "@/lib/catalog/bank-info";
 import { formatDateTime } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
 import { WALLET_MAX_ETB } from "@/lib/wallet/limits";
 import { getMyWallet } from "@/lib/wallet/queries";
 import type { Locale } from "@/i18n/config";
-import { ServiceNotice, serviceOn } from "@/components/shop/service-notice";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("wallet");
@@ -21,10 +18,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function WalletPage() {
   const user = await requireCustomer("/account/wallet");
-  const [t, locale, w, banks] = await Promise.all([getTranslations("wallet"), getLocale() as Promise<Locale>, getMyWallet(user.id), getPublicBankAccounts()]);
+  const [t, locale, w] = await Promise.all([getTranslations("wallet"), getLocale() as Promise<Locale>, getMyWallet(user.id)]);
   const etb = (n: number) => formatETB(toSantim(n), locale);
-  const room = Math.max(0, WALLET_MAX_ETB - w.balance - w.pending);
-  const bank = banks[0];
   const kind = (k: string) => t(`kind_${k}` as "kind_topup");
 
   return (
@@ -41,25 +36,9 @@ export default async function WalletPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader><CardTitle>{t("topUp")}</CardTitle></CardHeader>
-        <CardContent className="space-y-5">
-          {bank ? (
-            <ol className="space-y-2 text-sm">
-              <li>1. {t("step1")}</li>
-              <li className="rounded-lg border bg-muted/40 p-3">
-                <span className="block font-medium">{bank.bank_name}</span>
-                <span className="block">{bank.account_holder}</span>
-                <span className="flex items-center gap-2 font-mono text-base">{bank.account_number} <CopyButton value={bank.account_number} /></span>
-              </li>
-              <li>2. {t("step2", { email: user.email })}</li>
-              <li>3. {t("step3")}</li>
-            </ol>
-          ) : <p className="text-sm text-muted-foreground">{t("noBank")}</p>}
-          <ServiceNotice service="wallet" />
-          {bank && (await serviceOn("wallet")) && <TopupForm maxAmount={room} />}
-        </CardContent>
-      </Card>
+      <Button asChild size="lg" className="w-full sm:w-auto" data-testid="topup-button">
+        <Link href="/account/wallet/top-up"><Plus /> {t("topUp")}</Link>
+      </Button>
 
       {/* A top-up counts once it is accepted (then it appears in the history below). One still being checked is only mentioned. */}
       {w.topups.some((x) => x.status === "pending") && (

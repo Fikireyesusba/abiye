@@ -55,7 +55,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
           </form>
           <div className="ml-auto flex gap-2">
             <PrintButton />
-            <Button asChild><a href={exportHref}><Download /> Excel</a></Button>
+            {ctx.role === "super_admin" && <Button asChild><a href={exportHref}><Download /> Excel</a></Button>}
           </div>
         </div>
       </div>

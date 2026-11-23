@@ -42,9 +42,12 @@ select pg_temp.ok((select count(*) from public.admin_payments_export(now() - int
 select pg_temp.throws($$select * from public.admin_payments_export(now() - interval '1 day', now(), 'pending')$$, 'invalid_request', 'only verified / rejected');
 select pg_temp.throws($$select * from public.admin_payments_export(now() - interval '400 days', now())$$, 'invalid_request', 'at most one year at a time');
 select pg_temp.ok((select count(*) from public.admin_topups_export(now() - interval '1 day', now() + interval '1 minute')) >= 2, 'manager exports reviewed top-ups');
+select pg_temp.throws($$select public.admin_log_export('payments', '{"rows":3}')$$, 'forbidden', 'managers cannot download the Excel file (Super Admin only)');
+reset role;
+select pg_temp.login(:super);
 select public.admin_log_export('payments', '{"rows":3}');
 reset role;
-select pg_temp.ok((select count(*) from public.audit_logs where action = 'export_payments' and actor_id = :manager) = 1, 'payment export recorded');
+select pg_temp.ok((select count(*) from public.audit_logs where action = 'export_payments' and actor_id = :super) = 1, 'payment export recorded');
 
 select pg_temp.login(:staff);
 select pg_temp.throws($$select * from public.admin_topups_export(now() - interval '1 day', now())$$, 'forbidden', 'staff cannot export top-ups');

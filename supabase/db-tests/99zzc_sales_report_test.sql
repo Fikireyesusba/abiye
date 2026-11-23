@@ -36,6 +36,8 @@ select pg_temp.ok((public.admin_sales_report((select d - 1 from t_day), (select 
                   'payment verified at 23:30 Addis time counts on that day, not the next');
 select pg_temp.throws($$select public.admin_sales_report(current_date, current_date - 1)$$, 'invalid_request', 'valid range only');
 select pg_temp.throws($$select public.admin_sales_report(current_date - 400, current_date)$$, 'invalid_request', 'at most one year');
+reset role;
+select pg_temp.login(:super);
 select public.admin_log_export('sales', '{"from":"x"}');
 reset role;
 select pg_temp.ok(exists (select 1 from public.audit_logs where action = 'export_sales'), 'sales export recorded');

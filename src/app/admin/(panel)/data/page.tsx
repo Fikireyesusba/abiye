@@ -35,7 +35,7 @@ export default async function DataPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Panel title="1. Export everything">
           <p className="mb-3 text-sm text-muted-foreground">One Excel file with a sheet for every area: orders, items, payments, printing, customers, wallet, reviews, products, categories, inventory, promotions, settings, staff, activity log and more. Secrets (access codes) and files (receipts, documents) are not included. Each export is recorded.</p>
-          <Button asChild><a href="/admin/data/export"><Download /> Export everything (.xlsx)</a></Button>
+          {ctx.role === "super_admin" ? <Button asChild><a href="/admin/data/export"><Download /> Export everything (.xlsx)</a></Button> : <p className="text-sm text-muted-foreground">Only the Super Admin can download Excel files.</p>}
           <p className="mt-2 text-xs text-muted-foreground">
             {lastExport ? <>Your last export: {formatDateTime(lastExport.created_at, "en")}{exportedRecently ? " ✓ (reset allowed for 30 minutes)" : ""}</> : "You have not exported yet."}
           </p>

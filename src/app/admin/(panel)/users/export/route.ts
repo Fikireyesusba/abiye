@@ -17,7 +17,7 @@ const PLATFORM: Record<string, string> = { android: "Android", ios: "iPhone / iP
 /** Signed-in users → Excel: signed in now, last sign-in (with the page's filters) or app installs, with every detail. Super Admin. */
 export async function GET(request: Request) {
   const ctx = await getAdminContext();
-  if (!ctx || !ctx.permissions.has("security.manage")) return new NextResponse("Not found", { status: 404 });
+  if (!ctx || ctx.role !== "super_admin" || !ctx.permissions.has("security.manage")) return new NextResponse("Not found", { status: 404 });
   const url = new URL(request.url);
   const tab = url.searchParams.get("tab") ?? "now";
   if (!["now", "last", "installs"].includes(tab)) return new NextResponse("Invalid request.", { status: 400 });

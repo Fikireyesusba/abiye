@@ -12,7 +12,7 @@ export const maxDuration = 60;
 /** Sales report → Excel (Super Admin: analytics.view). */
 export async function GET(request: Request) {
   const ctx = await getAdminContext();
-  if (!ctx || !ctx.permissions.has("analytics.view")) return new NextResponse("Not found", { status: 404 });
+  if (!ctx || ctx.role !== "super_admin" || !ctx.permissions.has("analytics.view")) return new NextResponse("Not found", { status: 404 });
   const url = new URL(request.url);
   const today = zoneToday();
   const range = reportRange(url.searchParams.get("kind") ?? undefined, url.searchParams.get("value") ?? undefined, today);

@@ -27,7 +27,9 @@ export const metadata: Metadata = {
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   const ctx = await requireAdmin();
   const badges = await getAdminBadges(ctx);
-  const items: NavItem[] = ADMIN_ROUTES.filter((r) => r.anyOf.some((p) => ctx.permissions.has(p))).map((r) => ({ href: r.href, label: r.label }));
+  // Excel exports are for the Super Admin only.
+  const items: NavItem[] = ADMIN_ROUTES.filter((r) => r.anyOf.some((p) => ctx.permissions.has(p)) && (r.href !== "/admin/exports" || ctx.role === "super_admin"))
+    .map((r) => ({ href: r.href, label: r.label }));
   const canSearch = ctx.permissions.has("orders.view_all") || ctx.permissions.has("orders.view_assigned");
 
   return (

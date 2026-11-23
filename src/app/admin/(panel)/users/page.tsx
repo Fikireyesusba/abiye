@@ -60,7 +60,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/user
         {extra}
         <Button type="submit" variant="outline">Show</Button>
         {(q || sp.from || sp.to || sp.before) && <Button asChild variant="ghost"><Link href={`/admin/users?tab=${tab}`}>Clear</Link></Button>}
-        {canSessions && (
+        {ctx.role === "super_admin" && (
           <Button asChild variant="outline" className="ml-auto">
             <a href={`/admin/users/export?${new URLSearchParams(Object.entries({ tab, q, from: day(sp.from), to: day(sp.to), before: day(sp.before) }).filter(([, v]) => v))}`} data-testid="users-export">
               <Download /> Excel

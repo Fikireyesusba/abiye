@@ -16,7 +16,7 @@ const addis = (iso: string) => wallClock(iso)!;
 /** Activity log → Excel (.xlsx). Super Admin (audit.view); the export itself is recorded. */
 export async function GET(request: Request) {
   const ctx = await getAdminContext();
-  if (!ctx || !ctx.permissions.has("audit.view")) return new NextResponse("Not found", { status: 404 });
+  if (!ctx || ctx.role !== "super_admin" || !ctx.permissions.has("audit.view")) return new NextResponse("Not found", { status: 404 });
   const url = new URL(request.url);
   const from = url.searchParams.get("from") ?? "";
   const to = url.searchParams.get("to") ?? "";

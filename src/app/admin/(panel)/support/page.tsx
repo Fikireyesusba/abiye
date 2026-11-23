@@ -25,7 +25,7 @@ const TABS = [
 ] as const;
 
 export default async function SupportTicketsPage({ searchParams }: PageProps<"/admin/support">) {
-  await requirePermission("support.view");
+  const ctx = await requirePermission("support.view");
   const sp = await searchParams;
   const q = (first(sp.q) ?? "").trim().slice(0, 60);
   const from = DAY.test(first(sp.from) ?? "") ? first(sp.from)! : "";
@@ -55,9 +55,9 @@ export default async function SupportTicketsPage({ searchParams }: PageProps<"/a
         <label className="text-sm">To<input type="date" name="to" defaultValue={to} max={today} className={`${fieldClass} mt-1 block`} /></label>
         <Button type="submit" variant="outline">Show</Button>
         {(q || from || to) && <Button asChild variant="ghost"><Link href={`/admin/support?tab=${tab}`}>Clear</Link></Button>}
-        <Button asChild variant="outline" className="ml-auto">
+        {ctx.role === "super_admin" && <Button asChild variant="outline" className="ml-auto">
           <a href={`/admin/exports/download?${new URLSearchParams({ kind: "support", from: from || `${today.slice(0, 7)}-01`, to: to || today })}`} data-testid="tickets-export"><Download /> Excel</a>
-        </Button>
+        </Button>}
       </form>
       <Table scroll head={["Ticket", "User ID", "Topic", "Status", "Assigned", "Last message", "Rating & feedback"]} empty="No tickets here.">
         {list.map((r) => (

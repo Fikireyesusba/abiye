@@ -42,11 +42,14 @@ export function CheckoutForm({
   email,
   defaults,
   walletBalance = 0,
+  walletEnabled = false,
 }: {
   shopAddress: string;
   email: string;
   defaults: { fullName: string; phone: string; address?: string; zoneId?: string | null };
   walletBalance?: number;
+  /** Show "pay with my balance" (also when the balance is too low, with a Top up link). */
+  walletEnabled?: boolean;
 }) {
   const t = useTranslations();
   const locale = useLocale() as Locale;
@@ -397,8 +400,8 @@ export function CheckoutForm({
             </p>
           )}
 
-          {walletBalance > 0 && (
-            <fieldset className="space-y-2">
+          {(walletEnabled || walletBalance > 0) && (
+            <fieldset className="space-y-2" data-testid="pay-method">
               <legend className="mb-1 text-sm font-medium">{t("checkout.paymentMethod")}</legend>
               <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5">
                 <input type="radio" name="pay" className="mt-0.5 accent-[var(--primary)]" checked={!useWallet} onChange={() => setPayMethod("bank_transfer")} />
@@ -411,6 +414,9 @@ export function CheckoutForm({
                   <span className="block text-xs text-muted-foreground">
                     {walletCovers ? t("wallet.payWithHint", { amount: formatETB(toSantim(walletBalance), locale) }) : t("wallet.notEnough", { amount: formatETB(toSantim(walletBalance), locale) })}
                   </span>
+                  {!walletCovers && (
+                    <Link href="/account/wallet/top-up" target="_blank" className="mt-1 inline-block text-xs font-medium text-primary underline" data-testid="checkout-topup">{t("wallet.topUp")}</Link>
+                  )}
                 </span>
               </label>
             </fieldset>

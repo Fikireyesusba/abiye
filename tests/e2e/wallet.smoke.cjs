@@ -30,7 +30,7 @@ function png(seed) {
 }
 
 async function requestTopup(page, amount, seed) {
-  await page.goto(`${B}/account/wallet`);
+  await page.goto(`${B}/account/wallet/top-up`);
   await page.fill("#topup-amount", String(amount));
   await page.fill("#topup-reference", `FT${RUN}${seed}`.slice(0, 20));
   await page.setInputFiles("#topup-receipt", { name: "receipt.png", mimeType: "image/png", buffer: png(seed) });
@@ -54,7 +54,13 @@ async function requestTopup(page, amount, seed) {
     await c.goto(`${B}/account`);
     check((await c.locator("main").innerText()).includes("My balance"), "My account shows the balance");
 
-    // ---- top-up requests
+    // ---- top-up: the Top up button opens a page with our bank details and the steps
+    await c.goto(`${B}/account/wallet`);
+    await c.click("[data-testid=topup-button]");
+    await c.waitForURL(/\/account\/wallet\/top-up$/);
+    const steps = await c.locator("[data-testid=topup-steps]").innerText();
+    check(await c.locator("[data-testid=topup-banks]").count() === 1 && steps.includes("Top Up") && /exact/i.test(steps),
+      "top-up page: bank details and steps (reason \"Top Up\", exact amount)");
     await requestTopup(c, 3000, 1);
     await c.waitForSelector("[role=status]:has-text(\"was sent\")");
     check(sql(`select count(*) || ':' || sum(amount_etb) from wallet_topups where user_id = '${uid}' and status = 'pending'`) === "1:3000.00", "top-up request recorded (pending)");
@@ -62,7 +68,7 @@ async function requestTopup(page, amount, seed) {
     await requestTopup(c, 7500, 2);
     await c.waitForSelector("form [role=alert]");
     check((await c.locator("form [role=alert]").innerText()).includes("10,000"), "requests above the 10,000 ETB limit are refused");
-    await c.goto(`${B}/account/wallet`);
+    await c.goto(`${B}/account/wallet/top-up`);
     await c.fill("#topup-amount", "100");
     await c.setInputFiles("#topup-receipt", { name: "fake.png", mimeType: "image/png", buffer: Buffer.from("not an image at all, really not") });
     await c.click("button:has-text('Send top-up request')");
@@ -114,6 +120,8 @@ async function requestTopup(page, amount, seed) {
     await c.goto(`${B}/checkout`);
     await c.waitForSelector("text=does not cover this order");
     check(await c.locator("input[type=radio][name=pay]:disabled").count() === 1, "balance option disabled when it does not cover the order");
+    check(await c.locator("[data-testid=checkout-topup]").count() === 1 && await c.locator("text=Bank transfer").count() >= 1,
+      "checkout: bank transfer still possible, with a Top up link");
 
     // ---- cancel → refund to balance; history
     const o = await (await b.newContext({ viewport: { width: 1280, height: 1000 } })).newPage();
@@ -127,6 +135,17 @@ async function requestTopup(page, amount, seed) {
     await c.goto(`${B}/account/wallet`);
     const hist = await c.locator("main").innerText();
     check(hist.includes("Top-up") && hist.includes("Order payment") && hist.includes("Refund"), "customer history: top-up, payment, refund");
+
+    // ---- wallet search by User ID; Excel only for the Super Admin
+    const mem = sql(`select member_id from customer_accounts where id = '${uid}'`);
+    await m.goto(`${B}/admin/wallet?tab=balances&q=${mem}`);
+    check((await m.locator("main table").innerText()).includes(mem) && await m.locator("main table tbody tr").count() === 1, "wallet balances searchable by User ID");
+    await m.goto(`${B}/admin/wallet?tab=verified&q=${mem}`);
+    check(await m.locator("main table tbody tr").count() >= 1, "verified top-ups searchable by User ID");
+    check(await m.locator("[data-testid=wallet-export]").count() === 0, "manager sees no Excel button");
+    check((await m.request.get(`${B}/admin/exports/download?kind=wallet`)).status() === 404, "manager cannot download the wallet Excel");
+    await o.goto(`${B}/admin/wallet?tab=balances`);
+    check(await o.locator("[data-testid=wallet-export]").count() === 1, "super admin sees the wallet Excel button");
 
     // ---- super admin correction + reject flow
     await o.goto(`${B}/admin/customers/${uid}?tab=wallet`);

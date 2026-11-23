@@ -71,6 +71,7 @@ export default async function ActivityPage({ searchParams }: PageProps<"/admin/a
     <>
       <PageHeader title="Activity log" description="Every important change: who did it and when. Entries cannot be edited; a Super Admin can clear any dates after exporting them to Excel." />
       <div className="mb-4 grid gap-3 lg:grid-cols-2">
+        {ctx.role === "super_admin" && (
         <details className="rounded-lg border bg-card p-4">
           <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium"><FileSpreadsheet className="size-4 text-primary" aria-hidden /> Export to Excel</summary>
           <form method="get" action="/admin/activity/export" className="mt-3 flex flex-wrap items-end gap-3">
@@ -85,6 +86,7 @@ export default async function ActivityPage({ searchParams }: PageProps<"/admin/a
             <Button type="submit"><Download /> Download .xlsx</Button>
           </form>
         </details>
+        )}
         {canClear && (
           <details className="rounded-lg border border-destructive/30 bg-card p-4">
             <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium text-destructive"><Trash2 className="size-4" aria-hidden /> Clear entries (any dates)</summary>

@@ -29,6 +29,7 @@ export default async function CheckoutPage() {
           address: account?.default_address ?? "", zoneId: account?.default_zone_id ?? null,
         }}
         walletBalance={s.services.wallet ? Number(account?.wallet_balance_etb ?? 0) : 0}
+        walletEnabled={s.services.wallet}
       />
     </div>
   );
