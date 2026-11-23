@@ -344,7 +344,7 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
         <form method="get" className="mb-3 flex flex-wrap items-end gap-2" data-testid="scans-search">
           <input type="hidden" name="tab" value="scans" />
           <input name="q" defaultValue={q} placeholder="User ID, fingerprint or finding" maxLength={64} aria-label="Search file scans" className={`${fieldClass} max-w-xs`} />
-          <select name="result" defaultValue={result} aria-label="Result" className={`${fieldClass} w-auto`}>
+          <select name="result" defaultValue={result} aria-label="Result" className={`${fieldClass} w-full max-w-[13rem]`}>
             <option value="">All results</option><option value="clean">Clean</option><option value="blocked">Blocked</option><option value="unavailable">Scanner unavailable</option>
           </select>
           <label className="text-sm">From<input type="date" name="from" defaultValue={fromDay} className={`${fieldClass} mt-1 block w-auto`} /></label>
