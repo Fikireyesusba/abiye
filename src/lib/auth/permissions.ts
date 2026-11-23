@@ -35,6 +35,8 @@ export const PERMISSIONS = [
   "data.manage",
   "support.view",
   "support.manage",
+  "kpi.view",
+  "kpi.manage",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -94,6 +96,7 @@ export const ADMIN_ROUTES: ReadonlyArray<{ href: string; label: string; anyOf: r
   { href: "/admin/reviews", label: "Reviews", anyOf: ["reviews.manage"] },
   { href: "/admin/analytics", label: "Analytics", anyOf: ["analytics.view", "reports.operational"] },
   { href: "/admin/reports", label: "Sales reports", anyOf: ["analytics.view"] },
+  { href: "/admin/performance", label: "Staff performance", anyOf: ["kpi.view"] },
   { href: "/admin/staff", label: "Staff", anyOf: ["staff.manage"] },
   { href: "/admin/notifications", label: "Notifications", anyOf: ["settings.manage"] },
   { href: "/admin/services", label: "Manage services", anyOf: ["settings.manage"] },
@@ -101,6 +104,6 @@ export const ADMIN_ROUTES: ReadonlyArray<{ href: string; label: string; anyOf: r
   { href: "/admin/activity", label: "Activity log", anyOf: ["audit.view"] },
   { href: "/admin/security", label: "Security", anyOf: ["audit.view"] },
   { href: "/admin/users", label: "Signed-in users", anyOf: ["security.manage", "customers.view"] },
-  { href: "/admin/exports", label: "Excel exports", anyOf: ["orders.view_all", "payments.view", "customers.view", "products.view", "wallet.manage", "printing.view", "support.view", "audit.view", "settings.manage", "security.manage", "data.manage"] },
+  { href: "/admin/exports", label: "Excel exports", anyOf: ["orders.view_all", "payments.view", "customers.view", "products.view", "wallet.manage", "printing.view", "support.view", "audit.view", "settings.manage", "security.manage", "data.manage", "kpi.view"] },
   { href: "/admin/data", label: "Export & reset", anyOf: ["data.manage"] },
 ];

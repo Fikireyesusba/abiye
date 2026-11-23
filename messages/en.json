@@ -557,7 +557,11 @@
     "idleWarning": "You will be signed out in 1 minute because of inactivity.",
     "idleStay": "Stay signed in",
     "signedInElsewhere": "You were signed out because your account signed in on another device or browser. Only one device can be signed in at a time.",
-    "idleSignedOut": "For your security you were signed out after {minutes} minutes of inactivity. Please sign in again."
+    "idleSignedOut": "For your security you were signed out after {minutes} minutes of inactivity. Please sign in again.",
+    "waitingTitle": "Waiting for payment",
+    "waitingText": "Not an order yet: it becomes an order once we accept your payment. Unpaid checkouts are released after 30 minutes.",
+    "checkoutLabel": "Checkout",
+    "printRequestLabel": "Printing request"
   },
   "payInfo": {
     "title": "How to pay",
@@ -650,7 +654,8 @@
     "payWithHint": "Available: {amount}. The order is confirmed immediately.",
     "notEnough": "Your balance ({amount}) does not cover this order.",
     "bankTransfer": "Bank transfer",
-    "paidWithBalance": "Paid with your balance — the order is confirmed."
+    "paidWithBalance": "Paid with your balance — the order is confirmed.",
+    "inReview": "Top-up being checked: {amount}. It is added to your balance as soon as we accept it."
   },
   "reviews": {
     "title": "Customer reviews",

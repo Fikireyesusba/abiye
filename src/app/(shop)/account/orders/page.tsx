@@ -30,9 +30,14 @@ export default async function MyOrdersPage() {
     supabase.from("printing_jobs").select("id, job_number, status, total_etb, created_at, order_id").eq("user_id", user.id)
       .order("created_at", { ascending: false }).limit(100),
   ]);
-  // An order that was never paid and is closed (expired / cancelled) is not an order: leave it out.
-  const list = (orders ?? []).filter((o) => !(["expired", "cancelled"].includes(o.status) && ["unpaid", "rejected"].includes(o.payment_status)));
-  const printJobs = (jobs ?? []).filter((j) => j.status !== "cancelled" || j.order_id);
+  // An order exists only once its payment is accepted. Checkouts still being paid (30 minutes) or checked
+  // by our team are shown apart, so the customer can finish paying.
+  const PAID = ["verified", "refunded"];
+  const list = (orders ?? []).filter((o) => PAID.includes(o.payment_status));
+  const waiting = (orders ?? []).filter((o) => ["awaiting_payment", "pending_verification"].includes(o.status));
+  const paidOrders = new Set(list.map((o) => o.id));
+  const printJobs = (jobs ?? []).filter((j) => j.order_id && paidOrders.has(j.order_id));
+  const printWaiting = (jobs ?? []).filter((j) => ["awaiting_quote", "awaiting_payment"].includes(j.status) && !j.order_id);
   const Row = ({ href, number, at, total, badge }: { href: string; number: string; at: string; total: number | null; badge: React.ReactNode }) => (
     <li>
       <Link href={href} className="flex items-center gap-3 py-3 hover:bg-muted/40">
@@ -51,6 +56,16 @@ export default async function MyOrdersPage() {
     <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:py-12">
       <Link href="/account" className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" aria-hidden /> {t("account.title")}</Link>
       <h1 className="mb-6 text-2xl font-semibold tracking-tight">{t("account.myOrders")}</h1>
+      {(waiting.length > 0 || printWaiting.length > 0) && (
+        <section className="mb-6 rounded-xl border border-warning/40 bg-warning/5 p-4" data-testid="waiting-payment">
+          <h2 className="mb-1 text-sm font-semibold">{t("account.waitingTitle")}</h2>
+          <p className="mb-2 text-xs text-muted-foreground">{t("account.waitingText")}</p>
+          <ul className="divide-y text-sm">
+            {waiting.map((o) => <Row key={o.id} href={`/order-success/${o.id}`} number={t("account.checkoutLabel")} at={o.created_at} total={o.total_etb} badge={<StatusBadge kind="order" status={o.status} />} />)}
+            {printWaiting.map((j) => <Row key={j.id} href={`/printing/jobs/${j.id}`} number={t("account.printRequestLabel")} at={j.created_at} total={j.total_etb} badge={<StatusBadge kind="print" status={j.status} />} />)}
+          </ul>
+        </section>
+      )}
       <section className="mb-8">
         {!list.length ? (
           <p className="text-sm text-muted-foreground">{t("account.noOrders")} <Link href="/shop" className="text-primary underline">{t("nav.shop")}</Link></p>

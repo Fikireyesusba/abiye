@@ -14,8 +14,9 @@ export const metadata: Metadata = { title: "Printing" };
 
 // Jobs the customer has not paid for yet (submitted / awaiting payment) are not shown — only work for the shop.
 const TABS = [
-  { k: "todo", l: "Needs action", s: ["awaiting_quote", "printing", "ready"] },
-  { k: "approval", l: "Payment to approve", s: ["payment_verification"] },
+  // A printing order exists once its payment is accepted; payments waiting for approval are under Payments.
+  { k: "todo", l: "To print / hand over", s: ["printing", "ready"] },
+  { k: "quote", l: "Needs a price", s: ["awaiting_quote"] },
   { k: "done", l: "Completed / cancelled", s: ["completed", "cancelled"] },
 ] as const;
 

@@ -141,7 +141,9 @@ async function requestTopup(page, amount, seed) {
     await m.waitForSelector("[data-sonner-toast]:has-text('Top-up rejected')");
     check(sql(`select wallet_balance_etb from customer_accounts where id = '${uid}'`) === "2000.00", "rejected top-up adds nothing");
     await c.goto(`${B}/account/wallet`);
-    check((await c.locator("main").innerText()).includes("Not in our bank statement"), "customer sees the rejection reason");
+    check(!(await c.locator("main").innerText()).includes("Not in our bank statement")
+      && sql(`select count(*) from notifications_outbox where event_type = 'customer_topup_rejected' and recipient_user_id = '${uid}' and payload->>'note' = 'Not in our bank statement'`) >= "1",
+      "a rejected top-up is not listed (only accepted ones count); the customer is emailed the reason");
     check(sql(`select count(*) from notifications_outbox where channel = 'email' and recipient_user_id = '${uid}' and event_type like 'customer_topup_%'`) === "2", "customer emailed about verification and rejection");
     check(sql(`select count(*) from audit_logs where entity_id = '${uid}' and action in ('topup_verified','topup_rejected','wallet_adjusted')`) === "3", "all wallet decisions in the activity log");
   } catch (e) {

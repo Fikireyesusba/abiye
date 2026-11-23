@@ -119,8 +119,8 @@ async function fillContact(p, name, phone) {
   const a = await (await b.newContext({ viewport: { width: 1280, height: 1000 } })).newPage();
   a.on("dialog", (d) => d.accept());
   await adminLogin(a, B, OWNER.email, OWNER.password);
-  await a.goto(`${B}/admin/printing`);
-  check((await a.locator(`tr:has-text("${sql(`select job_number from printing_jobs where id = '${job2}'`)}")`).count()) === 1, "Word job listed under Needs action");
+  await a.goto(`${B}/admin/printing?tab=quote`);
+  check((await a.locator(`tr:has-text("${sql(`select job_number from printing_jobs where id = '${job2}'`)}")`).count()) === 1, "Word job listed under Needs a price");
   await a.goto(`${B}/admin/printing/${job2}`);
   const dl = await a.locator("a:has-text('Download')").getAttribute("href");
   const dlRes = await fetch(dl);

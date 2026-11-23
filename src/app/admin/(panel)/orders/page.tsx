@@ -15,8 +15,9 @@ import { formatEthiopianPhone } from "@/lib/validation/phone";
 
 export const metadata: Metadata = { title: "Orders" };
 /** An order shows here once the customer has paid (receipt waiting for approval, or verified). Unpaid checkouts: Stalled checkouts. */
-const PAID_PAYMENT = ["pending_verification", "verified", "refunded"] as const;
-const PAID_STATUSES = ORDER_STATUSES.filter((s) => !["awaiting_payment", "payment_rejected", "expired"].includes(s));
+// An order exists for staff only once its payment is accepted (payments waiting for approval are under Payments).
+const PAID_PAYMENT = ["verified", "refunded"] as const;
+const PAID_STATUSES = ORDER_STATUSES.filter((s) => !["awaiting_payment", "pending_verification", "payment_rejected", "expired"].includes(s));
 const PAGE = 30;
 
 export default async function OrdersPage({ searchParams }: PageProps<"/admin/orders">) {

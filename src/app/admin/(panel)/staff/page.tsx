@@ -3,6 +3,7 @@ import { ActionForm } from "@/components/admin/action-form";
 import { Field, Frame, PageHeader, Panel, SubTabs, Table, Td, fieldClass, pickTab } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { UserIdLink } from "@/components/admin/user-id";
+import { memberIds } from "@/lib/admin/member-ids";
 import { Input } from "@/components/ui/input";
 import { deleteRole, inviteStaff, removeStaff, resetStaffMfa, resetStaffPassword, saveRole, setMemberPermissions, updateStaff, updateStaffDetails } from "@/lib/admin/staff-actions";
 import { maxBirthDate, personSummary } from "@/lib/age";
@@ -18,7 +19,7 @@ const AREA: Record<string, string> = {
   dashboard: "Dashboard", orders: "Orders", payments: "Payments", wallet: "Wallet", printing: "Printing", products: "Products",
   categories: "Products", inventory: "Products", customers: "Customers", promotions: "Promotions", reviews: "Reviews",
   analytics: "Reports", reports: "Reports", settings: "Settings", bank_accounts: "Settings", staff: "Staff", audit: "Activity & security",
-  security: "Activity & security", data: "Export & reset", support: "Support",
+  security: "Activity & security", data: "Export & reset", support: "Support", kpi: "Reports",
 };
 
 export default async function StaffPage({ searchParams }: PageProps<"/admin/staff">) {
@@ -55,8 +56,7 @@ export default async function StaffPage({ searchParams }: PageProps<"/admin/staf
   // Emails live in auth.users; read them server-side only, after the permission check above.
   const { data: users } = await getSupabaseAdmin().auth.admin.listUsers({ perPage: 1000 });
   const email = new Map((users?.users ?? []).map((u) => [u.id, u.email ?? ""]));
-  const { data: ids } = await getSupabaseAdmin().from("customer_accounts").select("id, member_id").in("id", (profiles ?? []).map((p) => p.id));
-  const memberId = new Map((ids ?? []).map((r) => [r.id, r.member_id]));
+  const memberId = await memberIds((profiles ?? []).map((p) => p.id));
   // Two-step login status per staff member (few accounts: one lookup each).
   const twoStep = new Map(await Promise.all(current.map(async (p) => {
     const { data } = await getSupabaseAdmin().auth.admin.mfa.listFactors({ userId: p.id });

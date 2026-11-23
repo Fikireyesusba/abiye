@@ -6,6 +6,7 @@ import { rateLimit } from "@/lib/security/rate-limit";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sendExportCopy } from "@/lib/telegram/export-copy";
+import { inBatches } from "@/lib/supabase/in-batches";
 
 export const maxDuration = 60;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -48,12 +49,10 @@ export async function GET(request: Request) {
   // Phone, sex, date of birth (after the permission check and rate limit above).
   const ids = [...new Set(rows.map((r) => r.user_id).filter((x): x is string => !!x))];
   const db = getSupabaseAdmin();
-  const [{ data: accounts }, { data: staff }] = ids.length
-    ? await Promise.all([
-        db.from("customer_accounts").select("id, phone, sex, date_of_birth").in("id", ids),
-        db.from("profiles").select("id, phone, sex, date_of_birth").in("id", ids),
-      ])
-    : [{ data: [] }, { data: [] }];
+  const [accounts, staff] = await Promise.all([
+    inBatches(ids, (b) => db.from("customer_accounts").select("id, phone, sex, date_of_birth").in("id", b)),
+    inBatches(ids, (b) => db.from("profiles").select("id, phone, sex, date_of_birth").in("id", b)),
+  ]);
   const person = new Map<string, { phone: string | null; sex: string | null; date_of_birth: string | null }>();
   for (const a of accounts ?? []) person.set(a.id, a);
   for (const p of staff ?? []) person.set(p.id, { phone: p.phone ?? person.get(p.id)?.phone ?? null, sex: p.sex ?? person.get(p.id)?.sex ?? null, date_of_birth: p.date_of_birth ?? person.get(p.id)?.date_of_birth ?? null });

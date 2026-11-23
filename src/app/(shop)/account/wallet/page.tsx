@@ -4,7 +4,6 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { ArrowLeft, Wallet } from "lucide-react";
 import { TopupForm } from "@/components/account/topup-form";
 import { CopyButton } from "@/components/shop/copy-button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireCustomer } from "@/lib/account/session";
 import { getPublicBankAccounts } from "@/lib/catalog/bank-info";
@@ -62,23 +61,11 @@ export default async function WalletPage() {
         </CardContent>
       </Card>
 
-      {w.topups.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle>{t("requests")}</CardTitle></CardHeader>
-          <CardContent>
-            <ul className="divide-y text-sm">
-              {w.topups.map((x) => (
-                <li key={x.id} className="flex flex-wrap items-center gap-2 py-2">
-                  <span className="font-mono">{x.topup_number}</span>
-                  <span className="tabular-nums">{etb(Number(x.amount_etb))}</span>
-                  <Badge variant={x.status === "verified" ? "success" : x.status === "rejected" ? "destructive" : "warning"}>{t(`status_${x.status}` as "status_pending")}</Badge>
-                  <span className="ml-auto text-xs text-muted-foreground">{formatDateTime(x.created_at, locale)}</span>
-                  {x.status === "rejected" && x.review_note && <span className="w-full text-xs text-destructive">{x.review_note}</span>}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+      {/* A top-up counts once it is accepted (then it appears in the history below). One still being checked is only mentioned. */}
+      {w.topups.some((x) => x.status === "pending") && (
+        <p className="rounded-lg border border-warning/40 bg-warning/5 p-3 text-sm" role="status" data-testid="topup-in-review">
+          {t("inReview", { amount: etb(w.topups.filter((x) => x.status === "pending").reduce((n, x) => n + Number(x.amount_etb), 0)) })}
+        </p>
       )}
 
       <Card>

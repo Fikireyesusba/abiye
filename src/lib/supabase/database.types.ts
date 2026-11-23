@@ -245,6 +245,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"kpi_targets": {
+                  Row: {
+                    "id": string,"metric": string,"period": string,"profile_id": string | null,"target": number,"updated_at": string,"updated_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "id"?: string,"metric": string,"period": string,"profile_id"?: string | null,"target": number,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Update: {
+                    "id"?: string,"metric"?: string,"period"?: string,"profile_id"?: string | null,"target"?: number,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "kpi_targets_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"notifications_outbox": {
                   Row: {
                     "attachment_bucket": string | null,"attachment_path": string | null,"attempts": number,"channel": string,"created_at": string,"dedupe_key": string,"event_type": string,"id": number,"last_error": string | null,"locked_until": string | null,"max_attempts": number,"next_attempt_at": string,"payload": NonNullable<Json>,"recipient_user_id": string | null,"sent_at": string | null,"status": Database["public"]['Enums']["notification_status"]
@@ -941,6 +961,9 @@ isOneToOne: false
 "admin_data_export_areas":
 { Args: Record<PropertyKey, never>; Returns: (string)[]
                            },
+"admin_delete_kpi_target":
+{ Args: { "p_id": string }; Returns: undefined
+                           },
 "admin_delete_role":
 { Args: { "p_role_id": number }; Returns: undefined
                            },
@@ -1047,6 +1070,9 @@ isOneToOne: false
 "admin_sales_report":
 { Args: { "p_from": string,"p_to": string }; Returns: Json
                            },
+"admin_save_kpi_target":
+{ Args: { "p_metric": string,"p_period": string,"p_profile_id"?: string,"p_target": number }; Returns: undefined
+                           },
 "admin_save_role":
 { Args: { "p_description": string,"p_name": string,"p_permissions": (string)[],"p_role_id": number }; Returns: number
                            },
@@ -1081,6 +1107,11 @@ isOneToOne: false
 "admin_signed_in_users":
 { Args: { "p_search"?: string }; Returns: {
               "email": string,"full_name": string,"ip": string,"is_staff": boolean,"last_active_at": string,"member_id": string,"role_name": string,"session_id": string,"signed_in_at": string,"user_agent": string,"user_id": string
+            }[]
+                           },
+"admin_staff_kpis":
+{ Args: { "p_from": string,"p_to": string }; Returns: {
+              "full_name": string,"instore_sales": number,"instore_sales_etb": number,"is_active": boolean,"member_id": string,"order_steps": number,"orders_completed": number,"payment_review_minutes": number,"payments_approved": number,"payments_rejected": number,"printing_completed": number,"role_name": string,"ticket_first_reply_hours": number,"ticket_rating": number,"ticket_replies": number,"ticket_resolution_hours": number,"tickets_resolved": number,"topups_approved": number,"topups_rejected": number,"user_id": string
             }[]
                            },
 "admin_stalled_checkouts":

@@ -14,11 +14,8 @@ reset role;
 create function pg_temp.emails(p_event text) returns bigint language sql as $$
   select count(*) from public.notifications_outbox where channel = 'email' and event_type = p_event $$;
 
-select pg_temp.ok((select recipient_user_id = :customer and payload ? 'bank' and payload ? 'payment_due_at' and payload ->> 'order_number' like 'ET-%'
-                     from public.notifications_outbox where channel = 'email' and event_type = 'customer_order_placed'),
-  'order placed: email to the customer with bank details and deadline');
-select pg_temp.ok((select payload::text not like '%@%' from public.notifications_outbox where channel = 'email' and event_type = 'customer_order_placed'),
-  'the email address is not stored in the outbox');
+select pg_temp.ok(pg_temp.emails('customer_order_placed') = 0,
+  'no email for a checkout that is not paid yet (0056: an order exists once its payment is accepted)');
 
 select pg_temp.login(:manager);
 select public.admin_review_payment((select id from public.payment_submissions where order_id = (select id from t_o)), 'rejected', 'Amount not in the bank statement');
@@ -45,6 +42,8 @@ select public.admin_update_order_status((select id from t_o), 'out_for_delivery'
 select public.admin_update_order_status((select id from t_o), 'completed');
 reset role;
 select pg_temp.ok(pg_temp.emails('customer_order_confirmed') = 1, 'payment verified: confirmation email');
+select pg_temp.ok((select payload::text not like '%@%' and recipient_user_id = :customer from public.notifications_outbox where channel = 'email' and event_type = 'customer_order_confirmed'),
+  'the email address is not stored in the outbox');
 select pg_temp.ok(pg_temp.emails('customer_order_processing') = 0, 'internal steps (processing) send no email');
 select pg_temp.ok(pg_temp.emails('customer_order_out_for_delivery') = 1 and pg_temp.emails('customer_order_completed') = 1, 'delivery and completion emails');
 
@@ -53,7 +52,7 @@ set role service_role;
 create temp table t_tg as select * from public.claim_notifications(50);
 create temp table t_em as select * from public.claim_outbox('email', 50);
 reset role;
-select pg_temp.ok((select bool_and(channel = 'telegram') from t_tg) and (select bool_and(channel = 'email') from t_em) and (select count(*) from t_em) >= 5,
+select pg_temp.ok((select bool_and(channel = 'telegram') from t_tg) and (select bool_and(channel = 'email') from t_em) and (select count(*) from t_em) >= 4,
   'Telegram and email workers claim only their own channel');
 select pg_temp.throws($$insert into public.notifications_outbox (channel, event_type, dedupe_key, payload) values ('email', 'customer_x', 'x', '{}')$$,
   '%notifications_outbox_email_recipient%', 'an email always has a recipient account');

@@ -4,10 +4,12 @@ import type { Permission } from "@/lib/auth/permissions";
 import { getAdminContext } from "@/lib/auth/guards";
 import { memberIds } from "@/lib/admin/member-ids";
 import { TICKET_LABEL, TICKET_TOPIC } from "@/lib/admin/support";
+import { KPI_METRICS, achievement, scaledTarget, type KpiMetric } from "@/lib/admin/kpi";
 import { wallClock, zoneDayStartIso } from "@/lib/datetime";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { sendExportCopy } from "@/lib/telegram/export-copy";
+import { inBatches } from "@/lib/supabase/in-batches";
 
 export const maxDuration = 60;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -19,6 +21,7 @@ const KINDS: Record<string, { perm: Permission; title: string; dated: boolean }>
   products: { perm: "products.view", title: "Products & stock", dated: false },
   wallet: { perm: "wallet.manage", title: "Wallet", dated: true },
   printing: { perm: "printing.view", title: "Printing jobs", dated: true },
+  kpi: { perm: "kpi.view", title: "Staff performance (KPIs)", dated: true },
 };
 type Sheet = { name: string; columns: { header: string; width: number }[]; rows: unknown[][] };
 
@@ -57,8 +60,8 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.rpc("admin_customer_accounts", { p_limit: 500 });
     if (error) return fail("customers");
     const ids = (data ?? []).map((r) => r.id);
-    const { data: extra } = ids.length ? await supabase.from("customer_accounts").select("id, sex, date_of_birth, wallet_balance_etb, default_address").in("id", ids) : { data: [] };
-    const more = new Map((extra ?? []).map((e) => [e.id, e]));
+    const extra = await inBatches(ids, (b) => supabase.from("customer_accounts").select("id, sex, date_of_birth, wallet_balance_etb, default_address").in("id", b));
+    const more = new Map(extra.map((e) => [e.id, e]));
     sheets.push({
       name: "Customers",
       columns: [
@@ -107,6 +110,36 @@ export async function GET(request: Request) {
       columns: [{ header: "Top-up", width: 11 }, { header: "User ID", width: 9 }, { header: "Amount (ETB)", width: 12 }, { header: "Reference", width: 18 },
         { header: "Status", width: 10 }, { header: "Note", width: 30 }, { header: "Requested", width: 17 }, { header: "Decided", width: 17 }],
       rows: (topups ?? []).map((t) => [t.topup_number, ids.get(t.user_id) ?? "", Number(t.amount_etb), t.transaction_reference ?? "", t.status, t.review_note ?? "", at(t.created_at), at(t.reviewed_at)]),
+    });
+  } else if (kind === "kpi") {
+    const [{ data, error }, { data: targets }] = await Promise.all([
+      supabase.rpc("admin_staff_kpis", { p_from: pFrom!, p_to: pTo! }),
+      supabase.from("kpi_targets").select("metric, period, profile_id, target"),
+    ]);
+    if (error) return fail("staff performance");
+    const days = Math.round((Date.parse(pTo!) - Date.parse(pFrom!)) / 86400000);
+    const targetFor = (metric: KpiMetric, userId: string) => {
+      const t = (targets ?? []).find((x) => x.metric === metric && x.profile_id === userId) ?? (targets ?? []).find((x) => x.metric === metric && !x.profile_id);
+      return t ? scaledTarget(metric, Number(t.target), t.period, days) : null;
+    };
+    sheets.push({
+      name: "Staff KPIs",
+      columns: [
+        { header: "User ID", width: 9 }, { header: "Name", width: 22 }, { header: "Role", width: 12 },
+        ...KPI_METRICS.flatMap((m) => [{ header: `${m.label}${m.unit ? ` (${m.unit})` : ""}`, width: 14 }, { header: "Target", width: 9 }, { header: "% of target", width: 10 }]),
+        { header: "Ticket replies", width: 10 }, { header: "Avg rating", width: 9 }, { header: "Order steps", width: 10 }, { header: "Payments rejected", width: 11 },
+        { header: "Top-ups rejected", width: 11 }, { header: "In-store sales (ETB)", width: 14 },
+      ],
+      rows: (data ?? []).map((r) => [r.member_id ?? "", r.full_name, r.role_name ?? "",
+        ...KPI_METRICS.flatMap((m) => {
+          const raw = r[m.key as keyof typeof r];
+          const v = raw === null || raw === undefined ? null : Number(raw);
+          const target = targetFor(m.key, r.user_id);
+          const pct = achievement(m.key, v, target);
+          return [v ?? "", target ?? "", pct === null ? "" : pct / 100];
+        }),
+        Number(r.ticket_replies), r.ticket_rating === null ? "" : Number(r.ticket_rating), Number(r.order_steps), Number(r.payments_rejected),
+        Number(r.topups_rejected), Number(r.instore_sales_etb)]),
     });
   } else if (kind === "printing") {
     const { data, error } = await supabase.from("printing_jobs")

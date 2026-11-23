@@ -88,14 +88,11 @@ const asManager = (q) => {
     await p.waitForURL(/order-success/);
     let orderId = p.url().split("/order-success/")[1].split("?")[0];
     const number = sql(`select order_number from orders where id = '${orderId}'`);
-    check(await waitFor(() => mails(email, number).length === 1), "order placed: email sent right away");
-    const placed = mails(email, number)[0];
-    check(placed?.from === FROM && placed?.idem?.startsWith("outbox-"), "sent from the configured address, with an idempotency key");
-    check(placed?.html.includes(`/order-success/${orderId}`) && placed?.html.includes("lang=\"am\"") && /CBE|Bank|ባንክ/.test(placed?.html ?? ""),
-      "contains the order link, bank details and Amharic");
+    await sleep(2000);
+    check(mails(email, number).length === 0, "no email for a checkout that is not paid yet (the payment details are on the page)");
 
-    // ---- 1b. The email link opened in a signed-out browser (e.g. Gmail's in-app browser)
-    const link = placed.html.match(/href="([^"]*\/order-success\/[^"]+)"/)[1];
+    // ---- 1b. The order link opened in a signed-out browser (e.g. Gmail's in-app browser)
+    const link = `${B}/order-success/${orderId}`;
     const fresh = await (await b.newContext()).newPage();
     await fresh.goto(link);
     check(new URL(fresh.url()).pathname === "/account/login", "email link in a signed-out browser asks to sign in");
@@ -136,6 +133,9 @@ const asManager = (q) => {
     await a.click("button:has-text('Verify payment')");
     await a.waitForSelector("[data-sonner-toast]");
     check(await waitFor(() => mails(email, "confirmed").length === 1), "payment verified: confirmation email");
+    const confirmed = mails(email, "confirmed")[0];
+    check(confirmed?.from === FROM && confirmed?.idem?.startsWith("outbox-"), "sent from the configured address, with an idempotency key");
+    check(confirmed?.html.includes(`/order-success/${orderId}`) && confirmed?.html.includes("lang=\"am\""), "contains the order link and Amharic");
 
     // ---- 3. Temporary failure is retried; permanent failure gives up
     mode = "fail500";

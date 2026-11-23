@@ -38,6 +38,7 @@
     "test:smoke:member-id": "NODE_PATH=$(npm root -g):$(pwd)/node_modules node --env-file=.env.local tests/e2e/member-id.smoke.cjs",
     "test:smoke:support-sessions": "NODE_PATH=$(npm root -g):$(pwd)/node_modules node --env-file=.env.local tests/e2e/support-sessions.smoke.cjs",
     "test:smoke:exports-tickets": "NODE_PATH=$(npm root -g):$(pwd)/node_modules node --env-file=.env.local tests/e2e/exports-tickets.smoke.cjs",
+    "test:smoke:kpi": "NODE_PATH=$(npm root -g):$(pwd)/node_modules node --env-file=.env.local tests/e2e/kpi.smoke.cjs",
     "test:smoke:services": "NODE_PATH=$(npm root -g):$(pwd)/node_modules node --env-file=.env.local tests/e2e/services.smoke.cjs",
     "test:smoke:single-session": "NODE_PATH=$(npm root -g):$(pwd)/node_modules node --env-file=.env.local tests/e2e/single-session.smoke.cjs",
     "test:smoke:idle-signout": "NODE_PATH=$(npm root -g):$(pwd)/node_modules node --env-file=.env.local tests/e2e/idle-signout.smoke.cjs",

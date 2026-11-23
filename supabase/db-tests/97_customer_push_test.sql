@@ -23,11 +23,14 @@ select public.create_order_for_user(:customer, pg_temp.order_payload('e7000000-0
 select public.create_order_for_user(:customer2, pg_temp.order_payload('e7000000-0000-0000-0000-000000000002',
   jsonb_build_array(jsonb_build_object('type', 'product', 'product_id', '20000000-0000-0000-0000-000000000007', 'quantity', 1))));
 reset role;
-select pg_temp.ok((select count(*) from public.notifications_outbox where channel = 'push' and event_type = 'customer_order_placed' and recipient_user_id = :customer) = 1,
+-- payment accepted → the order exists → notifications
+update public.orders set status = 'confirmed', payment_status = 'verified', payment_verified_at = now()
+ where idempotency_key in ('e7000000-0000-0000-0000-000000000001', 'e7000000-0000-0000-0000-000000000002');
+select pg_temp.ok((select count(*) from public.notifications_outbox where channel = 'push' and event_type = 'customer_order_confirmed' and recipient_user_id = :customer) = 1,
   'customer with a device: phone notification queued');
 select pg_temp.ok((select count(*) from public.notifications_outbox where channel = 'push' and recipient_user_id = :customer2) = 0,
   'customer without a device: no phone notification');
-select pg_temp.ok((select count(*) from public.notifications_outbox where channel = 'email' and event_type = 'customer_order_placed') = 2, 'emails unaffected');
+select pg_temp.ok((select count(*) from public.notifications_outbox where channel = 'email' and event_type = 'customer_order_confirmed') = 2, 'emails unaffected');
 
 set role service_role;
 select pg_temp.ok((select locale from public.push_targets(:customer)) = 'am', 'worker reads the devices with their language');

@@ -24,7 +24,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   // RLS: a customer can only read their own orders and printing jobs.
   const supabase = await createSupabaseServerClient();
   const [{ count: orderCount }, { data: offers }] = await Promise.all([
-    supabase.from("orders").select("id", { count: "exact", head: true }).eq("user_id", user.id).not("payment_status", "in", "(unpaid,rejected)"),
+    supabase.from("orders").select("id", { count: "exact", head: true }).eq("user_id", user.id).in("payment_status", ["verified", "refunded"]),
     supabase.rpc("my_offers"),
   ]);
 
