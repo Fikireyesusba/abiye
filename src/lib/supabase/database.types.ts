@@ -1378,6 +1378,9 @@ isOneToOne: false
               "auth": string,"endpoint": string,"id": string,"locale": string,"p256dh": string
             }[]
                            },
+"queue_excel_copy":
+{ Args: { "p_by"?: string,"p_file_name": string,"p_path": string,"p_rows"?: number,"p_title": string }; Returns: undefined
+                           },
 "quote_printing":
 { Args: { "p_color": Database["public"]['Enums']["print_color_mode"],"p_copies": number,"p_page_count": number,"p_paper_size": string,"p_sides": Database["public"]['Enums']["print_sides"] }; Returns: Json
                            },

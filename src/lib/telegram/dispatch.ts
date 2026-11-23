@@ -49,6 +49,16 @@ export function securityTelegramConfig(): TelegramConfig | null {
 
 async function deliver(cfg: TelegramConfig, row: OutboxRow): Promise<SendResult> {
   const msg = buildMessage(row, getServerEnv().APP_URL);
+  // Excel exports: the file itself, then it is removed from storage (Telegram keeps the copy).
+  if (row.event_type === "excel_export" && msg.attachment?.bucket === "excel-exports") {
+    const store = getSupabaseAdmin().storage.from("excel-exports");
+    const { data: blob } = await store.download(msg.attachment.path);
+    if (!blob) return { ok: false, kind: "permanent", error: "Excel file no longer in storage" };
+    const name = String(row.payload.file_name ?? "export.xlsx").replace(/[\\/\r\n]/g, "_").slice(0, 120);
+    const res = await sendMedia(cfg, "document", blob, name, truncate(msg.text, CAPTION_LIMIT));
+    if (res.ok) await store.remove([msg.attachment.path]);
+    return res;
+  }
   // Printing documents: always as a file, with the customer's file name.
   if (row.event_type === "printing_document" && msg.attachment) {
     const { data: blob } = await getSupabaseAdmin().storage.from(msg.attachment.bucket).download(msg.attachment.path);

@@ -120,4 +120,19 @@ describe("Telegram activity feed", () => {
     expect(c.text).toContain("Service: Phone notification · Type: Payment confirmed");
     expect(c.text).toContain("Error: HTTP 410");
   });
+  it("promotion alerts and Excel copies", () => {
+    const base = { title: "Holiday", code: "HOLI", discount: "15% off", audience: "Every customer", applies_to: "All products", active: true, by_user_id: "123456", at: "2026-11-23T10:00:00Z" };
+    const a = buildMessage(row("promotion_alert", { ...base, change: "created" }), "https://abiye.example");
+    for (const t of ["PROMOTION: CREATED", "Service: Promotions · Type: Created", "Action by User ID: 123456", "Code: HOLI", "Discount: 15% off", "Status: Active", "/admin/promotions"]) expect(a.text).toContain(t);
+    const r = buildMessage(row("promotion_alert", { ...base, change: "revoked", active: false, reason: "Ended early" }), "");
+    expect(r.text).toContain("PROMOTION: REVOKED");
+    expect(r.text).toContain("Reason: Ended early");
+    const u = buildMessage(row("promotion_alert", { ...base, change: "used", user_id: "654321", order_number: "ET-10050", original_etb: 1000, discount_etb: 150, total_etb: 850, payment_method: "wallet" }), "");
+    for (const t of ["PROMOTION: CODE USED", "User ID: 654321", "Order: ET-10050", "Original price: 1,000 ETB", "Discount given: 150 ETB", "Price paid: <b>850 ETB</b>", "Paid with: Balance"]) expect(u.text).toContain(t);
+    const x = buildMessage({ ...row("excel_export", { title: "Promotion uses", file_name: "promotions-2026-11-01_to_2026-11-23.xlsx", rows: 3, by_user_id: "123456", at: "2026-11-23T10:00:00Z" }),
+      attachment_bucket: "excel-exports", attachment_path: "11111111-1111-1111-1111-111111111111.xlsx" }, "");
+    for (const t of ["EXCEL EXPORT", "Service: Exports · Type: Excel: Promotion uses", "Action by User ID: 123456", "Rows: 3", "Suggested action"]) expect(x.text).toContain(t);
+    expect(x.attachment).toEqual({ bucket: "excel-exports", path: "11111111-1111-1111-1111-111111111111.xlsx" });
+    expect(x.text.length).toBeLessThanOrEqual(CAPTION_LIMIT);
+  });
 });

@@ -98,6 +98,12 @@ export function suggestedAction(row: OutboxRow): string | null {
       return "Open Security → Active alerts: block the email if it looks malicious, or mark it reviewed.";
     case "admin_action":
       return "Nothing to do if this change was expected; otherwise check it in the Activity log.";
+    case "promotion_alert":
+      if (p.change === "used") return "Nothing to do — keep this for any complaint (the Promotions Excel lists every use).";
+      if (p.change === "revoked" || p.change === "deleted" || p.change === "removed") return "Nothing to do if this was expected; otherwise ask the staff member why (Activity log).";
+      return "If you did not expect this promotion change, revoke the promotion under Promotions and check the Activity log.";
+    case "excel_export":
+      return "Keep this file as your copy. If nobody on your team downloaded it, check who did (Action by User ID).";
     case "notification_copy":
       return p.status === "dead" ? "The message could not be delivered — contact the customer another way (Support or phone)." : null;
     case "support_ticket":
@@ -147,6 +153,11 @@ const SUPPORT_TOPIC: Record<string, string> = {
 };
 const titleCase = (s: string) => s.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase());
 
+const PROMO_CHANGE: Record<string, string> = {
+  created: "Created", changed: "Changed", switched_on: "Switched on", switched_off: "Switched off", revoked: "Revoked",
+  restored: "Brought back", deleted: "Deleted", given: "Code given to a customer", removed: "Code removed from a customer", used: "Code used",
+};
+
 /** [service, event name] for any outbox row. */
 export function describe(row: OutboxRow): [string, string] {
   const p = row.payload ?? {};
@@ -158,6 +169,8 @@ export function describe(row: OutboxRow): [string, string] {
     case "security_test": return ["Security group", "Test message"];
     case "stock_test": return ["Stock group", "Test message"];
     case "receipts_test": return ["Receipts group", "Test message"];
+    case "promotion_alert": return ["Promotions", PROMO_CHANGE[String(p.change)] ?? titleCase(String(p.change ?? "change"))];
+    case "excel_export": return ["Exports", `Excel: ${String(p.title ?? "file")}`];
     case "printing_test": return ["Printing group", "Test message"];
     case "support_test": return ["Support group", "Test message"];
     case "support_ticket": return ["Support", "New ticket"];
@@ -362,6 +375,50 @@ function buildBody(row: OutboxRow, appUrl: string): BuiltMessage {
           "",
           p.is_staff ? "Check with this staff member; reset their two-step login under Staff if needed." : "Open Security → block the email, or mark it as reviewed if it is fine.",
         ].join("\n") + admin("/admin/security?tab=emails"),
+      };
+    case "promotion_alert": {
+      const when = (v: unknown) => (typeof v === "string" ? addisTime(v) : "—");
+      const used = p.change === "used";
+      return {
+        attachment: null,
+        text: [
+          `${used ? "🏷" : "🛡"} <b>PROMOTION: ${esc((PROMO_CHANGE[String(p.change)] ?? String(p.change ?? "changed")).toUpperCase())}</b>`,
+          "",
+          line("Promotion", p.title),
+          ...(p.code ? [line("Code", p.code)] : []),
+          line("Discount", p.discount),
+          line("For", p.audience),
+          line("Applies to", p.applies_to),
+          ...(used ? [
+            line("Order", p.order_number),
+            line("Original price", etb(p.original_etb)),
+            line("Discount given", etb(p.discount_etb)),
+            `Price paid: <b>${esc(etb(p.total_etb))}</b>`,
+            line("Paid with", p.payment_method === "wallet" ? "Balance" : "Bank transfer"),
+          ] : [
+            ...(p.min_order_etb ? [line("Minimum order", etb(p.min_order_etb))] : []),
+            ...(p.usage_limit ? [line("Usage limit", `${p.usage_limit} order(s)`)] : []),
+            ...(p.starts_at || p.ends_at ? [line("Valid", `${when(p.starts_at)} → ${p.ends_at ? when(p.ends_at) : "no end"}`)] : []),
+            line("Status", p.active ? "Active" : "Off"),
+            ...(p.homepage ? ["Shown on the homepage"] : []),
+          ]),
+          ...(p.changed ? [line("Changed", p.changed)] : []),
+          ...(p.reason ? [line("Reason", p.reason)] : []),
+          line("When", addisTime(p.at)),
+        ].join("\n") + (used && p.order_id ? admin(`/admin/orders/${p.order_id}`) : admin("/admin/promotions")),
+      };
+    }
+    case "excel_export":
+      return {
+        attachment,
+        text: [
+          "📊 <b>EXCEL EXPORT</b>",
+          "",
+          line("Export", p.title),
+          line("File", p.file_name),
+          ...(p.rows !== undefined && p.rows !== null ? [line("Rows", p.rows)] : []),
+          line("When", addisTime(p.at)),
+        ].join("\n"),
       };
     case "admin_action": {
       const meta = p.metadata && typeof p.metadata === "object" ? Object.entries(p.metadata as Record<string, unknown>).filter(([, v]) => v !== null && v !== "") : [];

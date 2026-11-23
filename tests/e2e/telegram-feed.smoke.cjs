@@ -197,6 +197,23 @@ const cron = () => fetch(`${B}/api/cron/notifications`, { headers: { authorizati
     const exp = await o.request.get(`${B}/admin/orders/export?from=${tday}&to=${tday}&status=all`);
     check(exp.ok(), "orders exported");
     check(await waitFor(() => recMsgs.some((t) => t.includes("EXCEL EXPORT") && t.includes(`orders-${tday}_to_${tday}.xlsx`))), "the Excel file was also sent to the receipts group");
+    check(await waitFor(() => sql(`select count(*) from storage.objects where bucket_id = 'excel-exports'`) === "0" &&
+      sql(`select status from notifications_outbox where event_type = 'excel_export' order by id desc limit 1`) === "sent"),
+      "sent through the queue (retried if Telegram fails); the stored copy is removed once sent");
+    const promoExp = await o.request.get(`${B}/admin/exports/download?kind=promotions&from=${tday}&to=${tday}`);
+    check(promoExp.ok() && await waitFor(() => recMsgs.some((t) => t.includes("EXCEL EXPORT") && t.includes("Promotion uses") && t.includes(`promotions-${tday}_to_${tday}.xlsx`))),
+      "the promotion-uses Excel is sent to the receipts group too");
+
+    // ---- promotions: every change is a security alert
+    await o.goto(`${B}/admin/promotions?tab=new`);
+    await o.fill("#pt-en-new", `Feed promo ${RUN}`);
+    await o.fill("#pc-new", `FEED${RUN}`);
+    await o.fill("#pdv-new", "15");
+    await o.click("button:has-text('Create promotion')");
+    await o.waitForSelector("[data-sonner-toast]:has-text('Promotion created')");
+    check(await waitFor(() => secMsgs.some((t) => t.includes("PROMOTION: CREATED") && t.includes(`FEED${RUN}`) && t.includes("15% off") && /Action by User ID: \d{6}/.test(t))),
+      "creating a promotion: security alert with the code, discount and who did it");
+    check(!orderMsgs.some((t) => t.includes(`FEED${RUN}`)) && !recMsgs.some((t) => t.includes(`FEED${RUN}`)), "promotion alerts only in the security group");
 
     // ---- bot without rights → hint + Retry all failed
     rightsError = true;
