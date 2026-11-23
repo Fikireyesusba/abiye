@@ -11,6 +11,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { dispatchSoon } from "@/lib/telegram/dispatch";
 import { ethiopianPhoneSchema } from "@/lib/validation/checkout";
 import { PRINT_TYPES, validateUpload, type DetectedType } from "@/lib/validation/upload";
+import { scanCustomerUpload } from "@/lib/security/upload-scan";
 import { rememberJobAccess } from "./access";
 import { countPages } from "./page-count";
 
@@ -119,6 +120,12 @@ export async function submitPrintJob(input: unknown): Promise<SubmitPrintResult>
     if (!check.ok || check.type !== MIME[ext]) {
       await discardAll();
       return { ok: false, error: check.ok || check.reason === "unsupported_type" ? "upload_invalid_type" : check.reason === "too_large" ? "upload_too_large" : "upload_failed", detail: f.name };
+    }
+    // Virus scan (Cloudmersive) — the whole job is refused if any file is not clean or the scan is unavailable.
+    const scan = await scanCustomerUpload(bytes, { where: "printing_file", userId: user.id, mime: check.type, ref: v.jobId });
+    if (scan) {
+      await discardAll();
+      return { ok: false, error: scan, detail: f.name };
     }
     files.push({
       path: f.path, original_name: f.name.replace(/[\u0000-\u001F\u007F]/g, "").slice(0, 255) || "document",

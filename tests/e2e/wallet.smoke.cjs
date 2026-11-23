@@ -75,6 +75,35 @@ async function requestTopup(page, amount, seed) {
     await c.waitForSelector("form [role=alert]");
     check(sql(`select count(*) from wallet_topups where user_id = '${uid}'`) === "1", "fake receipt files are refused");
 
+    // ---- virus scan (Cloudmersive; a local fake in tests): infected → refused, deleted, security alert
+    const EICAR = "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*";
+    const scanStats = async () => (await fetch("http://127.0.0.1:4599/stats")).json();
+    const before = await scanStats();
+    check(before.scans > 0 && before.lastHeaders.allowexecutables === "false" && before.lastHeaders.allowpasswordprotectedfiles === "false"
+      && /\.png/.test(before.lastHeaders.restrictfiletypes ?? ""), "the accepted receipt was virus-scanned (strict settings, only the expected file type)");
+    const filesBefore = sql(`select count(*) from storage.objects where bucket_id = 'payment-receipts' and name like 'topups/${uid}/%'`);
+    await c.goto(`${B}/account/wallet/top-up`);
+    await c.fill("#topup-amount", "100");
+    await c.setInputFiles("#topup-receipt", { name: "receipt.png", mimeType: "image/png", buffer: Buffer.concat([png(7), Buffer.from(EICAR)]) });
+    await c.click("button:has-text('Send top-up request')");
+    await c.waitForSelector("form [role=alert]");
+    check((await c.locator("form [role=alert]").innerText()).includes("failed our security check"), "infected file: the customer is told it failed the security check");
+    check(sql(`select count(*) from wallet_topups where user_id = '${uid}'`) === "1", "infected file: no top-up created");
+    check(sql(`select count(*) from storage.objects where bucket_id = 'payment-receipts' and name like 'topups/${uid}/%'`) === filesBefore, "infected file: deleted from storage");
+    check(sql(`select count(*) from security_events where kind = 'upload_blocked' and user_id = '${uid}' and metadata->>'found' like '%EICAR%' and metadata->>'where' = 'topup_receipt'`) === "1",
+      "infected file: security event with what was found");
+    check(sql(`select count(*) from notifications_outbox where event_type = 'security_event' and payload->>'kind' = 'upload_blocked'
+      and payload->>'user_id' = (select member_id from customer_accounts where id = '${uid}')`) >= "1", "infected file: security Telegram alert with the User ID");
+    // scanner unavailable → refused (nothing unscanned is accepted)
+    await c.goto(`${B}/account/wallet/top-up`);
+    await c.fill("#topup-amount", "100");
+    await c.setInputFiles("#topup-receipt", { name: "receipt.png", mimeType: "image/png", buffer: Buffer.concat([png(8), Buffer.from("SCANNER-DOWN-TEST")]) });
+    await c.click("button:has-text('Send top-up request')");
+    await c.waitForSelector("form [role=alert]");
+    check((await c.locator("form [role=alert]").innerText()).includes("security check for files is unavailable"), "scanner down: upload refused, the customer is asked to try again later");
+    check(sql(`select count(*) from wallet_topups where user_id = '${uid}'`) === "1" && sql(`select count(*) from security_events where kind = 'scan_unavailable' and user_id = '${uid}'`) === "1",
+      "scanner down: nothing created; recorded for staff");
+
     // ---- staff cannot; manager verifies
     const s = await (await b.newContext()).newPage();
     await adminLogin(s, B, sEmail, "WalletStaff2026x");

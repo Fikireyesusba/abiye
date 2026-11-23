@@ -85,7 +85,7 @@ const ORDER_FIELDS = `id, order_number, status, payment_status, customer_name, c
 export async function authorizeCustomerOrder(
   orderId: string,
   opts: { token?: string | null; userId?: string | null },
-): Promise<{ order: CustomerOrder; accessTokenHash: string } | null> {
+): Promise<{ order: CustomerOrder; accessTokenHash: string; userId: string | null } | null> {
   if (!isGuid(orderId)) return null;
   let q = getSupabaseAdmin().from("orders").select(`${ORDER_FIELDS}, access_token_hash, user_id`).eq("id", orderId);
   if (opts.token && isAccessToken(opts.token)) q = q.eq("access_token_hash", sha256Hex(opts.token));
@@ -93,12 +93,11 @@ export async function authorizeCustomerOrder(
   else return null;
   const { data, error } = await q.maybeSingle();
   if (error || !data) return null;
-  const { access_token_hash, user_id: _u, ...rest } = data as unknown as CustomerOrder & { access_token_hash: string; user_id: string };
-  void _u;
+  const { access_token_hash, user_id, ...rest } = data as unknown as CustomerOrder & { access_token_hash: string; user_id: string | null };
   const order = rest as CustomerOrder;
   order.submissions.sort((a, b) => b.submitted_at.localeCompare(a.submitted_at));
   order.history.sort((a, b) => a.created_at.localeCompare(b.created_at));
-  return { order, accessTokenHash: access_token_hash };
+  return { order, accessTokenHash: access_token_hash, userId: user_id };
 }
 
 /** Load an order for its customer. Returns null for a wrong id OR token (indistinguishable). */

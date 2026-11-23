@@ -189,6 +189,8 @@
     "upload_too_large": "The file is too large (maximum 10 MB).",
     "upload_invalid_type": "Please upload a JPG, PNG or PDF file.",
     "upload_failed": "The upload failed. Please check your connection and try again.",
+    "upload_rejected": "This file failed our security check and was deleted. Please upload a different file (for example a screenshot or an unlocked PDF).",
+    "scan_unavailable": "Our security check for files is unavailable right now. Please try again in a few minutes.",
     "login_required": "Please sign in to your account to place an order.",
     "terms_required": "Please accept the terms and conditions.",
     "account_deactivated": "This account has been deactivated. Please contact us for help.",

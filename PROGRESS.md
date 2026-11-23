@@ -115,6 +115,15 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - Local dev: sign-ups + email confirmation on, local mail catcher on :54324 (dev:up no longer excludes it).
 - **Production TODO for the owner**: configure SMTP + email templates + URL configuration in Supabase (docs/DEPLOYMENT.md §2b).
 
+## Virus scan of customer uploads — Cloudmersive (requested 2026-11-23)
+
+- Payment receipts, wallet top-up receipts and printing documents: after the content-type check, every file goes to Cloudmersive's **advanced virus scan** (`src/lib/security/virus-scan.ts`, `upload-scan.ts`). Strict: no viruses, executables, scripts, macros, HTML, XXE, insecure deserialization, invalid files, **password-protected files** (owner's choice), only the expected format.
+- Not clean → file deleted, customer told "failed our security check", security event `upload_blocked` (Security page + security Telegram, User ID + what was found; the account becomes high-risk).
+- **Fails closed** (owner's choice): key missing / wrong, limit reached or outage → upload refused ("try again in a few minutes"), event `scan_unavailable`; Site health shows the scanner status.
+- Env: `CLOUDMERSIVE_API_KEY` (Vercel, Sensitive). `CLOUDMERSIVE_API_BASE` only for tests. Tests use a local fake scanner: `node tests/e2e/fake-scanner.cjs` (port 4599) with `.env.local` `CLOUDMERSIVE_API_KEY=test-cloudmersive-key`, `CLOUDMERSIVE_API_BASE=http://127.0.0.1:4599` — start it before the browser tests.
+- Migration **0065** `20261123000065_upload_virus_scan.sql`; tests: unit `virus-scan.test.ts`, db `99zzzb_upload_scan_test.sql`, e2e `wallet.smoke.cjs`. Docs: DEPLOYMENT.md §6b.
+- ⏳ Owner: add `CLOUDMERSIVE_API_KEY` in Vercel and redeploy (**until then customer uploads are refused**); paste **0065** into the Supabase SQL Editor.
+
 ## Promotion alerts (security group) and Excel copies through the queue (requested 2026-11-23)
 
 - **Security Telegram group** gets every promotion change: created, changed (what changed), switched on / off, revoked (reason), brought back, deleted, code given to / removed from a customer (User ID, reason), and **code used** when the order is paid (User ID, order, original price, discount, price paid). Who acted = Action by User ID.

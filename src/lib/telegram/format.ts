@@ -93,6 +93,8 @@ export function suggestedAction(row: OutboxRow): string | null {
       if (p.kind === "admin_login_success") return "If this was not one of your staff, reset their password and two-step login under Staff right away.";
       if (p.kind === "rate_limited") return "Watch for repeats; block the email under Security if it continues.";
       if (p.kind === "login_blocked" || p.kind === "signup_blocked") return "Nothing to do — the email is already blocked.";
+      if (p.kind === "upload_blocked") return "The file was deleted. Check this customer under Security; block the email if it happens again or looks deliberate.";
+      if (p.kind === "scan_unavailable") return "Customers cannot upload files right now. Check CLOUDMERSIVE_API_KEY in Vercel and your Cloudmersive plan (monthly limit).";
       return "If you do not recognise this, block the email under Security; otherwise no action is needed.";
     case "security_alert":
       return "Open Security → Active alerts: block the email if it looks malicious, or mark it reviewed.";
@@ -129,6 +131,8 @@ const SECURITY_KIND: Record<string, [string, string]> = {
   login_blocked: ["Customer sign-in", "Blocked email tried to sign in"],
   signup_blocked: ["Customer sign-up", "Blocked email tried to sign up"],
   rate_limited: ["Rate limiter", "Too many attempts"],
+  upload_blocked: ["File scan", "Upload blocked (virus / unsafe content)"],
+  scan_unavailable: ["File scan", "Scanner unavailable — upload refused"],
 };
 const CHANNEL: Record<string, string> = { email: "Customer email", push: "Phone notification", archive: "Receipt archive (email)" };
 const CUSTOMER_EVENT: Record<string, string> = {

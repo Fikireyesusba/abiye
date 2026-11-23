@@ -7,6 +7,7 @@ import { sha256Hex } from "@/lib/security/tokens";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { dispatchSoon } from "@/lib/telegram/dispatch";
 import { RECEIPT_MAX_BYTES, RECEIPT_TYPES, validateUpload } from "@/lib/validation/upload";
+import { scanCustomerUpload } from "@/lib/security/upload-scan";
 import { WALLET_MAX_ETB } from "./limits";
 
 const BUCKET = "payment-receipts";
@@ -54,6 +55,12 @@ export async function submitTopup(input: { amount: unknown; path: unknown; trans
   if (!check.ok || check.type !== MIME_BY_EXT[m[1]]) {
     await discard();
     return { ok: false, error: check.ok || check.reason === "unsupported_type" ? "upload_invalid_type" : check.reason === "too_large" ? "upload_too_large" : "upload_failed" };
+  }
+  // Virus scan (Cloudmersive) — refused if not clean or if the scan is unavailable.
+  const scan = await scanCustomerUpload(bytes, { where: "topup_receipt", userId: user.id, mime: check.type });
+  if (scan) {
+    await discard();
+    return { ok: false, error: scan };
   }
   const { data, error } = await getSupabaseAdmin().rpc("submit_wallet_topup", {
     p_user_id: user.id,

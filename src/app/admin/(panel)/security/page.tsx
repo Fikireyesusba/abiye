@@ -5,6 +5,7 @@ import { ActionForm } from "@/components/admin/action-form";
 import { DatabaseUpdateNeeded, PageHeader, Panel, StatCard, SubTabs, Table, Td, fieldClass, isMissingDbFunction } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { blockEmail, clearReviewedList, markSecurityReviewed, unblockEmail } from "@/lib/admin/security-actions";
+import { scanConfigured } from "@/lib/security/virus-scan";
 import { requirePermission } from "@/lib/auth/guards";
 import { first } from "@/lib/catalog/search";
 import { formatDateTime, zoneDayStartIso } from "@/lib/datetime";
@@ -30,6 +31,7 @@ const KIND: Record<string, string> = {
   admin_login_failed: "Admin sign-in failed", admin_login_not_staff: "Non-staff tried admin sign-in", admin_mfa_failed: "Wrong two-step code",
   admin_login_success: "Admin signed in", customer_login_failed: "Customer sign-in failed", staff_customer_login: "Staff tried customer sign-in",
   login_blocked: "Blocked email tried to sign in", signup_blocked: "Blocked email tried to sign up", rate_limited: "Too many attempts (rate limited)",
+  upload_blocked: "Upload blocked by the virus scan (file deleted)", scan_unavailable: "Virus scan unavailable — upload refused",
 };
 const ago = (iso: string | null) => {
   if (!iso) return "never";
@@ -170,6 +172,8 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
       { ok: emailConfigured(), text: emailConfigured() ? "Customer emails configured" : "Customer emails not configured", href: "/admin/notifications" },
       { ok: pushConfigured(), text: pushConfigured() ? "Phone notifications configured" : "Phone notifications not configured", href: "/admin/notifications" },
       { ok: !!telegramConfig(), text: telegramConfig() ? "Orders & payments Telegram group connected" : "Orders & payments Telegram group not connected", href: "/admin/notifications" },
+      { ok: scanConfigured() && !ev("scan_unavailable"), text: !scanConfigured() ? "Virus scanning of customer uploads NOT set up — customers cannot upload files (add CLOUDMERSIVE_API_KEY in Vercel)"
+          : ev("scan_unavailable") ? `Virus scanning: ${ev("scan_unavailable")} upload(s) refused in 24 h because the scanner was unavailable` : "Virus scanning of customer uploads active (Cloudmersive)", href: "/admin/security?tab=events" },
       { ok: !!securityTelegramConfig(), text: securityTelegramConfig() ? "Security Telegram group connected" : "Security Telegram group not connected", href: "/admin/notifications" },
       ...jobs.map((j) => {
         const r = h.cron[j.name];
@@ -188,6 +192,7 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
           <StatCard label="Failed customer sign-ins (24 h)" value={ev("customer_login_failed")} href="/admin/security?tab=emails" />
           <StatCard label="Blocked attempts (24 h)" value={ev("login_blocked") + ev("signup_blocked")} hint={`${h.blocked_emails} email(s) blocked`} href="/admin/security?tab=blocked" />
           <StatCard label="Rate-limited (24 h)" value={ev("rate_limited")} tone={ev("rate_limited") ? "warning" : undefined} />
+          <StatCard label="Uploads blocked (24 h)" value={ev("upload_blocked")} tone={ev("upload_blocked") ? "warning" : undefined} href="/admin/security?tab=events" />
           <StatCard label="Payments to verify" value={h.payments_pending} hint={h.payments_oldest ? `oldest ${ago(h.payments_oldest)}` : undefined} href="/admin/payments" />
           <StatCard label="Top-ups to verify" value={h.topups_pending} hint={h.topups_oldest ? `oldest ${ago(h.topups_oldest)}` : undefined} href="/admin/wallet" />
           <StatCard label="Out of stock" value={h.out_of_stock} href="/admin/inventory?filter=low" tone={h.out_of_stock ? "warning" : undefined} />

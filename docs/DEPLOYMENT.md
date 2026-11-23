@@ -148,6 +148,20 @@ It refuses to run again once an active Super Admin exists. (Developers can inste
 
 `production-setup.sql` is run once. Each later change is a single new file in `supabase/migrations/` — paste it into the Supabase SQL Editor and Run, in filename order, once. Already published after the first setup: `…0017_admin_customer_accounts.sql`, `…0018_customer_account_management.sql`, `…0019_finalization.sql`, `…0020_personal_promotions.sql`, `…0021_admin_mfa.sql`, `…0022_customer_emails.sql`, `…0023_customer_push.sql`, `…0024_export_audit.sql`, `…0025_staff_not_customers.sql`, `…0026_wallet.sql`, `…0027_security_monitoring.sql`, `…0028_profile_and_activity_tools.sql`, `…0029_payment_export.sql`, `…0030_pickup_cleanup_and_receipt_archive.sql`, `…0031_stock_alerts.sql`, `…0032_product_reviews.sql`, `…0033_sales_reports.sql`, `…0034_data_export_reset.sql`, `…0035_security_reviews.sql`, `…0036_telegram_activity_feed.sql`, `…0037_telegram_two_groups.sql`, `…0038_activity_categories.sql`, `…0039_personal_code_messages.sql`, `…0040_customers_without_staff.sql`, `…0041_telegram_four_groups.sql`, `…0042_staff_remove.sql`, `…0043_product_audience.sql`, `…0044_single_session_push_owner.sql`, `…0045_paid_orders_locked_details.sql`, `…0046_warsaw_gmail_printing_cancel.sql`, `…0047_age_sex.sql`, `…0048_manage_services.sql`, `…0049_instore_clear_tools.sql`, `…0050_search_permissions.sql`. PROGRESS.md records which ones production has.
 
+## 6b. Virus scan of customer uploads (Cloudmersive)
+
+Every file a customer uploads — payment receipts, wallet top-up receipts and printing documents — is checked by content (real file type) and then sent to Cloudmersive's **advanced virus scan** before it is accepted. It must be clean: no virus / malware, no programs, scripts, macros, embedded HTML or XML external entities, not broken or disguised, **not password-protected**, and of the expected format (`.pdf`, `.jpg`, `.png`, `.docx`).
+
+- **Not clean** → the file is deleted at once, the customer is asked for another file (e.g. a screenshot or an unlocked PDF), and a **security event** is recorded (Admin → Security; security Telegram group with the User ID and what was found). The account becomes an active alert.
+- **Scanner unavailable** (key missing or wrong, monthly limit used up, outage) → the upload is **refused** ("try again in a few minutes"); nothing unscanned is kept. Admin → Security → Site health shows it, and the security Telegram group is told.
+
+Setup (browser only):
+1. Create an account at **cloudmersive.com**, then **account.cloudmersive.com → API Keys → Create** and copy the key.
+2. Vercel → Settings → Environment Variables (Production): `CLOUDMERSIVE_API_KEY` = the key (mark **Sensitive**), then **Redeploy**.
+3. Admin → Security → Site health should say "Virus scanning of customer uploads active". Upload a test receipt to check.
+
+Plan limits: the free plan has a monthly scan limit and a small maximum file size; printing documents can be up to 25 MB, so a paid plan may be needed. When the limit is reached, uploads are refused until the next month or an upgrade.
+
 ## 7. Security headers
 
 Every page carries a nonce-based Content-Security-Policy (`src/proxy.ts`, `src/lib/security/csp.ts`): scripts only from this site with the per-request nonce, network/images only to this site and the Supabase project, no framing. If you ever add a third-party script, widget or analytics service, its domain must be added there or the browser will block it. See docs/GO-LIVE.md for the launch checklist.

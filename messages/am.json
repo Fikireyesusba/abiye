@@ -189,6 +189,8 @@
     "upload_too_large": "ፋይሉ በጣም ትልቅ ነው (ከ10 MB ያልበለጠ)።",
     "upload_invalid_type": "እባክዎ JPG፣ PNG ወይም PDF ፋይል ይጫኑ።",
     "upload_failed": "መጫኑ አልተሳካም። እባክዎ ግንኙነትዎን ያረጋግጡ እና እንደገና ይሞክሩ።",
+    "upload_rejected": "This file failed our security check and was deleted. Please upload a different file (for example a screenshot or an unlocked PDF).",
+    "scan_unavailable": "Our security check for files is unavailable right now. Please try again in a few minutes.",
     "login_required": "ትዕዛዝ ለማስገባት እባክዎ ወደ መለያዎ ይግቡ።",
     "terms_required": "እባክዎ ውሎችን እና ሁኔታዎችን ይቀበሉ።",
     "account_deactivated": "ይህ መለያ ታግዷል። እባክዎ ለእርዳታ ያግኙን።",

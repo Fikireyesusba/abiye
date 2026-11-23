@@ -6,7 +6,8 @@ import { clientIpKey } from "./rate-limit";
 
 export type SecurityEventKind =
   | "admin_login_failed" | "admin_login_not_staff" | "admin_mfa_failed" | "admin_login_success"
-  | "customer_login_failed" | "staff_customer_login" | "login_blocked" | "signup_blocked" | "rate_limited";
+  | "customer_login_failed" | "staff_customer_login" | "login_blocked" | "signup_blocked" | "rate_limited"
+  | "upload_blocked" | "scan_unavailable";
 
 /**
  * Records a security event (Admin → Security). Never throws and never blocks

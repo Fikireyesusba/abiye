@@ -6,6 +6,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { dispatchSoon } from "@/lib/telegram/dispatch";
 import { paymentSubmissionSchema } from "@/lib/validation/checkout";
 import { RECEIPT_MAX_BYTES, RECEIPT_TYPES, validateUpload } from "@/lib/validation/upload";
+import { scanCustomerUpload } from "@/lib/security/upload-scan";
 import { getCustomerUser } from "@/lib/account/session";
 import { authorizeCustomerOrder, isAccessToken, isGuid } from "./access";
 
@@ -99,6 +100,12 @@ export async function submitPaymentProof(input: {
   if (!check.ok || check.type !== MIME_BY_EXT[pathMatch[1]]) {
     await discard();
     return { ok: false, error: check.ok || check.reason === "unsupported_type" ? "upload_invalid_type" : check.reason === "too_large" ? "upload_too_large" : "upload_failed" };
+  }
+  // Virus scan (Cloudmersive) — refused if not clean or if the scan is unavailable.
+  const scan = await scanCustomerUpload(bytes, { where: "payment_receipt", userId: auth.userId ?? null, mime: check.type, ref: orderId });
+  if (scan) {
+    await discard();
+    return { ok: false, error: scan };
   }
 
   const originalName = typeof input.originalName === "string" ? input.originalName.slice(0, 255) : null;

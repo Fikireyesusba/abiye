@@ -34,6 +34,13 @@ const serverEnvSchema = z.object({
   TELEGRAM_PRINTING_CHAT_ID: z.string().regex(/^-?\d+$/, "Chat id must be numeric").optional(),
   TELEGRAM_SUPPORT_BOT_TOKEN: z.string().regex(/^\d+:[A-Za-z0-9_-]{30,}$/, "Invalid Telegram bot token format").optional(),
   TELEGRAM_SUPPORT_CHAT_ID: z.string().regex(/^-?\d+$/, "Chat id must be numeric").optional(),
+  // Virus scanning of customer uploads (Cloudmersive). Without it, customer uploads are refused (fail closed).
+  CLOUDMERSIVE_API_KEY: z.string().trim().min(10, "Cloudmersive API key looks too short").max(200).optional(),
+  // Only for tests (a local mock of the scanner). https anywhere, http only on localhost.
+  CLOUDMERSIVE_API_BASE: z
+    .url()
+    .refine((u) => u.startsWith("https://") || /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(u), "Must be https (or http on localhost)")
+    .optional(),
   // Only for tests (a local mock of the Bot API). https anywhere, http only on localhost.
   TELEGRAM_API_BASE: z
     .url()
@@ -66,7 +73,7 @@ export type ServerEnv = z.infer<typeof serverEnvSchema>;
 let cached: ServerEnv | undefined;
 
 const OPTIONAL = new Set([
-  "TELEGRAM_BOT_TOKEN", "TELEGRAM_ADMIN_CHAT_ID", "TELEGRAM_SECURITY_BOT_TOKEN", "TELEGRAM_SECURITY_CHAT_ID", "TELEGRAM_STOCK_BOT_TOKEN", "TELEGRAM_STOCK_CHAT_ID", "TELEGRAM_RECEIPTS_BOT_TOKEN", "TELEGRAM_RECEIPTS_CHAT_ID", "TELEGRAM_PRINTING_BOT_TOKEN", "TELEGRAM_PRINTING_CHAT_ID", "TELEGRAM_SUPPORT_BOT_TOKEN", "TELEGRAM_SUPPORT_CHAT_ID", "RESEND_API_KEY", "EMAIL_FROM", "VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "VAPID_SUBJECT",
+  "TELEGRAM_BOT_TOKEN", "TELEGRAM_ADMIN_CHAT_ID", "TELEGRAM_SECURITY_BOT_TOKEN", "TELEGRAM_SECURITY_CHAT_ID", "TELEGRAM_STOCK_BOT_TOKEN", "TELEGRAM_STOCK_CHAT_ID", "TELEGRAM_RECEIPTS_BOT_TOKEN", "TELEGRAM_RECEIPTS_CHAT_ID", "TELEGRAM_PRINTING_BOT_TOKEN", "TELEGRAM_PRINTING_CHAT_ID", "TELEGRAM_SUPPORT_BOT_TOKEN", "TELEGRAM_SUPPORT_CHAT_ID", "CLOUDMERSIVE_API_KEY", "CLOUDMERSIVE_API_BASE", "RESEND_API_KEY", "EMAIL_FROM", "VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "VAPID_SUBJECT",
 ]);
 const optionalProblems: Record<string, string> = {};
 
@@ -99,6 +106,8 @@ export function getServerEnv(): ServerEnv {
     TELEGRAM_SUPPORT_BOT_TOKEN: process.env.TELEGRAM_SUPPORT_BOT_TOKEN || undefined,
     TELEGRAM_SUPPORT_CHAT_ID: process.env.TELEGRAM_SUPPORT_CHAT_ID || undefined,
     TELEGRAM_API_BASE: process.env.TELEGRAM_API_BASE || undefined,
+    CLOUDMERSIVE_API_KEY: process.env.CLOUDMERSIVE_API_KEY || undefined,
+    CLOUDMERSIVE_API_BASE: process.env.CLOUDMERSIVE_API_BASE || undefined,
     RESEND_API_KEY: process.env.RESEND_API_KEY || undefined,
     EMAIL_FROM: process.env.EMAIL_FROM || undefined,
     EMAIL_API_BASE: process.env.EMAIL_API_BASE || undefined,
