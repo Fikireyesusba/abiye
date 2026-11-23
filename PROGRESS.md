@@ -124,7 +124,7 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - **Delete:** Super Admin only (with two-step sign-in), only when never used and nobody holds it — remove it from its customers first. Old expired / cancelled orders no longer block the delete (fixes "used 0 / 1" but "was used in orders").
 - Holders listed by User ID only. Help page updated (once per account; top-up reason "Top Up").
 - Migration **0062** `20261123000062_promotion_rules.sql`; tests `supabase/db-tests/99zzy_promotion_rules_test.sql`, `tests/e2e/personal-promo.smoke.cjs`.
-- ⏳ Owner: paste **0062** into the Supabase SQL Editor.
+- ✅ 0062 applied in production (owner confirmed 2026-11-23).
 
 ## Top-up page, wallet at checkout, Excel for Super Admin only (requested 2026-11-23)
 
