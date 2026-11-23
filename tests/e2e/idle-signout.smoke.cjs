@@ -77,6 +77,7 @@ const backdate = async (page, minutes) => {
     const h = await (await b.newContext()).newPage();
     await loginCustomer(h, B, email, "IdleE2E2026x");
     await h.goto(`${B}/account`);
+    await h.goto("about:blank"); // the app is closed while the time passes
     await h.context().addCookies([{ name: "abiye_active", value: String(Date.now() - 5 * 3600_000), url: B }]);
     await h.goto(`${B}/`);
     await h.mouse.move(10, 10);
