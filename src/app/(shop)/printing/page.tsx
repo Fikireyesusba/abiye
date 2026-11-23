@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { scanMaxMb } from "@/lib/security/virus-scan";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Printer } from "lucide-react";
 import Link from "next/link";
@@ -81,7 +82,7 @@ export default async function PrintingPage() {
           defaults={{ fullName: account?.full_name ?? "", phone: account?.phone ? formatEthiopianPhone(account.phone) : "" }}
           rules={prices}
           serviceCharge={charge}
-          maxMb={Math.min(25, s.printing.max_file_mb)}
+          maxMb={Math.min(25, s.printing.max_file_mb, scanMaxMb())}
           maxCopies={s.printing.max_copies}
           pickupEnabled={s.delivery.pickup_enabled}
           deliveryEnabled={s.delivery.delivery_enabled && zones.length > 0}

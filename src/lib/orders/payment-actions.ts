@@ -7,6 +7,7 @@ import { dispatchSoon } from "@/lib/telegram/dispatch";
 import { paymentSubmissionSchema } from "@/lib/validation/checkout";
 import { RECEIPT_MAX_BYTES, RECEIPT_TYPES, validateUpload } from "@/lib/validation/upload";
 import { scanCustomerUpload } from "@/lib/security/upload-scan";
+import { scanMaxBytes } from "@/lib/security/virus-scan";
 import { getCustomerUser } from "@/lib/account/session";
 import { authorizeCustomerOrder, isAccessToken, isGuid } from "./access";
 
@@ -33,6 +34,7 @@ export async function prepareReceiptUpload(input: {
   if (typeof mimeType !== "string" || !(mimeType in EXT_BY_MIME)) return { ok: false, error: "upload_invalid_type" };
   if (typeof size !== "number" || !Number.isInteger(size) || size <= 0) return { ok: false, error: "upload_failed" };
   if (size > RECEIPT_MAX_BYTES) return { ok: false, error: "upload_too_large" };
+  if (size > scanMaxBytes()) return { ok: false, error: "scan_too_large" };
 
   const ip = await clientIpKey();
   if (!(await rateLimitAll([[`receipt:ip:${ip}`, 20, 3600], [`receipt:order:${orderId}`, 10, 3600]]))) {

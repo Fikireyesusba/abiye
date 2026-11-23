@@ -13,7 +13,8 @@ import { getServerEnv } from "@/lib/env";
 export type ScanResult =
   | { ok: true }
   | { ok: false; reason: "infected"; findings: string[] }
-  | { ok: false; reason: "unavailable"; detail: string };
+  | { ok: false; reason: "unavailable"; detail: string }
+  | { ok: false; reason: "too_large"; maxMb: number };
 
 const DEFAULT_BASE = "https://api.cloudmersive.com";
 const TIMEOUT_MS = 30_000;
@@ -46,6 +47,14 @@ const FLAGS: [keyof AdvancedScan, string][] = [
   ["ContainsRestrictedFileFormat", "is not an allowed file format"],
 ];
 
+/** Largest file the Cloudmersive plan scans (CLOUDMERSIVE_MAX_MB, default 3.5 MB). */
+export function scanMaxMb(): number {
+  return getServerEnv().CLOUDMERSIVE_MAX_MB ?? 3.5;
+}
+export function scanMaxBytes(): number {
+  return Math.floor(scanMaxMb() * 1024 * 1024);
+}
+
 export function scanConfigured(): boolean {
   return !!getServerEnv().CLOUDMERSIVE_API_KEY;
 }
@@ -62,6 +71,8 @@ export function describeScan(r: AdvancedScan): string[] {
  */
 export async function scanFile(bytes: Uint8Array, fileName: string, extensions: readonly string[]): Promise<ScanResult> {
   const env = getServerEnv();
+  // Larger than the plan scans: never sent (it would be refused) — the customer is asked for a smaller file.
+  if (bytes.length > scanMaxBytes()) return { ok: false, reason: "too_large", maxMb: scanMaxMb() };
   if (!env.CLOUDMERSIVE_API_KEY) return { ok: false, reason: "unavailable", detail: "virus scanning is not set up (CLOUDMERSIVE_API_KEY)" };
   const form = new FormData();
   form.append("inputFile", new Blob([new Uint8Array(bytes)]), fileName.replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 100) || "upload");
@@ -88,6 +99,7 @@ export async function scanFile(bytes: Uint8Array, fileName: string, extensions: 
   } catch (e) {
     return { ok: false, reason: "unavailable", detail: `scanner not reachable: ${(e as Error).name === "TimeoutError" ? "timed out" : (e as Error).message}`.slice(0, 200) };
   }
+  if (res.status === 413) return { ok: false, reason: "too_large", maxMb: scanMaxMb() };
   if (!res.ok) {
     // 401/403: wrong key; 429 / quota: monthly limit used up; 5xx: outage. The body is not logged (may echo input).
     return { ok: false, reason: "unavailable", detail: `scanner answered HTTP ${res.status}` };

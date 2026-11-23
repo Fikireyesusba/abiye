@@ -23,13 +23,15 @@ type Source = "payment_receipt" | "topup_receipt" | "printing_file";
 export async function scanCustomerUpload(
   bytes: Uint8Array,
   opts: { where: Source; userId: string | null; mime: string; ref?: string },
-): Promise<null | "upload_rejected" | "scan_unavailable"> {
+): Promise<null | "upload_rejected" | "scan_unavailable" | "scan_too_large"> {
   const ext = EXT_OF[opts.mime] ?? [];
   const started = Date.now();
   const res = await scanFile(bytes, `upload${ext[0] ?? ""}`, ext);
+  // Too large for the plan: not an attack and not an outage — the customer is asked for a smaller file.
+  if (!res.ok && res.reason === "too_large") return "scan_too_large";
   const fileType = ext[0]?.slice(1) ?? opts.mime;
   await logScan(bytes, opts, fileType, res.ok ? "clean" : res.reason === "infected" ? "blocked" : "unavailable",
-    res.ok ? null : res.reason === "infected" ? res.findings.slice(0, 5).join("; ") : res.detail, Date.now() - started);
+    res.ok ? null : res.reason === "infected" ? res.findings.slice(0, 5).join("; ") : res.reason === "unavailable" ? res.detail : null, Date.now() - started);
   if (res.ok) return null;
   // The account's email links the event to the customer (User ID in alerts; risk score on the Security page).
   const email = opts.userId ? (await getSupabaseAdmin().auth.admin.getUserById(opts.userId).catch(() => null))?.data.user?.email ?? null : null;
@@ -38,8 +40,9 @@ export async function scanCustomerUpload(
     await recordSecurityEvent("upload_blocked", { userId: opts.userId, email, metadata: { ...metadata, found: res.findings.slice(0, 5).join("; ") } });
     return "upload_rejected";
   }
-  console.error(`[virus-scan] ${opts.where}: ${res.detail}`);
-  await recordSecurityEvent("scan_unavailable", { userId: opts.userId, email, metadata: { ...metadata, problem: res.detail } });
+  const detail = res.reason === "unavailable" ? res.detail : "unknown";
+  console.error(`[virus-scan] ${opts.where}: ${detail}`);
+  await recordSecurityEvent("scan_unavailable", { userId: opts.userId, email, metadata: { ...metadata, problem: detail } });
   return "scan_unavailable";
 }
 

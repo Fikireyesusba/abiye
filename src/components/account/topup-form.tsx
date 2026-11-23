@@ -10,14 +10,16 @@ import type { AppErrorCode } from "@/lib/errors";
 import { formatETB, toSantim } from "@/lib/money";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { prepareTopupUpload, submitTopup } from "@/lib/wallet/actions";
+import { shrinkImage } from "@/lib/upload/shrink-image";
 
 const MAX_FILE = 10 * 1024 * 1024;
 const TYPES = ["image/jpeg", "image/png", "application/pdf"];
 type Phase = "idle" | "uploading" | "verifying" | "done";
 
 /** Top-up request: amount + bank receipt. Credited only after our team verifies the transfer. */
-export function TopupForm({ maxAmount }: { maxAmount: number }) {
+export function TopupForm({ maxAmount, maxMb }: { maxAmount: number; maxMb: number }) {
   const t = useTranslations("wallet");
+  const tu = useTranslations("upload");
   const te = useTranslations("errors");
   const locale = useLocale() as "en" | "am";
   const router = useRouter();
@@ -37,14 +39,16 @@ export function TopupForm({ maxAmount }: { maxAmount: number }) {
     if (value > maxAmount) return setError({ code: "wallet_limit", detail: String(maxAmount) });
     if (!file) return setError({ code: "invalid_files" });
     if (!TYPES.includes(file.type)) return setError({ code: "upload_invalid_type" });
-    if (file.size > MAX_FILE) return setError({ code: "upload_too_large" });
     setError(null);
     setPhase("uploading");
     try {
-      const prep = await prepareTopupUpload({ amount: value, mimeType: file.type, size: file.size });
+      // Large photos are made smaller here, so they fit the security check's file-size limit.
+      const upload = await shrinkImage(file, { maxBytes: Math.min(MAX_FILE, maxMb * 1024 * 1024) });
+      if (upload.size > maxMb * 1024 * 1024) throw { error: "scan_too_large" };
+      const prep = await prepareTopupUpload({ amount: value, mimeType: upload.type, size: upload.size });
       if (!prep.ok) throw prep;
       const { error: upErr } = await createSupabaseBrowserClient().storage.from("payment-receipts")
-        .uploadToSignedUrl(prep.path, prep.uploadToken, file, { contentType: file.type });
+        .uploadToSignedUrl(prep.path, prep.uploadToken, upload, { contentType: upload.type });
       if (upErr) throw { error: "upload_failed" };
       setPhase("verifying");
       const res = await submitTopup({ amount: value, path: prep.path, transactionReference: reference });
@@ -84,10 +88,11 @@ export function TopupForm({ maxAmount }: { maxAmount: number }) {
         </label>
         <input id="topup-receipt" type="file" className="sr-only" accept="image/jpeg,image/png,application/pdf,.jpg,.jpeg,.png,.pdf"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+        <p className="text-xs text-muted-foreground">{tu("sizeHint", { max: maxMb })}</p>
       </div>
       {error && (
         <p role="alert" className="rounded-md bg-destructive/5 p-3 text-sm text-destructive">
-          {te(error.code)}{error.code === "wallet_limit" && error.detail ? ` ${t("canAdd", { amount: formatETB(toSantim(Number(error.detail)), locale) })}` : ""}
+          {error.code === "scan_too_large" ? tu("tooBig", { max: maxMb }) : te(error.code)}{error.code === "wallet_limit" && error.detail ? ` ${t("canAdd", { amount: formatETB(toSantim(Number(error.detail)), locale) })}` : ""}
         </p>
       )}
       <Button type="submit" size="lg" className="w-full" disabled={busy || !file || !amountOk}>

@@ -106,6 +106,41 @@ async function requestTopup(page, amount, seed) {
     check(sql(`select string_agg(result, ',' order by id) from upload_scans where user_id = '${uid}' and source = 'topup_receipt'`) === "clean,blocked,unavailable",
       "every scan is kept in the scan history (clean, blocked, scanner unavailable)");
 
+    // ---- file size vs the scanner plan (3.5 MB): big photos are made smaller in the browser; big PDFs get a clear message
+    function noisePng(side) {
+      const crcT = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+      const crc = (bb) => { let c = 0xffffffff; for (const x of bb) c = crcT[(c ^ x) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+      const chunk = (t, d) => { const l = Buffer.alloc(4); l.writeUInt32BE(d.length); const td = Buffer.concat([Buffer.from(t), d]); const cc = Buffer.alloc(4); cc.writeUInt32BE(crc(td)); return Buffer.concat([l, td, cc]); };
+      const ih = Buffer.alloc(13); ih.writeUInt32BE(side, 0); ih.writeUInt32BE(side, 4); ih[8] = 8; ih[9] = 2;
+      const raw = require("crypto").randomBytes(side * (side * 3 + 1));
+      for (let y = 0; y < side; y++) raw[y * (side * 3 + 1)] = 0;
+      return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk("IHDR", ih), chunk("IDAT", zlib.deflateSync(raw, { level: 0 })), chunk("IEND", Buffer.alloc(0))]);
+    }
+    const bigPhoto = noisePng(1700);
+    check(bigPhoto.length > 8 * 1024 * 1024, `test photo is big (${(bigPhoto.length / 1048576).toFixed(1)} MB)`);
+    const topupsBefore = Number(sql(`select count(*) from wallet_topups where user_id = '${uid}'`));
+    await c.goto(`${B}/account/wallet/top-up`);
+    check((await c.locator("main").innerText()).includes("Largest file: 3.5 MB"), "top-up page tells the largest file size (3.5 MB)");
+    await c.fill("#topup-amount", "100");
+    await c.setInputFiles("#topup-receipt", { name: "camera-photo.png", mimeType: "image/png", buffer: bigPhoto });
+    await c.click("button:has-text('Send top-up request')");
+    await c.waitForSelector("[role=status]:has-text(\"was sent\")", { timeout: 60000 });
+    const stored = sql(`select receipt_mime || ':' || (select (metadata->>'size')::bigint from storage.objects o where o.bucket_id = 'payment-receipts' and o.name = t.receipt_path)
+      from wallet_topups t where user_id = '${uid}' order by created_at desc limit 1`);
+    check(Number(sql(`select count(*) from wallet_topups where user_id = '${uid}'`)) === topupsBefore + 1 && stored.startsWith("image/jpeg:")
+      && Number(stored.split(":")[1]) < 3.5 * 1024 * 1024, `a ${(bigPhoto.length / 1048576).toFixed(0)} MB photo is made smaller in the browser and accepted (${(Number(stored.split(":")[1]) / 1048576).toFixed(2)} MB JPG)`);
+    sql(`delete from wallet_topups where user_id = '${uid}' and status = 'pending' and amount_etb = 100`); // keep the rest of the test unchanged
+    const bigPdf = Buffer.concat([Buffer.from("%PDF-1.4\n"), Buffer.alloc(4 * 1024 * 1024, 0x20), Buffer.from("\n%%EOF")]);
+    const scansBefore = sql(`select count(*) from upload_scans where user_id = '${uid}'`);
+    await c.goto(`${B}/account/wallet/top-up`);
+    await c.fill("#topup-amount", "100");
+    await c.setInputFiles("#topup-receipt", { name: "statement.pdf", mimeType: "application/pdf", buffer: bigPdf });
+    await c.click("button:has-text('Send top-up request')");
+    await c.waitForSelector("form [role=alert]");
+    check((await c.locator("form [role=alert]").innerText()).includes("larger than 3.5 MB"), "a 4 MB PDF: clear message with the 3.5 MB limit (not 'scanner unavailable')");
+    check(sql(`select count(*) from upload_scans where user_id = '${uid}'`) === scansBefore
+      && sql(`select count(*) from security_events where kind = 'scan_unavailable' and user_id = '${uid}'`) === "1", "nothing sent to the scanner, no false outage alert");
+
     // ---- staff cannot; manager verifies
     const s = await (await b.newContext()).newPage();
     await adminLogin(s, B, sEmail, "WalletStaff2026x");
@@ -182,7 +217,7 @@ async function requestTopup(page, amount, seed) {
     // ---- Security → File scans: the history, searchable by User ID
     await o.goto(`${B}/admin/security?tab=scans&q=${mem}`);
     const scanRows = await o.locator("[data-testid=scan-row]").allInnerTexts();
-    check(scanRows.length === 3 && scanRows.some((t) => t.includes("blocked") && t.includes("EICAR")) && scanRows.some((t) => t.includes("clean")),
+    check(scanRows.length === 4 && scanRows.some((t) => t.includes("blocked") && t.includes("EICAR")) && scanRows.some((t) => t.includes("clean")),
       "Security → File scans lists the customer's scans with results and findings");
 
     // ---- super admin correction + reject flow

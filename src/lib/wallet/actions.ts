@@ -8,6 +8,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { dispatchSoon } from "@/lib/telegram/dispatch";
 import { RECEIPT_MAX_BYTES, RECEIPT_TYPES, validateUpload } from "@/lib/validation/upload";
 import { scanCustomerUpload } from "@/lib/security/upload-scan";
+import { scanMaxBytes } from "@/lib/security/virus-scan";
 import { WALLET_MAX_ETB } from "./limits";
 
 const BUCKET = "payment-receipts";
@@ -25,6 +26,7 @@ export async function prepareTopupUpload(input: { amount: unknown; mimeType: unk
   if (typeof input.mimeType !== "string" || !(input.mimeType in EXT_BY_MIME)) return { ok: false, error: "upload_invalid_type" };
   if (typeof input.size !== "number" || !Number.isInteger(input.size) || input.size <= 0) return { ok: false, error: "upload_failed" };
   if (input.size > RECEIPT_MAX_BYTES) return { ok: false, error: "upload_too_large" };
+  if (input.size > scanMaxBytes()) return { ok: false, error: "scan_too_large" };
   const ip = await clientIpKey();
   if (!(await rateLimitAll([[`topup:ip:${ip}`, 20, 3600], [`topup:user:${user.id}`, 10, 3600]]))) return { ok: false, error: "rate_limited" };
   const path = `topups/${user.id}/${crypto.randomUUID()}.${EXT_BY_MIME[input.mimeType]}`;

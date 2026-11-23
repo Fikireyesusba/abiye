@@ -160,7 +160,11 @@ Setup (browser only):
 2. Vercel → Settings → Environment Variables (Production): `CLOUDMERSIVE_API_KEY` = the key (mark **Sensitive**), then **Redeploy**.
 3. Admin → Security → Site health should say "Virus scanning of customer uploads active". Upload a test receipt to check.
 
-Plan limits: the free plan has a monthly scan limit and a small maximum file size; printing documents can be up to 25 MB, so a paid plan may be needed. When the limit is reached, uploads are refused until the next month or an upgrade.
+Plan limits: the free plan has a monthly scan limit and scans files up to **3.5 MB**. The website matches it:
+- Large **photos** (JPG / PNG receipts or print images) are made smaller in the customer's browser before upload (a phone camera photo of several MB becomes about 1 MB, still easy to read; print images keep high quality and are only reduced if over the limit).
+- **PDF / Word files** larger than the limit are stopped at once with "This file is larger than 3.5 MB … please upload a smaller file" — no scan is used and no false "scanner unavailable" alert. The upload forms show "Largest file: 3.5 MB".
+- After upgrading Cloudmersive, set `CLOUDMERSIVE_MAX_MB` in Vercel to the new limit (e.g. `10`) and redeploy. The printing limit is also capped by Admin → Settings → printing max file size and 25 MB.
+- When the monthly scan count is used up, uploads are refused ("security check unavailable") until the next month or an upgrade; Site health and the security Telegram group show it.
 
 ## 7. Security headers
 

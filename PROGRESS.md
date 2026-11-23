@@ -115,6 +115,12 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - Local dev: sign-ups + email confirmation on, local mail catcher on :54324 (dev:up no longer excludes it).
 - **Production TODO for the owner**: configure SMTP + email templates + URL configuration in Supabase (docs/DEPLOYMENT.md §2b).
 
+## Upload size vs the Cloudmersive plan (3.5 MB) (requested 2026-11-23)
+
+- Limit = `CLOUDMERSIVE_MAX_MB` (Vercel, optional; default 3.5). Server refuses larger files before scanning with `scan_too_large` (clear message with the limit; not counted as an outage; nothing sent to Cloudmersive; HTTP 413 from Cloudmersive mapped the same way).
+- Browser: `src/lib/upload/shrink-image.ts` makes large JPG/PNG photos smaller before upload (receipts → ≤ 1.5 MB JPG, max 2000 px; print images only when over the limit, max 3500 px, quality ≥ 0.8). Top-up, payment and printing forms show "Largest file: N MB".
+- Tests: unit `virus-scan.test.ts` (too_large), e2e `wallet.smoke.cjs` (8 MB photo → 1.2 MB JPG accepted; 4 MB PDF → clear message, no scan, no outage alert).
+
 ## Virus-scan history in our own database (requested 2026-11-23)
 
 - Every scan of a customer upload is kept in `upload_scans` (1 year): User ID, upload type, file type / size, fingerprint (sha256), result (clean / blocked / scanner unavailable), findings, scan time. Written only by the server; staff read-only; customers none.

@@ -9,13 +9,14 @@ import { Label } from "@/components/ui/label";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { AppErrorCode } from "@/lib/errors";
 import { prepareReceiptUpload, submitPaymentProof } from "@/lib/orders/payment-actions";
+import { shrinkImage } from "@/lib/upload/shrink-image";
 
 const MAX = 10 * 1024 * 1024;
 const TYPES = ["image/jpeg", "image/png", "application/pdf"];
 
 type Phase = "idle" | "uploading" | "verifying" | "done";
 
-export function PaymentForm({ orderId, accessToken }: { orderId: string; accessToken: string | null }) {
+export function PaymentForm({ orderId, accessToken, maxMb }: { orderId: string; accessToken: string | null; maxMb: number }) {
   const t = useTranslations();
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -27,7 +28,7 @@ export function PaymentForm({ orderId, accessToken }: { orderId: string; accessT
   const pick = (f: File | null) => {
     setError(null);
     if (f && !TYPES.includes(f.type)) return setError("upload_invalid_type");
-    if (f && f.size > MAX) return setError("upload_too_large");
+    if (f && f.size > MAX && !f.type.startsWith("image/")) return setError("upload_too_large"); // photos are made smaller on sending
     setFile(f);
   };
 
@@ -37,14 +38,17 @@ export function PaymentForm({ orderId, accessToken }: { orderId: string; accessT
     setError(null);
     setPhase("uploading");
     try {
-      const prep = await prepareReceiptUpload({ orderId, accessToken, mimeType: file.type, size: file.size });
+      // Large photos are made smaller here, so they fit the security check's file-size limit.
+      const upload = await shrinkImage(file, { maxBytes: Math.min(MAX, maxMb * 1024 * 1024) });
+      if (upload.size > maxMb * 1024 * 1024) throw "scan_too_large";
+      const prep = await prepareReceiptUpload({ orderId, accessToken, mimeType: upload.type, size: upload.size });
       if (!prep.ok) throw prep.error;
       const { error: upErr } = await createSupabaseBrowserClient()
         .storage.from("payment-receipts")
-        .uploadToSignedUrl(prep.path, prep.uploadToken, file, { contentType: file.type });
+        .uploadToSignedUrl(prep.path, prep.uploadToken, upload, { contentType: upload.type });
       if (upErr) throw "upload_failed";
       setPhase("verifying");
-      const res = await submitPaymentProof({ orderId, accessToken, path: prep.path, transactionReference: reference, originalName: file.name });
+      const res = await submitPaymentProof({ orderId, accessToken, path: prep.path, transactionReference: reference, originalName: upload.name });
       if (!res.ok) throw res.error;
       setPhase("done");
       router.refresh();
@@ -82,9 +86,10 @@ export function PaymentForm({ orderId, accessToken }: { orderId: string; accessT
         </label>
         <input ref={fileRef} id="receipt" type="file" className="sr-only" accept="image/jpeg,image/png,application/pdf,.jpg,.jpeg,.png,.pdf"
           onChange={(e) => pick(e.target.files?.[0] ?? null)} />
+        <p className="text-xs text-muted-foreground">{t("upload.sizeHint", { max: maxMb })}</p>
       </div>
       {error && (
-        <p role="alert" className="rounded-md bg-destructive/5 p-3 text-sm text-destructive">{t(`errors.${error}`)}</p>
+        <p role="alert" className="rounded-md bg-destructive/5 p-3 text-sm text-destructive">{error === "scan_too_large" ? t("upload.tooBig", { max: maxMb }) : t(`errors.${error}`)}</p>
       )}
       <Button type="submit" size="lg" className="w-full" disabled={busy || !file}>
         {busy ? <Loader2 className="animate-spin" /> : <Upload />}

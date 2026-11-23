@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { scanMaxMb } from "@/lib/security/virus-scan";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { AlertTriangle, Bell, CheckCircle2, Clock, Landmark, XCircle } from "lucide-react";
@@ -140,7 +141,7 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
                 <Separator />
                 <div className="space-y-3">
                   <h2 className="font-semibold">{t("order.uploadTitle")}</h2>
-                  <PaymentForm orderId={order.id} accessToken={accessToken} />
+                  <PaymentForm orderId={order.id} accessToken={accessToken} maxMb={scanMaxMb()} />
                 </div>
                 <p className="text-xs text-muted-foreground">{t("checkout.verificationNote")}</p>
               </CardContent>

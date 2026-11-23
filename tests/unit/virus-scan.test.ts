@@ -51,4 +51,19 @@ describe("Cloudmersive virus scan (fails closed)", () => {
       expect(await scanFile(bytes, "a.pdf", [".pdf"])).toMatchObject({ ok: false, reason: "unavailable" });
     }
   });
+  it("larger than the plan scans (default 3.5 MB, CLOUDMERSIVE_MAX_MB) → too_large, never sent", async () => {
+    vi.stubEnv("CLOUDMERSIVE_API_KEY", "key-1234567890");
+    const f = answer(200, { CleanResult: true });
+    vi.stubGlobal("fetch", f);
+    const { scanFile, scanMaxMb } = await import("@/lib/security/virus-scan");
+    expect(scanMaxMb()).toBe(3.5);
+    expect(await scanFile(new Uint8Array(4 * 1024 * 1024), "a.pdf", [".pdf"])).toEqual({ ok: false, reason: "too_large", maxMb: 3.5 });
+    expect(f).not.toHaveBeenCalled();
+    vi.resetModules();
+    vi.stubEnv("CLOUDMERSIVE_MAX_MB", "10");
+    const again = await import("@/lib/security/virus-scan");
+    expect(await again.scanFile(new Uint8Array(4 * 1024 * 1024), "a.pdf", [".pdf"])).toEqual({ ok: true });
+    vi.stubGlobal("fetch", answer(413, {}));
+    expect(await again.scanFile(bytes, "a.pdf", [".pdf"])).toMatchObject({ ok: false, reason: "too_large" });
+  });
 });

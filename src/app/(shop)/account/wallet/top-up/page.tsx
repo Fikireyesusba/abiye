@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { scanMaxMb } from "@/lib/security/virus-scan";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { ArrowLeft } from "lucide-react";
@@ -60,7 +61,7 @@ export default async function TopUpPage() {
           {on && (
             <Card>
               <CardHeader><CardTitle>{t("formTitle")}</CardTitle></CardHeader>
-              <CardContent><TopupForm maxAmount={room} /></CardContent>
+              <CardContent><TopupForm maxAmount={room} maxMb={scanMaxMb()} /></CardContent>
             </Card>
           )}
         </>

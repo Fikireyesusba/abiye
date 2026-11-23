@@ -12,6 +12,7 @@ import { dispatchSoon } from "@/lib/telegram/dispatch";
 import { ethiopianPhoneSchema } from "@/lib/validation/checkout";
 import { PRINT_TYPES, validateUpload, type DetectedType } from "@/lib/validation/upload";
 import { scanCustomerUpload } from "@/lib/security/upload-scan";
+import { scanMaxBytes } from "@/lib/security/virus-scan";
 import { rememberJobAccess } from "./access";
 import { countPages } from "./page-count";
 
@@ -41,6 +42,7 @@ export async function preparePrintUpload(input: { files: unknown }): Promise<{ o
   for (const f of files.data) {
     if (!(f.mime in EXT)) return { ok: false, error: "upload_invalid_type" };
     if (f.size > limit) return { ok: false, error: "upload_too_large" };
+    if (f.size > scanMaxBytes()) return { ok: false, error: "scan_too_large" };
   }
   const ip = await clientIpKey();
   if (!(await rateLimitAll([[`print-upload:ip:${ip}`, 10, 3600]]))) return { ok: false, error: "rate_limited" };

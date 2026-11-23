@@ -12,6 +12,7 @@ import { formatETB, toSantim } from "@/lib/money";
 import { quotePrinting, type PrintPriceRule } from "@/lib/pricing/printing";
 import { preparePrintUpload, submitPrintJob } from "@/lib/printing/actions";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { shrinkImage } from "@/lib/upload/shrink-image";
 import { cn } from "@/lib/utils";
 
 const DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -70,8 +71,10 @@ export function PrintForm({
     const next: Picked[] = [];
     for (const file of incoming) {
       if (!ACCEPTED.includes(file.type)) return setError({ code: "upload_invalid_type", detail: file.name });
-      if (file.size > maxMb * 1024 * 1024) return setError({ code: "upload_too_large", detail: file.name });
-      next.push({ file, pages: await estimatePages(file) });
+      // Photos over the limit are made smaller (high quality kept for printing); documents must already fit.
+      const fitted = await shrinkImage(file, { maxBytes: maxMb * 1024 * 1024, target: maxMb * 1024 * 1024, maxSide: 3500, minQuality: 0.8 });
+      if (fitted.size > maxMb * 1024 * 1024) return setError({ code: "scan_too_large", detail: file.name });
+      next.push({ file: fitted, pages: await estimatePages(fitted) });
     }
     setFiles((f) => [...f, ...next].slice(0, 10));
   };
@@ -214,7 +217,7 @@ export function PrintForm({
         <p className="text-xs text-muted-foreground">{t("printing.estimateHint")}</p>
         {error && (
           <p role="alert" className="rounded-md bg-destructive/5 p-3 text-sm text-destructive">
-            {t(`errors.${error.code}`)}{error.detail ? ` (${error.detail})` : ""}
+            {error.code === "scan_too_large" ? t("upload.tooBig", { max: maxMb }) : t(`errors.${error.code}`)}{error.detail ? ` (${error.detail})` : ""}
           </p>
         )}
         <Button type="submit" size="lg" className="w-full" disabled={busy || files.length === 0}>
