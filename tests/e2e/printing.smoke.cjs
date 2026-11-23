@@ -152,6 +152,7 @@ async function fillContact(p, name, phone) {
   check((await p.locator("text=Your printing is ready").count()) === 1, "customer sees 'ready'");
   await a.locator("form:has(button:has-text('Mark collected')) button").click();
   await toast(a, "status updated");
+  for (let i = 0; i < 40 && sql(`select status from printing_jobs where id = '${job1}'`) !== "completed"; i++) await new Promise((r) => setTimeout(r, 250));
   check(sql(`select status from printing_jobs where id = '${job1}'`) === "completed", "job completed");
   check(sql(`select count(*) from storage.objects where bucket_id = 'printing-files' and name like 'jobs/${job1}/%'`) === "0"
     && sql(`select files_deleted_at is not null from printing_jobs where id = '${job1}'`) === "t", "documents deleted as soon as the job is collected");
