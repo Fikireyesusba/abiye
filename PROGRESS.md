@@ -121,7 +121,7 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - **Courier** (migration **0068** `20261123000068_courier.sql`): permission set Courier (`deliveries.own`); admin assigns delivery orders (order page → Courier); 4-digit delivery code for the customer (order page + "on its way" email); courier app `/courier`: Picked up → Delivered (code) / Couldn't deliver (reason); 5 wrong codes lock; contact details only while open; Activity log + Telegram `delivery_update`; courier idle sign-out 30 min. Docs: §6b.
 - Tests: db `99zzzf_courier_test.sql`, unit `hosts.test.ts`, e2e `courier.smoke.cjs` (own server with the split on, `*.fantaf.test`).
 - Later: courier KPIs on the Performance dashboard; optional photo proof.
-- ⏳ Owner: paste **0068**; then (when ready) add the three subdomains, Supabase redirect URLs and the four `*_HOST` variables (§6a).
+- ✅ 0068 applied; subdomains, Supabase redirect URLs and the four `*_HOST` variables set in production (owner confirmed 2026-11-23).
 
 ## Customer app tidy-up, About us editor, printing payment alert (requested 2026-11-23)
 

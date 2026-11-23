@@ -199,6 +199,8 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
     await b.close();
     try { process.kill(-app.pid, "SIGTERM"); } catch { app.kill("SIGTERM"); }
     mock.close();
+    // Leave the alert switches at their defaults for the other suites.
+    sql("delete from website_settings where key = 'telegram_feed'");
   }
   const filtered = results.filter((r) => !r.endsWith("- "));
   console.log(filtered.join("\n"));
