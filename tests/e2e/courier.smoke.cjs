@@ -91,7 +91,12 @@ async function tryLogin(page, base, email, password) {
     check(new URL(c.url()).pathname === "/courier", "courier: the admin portal is not available");
     check((await c.locator("text=No deliveries assigned to you right now").count()) === 1, "courier: nothing assigned yet");
     const man = await c.evaluate(async (u) => (await fetch(u)).json(), `${U("courier")}/manifest.webmanifest`);
-    check(/Courier/.test(man.name) && man.start_url === "/courier", `courier address installs its own app ("${man.name}")`);
+    check(/Courier/.test(man.name) && man.start_url === "/courier" && man.scope === "/" && man.display === "standalone"
+      && man.icons.some((i) => i.purpose === "maskable"), `courier address installs its own app ("${man.name}", opens on the deliveries, sign-in stays in the app)`);
+    check(await c.locator('meta[name="apple-mobile-web-app-title"]').getAttribute("content") === "Abiye Courier", "iPhone: Add to Home Screen name is “Abiye Courier”");
+    check(await c.evaluate(async (base) => (await fetch(`${base}/sw.js`)).ok && (await fetch(`${base}/offline`)).ok, U("courier")),
+      "courier address serves the app's background script and offline page (needed to install)");
+    check(await c.locator("[data-testid=courier-install]").count() === 1, "courier app shows the Install card (until installed)");
 
     // ---- manager assigns the delivery to the courier (ocs)
     await m.goto(`${U("ocs")}/admin/orders/${order.order_id}`);

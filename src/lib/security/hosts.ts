@@ -45,6 +45,11 @@ export function homeSurfaceForRole(role: string): Surface {
   return role === "super_admin" ? "super" : role === "courier" ? "courier" : "staff";
 }
 
+/** Name of the installed app on this address (home screen). */
+export function appNameForSurface(surface: Surface | null, business = "Abiye"): string {
+  return surface === "courier" ? `${business} Courier` : surface === "super" ? `${business} Operations` : surface === "staff" ? `${business} OCS` : business;
+}
+
 /** https://<address> of a part of the website, or null when the split is not configured. */
 export function surfaceUrl(surface: Surface): string | null {
   const hosts = surfaceHosts();
@@ -53,6 +58,7 @@ export function surfaceUrl(surface: Surface): string | null {
 
 /** Paths each address may open (pages only; API routes and static files are not affected). */
 export function pathAllowed(surface: Surface, path: string): boolean {
+  if (path === "/offline") return true; // the installed app's offline page, on every address
   const admin = /^\/admin(\/|$)/.test(path);
   const courier = /^\/courier(\/|$)/.test(path);
   const signIn = /^\/admin\/(login|mfa|password)(\/|$)/.test(path);

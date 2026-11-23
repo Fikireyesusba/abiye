@@ -3,6 +3,7 @@ import { MapPin, Phone, RefreshCw } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
 import { fieldClass } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
+import { CourierInstallCard } from "@/components/pwa/courier-install";
 import { requirePermission } from "@/lib/auth/guards";
 import { couldNotDeliver, deliver, pickUp } from "@/lib/courier/actions";
 import { formatDateTime } from "@/lib/datetime";
@@ -21,6 +22,7 @@ export default async function CourierPage() {
   const done = rows.filter((r) => !r.active);
   return (
     <div className="space-y-4">
+      <CourierInstallCard />
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">My deliveries <span className="text-muted-foreground">({open.length})</span></h1>
         <a href="/courier" className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm hover:bg-secondary"><RefreshCw className="size-4" aria-hidden /> Refresh</a>

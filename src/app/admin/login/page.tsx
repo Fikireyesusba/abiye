@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { staffAppMetadata } from "@/lib/security/app-meta";
 import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { IDLE_MINUTES } from "@/lib/security/idle";
@@ -6,7 +7,9 @@ import { getAdminContext } from "@/lib/auth/guards";
 import { safeAdminRedirect } from "@/lib/auth/safe-redirect";
 import { LoginForm } from "./login-form";
 
-export const metadata: Metadata = { title: "Admin sign in", robots: { index: false, follow: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  return staffAppMetadata({ title: "Admin sign in", robots: { index: false, follow: false } });
+}
 
 export default async function AdminLoginPage({ searchParams }: PageProps<"/admin/login">) {
   const sp = await searchParams;

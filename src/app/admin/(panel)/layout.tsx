@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { staffAppMetadata } from "@/lib/security/app-meta";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LogOut, Search, UserCircle } from "lucide-react";
@@ -14,10 +15,13 @@ import { AdminBadgesProvider, PendingPaymentsLink } from "@/components/admin/adm
 import { IdleSignOut } from "@/components/security/idle-sign-out";
 import { IDLE_MINUTES } from "@/lib/security/idle";
 
-export const metadata: Metadata = {
+const BASE_METADATA: Metadata = {
   title: { default: "Admin", template: "%s · Abiye Admin" },
   robots: { index: false, follow: false },
 };
+export async function generateMetadata(): Promise<Metadata> {
+  return staffAppMetadata(BASE_METADATA);
+}
 
 
 /**

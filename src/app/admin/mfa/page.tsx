@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { staffAppMetadata } from "@/lib/security/app-meta";
 import { redirect } from "next/navigation";
 import { KeyRound, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,9 @@ import { getMfaState } from "@/lib/auth/mfa";
 import { safeAdminRedirect } from "@/lib/auth/safe-redirect";
 import { MfaSetupForm, MfaVerifyForm } from "./mfa-forms";
 
-export const metadata: Metadata = { title: "Two-step login", robots: { index: false, follow: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  return staffAppMetadata({ title: "Two-step login", robots: { index: false, follow: false } });
+}
 
 export default async function AdminMfaPage({ searchParams }: PageProps<"/admin/mfa">) {
   const next = safeAdminRedirect((await searchParams).next);

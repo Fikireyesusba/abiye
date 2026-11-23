@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { headers } from "next/headers";
 import { getSiteSettings } from "@/lib/catalog/settings";
-import { surfaceForHost } from "@/lib/security/hosts";
+import { appNameForSurface, surfaceForHost } from "@/lib/security/hosts";
 
 /** Web app manifest: makes the shop installable on Android (and gives iPhone its name/colours). */
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
@@ -11,14 +11,16 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const surface = surfaceForHost((await headers()).get("host"));
   if (surface && surface !== "customer") {
     const courier = surface === "courier";
-    const appName = `${name} ${courier ? "Courier" : surface === "super" ? "Operations" : "OCS"}`;
+    const appName = appNameForSurface(surface, name);
     const start = courier ? "/courier" : "/admin";
+    // Scope = the whole address, so signing in (/admin/login) stays inside the installed app.
     return {
-      id: start, name: appName, short_name: appName.slice(0, 12), start_url: start, scope: start,
+      id: start, name: appName, short_name: appName.slice(0, 12), start_url: start, scope: "/",
       display: "standalone", orientation: "portrait", background_color: "#faf9f6", theme_color: "#14523f", lang: "en",
       icons: [
         { src: "/app-icon/192", sizes: "192x192", type: "image/png", purpose: "any" },
         { src: "/app-icon/512", sizes: "512x512", type: "image/png", purpose: "any" },
+        { src: "/app-icon/maskable-512", sizes: "512x512", type: "image/png", purpose: "maskable" },
       ],
     };
   }

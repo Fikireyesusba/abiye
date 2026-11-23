@@ -176,7 +176,8 @@ To switch the split off again, delete the four variables and redeploy.
 - Admin → **Staff → Add staff member**, permission set **Courier**. Couriers sign in (password + two-step code, like all staff) at the courier address and see only the deliveries assigned to them.
 - On a paid **delivery** order: Admin → order → **Courier** → choose → **Assign courier**. The customer gets a **4-digit delivery code** (order page and the "on its way" email).
 - Courier: **Picked up — on my way** (customer told it is on its way) → at the door, enter the customer's code → **Delivered** (order completed). Or **Couldn't deliver** with a reason (order back to preparing; the office decides). 5 wrong codes lock the delivery — re-assign the courier to unlock it.
-- The courier sees the customer's name, phone (call button) and address (map link) only while the delivery is assigned and open. Every step is in the Activity log and the orders & payments Telegram group (with the courier's User ID).
+- The courier sees the customer's name, phone (call button) and address (map link) only while the delivery is assigned and open.
+- **Courier app on the phone:** open `https://courier.fantaf.xyz`, sign in, then tap **Install** on the "Install the courier app" card (Android / Chrome), or on iPhone: Safari → Share → **Add to Home Screen**. It appears as **Abiye Courier** and opens straight on the deliveries. (Staff can do the same at `ocs` → "Abiye OCS"; Super Admin at `operations` → "Abiye Operations".) Every step is in the Activity log and the orders & payments Telegram group (with the courier's User ID).
 
 ## 6c. Virus scan of customer uploads (Cloudmersive)
 
