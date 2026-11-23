@@ -64,8 +64,8 @@ update public.website_settings set value = value || '{"pending_payments": false}
 select private.enqueue_notification('new_order', 'x57:1', '{}');
 select private.enqueue_notification('wallet_topup', 'x57:2', '{}');
 select private.enqueue_notification('payment_verified', 'x57:3', '{}');
-select pg_temp.ok((select array_agg(event_type order by event_type) from public.notifications_outbox where dedupe_key like 'x57:%') = array['payment_verified'],
-  'waiting-for-approval alerts switched off: only approved payments are sent');
+select pg_temp.ok((select array_agg(event_type order by event_type) from public.notifications_outbox where dedupe_key like 'x57:%') = array['payment_verified', 'wallet_topup'],
+  'waiting-for-approval switch off: no order payment waiting alert; top-ups always alerted (0059)');
 insert into public.printing_jobs (id, user_id, access_token_hash, customer_name, customer_phone, color_mode, paper_size, sides, copies, page_count, total_etb, status)
 values ('e5700000-0000-0000-0000-000000000001', :customer, repeat('c', 64), 'Print Buyer', '+251911223344', 'bw', 'A4', 'single', 1, 1, 10, 'awaiting_payment');
 insert into public.printing_files (job_id, storage_path, original_name, mime_type, size_bytes, sha256, page_count) values
@@ -85,4 +85,10 @@ select public.admin_review_topup('e5800000-0000-0000-0000-000000000001', 'verifi
 reset role;
 select pg_temp.ok((select payload ->> 'amount_etb' from public.notifications_outbox where event_type = 'topup_verified') = '500.00'
   and private.telegram_group('topup_verified') = 'orders', 'approved top-up → "TOP-UP APPROVED" in the orders & payments group');
+insert into public.wallet_topups (id, user_id, amount_etb, transaction_reference, receipt_path, receipt_mime, receipt_size_bytes, receipt_sha256, bank_snapshot)
+select 'e5900000-0000-0000-0000-000000000001', :customer, 300, 'FT59TEST', 'topups/cccccccc-0000-0000-0000-000000000001/e5900000-0000-0000-0000-000000000001.png', 'image/png', 100, repeat('f', 64), '{}'::jsonb;
+select pg_temp.login(:super);
+select public.admin_review_topup('e5900000-0000-0000-0000-000000000001', 'rejected', 'Not in the statement');
+reset role;
+select pg_temp.ok((select payload ->> 'reason' from public.notifications_outbox where event_type = 'topup_rejected') = 'Not in the statement', 'rejected top-up → "TOP-UP REJECTED" with the reason');
 rollback;

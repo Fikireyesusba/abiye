@@ -37,7 +37,7 @@ const CATEGORIES = [
 function categoryOf(r: Pick<Row, "channel" | "event_type">): (typeof CATEGORIES)[number]["key"] {
   if (r.channel !== "telegram" || r.event_type === "notification_copy") return "customers";
   if (["security_event", "security_alert", "admin_action", "security_test"].includes(r.event_type)) return "security";
-  if (["new_order", "payment_resubmitted", "payment_verified", "payment_rejected", "wallet_topup", "topup_verified", "wallet_order_paid"].includes(r.event_type)) return "payments";
+  if (["new_order", "payment_resubmitted", "payment_verified", "payment_rejected", "wallet_topup", "topup_verified", "topup_rejected", "wallet_order_paid"].includes(r.event_type)) return "payments";
   if (["low_stock", "out_of_stock", "stock_test"].includes(r.event_type)) return "stock";
   if (["receipt_record", "receipts_test"].includes(r.event_type)) return "receipts";
   if (["printing_document", "printing_test"].includes(r.event_type)) return "printing";
@@ -235,7 +235,7 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
           <p className="mb-3 text-sm text-muted-foreground">Approved payments go to the orders & payments group (payments waiting for approval only if switched on below); stock alerts and receipt files to their groups. Choose the rest below. Each message shows its <strong>service</strong> and <strong>event</strong> name with the details; identical security events within 5 minutes are grouped.</p>
           <ActionForm action={savePendingPaymentAlerts} submitLabel="Save" size="sm" className="mb-4 space-y-2 border-b pb-4">
             <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="pending_payments" defaultChecked={feed.pending_payments ?? false} className="mt-0.5 size-4 accent-[var(--primary)]" data-testid="pending-payments-toggle" />
-              <span><strong>Also alert payments and top-ups waiting for approval</strong> → orders &amp; payments group. Off: only approved payments are sent; what is waiting shows as red counts under Payments and Wallet.</span></label>
+              <span><strong>Also alert order payments waiting for approval</strong> → orders &amp; payments group. Off: only approved payments are sent; waiting ones show as red counts under Payments. (Top-ups are always alerted: waiting, approved and rejected.)</span></label>
           </ActionForm>
           <ActionForm action={saveTelegramFeed} submitLabel="Save" size="sm" className="space-y-2">
             <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="security" defaultChecked={feed.security} className="mt-0.5 size-4 accent-[var(--primary)]" />

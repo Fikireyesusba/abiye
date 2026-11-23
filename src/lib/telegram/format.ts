@@ -100,6 +100,7 @@ export function describe(row: OutboxRow): [string, string] {
     case "printing_request": return ["Printing", "New printing request"];
     case "payment_verified": return ["Payments", "Payment verified"];
     case "topup_verified": return ["Wallet", "Top-up approved"];
+    case "topup_rejected": return ["Wallet", "Top-up rejected"];
     case "payment_rejected": return ["Payments", "Payment rejected"];
     case "order_cancelled": return ["Orders", "Order cancelled"];
     case "wallet_topup": return ["Wallet", "Top-up to verify"];
@@ -174,6 +175,20 @@ function buildBody(row: OutboxRow, appUrl: string): BuiltMessage {
     }
     case "payment_verified":
       return { attachment: null, text: `✅ <b>PAYMENT VERIFIED</b>\n\n${line("Order", p.order_number)}\nAmount: ${esc(etb(p.total_etb))}${orderLink}` };
+    case "topup_rejected":
+      return {
+        attachment: null,
+        text: [
+          "❌ <b>TOP-UP REJECTED</b>",
+          "",
+          line("Top-up", p.number),
+          `Amount: <b>${esc(etb(p.amount_etb))}</b>`,
+          line("Reference", p.reference ?? "—"),
+          line("User ID", p.user_id ?? "—"),
+          line("Reason", p.reason ?? "—"),
+          line("Rejected by", p.decided_by ?? "—"),
+        ].join("\n") + (p.topup_id ? admin(`/admin/wallet/${p.topup_id}`) : ""),
+      };
     case "topup_verified":
       return {
         attachment: null,
