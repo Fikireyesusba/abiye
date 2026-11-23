@@ -567,7 +567,8 @@
     "waitingText": "ገና ትዕዛዝ አይደለም፤ ክፍያዎን ስንቀበል ትዕዛዝ ይሆናል። ያልተከፈሉ ግዢዎች ከ30 ደቂቃ በኋላ ይለቀቃሉ።",
     "checkoutLabel": "ግዢ",
     "printRequestLabel": "የህትመት ጥያቄ",
-    "profileHint": "Theme, notifications, privacy and terms"
+    "profileHint": "Theme, notifications, privacy and terms",
+    "track": "Track"
   },
   "payInfo": {
     "title": "እንዴት እንደሚከፍሉ",

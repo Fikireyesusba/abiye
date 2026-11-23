@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
-import { Clock, Landmark, MapPin } from "lucide-react";
-import { CopyButton } from "@/components/shop/copy-button";
+import { Clock, MapPin } from "lucide-react";
 import { PageShell } from "@/components/shop/page-shell";
 import { socialLinks } from "@/components/shop/social-links";
-import { getPublicBankAccounts } from "@/lib/catalog/bank-info";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import type { Locale } from "@/i18n/config";
 
@@ -14,7 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ContactPage() {
-  const [t, s, locale, banks] = await Promise.all([getTranslations(), getSiteSettings(), getLocale() as Promise<Locale>, getPublicBankAccounts()]);
+  const [t, s, locale] = await Promise.all([getTranslations(), getSiteSettings(), getLocale() as Promise<Locale>]);
   const pick = (v: { en: string; am: string }) => v[locale] || v.en;
   const links = socialLinks(s);
 
@@ -54,30 +52,6 @@ export default async function ContactPage() {
           )}
         </ul>
       </section>
-
-      {banks.length > 0 && (
-        <section aria-labelledby="pay" className="mt-10 space-y-3">
-          <h2 id="pay" className="flex items-center gap-2 text-xl font-semibold"><Landmark className="size-5 text-primary" aria-hidden /> {t("payInfo.title")}</h2>
-          <p className="text-sm text-muted-foreground">{t("payInfo.intro")}</p>
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {banks.map((b) => (
-              <li key={b.id} className="space-y-2 rounded-xl border bg-card p-4 text-sm">
-                <p className="text-base font-semibold">{b.bank_name}</p>
-                <p><span className="text-muted-foreground">{t("payInfo.holder")}: </span>{b.account_holder}</p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-muted-foreground">{t("payInfo.number")}:</span>
-                  <span className="font-mono text-base tracking-wider">{b.account_number}</span>
-                  <CopyButton value={b.account_number.replace(/[\s-]/g, "")} label={`${b.bank_name} ${t("payInfo.number")}`} />
-                </div>
-                {b.branch && <p><span className="text-muted-foreground">{t("payInfo.branch")}: </span>{b.branch}</p>}
-                {(locale === "am" ? b.instructions_am || b.instructions_en : b.instructions_en) && (
-                  <p className="text-muted-foreground">{locale === "am" ? b.instructions_am || b.instructions_en : b.instructions_en}</p>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </PageShell>
   );
 }

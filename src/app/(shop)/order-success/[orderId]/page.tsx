@@ -57,7 +57,7 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-4 py-24 text-center">
         <XCircle className="size-10 text-muted-foreground" aria-hidden />
         <p className="text-muted-foreground">{t("order.notFound")}</p>
-        <Button asChild variant="outline"><Link href="/track-order">{t("nav.trackOrder")}</Link></Button>
+        <Button asChild variant="outline"><Link href="/account/orders">{t("account.myOrders")}</Link></Button>
       </div>
     );
   }

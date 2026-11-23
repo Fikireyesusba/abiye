@@ -40,6 +40,12 @@ function build(key: SettingsKey, f: Record<string, string>, current: Record<stri
       const long = (k: string) => ({ en: (f[`${k}_en`] ?? "").trim(), am: (f[`${k}_am`] ?? "").trim() });
       return { terms: long("terms"), privacy: long("privacy"), approved: f.approved === "on" };
     }
+    case "about":
+      return {
+        title: pair(f, "title"),
+        body: { en: (f.body_en ?? "").trim(), am: (f.body_am ?? "").trim() },
+        show_services: f.show_services === "on", show_why_us: f.show_why_us === "on",
+      };
     case "homepage":
       return {
         hero_title: pair(f, "hero_title"), hero_subtitle: pair(f, "hero_subtitle"), hero_image_path: current.hero_image_path ?? null,

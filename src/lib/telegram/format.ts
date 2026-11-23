@@ -166,7 +166,7 @@ const PROMO_CHANGE: Record<string, string> = {
 export function describe(row: OutboxRow): [string, string] {
   const p = row.payload ?? {};
   switch (row.event_type) {
-    case "new_order": return ["Payments", "Receipt uploaded — verify payment"];
+    case "new_order": return [p.printing ? "Printing payments" : "Payments", "Receipt uploaded — verify payment"];
     case "order_placed": return ["Orders", "Order placed (awaiting payment)"];
     case "order_status": return ["Orders", ORDER_STEP[String(p.to)] ?? titleCase(String(p.to ?? ""))];
     case "printing_status": return ["Printing", PRINT_STEP[String(p.to)] ?? titleCase(String(p.to ?? ""))];
@@ -225,7 +225,8 @@ function buildBody(row: OutboxRow, appUrl: string): BuiltMessage {
       return {
         attachment,
         text: [
-          p.resubmission || row.event_type === "payment_resubmitted" ? "🔁 <b>PAYMENT RESUBMITTED</b>" : "🛒 <b>NEW CUSTOMER ORDER</b>",
+          p.printing ? `🖨 <b>PRINTING ORDER — ${p.resubmission || row.event_type === "payment_resubmitted" ? "PAYMENT RESUBMITTED" : "PAYMENT TO VERIFY"}</b>`
+            : p.resubmission || row.event_type === "payment_resubmitted" ? "🔁 <b>PAYMENT RESUBMITTED</b>" : "🛒 <b>NEW CUSTOMER ORDER</b>",
           "",
           line("Order ID", p.order_number),
           line("Customer", p.customer_name),

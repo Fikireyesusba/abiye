@@ -35,11 +35,10 @@ export async function SiteHeader() {
   const [settings, t, locale] = await Promise.all([getSiteSettings(), getTranslations(), getLocale() as Promise<Locale>]);
   const name = settings.business.name[locale] || settings.business.name.en;
   const logo = publicImageUrl("site-assets", settings.business.logo_path);
-  // Home and Shop always show; the departments join them on wide screens
+  // Home always shows; the departments join it on wide screens
   // (on phones they are on the home page under "Shop by Category").
   const links = [
     { href: "/", label: t("nav.home"), always: true },
-    { href: "/shop", label: t("nav.shop"), always: true },
     { href: "/cosmetics", label: t("nav.cosmetics") },
     { href: "/electronics", label: t("nav.electronics") },
     { href: "/printing", label: t("nav.printing") },

@@ -17,6 +17,7 @@ const DEFAULTS: { [K in SettingsKey]: Settings<K> } = {
     privacy: { en: toLegalText(privacy.en), am: toLegalText(privacy.am) },
     approved: false,
   },
+  about: { title: { en: "", am: "" }, body: { en: "", am: "" }, show_services: true, show_why_us: true },
   homepage: { hero_title: { en: "", am: "" }, hero_subtitle: { en: "", am: "" }, hero_image_path: null, why_us: [] },
 };
 

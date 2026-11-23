@@ -4,7 +4,7 @@ import Link from "next/link";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Bell, CircleHelp, Menu, Headset, History, Info, Mail, Megaphone, PackageSearch, Printer, ShoppingBag, UserRound, Wallet, X } from "lucide-react";
+import { Bell, CircleHelp, Menu, Headset, History, Info, Mail, Megaphone, Printer, ShoppingBag, UserRound, Wallet, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartCount } from "@/lib/cart/store";
 import { cn } from "@/lib/utils";
@@ -52,7 +52,6 @@ export function AccountMenu({ viewer, printingOn }: { viewer: DrawerViewer | nul
     ? [
         { href: "/account/wallet", label: t("balance"), icon: Wallet },
         { href: "/account/orders", label: t("orders"), icon: History },
-        { href: "/track-order", label: t("track"), icon: PackageSearch },
         { href: "/account/offers", label: t("offers"), icon: Megaphone },
         { href: "/account/notifications", label: t("notifications"), icon: Bell },
         { href: "/support", label: t("support"), icon: Headset },
@@ -61,7 +60,7 @@ export function AccountMenu({ viewer, printingOn }: { viewer: DrawerViewer | nul
         { href: "/contact", label: t("contact"), icon: Mail },
       ]
     : [
-        { href: "/track-order", label: t("track"), icon: PackageSearch },
+        { href: "/account/orders", label: t("orders"), icon: History },
         { href: "/support", label: t("support"), icon: Headset },
         { href: "/help", label: t("help"), icon: CircleHelp },
         { href: "/about", label: t("about"), icon: Info },

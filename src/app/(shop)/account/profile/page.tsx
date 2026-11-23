@@ -29,7 +29,7 @@ function Row({ href, icon: Icon, label, hint }: { href: string; icon: typeof Bel
   );
 }
 
-/** Profile: who you are, settings (theme, notifications, saved address) and the legal pages. */
+/** Profile: who you are, settings (theme, saved address) and the legal pages. Notifications are in the side menu. */
 export default async function ProfilePage() {
   const user = await requireCustomer("/account/profile");
   const [t, account, jar] = await Promise.all([getTranslations("profile"), getCustomerAccount(user.id), cookies()]);
@@ -57,7 +57,6 @@ export default async function ProfilePage() {
             <div className="mb-3 flex items-center gap-4"><Palette className="size-5 text-muted-foreground" aria-hidden /><span>{t("theme")}</span></div>
             <ThemePicker initial={themeFromCookie(jar.get(THEME_COOKIE)?.value)} />
           </li>
-          <Row href="/account/notifications" icon={Bell} label={t("notifications")} />
           <Row href="/account/details" icon={MapPin} label={t("savedAddress")} hint={account?.default_address ?? undefined} />
         </ul>
       </section>

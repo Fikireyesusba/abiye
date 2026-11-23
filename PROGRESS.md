@@ -115,6 +115,17 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - Local dev: sign-ups + email confirmation on, local mail catcher on :54324 (dev:up no longer excludes it).
 - **Production TODO for the owner**: configure SMTP + email templates + URL configuration in Supabase (docs/DEPLOYMENT.md §2b).
 
+## Customer app tidy-up, About us editor, printing payment alert (requested 2026-11-23)
+
+- Contact page: "How to pay" / bank accounts removed (shown at checkout and on the top-up page).
+- Profile: Notifications row removed (it is in the side menu above Support & feedback).
+- Header: no separate "Shop" link (Home has everything; search still uses /shop).
+- **My orders** replaces Track order: each order has a **Track** button (its status page); side menu shows My orders only; `/track-order` redirects to My orders; the old track-by-number form and action were deleted.
+- **About us** editable in Admin → Settings → About us (title, text with `## ` sections and `{name}`, show services / why-us); plain text only. Empty → standard description.
+- **Printing payment receipt → orders & payments Telegram group always** ("🖨 PRINTING ORDER — PAYMENT TO VERIFY"), even with the pending-payment switch off; product orders follow the switch. Documents still go to the printing group only after approval.
+- Migration **0067** `20261123000067_printing_payment_alert_about.sql`; tests `99zzzd_printing_payment_alert_test.sql`, unit format test, e2e account / checkout / member-id / storefront / wallet.
+- ⏳ Owner: paste **0067** into the Supabase SQL Editor.
+
 ## Upload size vs the Cloudmersive plan (3.5 MB) (requested 2026-11-23)
 
 - Limit = `CLOUDMERSIVE_MAX_MB` (Vercel, optional; default 3.5). Server refuses larger files before scanning with `scan_too_large` (clear message with the limit; not counted as an outage; nothing sent to Cloudmersive; HTTP 413 from Cloudmersive mapped the same way).

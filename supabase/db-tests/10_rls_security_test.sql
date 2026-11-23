@@ -18,7 +18,7 @@ select pg_temp.throws($$select public.create_order_for_user('cccccccc-0000-0000-
 select pg_temp.throws($$select public.submit_payment('{}'::jsonb)$$, '%permission denied%', 'anon cannot call submit_payment directly');
 select pg_temp.throws($$select public.admin_review_payment(gen_random_uuid(), 'verified')$$, '%permission denied%', 'anon cannot call admin RPCs');
 select pg_temp.throws($$select public.bootstrap_super_admin(gen_random_uuid(), 'x')$$, '%permission denied%', 'anon cannot bootstrap super admin');
-select pg_temp.ok((select count(*) from public.website_settings) = 9, 'anon reads public website settings (incl. service switches)');
+select pg_temp.ok((select count(*) from public.website_settings) = 10, 'anon reads public website settings (incl. service switches and About us)');
 select pg_temp.ok((select count(*) from public.delivery_zones) = 4, 'anon reads active delivery zones');
 select pg_temp.ok((select count(*) from storage.objects where bucket_id in ('payment-receipts','printing-files')) = 0,
   'anon sees no private storage objects');

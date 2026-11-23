@@ -135,4 +135,9 @@ describe("Telegram activity feed", () => {
     expect(x.attachment).toEqual({ bucket: "excel-exports", path: "11111111-1111-1111-1111-111111111111.xlsx" });
     expect(x.text.length).toBeLessThanOrEqual(CAPTION_LIMIT);
   });
+  it("printing order payment: own title, orders & payments group", () => {
+    const m = buildMessage({ ...order, payload: { ...order.payload, printing: true } }, "");
+    expect(m.text).toContain("🖨 <b>PRINTING ORDER — PAYMENT TO VERIFY</b>");
+    expect(m.text).toContain("Service: Printing payments · Type: Receipt uploaded — verify payment");
+  });
 });

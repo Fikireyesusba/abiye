@@ -261,12 +261,25 @@ async function emailLink(to, subjectPart) {
     ["Telegram", "https://t.me/abiyeshop"], ["Email", "mailto:abiyeshop@gmail.com"], ["WhatsApp", "https://wa.me/251911001122"], ["Phone", "tel:+251911001122"]]) {
     check((await p.locator(`main a[href="${href}"]`).count()) === 1, `contact page links ${label}`);
   }
-  check((await p.locator("main:has-text('How to pay')").count()) === 1 && (await p.locator("main >> text=1000000000000").count()) === 1,
-    "contact page shows the bank account to pay into");
-  await ctx.grantPermissions(["clipboard-read", "clipboard-write"]);
-  await p.locator("main button[aria-label*='Account number']").first().click();
-  check((await p.evaluate(() => navigator.clipboard.readText())) === "1000000000000", "bank account number copy button");
-  check((await p.locator("footer >> text=1000000000000").count()) === 0, "footer no longer shows bank details (only the contact page and checkout do)");
+  check((await p.locator("main:has-text('How to pay')").count()) === 0 && (await p.locator("main >> text=1000000000000").count()) === 0,
+    "contact page: no How to pay / bank accounts (they are shown at checkout and on the top-up page)");
+  check((await p.locator("footer >> text=1000000000000").count()) === 0, "footer shows no bank details");
+
+  // ---- About us: written in Admin → Settings → About us
+  await a.goto(`${B}/admin/settings?tab=about`);
+  const about = a.locator("form:has([data-testid=about-body])");
+  await about.locator("input[name=title_en]").fill(`About Abiye ${RUN}`);
+  await about.locator("[data-testid=about-body]").fill(`## Our story ${RUN}\n\n{name} was started to make shopping easy. <b>bold?</b>`);
+  await about.locator("input[name=show_services]").uncheck();
+  await about.locator("button[type=submit]").click();
+  await a.waitForSelector('[data-sonner-toast]:has-text("Settings saved")');
+  await p.goto(`${B}/about`);
+  const aboutText = await p.locator("main").innerText();
+  check(aboutText.includes(`About Abiye ${RUN}`) && (await p.locator(`h2:text("Our story ${RUN}")`).count()) === 1 && !aboutText.includes("{name}"),
+    "About us text edited in admin appears on the website (title, sections, business name filled in)");
+  check(aboutText.includes("<b>bold?</b>") && (await p.locator("main b").count()) === 0, "About us text is shown as plain text (no HTML)");
+  check(!aboutText.includes("Printing") || (await p.locator("main ul li h2").count()) === 0, "services list hidden when unticked");
+  sql(`update website_settings set value = jsonb_build_object('title', jsonb_build_object('en','','am',''), 'body', jsonb_build_object('en','','am',''), 'show_services', true, 'show_why_us', true) where key = 'about'`);
 
   await a.goto(`${B}/admin/settings?tab=legal`);
   const legal = a.locator("form:has(textarea[name=terms_en])");

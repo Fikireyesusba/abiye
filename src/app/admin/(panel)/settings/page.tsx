@@ -29,7 +29,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
   const canBanks = ctx.permissions.has("bank_accounts.manage");
   const tabs = [
     ...(canSettings ? [{ k: "general", l: "Business" }, { k: "contact", l: "Contact & hours" }, { k: "social", l: "Social media" },
-      { k: "homepage", l: "Homepage" }, { k: "delivery", l: "Delivery" }] : []),
+      { k: "homepage", l: "Homepage" }, { k: "about", l: "About us" }, { k: "delivery", l: "Delivery" }] : []),
     ...(canBanks ? [{ k: "banks", l: "Bank accounts" }] : []),
     ...(canSettings ? [{ k: "legal", l: "Terms & privacy" }, { k: "printing", l: "Printing" }] : []),
   ];
@@ -109,6 +109,24 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
             </ActionForm>
             <p className="text-xs text-muted-foreground">Featured products: tick “Feature on homepage” on a product. Sale products appear under Special offers automatically.</p>
           </div>
+        </Panel>
+      )}
+
+      {tab === "about" && (
+        <Panel title="About us page">
+          <ActionForm action={saveSettings} hidden={{ key: "about" }} submitLabel="Save About us">
+            <p className="text-sm text-muted-foreground">
+              What customers see under <Link href="/about" className="text-primary underline" target="_blank">About us</Link>. Start a section with a line beginning{" "}
+              <code className="rounded bg-muted px-1">## </code> (e.g. <code className="rounded bg-muted px-1">## Our story</code>); leave a blank line between paragraphs.
+              <code className="rounded bg-muted px-1">{"{name}"}</code> is replaced with your business name. Leave the text empty to show the standard description.
+            </p>
+            <Field label="Page title (optional — default “About us”)"><Input name="title_en" defaultValue={s.about.title.en} maxLength={120} /></Field>
+            <Field label="Text">
+              <Textarea name="body_en" rows={14} maxLength={10000} defaultValue={s.about.body.en} placeholder={"## Our story\n{name} started in Addis Ababa in …\n\n## What we offer\n…"} data-testid="about-body" />
+            </Field>
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="show_services" defaultChecked={s.about.show_services} className="size-4 accent-[var(--primary)]" /> Show our services (cosmetics, electronics, printing) below the text</label>
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="show_why_us" defaultChecked={s.about.show_why_us} className="size-4 accent-[var(--primary)]" /> Show the “Why shop with us” points (from Homepage)</label>
+          </ActionForm>
         </Panel>
       )}
 

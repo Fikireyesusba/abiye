@@ -181,6 +181,12 @@ async function requestTopup(page, amount, seed) {
     const orderId = c.url().split("/order-success/")[1].split("?")[0];
     check((await c.locator("main").innerText()).includes("Paid with your balance"), "order page: paid with balance, confirmed");
     check(sql(`select status || ':' || payment_status || ':' || payment_method from orders where id = '${orderId}'`) === "confirmed:verified:wallet", "order confirmed immediately");
+    await c.goto(`${B}/account/orders`);
+    const trackLink = c.locator(`[data-testid=order-row]:has-text("${sql(`select order_number from orders where id = '${orderId}'`)}") [data-testid=track-button]`);
+    check(await trackLink.count() === 1 && await trackLink.getAttribute("href") === `/order-success/${orderId}`, "My orders: the paid order has a Track button to its status page");
+    await trackLink.click();
+    await c.waitForURL(new RegExp(`/order-success/${orderId}`));
+    check((await c.locator("main").innerText()).includes("Paid with your balance"), "Track opens the order's status page");
     check(sql(`select wallet_balance_etb from customer_accounts where id = '${uid}'`) === "1300.00", "balance debited 1,700");
     // not enough for a big order
     await c.evaluate((id) => localStorage.setItem("cart:v1", JSON.stringify([{ type: "product", productId: id, quantity: 3 }])), CHARGER);

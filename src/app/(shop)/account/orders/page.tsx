@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, PackageSearch } from "lucide-react";
 import { StatusBadge } from "@/components/status/status-badge";
 import { requireCustomer } from "@/lib/account/session";
 import { formatDateTime } from "@/lib/datetime";
@@ -38,16 +38,17 @@ export default async function MyOrdersPage() {
   const paidOrders = new Set(list.map((o) => o.id));
   const printJobs = (jobs ?? []).filter((j) => j.order_id && paidOrders.has(j.order_id));
   const printWaiting = (jobs ?? []).filter((j) => ["awaiting_quote", "awaiting_payment"].includes(j.status) && !j.order_id);
+  // Each order: number, date, total, status and a Track button (status timeline on the order page).
   const Row = ({ href, number, at, total, badge }: { href: string; number: string; at: string; total: number | null; badge: React.ReactNode }) => (
-    <li>
-      <Link href={href} className="flex items-center gap-3 py-3 hover:bg-muted/40">
-        <span className="min-w-0 flex-1">
-          <span className="block font-medium">{number}</span>
-          <span className="block text-xs text-muted-foreground">{formatDateTime(at, locale)}</span>
-        </span>
-        {total !== null && <span className="text-sm tabular-nums">{formatETB(toSantim(total), locale)}</span>}
-        {badge}
-        <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+    <li className="flex flex-wrap items-center gap-3 py-3" data-testid="order-row">
+      <span className="min-w-0 flex-1">
+        <span className="block font-medium">{number}</span>
+        <span className="block text-xs text-muted-foreground">{formatDateTime(at, locale)}</span>
+      </span>
+      {total !== null && <span className="text-sm tabular-nums">{formatETB(toSantim(total), locale)}</span>}
+      {badge}
+      <Link href={href} className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-secondary" data-testid="track-button">
+        <PackageSearch className="size-4" aria-hidden /> {t("account.track")}
       </Link>
     </li>
   );

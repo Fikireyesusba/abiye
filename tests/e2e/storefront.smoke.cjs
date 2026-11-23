@@ -157,7 +157,9 @@ function resetSampleStock() {
   // Language switch
   await p.goto(B + '/');
   await p.click('header button[aria-controls=account-menu]');
-  check(await p.locator('#account-menu a[href="/track-order"]').count() === 1 && await p.locator('#account-menu a[href="/contact"]').count() === 1, 'profile menu: account, track order, about, contact');
+  check(await p.locator('#account-menu a[href="/track-order"]').count() === 0 && await p.locator('#account-menu a[href="/account/orders"]').count() === 1
+    && await p.locator('#account-menu a[href="/contact"]').count() === 1, 'side menu: My orders (no separate Track order), about, contact');
+  check(await p.locator('header nav a[href="/shop"]').count() === 0, 'no separate Shop link in the header (everything is on Home)');
   check(await p.locator('#account-menu button:has-text("አማርኛ")').count() === 0, 'no language switch (English only)');
   check(await p.locator('#account-menu a[href="/account/login"]').count() === 1 && await p.locator('#account-menu a[href="/account/signup"]').count() === 1, 'signed out: side menu offers Sign in / Create account');
   await p.keyboard.press('Escape');
@@ -169,7 +171,7 @@ function resetSampleStock() {
   const m = await b.newPage({ viewport: { width: 390, height: 844 } });
   await m.goto(B + '/', { waitUntil: 'networkidle' });
   check(await m.locator('button[aria-label="Open menu"]').count() === 0, 'no side menu on phones');
-  check(await m.locator('nav[aria-label=Main] a:visible').allTextContents().then((x) => x.join(',')) === 'Home,Shop', 'phone header shows Home and Shop');
+  check(await m.locator('nav[aria-label=Main] a:visible').allTextContents().then((x) => x.join(',')) === 'Home', 'phone header shows Home (no separate Shop)');
   await m.click('header button[aria-controls=account-menu]');
   await m.click('#account-menu a[href="/help"]');
   await m.waitForURL(/\/help/);

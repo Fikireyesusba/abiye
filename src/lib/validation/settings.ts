@@ -58,6 +58,13 @@ export const settingsSchemas = {
     retention_days: z.int().min(1).max(365),
   }),
   legal: z.object({ terms: longText, privacy: longText, approved: z.boolean() }),
+  // About us page (Admin → Settings → About us). Empty text → the page shows the standard description.
+  about: z.object({
+    title: localized,
+    body: z.object({ en: z.string().max(10000), am: z.string().max(10000) }),
+    show_services: z.boolean(),
+    show_why_us: z.boolean(),
+  }),
   homepage: z.object({
     hero_title: localized,
     hero_subtitle: localized,

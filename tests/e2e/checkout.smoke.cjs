@@ -140,32 +140,17 @@ function resetSampleStock() {
   check((await fetch(`${B}/order-success/${orderId}?t=${"A".repeat(43)}`, { redirect: "manual" })).headers.get("referrer-policy") === "no-referrer",
     "order page sends Referrer-Policy: no-referrer");
 
-  // ---- Tracking: signed-in customers, their own orders only
+  // ---- Tracking: in My orders (a Track button on each order); the old Track order link goes there
   await o.goto(B + "/track-order");
-  check(new URL(o.url()).pathname === "/account/login" && o.url().includes("next=%2Ftrack-order"), "track order asks a signed-out visitor to sign in");
+  check(new URL(o.url()).pathname === "/account/login", "old Track order link: a signed-out visitor is asked to sign in");
   await p.goto(B + "/track-order");
-  await p.fill("#orderNumber", orderNumber.toLowerCase());
-  await p.click("button[type=submit]");
-  await p.waitForSelector(`h2:text("${orderNumber}")`);
-  const html = await p.content();
-  check(html.includes("Cancelled"), "tracking shows status of the customer's own order");
-  // (The side menu carries the signed-in customer's own name; the tracking result itself shows no personal data.)
-  const result = await p.locator("main").innerText();
-  check(!result.includes("Abebe") && !result.includes("911223344") && !result.includes("Bole"), "tracking result shows no name/phone/address");
-  check(await p.locator("#trackingCode").count() === 0, "no tracking code asked");
-  const otherOrder = sql("select order_number from orders where user_id is distinct from (select id from auth.users where email = '" + CUSTOMER.email + "') order by created_at desc limit 1");
-  if (otherOrder) {
-    await p.fill("#orderNumber", otherOrder);
-    await p.click("button[type=submit]");
-    await p.waitForSelector("text=None of your orders");
-    check(true, `another customer's order (${otherOrder}) cannot be tracked`);
-  }
-  for (let i = 0; i < 10; i++) {
-    await p.click("button[type=submit]");
-    await p.waitForTimeout(300);
-  }
-  check((await p.locator("text=Too many attempts").count()) === 1, "tracking lookups are rate-limited");
-  sql("delete from rate_limits where key like 'track:%'");
+  check(new URL(p.url()).pathname === "/account/orders", "old Track order link opens My orders");
+  const myPaid = Number(sql("select count(*) from orders where payment_status in ('verified','refunded') and user_id = (select id from auth.users where email = '" + CUSTOMER.email + "')"));
+  const trackHrefs = await p.locator("[data-testid=track-button]").evaluateAll((els) => els.map((e) => e.getAttribute("href")));
+  check(trackHrefs.filter((h) => /^\/order-success\/[0-9a-f-]{36}$/.test(h ?? "")).length >= myPaid, `My orders: a Track button on every order (${trackHrefs.length})`);
+  await p.click("header button[aria-controls=account-menu]");
+  check(await p.locator('#account-menu a[href="/track-order"]').count() === 0 && await p.locator('#account-menu a[href="/account/orders"]').count() === 1, "side menu: My orders only (no separate Track order)");
+  await p.keyboard.press("Escape");
 
   // ---- Expiry
   await p.goto(B + "/");

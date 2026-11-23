@@ -139,7 +139,7 @@ export const HELP: HelpSection[] = [
         { en: "Phone notifications: in My account tap “Turn on notifications” to get a message on your phone at every step (on iPhone, first install the app — see the top of this page).", am: "የስልክ ማሳወቂያዎች፦ በየእኔ መለያ ውስጥ «ማሳወቂያዎችን አብራ»ን ይንኩ፣ በእያንዳንዱ ደረጃ በስልክዎ ላይ መልዕክት ይደርስዎታል (በiPhone መጀመሪያ መተግበሪያውን ይጫኑ — የዚህን ገጽ ላይኛው ክፍል ይመልከቱ)።" },
       ] },
     ],
-    links: [{ href: "/account", label: { en: "My account", am: "የእኔ መለያ" } }, { href: "/track-order", label: { en: "Track order", am: "ትዕዛዝ ይከታተሉ" } }],
+    links: [{ href: "/account", label: { en: "My account", am: "የእኔ መለያ" } }, { href: "/account/orders", label: { en: "My orders", am: "የእኔ ትዕዛዞች" } }],
   },
   {
     id: "printing",

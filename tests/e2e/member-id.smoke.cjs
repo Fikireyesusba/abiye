@@ -23,10 +23,10 @@ const RUN = Date.now().toString(36);
   check(/^[1-9][0-9]{5}$/.test(mid), `new customer got a member ID (${mid})`);
   const b = await chromium.launch();
   try {
-    // ---- signed out: track order asks to sign in
+    // ---- signed out: My orders (and the old Track order link) asks to sign in
     const anon = await (await b.newContext()).newPage();
     await anon.goto(`${B}/track-order`);
-    check(new URL(anon.url()).pathname === "/account/login", "track order: signed-out visitors are sent to sign in");
+    check(new URL(anon.url()).pathname === "/account/login", "orders: signed-out visitors are sent to sign in");
 
     // ---- customer sees their ID on My account
     const c = await (await b.newContext()).newPage();
@@ -34,12 +34,7 @@ const RUN = Date.now().toString(36);
     await c.goto(`${B}/account`);
     check((await c.locator("[data-testid=member-id]").innerText()).trim() === mid, "My account shows the member ID");
     await c.goto(`${B}/track-order`);
-    check(new URL(c.url()).pathname === "/track-order" && await c.locator("#orderNumber").count() === 1 && await c.locator("#trackingCode").count() === 0,
-      "signed in: track by order number only");
-    await c.fill("#orderNumber", "ET-99999999");
-    await c.click("button[type=submit]");
-    await c.waitForSelector("text=None of your orders");
-    check(true, "unknown order number: not found");
+    check(new URL(c.url()).pathname === "/account/orders", "signed in: tracking is in My orders");
 
     // ---- admin: list, search by ID, customer page, staff list
     const o = await (await b.newContext({ viewport: { width: 1280, height: 1000 } })).newPage();

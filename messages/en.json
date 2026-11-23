@@ -567,7 +567,8 @@
     "waitingText": "Not an order yet: it becomes an order once we accept your payment. Unpaid checkouts are released after 30 minutes.",
     "checkoutLabel": "Checkout",
     "printRequestLabel": "Printing request",
-    "profileHint": "Theme, notifications, privacy and terms"
+    "profileHint": "Theme, notifications, privacy and terms",
+    "track": "Track"
   },
   "payInfo": {
     "title": "How to pay",
