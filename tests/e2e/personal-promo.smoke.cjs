@@ -134,7 +134,8 @@ async function tryCode(page, code) {
     await toast(op, "Promotion revoked");
     check(sql(`select is_active || ':' || revoked_reason from promotions where code = '${CODE}'`) === "false:Campaign cancelled", "revoked with the reason");
     await op.reload();
-    check(await op.locator("[data-testid=promo-revoked]", { hasText: "Campaign cancelled" }).count() === 1, "revoked promotion shows the reason");
+    check(await op.locator("li[data-row]", { has: op.locator(`text=VIP ${RUN}`) }).first().locator("[data-testid=promo-revoked]", { hasText: "Campaign cancelled" }).count() === 1,
+      "revoked promotion shows the reason");
     await cp.goto(`${B}/account/offers`);
     check(!(await cp.locator("main").innerText()).includes(CODE), "a revoked code disappears for the customer");
     check(await tryCode(cp, CODE) === "error", "a revoked code no longer works at checkout");
