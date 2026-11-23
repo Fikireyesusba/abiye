@@ -122,7 +122,7 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - **Fails closed** (owner's choice): key missing / wrong, limit reached or outage → upload refused ("try again in a few minutes"), event `scan_unavailable`; Site health shows the scanner status.
 - Env: `CLOUDMERSIVE_API_KEY` (Vercel, Sensitive). `CLOUDMERSIVE_API_BASE` only for tests. Tests use a local fake scanner: `node tests/e2e/fake-scanner.cjs` (port 4599) with `.env.local` `CLOUDMERSIVE_API_KEY=test-cloudmersive-key`, `CLOUDMERSIVE_API_BASE=http://127.0.0.1:4599` — start it before the browser tests.
 - Migration **0065** `20261123000065_upload_virus_scan.sql`; tests: unit `virus-scan.test.ts`, db `99zzzb_upload_scan_test.sql`, e2e `wallet.smoke.cjs`. Docs: DEPLOYMENT.md §6b.
-- ⏳ Owner: add `CLOUDMERSIVE_API_KEY` in Vercel and redeploy (**until then customer uploads are refused**); paste **0065** into the Supabase SQL Editor.
+- ✅ 0065 applied in production and `CLOUDMERSIVE_API_KEY` added in Vercel (owner confirmed 2026-11-23).
 
 ## Promotion alerts (security group) and Excel copies through the queue (requested 2026-11-23)
 
