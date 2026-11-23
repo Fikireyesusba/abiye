@@ -115,6 +115,14 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - Local dev: sign-ups + email confirmation on, local mail catcher on :54324 (dev:up no longer excludes it).
 - **Production TODO for the owner**: configure SMTP + email templates + URL configuration in Supabase (docs/DEPLOYMENT.md §2b).
 
+## Separate addresses + courier app (requested 2026-11-23)
+
+- **Addresses** (`src/lib/security/hosts.ts`, proxy, guards, sign-in): `fantaf.xyz` customers · `ocs.fantaf.xyz` managers/staff · `operations.fantaf.xyz` Super Admin only · `courier.fantaf.xyz` couriers only. Switched on only when `CUSTOMER_HOST`, `STAFF_HOST`, `SUPER_ADMIN_HOST`, `COURIER_HOST` are all set in Vercel. Wrong-address sign-in refused + security event; every admin request re-checked; per-address app manifest; Telegram admin links use ocs / operations. Docs: DEPLOYMENT.md §6a.
+- **Courier** (migration **0068** `20261123000068_courier.sql`): permission set Courier (`deliveries.own`); admin assigns delivery orders (order page → Courier); 4-digit delivery code for the customer (order page + "on its way" email); courier app `/courier`: Picked up → Delivered (code) / Couldn't deliver (reason); 5 wrong codes lock; contact details only while open; Activity log + Telegram `delivery_update`; courier idle sign-out 30 min. Docs: §6b.
+- Tests: db `99zzzf_courier_test.sql`, unit `hosts.test.ts`, e2e `courier.smoke.cjs` (own server with the split on, `*.fantaf.test`).
+- Later: courier KPIs on the Performance dashboard; optional photo proof.
+- ⏳ Owner: paste **0068**; then (when ready) add the three subdomains, Supabase redirect URLs and the four `*_HOST` variables (§6a).
+
 ## Customer app tidy-up, About us editor, printing payment alert (requested 2026-11-23)
 
 - Contact page: "How to pay" / bank accounts removed (shown at checkout and on the top-up page).

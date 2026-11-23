@@ -66,7 +66,13 @@ export async function dispatchCustomerEmails(limit = 20): Promise<EmailSummary> 
       await giveUp(row.id, "skipped: older than 2 days");
       continue;
     }
-    const built = buildCustomerEmail({ event_type: row.event_type, payload: (row.payload ?? {}) as Record<string, unknown> }, ctx);
+    const payload = { ...((row.payload ?? {}) as Record<string, unknown>) };
+    // "On its way": the delivery code the customer gives the courier at the door (read fresh, never stored in the queue).
+    if (row.event_type === "customer_order_out_for_delivery" && typeof payload.order_id === "string") {
+      const { data: o } = await db.from("orders").select("delivery_code").eq("id", payload.order_id).maybeSingle();
+      if (o?.delivery_code) payload.delivery_code = o.delivery_code;
+    }
+    const built = buildCustomerEmail({ event_type: row.event_type, payload }, ctx);
     const { data: user } = row.recipient_user_id ? await db.auth.admin.getUserById(row.recipient_user_id) : { data: null };
     const to = user?.user?.email;
     if (!built || !to) {

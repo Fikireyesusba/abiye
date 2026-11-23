@@ -209,7 +209,8 @@
     "wallet_insufficient": "ቀሪ ሂሳብዎ ይህን ትዕዛዝ አይሸፍንም። በምትኩ በባንክ ዝውውር ይክፈሉ።",
     "wallet_limit": "ይህ ገንዘብ መሙላት ቀሪ ሂሳብዎን ከ10,000 ብር ገደብ በላይ ያደርገዋል።",
     "topup_pending_limit": "ማረጋገጫ የሚጠብቁ 3 የገንዘብ መሙላት ጥያቄዎች አሉዎት። እስክናረጋግጣቸው ድረስ እባክዎ ይጠብቁ።",
-    "email_blocked": "ይህ ኢሜይል በዚህ ድረ-ገጽ ላይ መጠቀም አይቻልም። እባክዎ ያግኙን።"
+    "email_blocked": "ይህ ኢሜይል በዚህ ድረ-ገጽ ላይ መጠቀም አይቻልም። እባክዎ ያግኙን።",
+    "delivery_locked": "Too many wrong delivery codes. Call the office — they will check the order."
   },
   "header": {
     "menu": "ማውጫ",
@@ -421,7 +422,9 @@
     "deliverTo": "ማድረሻ አድራሻ",
     "history": "የትዕዛዝ ታሪክ",
     "orderDate": "የታዘዘበት ቀን {date}",
-    "notFound": "ትዕዛዙ አልተገኘም። ከክፍያ በኋላ በተሰጠዎት የግል ማገናኛ ይክፈቱት።"
+    "notFound": "ትዕዛዙ አልተገኘም። ከክፍያ በኋላ በተሰጠዎት የግል ማገናኛ ይክፈቱት።",
+    "deliveryCodeTitle": "Your delivery code",
+    "deliveryCodeHint": "Give this code to the courier only when you receive your order."
   },
   "track": {
     "title": "ትዕዛዝዎን ይከታተሉ",

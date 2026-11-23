@@ -23,6 +23,7 @@ export default async function AdminLoginPage({ searchParams }: PageProps<"/admin
           <p className="text-sm text-muted-foreground">Staff sign in</p>
         </div>
         {sp.reason === "elsewhere" && <p className="mb-4 rounded-md bg-muted p-3 text-sm" role="status">You were signed out because this account signed in on another device or browser. Only one device can be signed in at a time.</p>}
+        {sp.reason === "address" && <p className="mb-4 rounded-md bg-muted p-3 text-sm" role="status">This account signs in at a different address. Please use the sign-in address you were given.</p>}
         {sp.reason === "idle" && <p className="mb-4 rounded-md bg-muted p-3 text-sm" role="status">For security you were signed out after {IDLE_MINUTES.admin} minutes of inactivity. Please sign in again.</p>}
         <LoginForm next={next} />
       </div>

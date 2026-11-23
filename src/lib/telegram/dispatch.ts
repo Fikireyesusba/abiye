@@ -1,4 +1,5 @@
 import "server-only";
+import { surfaceUrl } from "@/lib/security/hosts";
 import { after } from "next/server";
 import { getServerEnv } from "@/lib/env";
 import { dispatchCustomerEmails } from "@/lib/email/dispatch";
@@ -47,8 +48,13 @@ export function securityTelegramConfig(): TelegramConfig | null {
   return { token: env.TELEGRAM_SECURITY_BOT_TOKEN, chatId: env.TELEGRAM_SECURITY_CHAT_ID, apiBase: env.TELEGRAM_API_BASE ?? "https://api.telegram.org" };
 }
 
-async function deliver(cfg: TelegramConfig, row: OutboxRow): Promise<SendResult> {
-  const msg = buildMessage(row, getServerEnv().APP_URL);
+/** "Open in admin" links: Super Admin address for the security and receipts groups, staff address otherwise. */
+function adminBase(group: TelegramGroup): string {
+  return surfaceUrl(group === "security" || group === "receipts" ? "super" : "staff") ?? getServerEnv().APP_URL;
+}
+
+async function deliver(cfg: TelegramConfig, row: OutboxRow, group: TelegramGroup = "orders"): Promise<SendResult> {
+  const msg = buildMessage(row, adminBase(group));
   // Excel exports: the file itself, then it is removed from storage (Telegram keeps the copy).
   if (row.event_type === "excel_export" && msg.attachment?.bucket === "excel-exports") {
     const store = getSupabaseAdmin().storage.from("excel-exports");
@@ -125,7 +131,7 @@ export async function dispatchGroup(group: TelegramGroup | boolean, limit = 20):
       await db.from("notifications_outbox").update({ status: "dead", last_error: "skipped: older than 24 h", locked_until: null }).eq("id", row.id).eq("status", "processing");
       continue;
     }
-    const res: SendResult = rateLimited ? { ok: false, kind: "retry", error: rateLimited } : await deliver(cfg, row);
+    const res: SendResult = rateLimited ? { ok: false, kind: "retry", error: rateLimited } : await deliver(cfg, row, g);
     if (!res.ok && res.kind === "rate_limited") rateLimited = `rate limited by Telegram (retry after ${res.retryAfter}s)`;
     if (!res.ok && res.kind === "permanent") console.error(`[telegram] permanent failure for outbox #${row.id}: ${res.error}`);
     await db.rpc("complete_notification", { p_id: row.id, p_success: res.ok, p_error: res.ok ? undefined : res.error });

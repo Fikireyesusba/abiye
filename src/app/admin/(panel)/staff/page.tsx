@@ -19,7 +19,7 @@ const AREA: Record<string, string> = {
   dashboard: "Dashboard", orders: "Orders", payments: "Payments", wallet: "Wallet", printing: "Printing", products: "Products",
   categories: "Products", inventory: "Products", customers: "Customers", promotions: "Promotions", reviews: "Reviews",
   analytics: "Reports", reports: "Reports", settings: "Settings", bank_accounts: "Settings", staff: "Staff", audit: "Activity & security",
-  security: "Activity & security", data: "Export & reset", support: "Support", kpi: "Reports",
+  security: "Activity & security", data: "Export & reset", support: "Support", kpi: "Reports", deliveries: "Deliveries (courier app)",
 };
 
 export default async function StaffPage({ searchParams }: PageProps<"/admin/staff">) {

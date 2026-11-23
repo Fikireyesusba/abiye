@@ -1,6 +1,7 @@
 "use server";
 import { ACTIVE_COOKIE, SESSION_COOKIE } from "@/lib/security/idle";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { roleAllowedOn, surfaceForHost } from "@/lib/security/hosts";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { clientIpKey, rateLimitAll } from "@/lib/security/rate-limit";
@@ -48,6 +49,15 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
     console.warn("[admin-login] signed in but no active staff profile (run bootstrap_super_admin / add in /admin/staff)");
     await supabase.auth.signOut();
     return { error: "This account does not have access to the admin dashboard.", email };
+  }
+  // Each permission set signs in at its own address (when the address split is switched on).
+  const { data: status } = await supabase.rpc("my_staff_status");
+  const role = (status as { role?: string | null } | null)?.role ?? "";
+  const surface = surfaceForHost((await headers()).get("host"));
+  if (role && !roleAllowedOn(surface, role)) {
+    await recordSecurityEvent("admin_login_not_staff", { email, metadata: { where: "wrong_address", role } });
+    await supabase.auth.signOut();
+    return { error: "This account signs in at a different address. Please use the sign-in address you were given.", email };
   }
   // Second step: the authenticator code (or setting one up on first sign-in).
   redirect(`/admin/mfa?next=${encodeURIComponent(safeAdminRedirect(formData.get("next")))}`);

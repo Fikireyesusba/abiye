@@ -55,6 +55,26 @@ export async function assignOrder(_prev: ActionResult | null, fd: FormData): Pro
   return ok(parsed.data.assignee ? "Order assigned." : "Assignment removed.");
 }
 
+/** Give a delivery order to a courier (or take it back). The customer gets a 4-digit delivery code. */
+export async function assignCourier(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("orders.manage");
+  const parsed = z.object({ orderId: guid, courier: z.union([guid, z.literal("")]) }).safeParse(formObject(fd));
+  if (!parsed.success) return fail("Invalid request.");
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("admin_assign_courier", {
+    p_order_id: parsed.data.orderId,
+    p_courier: (parsed.data.courier || null) as string,
+  });
+  if (error) {
+    if (error.message === "invalid_assignee") return fail("Choose an active courier (Staff → permission set Courier).");
+    if (error.message === "invalid_transition") return fail("Couriers can be assigned to paid delivery orders that are not finished (and not taken back while on the way).");
+    return dbError(error);
+  }
+  dispatchSoon();
+  revalidatePath(`/admin/orders/${parsed.data.orderId}`);
+  return ok(parsed.data.courier ? "Courier assigned — the delivery is in their app." : "Courier removed.");
+}
+
 export async function addOrderNote(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   await requirePermission("orders.manage", "orders.update_fulfillment");
   const parsed = z.object({ orderId: guid, body: z.string().trim().min(1).max(2000) }).safeParse(formObject(fd));

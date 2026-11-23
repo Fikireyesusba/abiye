@@ -104,6 +104,13 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
             <Banner tone="danger" icon={<AlertTriangle className="size-5" />} title={t("order.rejectedTitle")}
               text={`${lastRejection.review_note ? t("order.rejectedReason", { reason: lastRejection.review_note }) + " " : ""}${t("order.rejectedHelp")}`} />
           )}
+          {order.status === "out_for_delivery" && order.delivery_code && (
+            <div className="rounded-xl border-2 border-primary/40 bg-primary/5 p-4 text-center" data-testid="delivery-code">
+              <p className="text-sm font-medium">{t("order.deliveryCodeTitle")}</p>
+              <p className="my-1 font-mono text-3xl font-bold tracking-[0.4em]">{order.delivery_code}</p>
+              <p className="text-xs text-muted-foreground">{t("order.deliveryCodeHint")}</p>
+            </div>
+          )}
           {["confirmed", "processing", "ready_for_pickup", "out_for_delivery", "completed"].includes(order.status) && (
             <Banner tone="success" icon={<CheckCircle2 className="size-5" />} title={order.payment_method === "wallet" ? t("wallet.paidWithBalance") : t("order.confirmedTitle")} />
           )}

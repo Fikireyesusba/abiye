@@ -35,6 +35,12 @@ const ACTION_LABELS: Record<string, string> = {
   security_reviewed: "Security alert cleared (reviewed)",
   promo_unassigned: "Personal promo code removed",
   promo_revoked: "Promotion revoked",
+  courier_assigned: "Courier assigned",
+  courier_unassigned: "Courier removed",
+  delivery_picked_up: "Picked up by the courier",
+  delivery_completed: "Delivered (customer's code checked)",
+  delivery_failed: "Courier could not deliver",
+  delivery_code_locked: "Delivery code locked (5 wrong tries)",
   // Supabase Auth events
   login: "Signed in",
   logout: "Signed out",

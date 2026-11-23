@@ -37,6 +37,7 @@ export const PERMISSIONS = [
   "support.manage",
   "kpi.view",
   "kpi.manage",
+  "deliveries.own",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];

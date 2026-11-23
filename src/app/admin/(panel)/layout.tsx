@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { LogOut, Search, UserCircle } from "lucide-react";
 import { AdminMobileNav, AdminSidebar, type NavItem } from "@/components/admin/admin-nav";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,8 @@ export const metadata: Metadata = {
  */
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   const ctx = await requireAdmin();
+  // Couriers use the courier app only.
+  if (ctx.role === "courier") redirect("/courier");
   const badges = await getAdminBadges(ctx);
   // Excel exports are for the Super Admin only.
   const items: NavItem[] = ADMIN_ROUTES.filter((r) => r.anyOf.some((p) => ctx.permissions.has(p)) && (r.href !== "/admin/exports" || ctx.role === "super_admin"))

@@ -1,13 +1,27 @@
 import type { MetadataRoute } from "next";
+import { headers } from "next/headers";
 import { getSiteSettings } from "@/lib/catalog/settings";
-
-/** Refreshed hourly so a renamed shop (Admin → Settings) reaches the app. */
-export const revalidate = 3600;
+import { surfaceForHost } from "@/lib/security/hosts";
 
 /** Web app manifest: makes the shop installable on Android (and gives iPhone its name/colours). */
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const s = await getSiteSettings();
   const name = s.business.name.en || "Abiye";
+  // Staff / Super Admin / courier addresses install their own app (own name and start page).
+  const surface = surfaceForHost((await headers()).get("host"));
+  if (surface && surface !== "customer") {
+    const courier = surface === "courier";
+    const appName = `${name} ${courier ? "Courier" : surface === "super" ? "Operations" : "OCS"}`;
+    const start = courier ? "/courier" : "/admin";
+    return {
+      id: start, name: appName, short_name: appName.slice(0, 12), start_url: start, scope: start,
+      display: "standalone", orientation: "portrait", background_color: "#faf9f6", theme_color: "#14523f", lang: "en",
+      icons: [
+        { src: "/app-icon/192", sizes: "192x192", type: "image/png", purpose: "any" },
+        { src: "/app-icon/512", sizes: "512x512", type: "image/png", purpose: "any" },
+      ],
+    };
+  }
   return {
     id: "/",
     name,

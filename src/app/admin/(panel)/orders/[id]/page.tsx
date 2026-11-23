@@ -8,7 +8,9 @@ import { PageHeader, Panel, SubTabs, fieldClass, pickTab } from "@/components/ad
 import { StatusBadge } from "@/components/status/status-badge";
 import { Textarea } from "@/components/ui/textarea";
 import { nextStatuses, type OrderStatus } from "@/lib/admin/order-flow";
-import { addOrderNote, assignOrder, reviewPayment, updateOrderStatus } from "@/lib/admin/order-actions";
+import { addOrderNote, assignCourier, assignOrder, reviewPayment, updateOrderStatus } from "@/lib/admin/order-actions";
+import { UserIdLink } from "@/components/admin/user-id";
+import { memberIds } from "@/lib/admin/member-ids";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
@@ -37,14 +39,18 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
   if (!order) notFound(); // RLS: also not found when not visible to this role
 
   const can = (p: Parameters<typeof ctx.permissions.has>[0]) => ctx.permissions.has(p);
-  const [{ data: submissions }, { data: staff }] = await Promise.all([
+  const [{ data: submissions }, { data: staff }, { data: couriers }] = await Promise.all([
     can("payments.view")
       ? supabase.from("payment_submissions").select("*").eq("order_id", id).order("submitted_at", { ascending: false })
       : Promise.resolve({ data: [] as never[] }),
     can("orders.manage")
       ? supabase.from("profiles").select("id, full_name, is_active").eq("is_active", true).order("full_name")
       : Promise.resolve({ data: [] as { id: string; full_name: string; is_active: boolean }[] }),
+    can("orders.manage") && order.fulfillment_method === "delivery"
+      ? supabase.from("profiles").select("id, full_name, role:admin_roles!inner(key)").eq("is_active", true).eq("admin_roles.key", "courier").order("full_name")
+      : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
   ]);
+  const courierIds = await memberIds([...(couriers ?? []).map((c) => c.id), ...(order.courier_id ? [order.courier_id] : [])]);
   const signed = await Promise.all(
     (submissions ?? []).map(async (s) => (await supabase.storage.from("payment-receipts").createSignedUrl(s.receipt_path, 300)).data?.signedUrl ?? null),
   );
@@ -191,6 +197,32 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
               {can("customers.view") && order.user_id && <Link href={`/admin/customers/${order.user_id}`} className="inline-block pt-1 text-primary hover:underline">Customer account & history →</Link>}
             </dl>
           </Panel>
+
+          {order.fulfillment_method === "delivery" && (can("orders.manage") || order.courier_id) && (
+            <Panel title="Courier">
+              <div className="space-y-3 text-sm" data-testid="courier-panel">
+                {order.courier_id ? (
+                  <dl className="space-y-1">
+                    <div className="flex gap-2"><dt className="text-muted-foreground">Courier (User ID)</dt><dd><UserIdLink id={courierIds.get(order.courier_id)} /></dd></div>
+                    {order.courier_assigned_at && <div className="flex gap-2"><dt className="text-muted-foreground">Assigned</dt><dd>{formatDateTime(order.courier_assigned_at, "en")}</dd></div>}
+                    {order.picked_up_at && <div className="flex gap-2"><dt className="text-muted-foreground">Picked up</dt><dd>{formatDateTime(order.picked_up_at, "en")}</dd></div>}
+                    {order.delivered_at && <div className="flex gap-2"><dt className="text-muted-foreground">Delivered</dt><dd>{formatDateTime(order.delivered_at, "en")} (customer&apos;s code checked)</dd></div>}
+                    {order.delivery_fail_reason && !order.delivered_at && <div className="flex gap-2 text-destructive"><dt>Last try failed</dt><dd>{order.delivery_fail_reason} ({order.delivery_attempts}×)</dd></div>}
+                    {order.delivery_code_tries >= 5 && !order.delivered_at && <p className="text-destructive">Delivery code locked after 5 wrong tries — re-assign the courier to unlock it.</p>}
+                  </dl>
+                ) : <p className="text-muted-foreground">No courier yet.</p>}
+                {can("orders.manage") && ["confirmed", "processing", "out_for_delivery"].includes(order.status) && (
+                  <ActionForm action={assignCourier} hidden={{ orderId: order.id }} submitLabel={order.courier_id ? "Change courier" : "Assign courier"} variant="outline" size="sm">
+                    <select name="courier" defaultValue={order.courier_id ?? ""} className={fieldClass} aria-label="Courier">
+                      <option value="">{order.courier_id ? "Remove courier" : "Choose a courier…"}</option>
+                      {(couriers ?? []).map((c) => <option key={c.id} value={c.id}>{c.full_name} · {courierIds.get(c.id) ?? ""}</option>)}
+                    </select>
+                  </ActionForm>
+                )}
+                {can("orders.manage") && (couriers ?? []).length === 0 && <p className="text-xs text-muted-foreground">Add couriers under Staff (permission set “Courier”).</p>}
+              </div>
+            </Panel>
+          )}
 
           {can("orders.manage") && (
             <Panel title="Assigned staff">

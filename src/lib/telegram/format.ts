@@ -104,6 +104,10 @@ export function suggestedAction(row: OutboxRow): string | null {
       if (p.change === "used") return "Nothing to do — keep this for any complaint (the Promotions Excel lists every use).";
       if (p.change === "revoked" || p.change === "deleted" || p.change === "removed") return "Nothing to do if this was expected; otherwise ask the staff member why (Activity log).";
       return "If you did not expect this promotion change, revoke the promotion under Promotions and check the Activity log.";
+    case "delivery_update":
+      if (p.step === "failed") return "Call the customer, then re-assign the courier (or arrange pickup) on the order.";
+      if (p.step === "code_locked") return "Call the customer and the courier; re-assign the courier on the order to unlock the code.";
+      return "Nothing to do — the customer sees the progress on their order page.";
     case "excel_export":
       return "Keep this file as your copy. If nobody on your team downloaded it, check who did (Action by User ID).";
     case "notification_copy":
@@ -157,6 +161,10 @@ const SUPPORT_TOPIC: Record<string, string> = {
 };
 const titleCase = (s: string) => s.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase());
 
+const DELIVERY_STEP: Record<string, string> = {
+  assigned: "Assigned to a courier", picked_up: "Picked up — on the way", delivered: "Delivered (code checked)",
+  failed: "Could not deliver", code_locked: "Delivery code locked (5 wrong tries)",
+};
 const PROMO_CHANGE: Record<string, string> = {
   created: "Created", changed: "Changed", switched_on: "Switched on", switched_off: "Switched off", revoked: "Revoked",
   restored: "Brought back", deleted: "Deleted", given: "Code given to a customer", removed: "Code removed from a customer", used: "Code used",
@@ -175,6 +183,7 @@ export function describe(row: OutboxRow): [string, string] {
     case "receipts_test": return ["Receipts group", "Test message"];
     case "promotion_alert": return ["Promotions", PROMO_CHANGE[String(p.change)] ?? titleCase(String(p.change ?? "change"))];
     case "excel_export": return ["Exports", `Excel: ${String(p.title ?? "file")}`];
+    case "delivery_update": return ["Deliveries", DELIVERY_STEP[String(p.step)] ?? titleCase(String(p.step ?? ""))];
     case "printing_test": return ["Printing group", "Test message"];
     case "support_test": return ["Support group", "Test message"];
     case "support_ticket": return ["Support", "New ticket"];
@@ -413,6 +422,19 @@ function buildBody(row: OutboxRow, appUrl: string): BuiltMessage {
         ].join("\n") + (used && p.order_id ? admin(`/admin/orders/${p.order_id}`) : admin("/admin/promotions")),
       };
     }
+    case "delivery_update":
+      return {
+        attachment: null,
+        text: [
+          `🚚 <b>DELIVERY: ${esc((DELIVERY_STEP[String(p.step)] ?? String(p.step ?? "")).toUpperCase())}</b>`,
+          "",
+          line("Order", p.order_number),
+          ...(p.courier_user_id ? [line("Courier User ID", p.courier_user_id)] : []),
+          ...(p.city ? [line("City", p.city)] : []),
+          ...(p.reason ? [line("Reason", p.reason)] : []),
+          line("When", addisTime(p.at)),
+        ].join("\n") + orderLink,
+      };
     case "excel_export":
       return {
         attachment,

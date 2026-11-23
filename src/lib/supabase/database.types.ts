@@ -353,14 +353,14 @@ isOneToOne: false
                   ]
                 },"orders": {
                   Row: {
-                    "access_token_hash": string,"address_line": string | null,"assigned_to": string | null,"bank_account_id": string | null,"bank_snapshot": NonNullable<Json>,"cancelled_at": string | null,"channel": string,"city": string | null,"created_at": string,"currency": string,"customer_id": string,"customer_name": string,"customer_phone": string,"delivery_fee_etb": number,"delivery_instructions": string | null,"delivery_zone_id": string | null,"discount_etb": number,"fulfillment_method": Database["public"]['Enums']["fulfillment_method"],"id": string,"idempotency_key": string,"locale": string,"order_number": string,"payment_due_at": string,"payment_method": string,"payment_status": Database["public"]['Enums']["payment_status"],"payment_verified_at": string | null,"payment_verified_by": string | null,"promotion_id": string | null,"status": Database["public"]['Enums']["order_status"],"subtotal_etb": number,"total_etb": number,"tracking_code_hash": string,"updated_at": string,"user_id": string | null
+                    "access_token_hash": string,"address_line": string | null,"assigned_to": string | null,"bank_account_id": string | null,"bank_snapshot": NonNullable<Json>,"cancelled_at": string | null,"channel": string,"city": string | null,"courier_assigned_at": string | null,"courier_id": string | null,"created_at": string,"currency": string,"customer_id": string,"customer_name": string,"customer_phone": string,"delivered_at": string | null,"delivery_attempts": number,"delivery_code": string | null,"delivery_code_tries": number,"delivery_fail_reason": string | null,"delivery_failed_at": string | null,"delivery_fee_etb": number,"delivery_instructions": string | null,"delivery_zone_id": string | null,"discount_etb": number,"fulfillment_method": Database["public"]['Enums']["fulfillment_method"],"id": string,"idempotency_key": string,"locale": string,"order_number": string,"payment_due_at": string,"payment_method": string,"payment_status": Database["public"]['Enums']["payment_status"],"payment_verified_at": string | null,"payment_verified_by": string | null,"picked_up_at": string | null,"promotion_id": string | null,"status": Database["public"]['Enums']["order_status"],"subtotal_etb": number,"total_etb": number,"tracking_code_hash": string,"updated_at": string,"user_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "access_token_hash": string,"address_line"?: string | null,"assigned_to"?: string | null,"bank_account_id"?: string | null,"bank_snapshot": NonNullable<Json>,"cancelled_at"?: string | null,"channel"?: string,"city"?: string | null,"created_at"?: string,"currency"?: string,"customer_id": string,"customer_name": string,"customer_phone": string,"delivery_fee_etb"?: number,"delivery_instructions"?: string | null,"delivery_zone_id"?: string | null,"discount_etb"?: number,"fulfillment_method": Database["public"]['Enums']["fulfillment_method"],"id"?: string,"idempotency_key": string,"locale"?: string,"order_number"?: string,"payment_due_at": string,"payment_method"?: string,"payment_status"?: Database["public"]['Enums']["payment_status"],"payment_verified_at"?: string | null,"payment_verified_by"?: string | null,"promotion_id"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"subtotal_etb": number,"total_etb": number,"tracking_code_hash": string,"updated_at"?: string,"user_id"?: string | null
+                    "access_token_hash": string,"address_line"?: string | null,"assigned_to"?: string | null,"bank_account_id"?: string | null,"bank_snapshot": NonNullable<Json>,"cancelled_at"?: string | null,"channel"?: string,"city"?: string | null,"courier_assigned_at"?: string | null,"courier_id"?: string | null,"created_at"?: string,"currency"?: string,"customer_id": string,"customer_name": string,"customer_phone": string,"delivered_at"?: string | null,"delivery_attempts"?: number,"delivery_code"?: string | null,"delivery_code_tries"?: number,"delivery_fail_reason"?: string | null,"delivery_failed_at"?: string | null,"delivery_fee_etb"?: number,"delivery_instructions"?: string | null,"delivery_zone_id"?: string | null,"discount_etb"?: number,"fulfillment_method": Database["public"]['Enums']["fulfillment_method"],"id"?: string,"idempotency_key": string,"locale"?: string,"order_number"?: string,"payment_due_at": string,"payment_method"?: string,"payment_status"?: Database["public"]['Enums']["payment_status"],"payment_verified_at"?: string | null,"payment_verified_by"?: string | null,"picked_up_at"?: string | null,"promotion_id"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"subtotal_etb": number,"total_etb": number,"tracking_code_hash": string,"updated_at"?: string,"user_id"?: string | null
                   }
                   Update: {
-                    "access_token_hash"?: string,"address_line"?: string | null,"assigned_to"?: string | null,"bank_account_id"?: string | null,"bank_snapshot"?: NonNullable<Json>,"cancelled_at"?: string | null,"channel"?: string,"city"?: string | null,"created_at"?: string,"currency"?: string,"customer_id"?: string,"customer_name"?: string,"customer_phone"?: string,"delivery_fee_etb"?: number,"delivery_instructions"?: string | null,"delivery_zone_id"?: string | null,"discount_etb"?: number,"fulfillment_method"?: Database["public"]['Enums']["fulfillment_method"],"id"?: string,"idempotency_key"?: string,"locale"?: string,"order_number"?: string,"payment_due_at"?: string,"payment_method"?: string,"payment_status"?: Database["public"]['Enums']["payment_status"],"payment_verified_at"?: string | null,"payment_verified_by"?: string | null,"promotion_id"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"subtotal_etb"?: number,"total_etb"?: number,"tracking_code_hash"?: string,"updated_at"?: string,"user_id"?: string | null
+                    "access_token_hash"?: string,"address_line"?: string | null,"assigned_to"?: string | null,"bank_account_id"?: string | null,"bank_snapshot"?: NonNullable<Json>,"cancelled_at"?: string | null,"channel"?: string,"city"?: string | null,"courier_assigned_at"?: string | null,"courier_id"?: string | null,"created_at"?: string,"currency"?: string,"customer_id"?: string,"customer_name"?: string,"customer_phone"?: string,"delivered_at"?: string | null,"delivery_attempts"?: number,"delivery_code"?: string | null,"delivery_code_tries"?: number,"delivery_fail_reason"?: string | null,"delivery_failed_at"?: string | null,"delivery_fee_etb"?: number,"delivery_instructions"?: string | null,"delivery_zone_id"?: string | null,"discount_etb"?: number,"fulfillment_method"?: Database["public"]['Enums']["fulfillment_method"],"id"?: string,"idempotency_key"?: string,"locale"?: string,"order_number"?: string,"payment_due_at"?: string,"payment_method"?: string,"payment_status"?: Database["public"]['Enums']["payment_status"],"payment_verified_at"?: string | null,"payment_verified_by"?: string | null,"picked_up_at"?: string | null,"promotion_id"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"subtotal_etb"?: number,"total_etb"?: number,"tracking_code_hash"?: string,"updated_at"?: string,"user_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -374,6 +374,12 @@ isOneToOne: false
       columns: ["bank_account_id"]
 isOneToOne: false
       referencedRelation: "bank_accounts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "orders_courier_id_fkey"
+      columns: ["courier_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "orders_customer_id_fkey"
@@ -924,6 +930,9 @@ isOneToOne: false
 "admin_archive_past_receipts":
 { Args: { "p_from": string,"p_to": string }; Returns: number
                            },
+"admin_assign_courier":
+{ Args: { "p_courier": string,"p_order_id": string }; Returns: undefined
+                           },
 "admin_assign_order":
 { Args: { "p_assignee": string,"p_order_id": string }; Returns: undefined
                            },
@@ -1325,6 +1334,20 @@ isOneToOne: false
                            },
 "complete_notification":
 { Args: { "p_error"?: string,"p_id": number,"p_success": boolean }; Returns: undefined
+                           },
+"courier_deliver":
+{ Args: { "p_code": string,"p_order_id": string }; Returns: boolean
+                           },
+"courier_deliveries":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "active": boolean,"address_line": string,"assigned_at": string,"city": string,"customer_name": string,"customer_phone": string,"delivered_at": string,"delivery_instructions": string,"fail_reason": string,"items": Json,"order_id": string,"order_number": string,"picked_up_at": string,"status": string,"total_etb": number
+            }[]
+                           },
+"courier_fail":
+{ Args: { "p_order_id": string,"p_reason": string }; Returns: undefined
+                           },
+"courier_pick_up":
+{ Args: { "p_order_id": string }; Returns: undefined
                            },
 "create_order":
 { Args: { "p_input": Json }; Returns: Json

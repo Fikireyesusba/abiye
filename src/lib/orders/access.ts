@@ -66,6 +66,9 @@ export interface CustomerOrder {
   };
   payment_due_at: string;
   created_at: string;
+  /** Given to the courier at the door (shown only while the order is on its way). */
+  delivery_code: string | null;
+  courier_id: string | null;
   items: { id: string; name_en: string; name_am: string; quantity: number; unit_price_etb: number; line_total_etb: number; product: { slug: string } | null }[];
   submissions: { status: string; review_note: string | null; submitted_at: string; transaction_reference: string | null }[];
   history: { to_status: string; created_at: string }[];
@@ -73,6 +76,7 @@ export interface CustomerOrder {
 
 const ORDER_FIELDS = `id, order_number, status, payment_status, customer_name, customer_phone, fulfillment_method, city, address_line,
        delivery_instructions, subtotal_etb, delivery_fee_etb, discount_etb, total_etb, payment_method, bank_snapshot, payment_due_at, created_at,
+       delivery_code, courier_id,
        items:order_items ( id, name_en, name_am, quantity, unit_price_etb, line_total_etb, product:products ( slug ) ),
        submissions:payment_submissions ( status, review_note, submitted_at, transaction_reference ),
        history:order_status_history ( to_status, created_at )`;

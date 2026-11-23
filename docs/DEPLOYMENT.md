@@ -148,7 +148,35 @@ It refuses to run again once an active Super Admin exists. (Developers can inste
 
 `production-setup.sql` is run once. Each later change is a single new file in `supabase/migrations/` — paste it into the Supabase SQL Editor and Run, in filename order, once. Already published after the first setup: `…0017_admin_customer_accounts.sql`, `…0018_customer_account_management.sql`, `…0019_finalization.sql`, `…0020_personal_promotions.sql`, `…0021_admin_mfa.sql`, `…0022_customer_emails.sql`, `…0023_customer_push.sql`, `…0024_export_audit.sql`, `…0025_staff_not_customers.sql`, `…0026_wallet.sql`, `…0027_security_monitoring.sql`, `…0028_profile_and_activity_tools.sql`, `…0029_payment_export.sql`, `…0030_pickup_cleanup_and_receipt_archive.sql`, `…0031_stock_alerts.sql`, `…0032_product_reviews.sql`, `…0033_sales_reports.sql`, `…0034_data_export_reset.sql`, `…0035_security_reviews.sql`, `…0036_telegram_activity_feed.sql`, `…0037_telegram_two_groups.sql`, `…0038_activity_categories.sql`, `…0039_personal_code_messages.sql`, `…0040_customers_without_staff.sql`, `…0041_telegram_four_groups.sql`, `…0042_staff_remove.sql`, `…0043_product_audience.sql`, `…0044_single_session_push_owner.sql`, `…0045_paid_orders_locked_details.sql`, `…0046_warsaw_gmail_printing_cancel.sql`, `…0047_age_sex.sql`, `…0048_manage_services.sql`, `…0049_instore_clear_tools.sql`, `…0050_search_permissions.sql`. PROGRESS.md records which ones production has.
 
-## 6b. Virus scan of customer uploads (Cloudmersive)
+## 6a. Separate addresses: customers, staff, Super Admin, couriers
+
+One website, four addresses — each opens only its own part, and each permission set signs in only at its own address:
+
+| Address | Who | What |
+|---|---|---|
+| `fantaf.xyz` | customers | shop and customer app (no `/admin`, no courier app — "not found") |
+| `ocs.fantaf.xyz` | managers, staff and other permission sets | admin portal only |
+| `operations.fantaf.xyz` | Super Admins only | admin portal only |
+| `courier.fantaf.xyz` | couriers only | courier app only (installs as "Abiye Courier") |
+
+A sign-in at the wrong address is refused ("This account signs in at a different address") and recorded as a security event. Telegram "Open in admin" links use `ocs` (security and receipts groups: `operations`).
+
+Setup, in this order (browser only):
+1. **Vercel → Settings → Domains → Add** `ocs.fantaf.xyz`, `operations.fantaf.xyz` and `courier.fantaf.xyz` (Production). Add the DNS records Vercel shows (usually a CNAME to `cname.vercel-dns.com`) at your domain registrar. Wait until each shows **Valid Configuration**.
+2. **Supabase → Authentication → URL Configuration → Redirect URLs**: add `https://ocs.fantaf.xyz/**`, `https://operations.fantaf.xyz/**`, `https://courier.fantaf.xyz/**`.
+3. **Vercel → Settings → Environment Variables (Production)**: `CUSTOMER_HOST=fantaf.xyz`, `STAFF_HOST=ocs.fantaf.xyz`, `SUPER_ADMIN_HOST=operations.fantaf.xyz`, `COURIER_HOST=courier.fantaf.xyz`, then **Redeploy** (and Promote if the deployment shows Stale). The split is switched on only when all four are set; until then everything keeps working on every address.
+4. Sign in as Super Admin at `https://operations.fantaf.xyz/admin`; tell staff to use `https://ocs.fantaf.xyz` and couriers `https://courier.fantaf.xyz` (each can install it on their phone).
+
+To switch the split off again, delete the four variables and redeploy.
+
+## 6b. Couriers
+
+- Admin → **Staff → Add staff member**, permission set **Courier**. Couriers sign in (password + two-step code, like all staff) at the courier address and see only the deliveries assigned to them.
+- On a paid **delivery** order: Admin → order → **Courier** → choose → **Assign courier**. The customer gets a **4-digit delivery code** (order page and the "on its way" email).
+- Courier: **Picked up — on my way** (customer told it is on its way) → at the door, enter the customer's code → **Delivered** (order completed). Or **Couldn't deliver** with a reason (order back to preparing; the office decides). 5 wrong codes lock the delivery — re-assign the courier to unlock it.
+- The courier sees the customer's name, phone (call button) and address (map link) only while the delivery is assigned and open. Every step is in the Activity log and the orders & payments Telegram group (with the courier's User ID).
+
+## 6c. Virus scan of customer uploads (Cloudmersive)
 
 Every file a customer uploads — payment receipts, wallet top-up receipts and printing documents — is checked by content (real file type) and then sent to Cloudmersive's **advanced virus scan** before it is accepted. It must be clean: no virus / malware, no programs, scripts, macros, embedded HTML or XML external entities, not broken or disguised, **not password-protected**, and of the expected format (`.pdf`, `.jpg`, `.png`, `.docx`).
 

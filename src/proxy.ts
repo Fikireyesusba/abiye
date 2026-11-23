@@ -2,9 +2,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { buildContentSecurityPolicy } from "@/lib/security/csp";
 import { ACTIVE_COOKIE, IDLE_MINUTES, SESSION_COOKIE } from "@/lib/security/idle";
+import { pathAllowed, surfaceForHost } from "@/lib/security/hosts";
 
 /** Paths that read the Supabase session (cookie refresh needed). */
-const SESSION_PATHS = [/^\/track-order$/, /^\/support(\/|$)/, /^\/admin(\/|$)/, /^\/account(\/|$)/, /^\/checkout$/, /^\/order-success\//, /^\/printing(\/|$)/];
+const SESSION_PATHS = [/^\/courier(\/|$)/, /^\/track-order$/, /^\/support(\/|$)/, /^\/admin(\/|$)/, /^\/account(\/|$)/, /^\/checkout$/, /^\/order-success\//, /^\/printing(\/|$)/];
 
 /**
  * Runs before every page:
@@ -20,7 +21,13 @@ const SESSION_PATHS = [/^\/track-order$/, /^\/support(\/|$)/, /^\/admin(\/|$)/, 
  */
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  const isAdmin = /^\/admin(\/|$)/.test(path);
+  // Separate addresses (customers / staff / Super Admin / couriers): each opens only its own part.
+  const surface = surfaceForHost(request.headers.get("host"));
+  if (surface && !pathAllowed(surface, path)) {
+    if (surface === "customer") return new NextResponse("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
+    return NextResponse.redirect(new URL(surface === "courier" ? "/courier" : "/admin", request.url));
+  }
+  const isAdmin = /^\/(admin|courier)(\/|$)/.test(path); // staff areas (courier app included)
   const isLogin = path === "/admin/login";
   const needsSession = SESSION_PATHS.some((re) => re.test(path));
 
@@ -78,7 +85,7 @@ export async function proxy(request: NextRequest) {
     return response;
   }
   if (needsSession && signedIn && sessionId && !isAnyLogin) {
-    const limitMs = (isAdmin ? IDLE_MINUTES.admin : IDLE_MINUTES.customer) * 60_000;
+    const limitMs = (/^\/courier(\/|$)/.test(path) ? IDLE_MINUTES.courier : isAdmin ? IDLE_MINUTES.admin : IDLE_MINUTES.customer) * 60_000;
     const last = Number(request.cookies.get(ACTIVE_COOKIE)?.value);
     if (request.cookies.get(SESSION_COOKIE)?.value !== sessionId || !Number.isFinite(last) || last <= 0) {
       // New sign-in (or first visit since): start counting now.

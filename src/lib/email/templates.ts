@@ -115,7 +115,11 @@ function spec(row: EmailRow, ctx: EmailContext): Spec | null {
     case "customer_order_out_for_delivery":
       return {
         subject: `Order ${n} is on its way / በመንገድ ላይ ነው`,
-        en: { title: `Order ${n} is on its way.`, lines: ["Please keep your phone nearby — our delivery person may call you."] },
+        en: { title: `Order ${n} is on its way.`, lines: [
+          "Please keep your phone nearby — our delivery person may call you.",
+          ...(typeof p.delivery_code === "string" && /^\d{4}$/.test(p.delivery_code)
+            ? [`Your delivery code: <strong style="font-size:20px;letter-spacing:4px">${p.delivery_code}</strong> — give it to the courier only when you receive your order.`] : []),
+        ] },
         am: { title: `ትዕዛዝ ${n} በመንገድ ላይ ነው።`, lines: ["እባክዎ ስልክዎን በአቅራቢያ ያቆዩ — አድራሾቻችን ሊደውሉልዎ ይችላሉ።"] },
         button: viewOrder,
       };
