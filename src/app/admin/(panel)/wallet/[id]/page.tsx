@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ScanStatus } from "@/components/admin/scan-status";
 import Link from "next/link";
 import { UserIdLink } from "@/components/admin/user-id";
 import { notFound } from "next/navigation";
@@ -47,6 +48,7 @@ export default async function TopupDetailPage({ params }: PageProps<"/admin/wall
             <span className="text-lg font-semibold">{r.topup_number}</span>
             <span className="text-xs text-muted-foreground">Sent {formatDateTime(r.created_at, "en")}</span>
           </div>
+          <ScanStatus sha256={r.receipt_sha256} />
           <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
             <div><dt className="text-muted-foreground">Amount to find</dt><dd className="text-base font-semibold">{etb(r.amount_etb)}</dd></div>
             <div><dt className="text-muted-foreground">Into account</dt><dd>{bank.bank_name ?? "—"} · <span className="font-mono">{bank.account_number ?? ""}</span></dd></div>

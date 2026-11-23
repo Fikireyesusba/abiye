@@ -103,6 +103,8 @@ async function requestTopup(page, amount, seed) {
     check((await c.locator("form [role=alert]").innerText()).includes("security check for files is unavailable"), "scanner down: upload refused, the customer is asked to try again later");
     check(sql(`select count(*) from wallet_topups where user_id = '${uid}'`) === "1" && sql(`select count(*) from security_events where kind = 'scan_unavailable' and user_id = '${uid}'`) === "1",
       "scanner down: nothing created; recorded for staff");
+    check(sql(`select string_agg(result, ',' order by id) from upload_scans where user_id = '${uid}' and source = 'topup_receipt'`) === "clean,blocked,unavailable",
+      "every scan is kept in the scan history (clean, blocked, scanner unavailable)");
 
     // ---- staff cannot; manager verifies
     const s = await (await b.newContext()).newPage();
@@ -118,6 +120,7 @@ async function requestTopup(page, amount, seed) {
     check(await m.locator("main").getByText(`${sql(`select member_id from customer_accounts where id = '${uid}'`)}`).count() >= 1, "top-up page shows the customer's User ID");
     const card = m.locator("main");
     check(await card.locator("img, a").count() >= 1, "receipt preview shown to the manager");
+    check((await m.locator("[data-testid=scan-status]").innerText()).includes("Virus scan: clean"), "top-up page: the receipt's virus scan shown (clean)");
     await card.locator("button:has-text('Verify and add to balance')").click();
     await m.waitForSelector("[data-sonner-toast]:has-text('Top-up verified')");
     check(sql(`select count(*) from notifications_outbox where event_type = 'topup_verified' and payload->>'user_id' = (select member_id from customer_accounts where id = '${uid}')`) >= "1",
@@ -175,6 +178,12 @@ async function requestTopup(page, amount, seed) {
     check((await m.request.get(`${B}/admin/exports/download?kind=wallet`)).status() === 404, "manager cannot download the wallet Excel");
     await o.goto(`${B}/admin/wallet?tab=balances`);
     check(await o.locator("[data-testid=wallet-export]").count() === 1, "super admin sees the wallet Excel button");
+
+    // ---- Security → File scans: the history, searchable by User ID
+    await o.goto(`${B}/admin/security?tab=scans&q=${mem}`);
+    const scanRows = await o.locator("[data-testid=scan-row]").allInnerTexts();
+    check(scanRows.length === 3 && scanRows.some((t) => t.includes("blocked") && t.includes("EICAR")) && scanRows.some((t) => t.includes("clean")),
+      "Security → File scans lists the customer's scans with results and findings");
 
     // ---- super admin correction + reject flow
     await o.goto(`${B}/admin/customers/${uid}?tab=wallet`);

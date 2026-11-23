@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ScanStatus } from "@/components/admin/scan-status";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Download, FileText } from "lucide-react";
@@ -57,6 +58,7 @@ export default async function PrintingJobPage({ params }: PageProps<"/admin/prin
                   <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                   <span className="min-w-0 flex-1 truncate font-medium">{f.original_name}</span>
                   <span className="text-xs text-muted-foreground">{f.page_count ? `${f.page_count} page(s)` : "pages not counted"} · {(f.size_bytes / 1024 / 1024).toFixed(1)} MB</span>
+                  <ScanStatus sha256={f.sha256} className="basis-full pl-7" />
                   {links[i] ? (
                     <a href={links[i]!} className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-secondary"><Download className="size-3.5" /> Download</a>
                   ) : <span className="text-xs text-muted-foreground">deleted</span>}

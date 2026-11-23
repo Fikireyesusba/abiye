@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AlertTriangle, CheckCircle2, ShieldAlert, XCircle } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
 import { DatabaseUpdateNeeded, PageHeader, Panel, StatCard, SubTabs, Table, Td, fieldClass, isMissingDbFunction } from "@/components/admin/ui";
+import { UserIdLink } from "@/components/admin/user-id";
 import { Badge } from "@/components/ui/badge";
 import { blockEmail, clearReviewedList, markSecurityReviewed, unblockEmail } from "@/lib/admin/security-actions";
 import { scanConfigured } from "@/lib/security/virus-scan";
@@ -26,6 +27,7 @@ const TABS = [
   { key: "blocked", label: "Blocked" },
   { key: "logins", label: "Admin sign-ins" },
   { key: "events", label: "All events" },
+  { key: "scans", label: "File scans" },
 ] as const;
 const KIND: Record<string, string> = {
   admin_login_failed: "Admin sign-in failed", admin_login_not_staff: "Non-staff tried admin sign-in", admin_mfa_failed: "Wrong two-step code",
@@ -84,6 +86,7 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
       {tab === "blocked" && <Blocked />}
       {tab === "logins" && <Events kind="admin_login_success" title="Successful admin sign-ins (after the two-step code)" />}
       {tab === "events" && <Events title="All security events (newest first)" />}
+      {tab === "scans" && <Scans />}
     </>
   );
 
@@ -313,6 +316,57 @@ export default async function SecurityPage({ searchParams }: PageProps<"/admin/s
           ))}
         </Table>
       </div>
+    );
+  }
+
+  async function Scans() {
+    const q = (first(sp.q) ?? "").trim().slice(0, 64);
+    const result = ["clean", "blocked", "unavailable"].find((r) => r === first(sp.result)) ?? "";
+    const DAY = /^\d{4}-\d{2}-\d{2}$/;
+    const fromDay = DAY.test(first(sp.from) ?? "") ? first(sp.from)! : "";
+    const toDay = DAY.test(first(sp.to) ?? "") ? first(sp.to)! : "";
+    const nextDay = (d: string) => new Date(Date.parse(`${d}T00:00:00Z`) + 86400000).toISOString().slice(0, 10);
+    let query = supabase.from("upload_scans").select("id, created_at, member_id, source, ref, file_type, size_bytes, sha256, result, findings, duration_ms")
+      .order("id", { ascending: false }).limit(500);
+    if (result) query = query.eq("result", result);
+    if (/^[1-9][0-9]{5}$/.test(q)) query = query.eq("member_id", q);
+    else if (/^[0-9a-f]{6,64}$/i.test(q)) query = query.ilike("sha256", `${q.toLowerCase()}%`);
+    else if (q) query = query.ilike("findings", `%${q.replace(/[%_\\,()]/g, "")}%`);
+    if (fromDay) query = query.gte("created_at", zoneDayStartIso(fromDay));
+    if (toDay) query = query.lt("created_at", zoneDayStartIso(nextDay(toDay)));
+    const { data } = await query;
+    const rows = data ?? [];
+    const count = (r: string) => rows.filter((x) => x.result === r).length;
+    const SOURCE: Record<string, string> = { payment_receipt: "Payment receipt", topup_receipt: "Top-up receipt", printing_file: "Printing document" };
+    return (
+      <>
+        <p className="mb-3 text-sm text-muted-foreground">Every file a customer uploaded, scanned by Cloudmersive <strong>before</strong> it reached the admin portal or Telegram. Only clean files are kept; blocked or unscanned files were deleted at once. Kept for 1 year.</p>
+        <form method="get" className="mb-3 flex flex-wrap items-end gap-2" data-testid="scans-search">
+          <input type="hidden" name="tab" value="scans" />
+          <input name="q" defaultValue={q} placeholder="User ID, fingerprint or finding" maxLength={64} aria-label="Search file scans" className={`${fieldClass} max-w-xs`} />
+          <select name="result" defaultValue={result} aria-label="Result" className={`${fieldClass} w-auto`}>
+            <option value="">All results</option><option value="clean">Clean</option><option value="blocked">Blocked</option><option value="unavailable">Scanner unavailable</option>
+          </select>
+          <label className="text-sm">From<input type="date" name="from" defaultValue={fromDay} className={`${fieldClass} mt-1 block w-auto`} /></label>
+          <label className="text-sm">To<input type="date" name="to" defaultValue={toDay} className={`${fieldClass} mt-1 block w-auto`} /></label>
+          <button type="submit" className="h-10 rounded-md border px-4 text-sm hover:bg-muted">Search</button>
+          {(q || result || fromDay || toDay) && <Link href="/admin/security?tab=scans" className="pb-2 text-sm text-primary underline">Clear search</Link>}
+        </form>
+        <p className="mb-3 text-sm">{rows.length} scan{rows.length === 1 ? "" : "s"} · <span className="text-success">{count("clean")} clean</span> · <span className="text-destructive">{count("blocked")} blocked</span> · {count("unavailable")} scanner unavailable</p>
+        <Table scroll head={["When", "User ID", "Upload", "File", "Result", "Details", "Fingerprint"]} empty="No file scans yet.">
+          {rows.map((r) => (
+            <tr key={r.id} className="align-top" data-testid="scan-row">
+              <Td className="text-xs whitespace-nowrap text-muted-foreground">{formatDateTime(r.created_at, "en")}</Td>
+              <Td><UserIdLink id={r.member_id} /></Td>
+              <Td className="text-sm">{SOURCE[r.source] ?? r.source}</Td>
+              <Td className="text-xs whitespace-nowrap">{r.file_type.toUpperCase()} · {Math.max(1, Math.round(r.size_bytes / 1024))} KB</Td>
+              <Td>{r.result === "clean" ? <Badge variant="success">clean</Badge> : r.result === "blocked" ? <Badge variant="destructive">blocked</Badge> : <Badge variant="warning">scanner unavailable</Badge>}</Td>
+              <Td className="max-w-[18rem] text-xs break-words text-muted-foreground">{r.findings ?? "—"}{r.duration_ms !== null && <span className="block">scan took {(r.duration_ms / 1000).toFixed(1)} s</span>}</Td>
+              <Td className="font-mono text-xs"><span title={r.sha256}>{r.sha256.slice(0, 12)}…</span></Td>
+            </tr>
+          ))}
+        </Table>
+      </>
     );
   }
 

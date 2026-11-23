@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ScanStatus } from "@/components/admin/scan-status";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AlertTriangle, ArrowLeft } from "lucide-react";
@@ -53,6 +54,7 @@ export default async function PaymentDetailPage({ params }: PageProps<"/admin/pa
             <Link href={`/admin/orders/${order.id}`} className="text-lg font-semibold text-primary hover:underline">Order {order.order_number}</Link>
             <span className="text-xs text-muted-foreground">Submitted {formatDateTime(s.submitted_at, "en")}</span>
           </div>
+          <ScanStatus sha256={s.receipt_sha256} />
           <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
             <div><dt className="text-muted-foreground">Amount to find</dt><dd className="text-base font-semibold">{formatETB(toSantim(s.amount_expected_etb))}</dd></div>
             <div><dt className="text-muted-foreground">Into account</dt><dd>{bank.bank_name ?? "—"} · <span className="font-mono">{bank.account_number ?? ""}</span></dd></div>

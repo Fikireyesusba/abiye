@@ -813,6 +813,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"upload_scans": {
+                  Row: {
+                    "created_at": string,"duration_ms": number | null,"file_type": string,"findings": string | null,"id": number,"member_id": string | null,"ref": string | null,"result": string,"scanner": string,"sha256": string,"size_bytes": number,"source": string,"user_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"duration_ms"?: number | null,"file_type": string,"findings"?: string | null,"id"?: never,"member_id"?: string | null,"ref"?: string | null,"result": string,"scanner"?: string,"sha256": string,"size_bytes": number,"source": string,"user_id"?: string | null
+                  }
+                  Update: {
+                    "created_at"?: string,"duration_ms"?: number | null,"file_type"?: string,"findings"?: string | null,"id"?: never,"member_id"?: string | null,"ref"?: string | null,"result"?: string,"scanner"?: string,"sha256"?: string,"size_bytes"?: number,"source"?: string,"user_id"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"wallet_ledger": {
                   Row: {
                     "amount_etb": number,"balance_after_etb": number,"created_at": string,"created_by": string | null,"id": number,"kind": string,"note": string | null,"order_id": string | null,"topup_id": string | null,"user_id": string
@@ -1398,6 +1412,9 @@ isOneToOne: false
                            },
 "record_security_event":
 { Args: { "p_email"?: string,"p_ip_hash"?: string,"p_kind": string,"p_metadata"?: Json,"p_user_agent"?: string,"p_user_id"?: string }; Returns: undefined
+                           },
+"record_upload_scan":
+{ Args: { "p_duration_ms"?: number,"p_file_type": string,"p_findings"?: string,"p_ref": string,"p_result": string,"p_sha256": string,"p_size": number,"p_source": string,"p_user_id": string }; Returns: undefined
                            },
 "request_stock_alert":
 { Args: { "p_product_id": string }; Returns: undefined

@@ -115,6 +115,14 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - Local dev: sign-ups + email confirmation on, local mail catcher on :54324 (dev:up no longer excludes it).
 - **Production TODO for the owner**: configure SMTP + email templates + URL configuration in Supabase (docs/DEPLOYMENT.md §2b).
 
+## Virus-scan history in our own database (requested 2026-11-23)
+
+- Every scan of a customer upload is kept in `upload_scans` (1 year): User ID, upload type, file type / size, fingerprint (sha256), result (clean / blocked / scanner unavailable), findings, scan time. Written only by the server; staff read-only; customers none.
+- **Admin → Security → File scans**: list with counts, search by User ID / fingerprint / finding, result filter, dates.
+- Payment, top-up and printing pages show **"Virus scan: clean (Cloudmersive, time)"** for their exact file (matched by fingerprint).
+- Migration **0066** `20261123000066_upload_scan_history.sql`; tests `99zzzc_upload_scan_history_test.sql`, `wallet.smoke.cjs`.
+- ⏳ Owner: paste **0066** into the Supabase SQL Editor.
+
 ## Virus scan of customer uploads — Cloudmersive (requested 2026-11-23)
 
 - Payment receipts, wallet top-up receipts and printing documents: after the content-type check, every file goes to Cloudmersive's **advanced virus scan** (`src/lib/security/virus-scan.ts`, `upload-scan.ts`). Strict: no viruses, executables, scripts, macros, HTML, XXE, insecure deserialization, invalid files, **password-protected files** (owner's choice), only the expected format.
