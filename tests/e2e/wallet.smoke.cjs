@@ -85,6 +85,8 @@ async function requestTopup(page, amount, seed) {
     check(await card.locator("img, a").count() >= 1, "receipt preview shown to the manager");
     await card.locator("button:has-text('Verify and add to balance')").click();
     await m.waitForSelector("[data-sonner-toast]:has-text('Top-up verified')");
+    check(sql(`select count(*) from notifications_outbox where event_type = 'topup_verified' and payload->>'user_id' = (select member_id from customer_accounts where id = '${uid}')`) >= "1",
+      "approved top-up announced in the orders & payments Telegram group");
     check(sql(`select wallet_balance_etb from customer_accounts where id = '${uid}'`) === "3000.00", "manager verified: balance 3,000");
     check(await (await m.goto(`${B}/admin/customers/${uid}?tab=wallet`)) && await m.locator("button:has-text('Correct balance')").count() === 0, "managers cannot correct balances manually");
 

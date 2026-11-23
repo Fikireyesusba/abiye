@@ -37,7 +37,7 @@ const CATEGORIES = [
 function categoryOf(r: Pick<Row, "channel" | "event_type">): (typeof CATEGORIES)[number]["key"] {
   if (r.channel !== "telegram" || r.event_type === "notification_copy") return "customers";
   if (["security_event", "security_alert", "admin_action", "security_test"].includes(r.event_type)) return "security";
-  if (["new_order", "payment_resubmitted", "payment_verified", "payment_rejected", "wallet_topup", "wallet_order_paid"].includes(r.event_type)) return "payments";
+  if (["new_order", "payment_resubmitted", "payment_verified", "payment_rejected", "wallet_topup", "topup_verified", "wallet_order_paid"].includes(r.event_type)) return "payments";
   if (["low_stock", "out_of_stock", "stock_test"].includes(r.event_type)) return "stock";
   if (["receipt_record", "receipts_test"].includes(r.event_type)) return "receipts";
   if (["printing_document", "printing_test"].includes(r.event_type)) return "printing";

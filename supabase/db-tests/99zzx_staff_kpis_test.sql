@@ -76,4 +76,13 @@ select pg_temp.ok(not exists (select 1 from public.notifications_outbox where ev
 update public.printing_jobs set status = 'printing' where id = 'e5700000-0000-0000-0000-000000000001';
 select pg_temp.ok((select payload ->> 'stage' from public.notifications_outbox where event_type = 'printing_document' and payload ->> 'job_id' = 'e5700000-0000-0000-0000-000000000001') = 'paid',
   'payment approved: the document goes to the printing group');
+
+-- 0058: an approved top-up is announced in the orders & payments group
+insert into public.wallet_topups (id, user_id, amount_etb, transaction_reference, receipt_path, receipt_mime, receipt_size_bytes, receipt_sha256, bank_snapshot)
+select 'e5800000-0000-0000-0000-000000000001', :customer, 500, 'FT58TEST', 'topups/cccccccc-0000-0000-0000-000000000001/e5800000-0000-0000-0000-000000000001.png', 'image/png', 100, repeat('e', 64), '{}'::jsonb;
+select pg_temp.login(:super);
+select public.admin_review_topup('e5800000-0000-0000-0000-000000000001', 'verified', null);
+reset role;
+select pg_temp.ok((select payload ->> 'amount_etb' from public.notifications_outbox where event_type = 'topup_verified') = '500.00'
+  and private.telegram_group('topup_verified') = 'orders', 'approved top-up → "TOP-UP APPROVED" in the orders & payments group');
 rollback;
