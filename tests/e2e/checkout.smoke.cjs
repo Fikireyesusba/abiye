@@ -112,7 +112,7 @@ function resetSampleStock() {
   check(sql(`select status || '/' || payment_status from orders where id = '${orderId}'`) === "pending_verification/pending_verification", "order → pending verification");
   check(sql(`select count(*) from storage.objects where bucket_id = 'payment-receipts' and name like 'orders/${orderId}/%'`) === "1", "receipt stored in private bucket");
   check(sql(`select receipt_mime || ' ' || transaction_reference from payment_submissions where order_id = '${orderId}'`) === "image/png FT2611ABC123", "submission metadata recorded");
-  check(sql(`select count(*) from notifications_outbox where event_type = 'new_order' and payload->>'order_id' = '${orderId}'`) === "1", "Telegram notification queued");
+  check(sql(`select count(*) from notifications_outbox where event_type = 'new_order' and payload->>'order_id' = '${orderId}'`) === "0", "no Telegram alert while the payment waits for approval (default off)");
   check((await p.locator("#receipt").count()) === 0, "payment form hidden while pending");
   const objectPath = sql(`select receipt_path from payment_submissions where order_id = '${orderId}'`);
   const publicTry = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/payment-receipts/${objectPath}`);
