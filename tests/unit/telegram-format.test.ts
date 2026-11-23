@@ -19,6 +19,7 @@ const order = {
     address_line: "Bole",
     resubmission: false,
     reference_seen_before: false,
+    user_id: "482915",
   },
 };
 
@@ -26,17 +27,21 @@ describe("Telegram messages", () => {
   it("matches the required new-order layout", () => {
     const { text, attachment } = buildMessage(order, "https://abiye.example");
     for (const expected of [
-      "NEW CUSTOMER ORDER", "Order ID: ET-10025", "Customer: Abebe Kebede", "Phone: +251 91 122 3344", "Products:",
+      "NEW CUSTOMER ORDER", "Order ID: ET-10025", "User ID: 482915", "Products:",
       "• Perfume × 2", "• Charger × 1", "Total: <b>4,500 ETB</b>", "Payment Method: Bank Transfer",
       "Transaction Reference: FT2611ABC123", "Payment Status: Pending Verification", "Delivery Address: Addis Ababa — Bole",
       'href="https://abiye.example/admin/orders/11111111-2222-3333-4444-555555555555"',
     ]) expect(text).toContain(expected);
+    expect(text).not.toContain("Abebe");
+    expect(text).not.toContain("91 122");
+    expect(text).toContain("👉 <b>Suggested action:</b> Find this amount and reference in the bank statement");
+    expect(text.indexOf("Suggested action")).toBeLessThan(text.indexOf("Open in admin"));
     expect(attachment).toEqual({ bucket: "payment-receipts", path: "orders/x/r.png" });
     expect(text.length).toBeLessThanOrEqual(CAPTION_LIMIT);
   });
 
   it("escapes customer-controlled text (no HTML/link injection)", () => {
-    const evil = { ...order, payload: { ...order.payload, customer_name: '<a href="https://phish.example">Click</a> & <b>', items: [{ name: "<i>x</i>", quantity: 1 }] } };
+    const evil = { ...order, payload: { ...order.payload, transaction_reference: '<a href="https://phish.example">Click</a> & <b>', items: [{ name: "<i>x</i>", quantity: 1 }] } };
     const { text } = buildMessage(evil, "");
     expect(text).not.toContain("<a href=\"https://phish");
     expect(text).toContain("&lt;a href=&quot;https://phish.example&quot;&gt;Click&lt;/a&gt; &amp; &lt;b&gt;");
@@ -79,13 +84,13 @@ describe("Telegram activity feed", () => {
   const row = (event_type: string, payload: Record<string, unknown>) => ({ id: 1, event_type, payload, attachment_bucket: null, attachment_path: null });
   it("every message carries its service and event name", () => {
     const m = buildMessage(row("new_order", { order_number: "ET-1", items: [], total_etb: 100 }), "https://shop.example");
-    expect(m.text.split("\n")[1]).toBe("<i>Service: Payments · Event: Receipt uploaded — verify payment</i>");
+    expect(m.text.split("\n")[1]).toBe("<i>Service: Payments · Type: Receipt uploaded — verify payment</i>");
   });
   it("security event: what, email, network, device, repeats, escaped", () => {
     const m = buildMessage(row("security_event", { kind: "admin_mfa_failed", email: "x<y>@example.com", network: "abcdef1234", device: "curl/8",
       repeats: 4, details: { where: "data_reset" }, at: "2026-11-20T07:00:00Z" }), "https://shop.example");
     expect(m.text).toContain("SECURITY: WRONG TWO-STEP CODE");
-    expect(m.text).toContain("Service: Admin sign-in · Event: Wrong two-step code");
+    expect(m.text).toContain("Service: Admin sign-in · Type: Wrong two-step code");
     expect(m.text).toContain("x&lt;y&gt;@example.com");
     expect(m.text).toContain("× 4");
     expect(m.text).toContain("Where: data_reset");
@@ -107,12 +112,12 @@ describe("Telegram activity feed", () => {
     expect(a.text).toContain("STAFF account");
     const b = buildMessage(row("admin_action", { action: "email_blocked", entity_type: "security", entity_id: "bad@example.com", actor: "Owner", role: "super_admin", metadata: { reason: "spam" } }), "");
     expect(b.text).toContain("ADMIN ACTION: EMAIL BLOCKED");
-    expect(b.text).toContain("Service: Security · Event: Email blocked");
+    expect(b.text).toContain("Service: Security · Type: Email blocked");
     expect(b.text).toContain("By: Owner (super admin)");
     expect(b.text).toContain("Reason: spam");
     const c = buildMessage(row("notification_copy", { channel: "push", event: "customer_order_confirmed", status: "dead", attempts: 4, error: "HTTP 410", to: "c@example.com", order_number: "ET-9" }), "");
     expect(c.text).toContain("FAILED: PAYMENT CONFIRMED");
-    expect(c.text).toContain("Service: Phone notification · Event: Payment confirmed");
+    expect(c.text).toContain("Service: Phone notification · Type: Payment confirmed");
     expect(c.text).toContain("Error: HTTP 410");
   });
 });

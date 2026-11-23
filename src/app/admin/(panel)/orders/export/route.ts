@@ -67,7 +67,7 @@ export async function GET(request: Request) {
   // Exports contain customer contact details: keep a record (ignored if the database update is not applied yet).
   await supabase.rpc("admin_log_export", { p_kind: "orders", p_metadata: { from, to, filter, rows: rows.length } });
 
-  sendExportCopy(file as ArrayBuffer | Uint8Array, `orders-${from}_to_${to}.xlsx`, "Orders", ctx.fullName); // copy to the receipts Telegram group
+  sendExportCopy(file as ArrayBuffer | Uint8Array, `orders-${from}_to_${to}.xlsx`, "Orders", ctx.userId); // copy to the receipts Telegram group
   return new NextResponse(new Uint8Array(file), {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

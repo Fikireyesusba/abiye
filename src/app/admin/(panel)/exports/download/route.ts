@@ -175,7 +175,7 @@ export async function GET(request: Request) {
   await supabase.rpc("admin_log_export", { p_kind: kind, p_metadata: def.dated ? { from, to, rows: total } : { rows: total } });
   const file = await wb.xlsx.writeBuffer();
   const name = `${kind}-${def.dated ? `${from}_to_${to}` : new Date().toISOString().slice(0, 10)}.xlsx`;
-  sendExportCopy(file as ArrayBuffer | Uint8Array, name, def.title, ctx.fullName, total);
+  sendExportCopy(file as ArrayBuffer | Uint8Array, name, def.title, ctx.userId, total);
   return new NextResponse(new Uint8Array(file as ArrayBuffer), {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

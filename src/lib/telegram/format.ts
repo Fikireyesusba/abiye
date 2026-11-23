@@ -38,10 +38,79 @@ export interface BuiltMessage {
 export function buildMessage(row: OutboxRow, appUrl: string): BuiltMessage {
   const msg = buildBody(row, appUrl);
   const [service, event] = describe(row);
-  // Every message: title line, then "Service · Event" so the chat can be scanned and searched.
-  const nl = msg.text.indexOf("\n");
-  const tag = `<i>Service: ${esc(service)} · Event: ${esc(event)}</i>`;
-  return { ...msg, text: nl < 0 ? `${msg.text}\n${tag}` : `${msg.text.slice(0, nl)}\n${tag}${msg.text.slice(nl)}` };
+  const p = row.payload ?? {};
+  // People are named by User ID only: drop name / phone / email lines (security alerts keep the email
+  // that was tried when it is not one of our accounts — it is what can be blocked).
+  const known = typeof p.user_id === "string" && /^[1-9][0-9]{5}$/.test(p.user_id);
+  let text = msg.text
+    .split("\n")
+    .filter((l) => !/^(Customer|Phone|To|Account|Name|Customer name)( [^:]*)?: /.test(l) && !(known && /^Email: /.test(l))
+      && !(p.by_user_id && /^(By|Approved by|Rejected by|Decided by|Handled by|Verified by): /.test(l)))
+    .join("\n");
+  // Every message: title, then service · type, who it is about (User ID) and who acted.
+  const head = [
+    `<i>Service: ${esc(service)} · Type: ${esc(event)}</i>`,
+    ...(known ? [line("User ID", p.user_id)] : []),
+    ...(typeof p.by_user_id === "string" && p.by_user_id ? [line("Action by User ID", p.by_user_id)] : []),
+  ].join("\n");
+  const nl = text.indexOf("\n");
+  text = nl < 0 ? `${text}\n${head}` : `${text.slice(0, nl)}\n${head}${text.slice(nl)}`;
+  // …and what to do next, before the admin link.
+  const tip = suggestedAction(row);
+  if (tip) {
+    const link = text.lastIndexOf("\n\n<a href=");
+    const add = `\n\n👉 <b>Suggested action:</b> ${esc(tip)}`;
+    text = link < 0 ? text + add : `${text.slice(0, link)}${add}${text.slice(link)}`;
+  }
+  return { ...msg, text };
+}
+
+/** The next step for staff, per alert type. */
+export function suggestedAction(row: OutboxRow): string | null {
+  const p = row.payload ?? {};
+  switch (row.event_type) {
+    case "new_order":
+    case "payment_resubmitted":
+      return "Find this amount and reference in the bank statement, then Verify or Reject the payment under Payments.";
+    case "payment_verified":
+    case "wallet_order_paid":
+      return "Prepare the order (pack or print it), then mark it Ready for pickup / Out for delivery.";
+    case "wallet_topup":
+      return "Find this amount and reference in the bank statement, then Approve or Reject the top-up under Wallet.";
+    case "topup_verified":
+      return "Nothing to do — the balance was credited and the customer was told.";
+    case "topup_rejected":
+      return "Nothing to do — the customer was told the reason. If the money arrives later, ask them to send a new top-up.";
+    case "receipt_record":
+      return "Keep this receipt for your accounting.";
+    case "printing_document":
+      return "Print with the options shown, then mark the job Ready in Printing.";
+    case "low_stock":
+      return "Reorder this product, then add the new stock under Inventory.";
+    case "out_of_stock":
+      return "Restock as soon as possible — customers cannot buy it now (they can ask to be told when it is back).";
+    case "security_event":
+      if (p.kind === "admin_login_success") return "If this was not one of your staff, reset their password and two-step login under Staff right away.";
+      if (p.kind === "rate_limited") return "Watch for repeats; block the email under Security if it continues.";
+      if (p.kind === "login_blocked" || p.kind === "signup_blocked") return "Nothing to do — the email is already blocked.";
+      return "If you do not recognise this, block the email under Security; otherwise no action is needed.";
+    case "security_alert":
+      return "Open Security → Active alerts: block the email if it looks malicious, or mark it reviewed.";
+    case "admin_action":
+      return "Nothing to do if this change was expected; otherwise check it in the Activity log.";
+    case "notification_copy":
+      return p.status === "dead" ? "The message could not be delivered — contact the customer another way (Support or phone)." : null;
+    case "support_ticket":
+      return "Assign the ticket and answer the customer under Support tickets.";
+    case "support_reply":
+      return "Answer the customer under Support tickets.";
+    case "support_rating":
+      return Number(p.rating) <= 2 ? "Low rating — read the ticket and follow up with the customer." : "Nothing to do — thank the team.";
+    case "security_test": case "stock_test": case "receipts_test": case "printing_test": case "support_test": case "test_message":
+      return "Nothing to do — this group is connected.";
+    default:
+      return null;
+  }
 }
 
 const SECURITY_KIND: Record<string, [string, string]> = {

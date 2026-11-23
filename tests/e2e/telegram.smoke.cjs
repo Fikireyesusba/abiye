@@ -111,13 +111,13 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
     check(await waitFor(() => received.some((r) => r.caption?.includes(orderNumber))), "new-order alert delivered right after the receipt upload (no cron needed)");
     const photo = received.find((r) => r.caption?.includes(orderNumber));
     check(photo?.method === "sendPhoto" && photo.hasFile && photo.chat_id === CHAT, "sent as a photo with the receipt attached, to the configured chat");
-    for (const s of ["NEW CUSTOMER ORDER", `Order ID: ${orderNumber}`, "Phone: +251 91 176 5432", "25W USB-C Fast Charger × 2", "Total: <b>1,850 ETB</b>",
+    for (const s of ["NEW CUSTOMER ORDER", `Order ID: ${orderNumber}`, "User ID: ", "Suggested action:", "25W USB-C Fast Charger × 2", "Total: <b>1,850 ETB</b>",
       "Payment Method: Bank Transfer", "Transaction Reference: FT26TG0001", "Payment Status: Pending Verification", "Delivery Address: Addis Ababa — Bole, near Edna Mall",
       `href="${B}/admin/orders/`]) {
       check(photo?.caption?.includes(s), `caption contains “${s}”`);
     }
-    check(photo?.caption?.includes("&lt;a href=&quot;https://phish.example&quot;&gt;Click&lt;/a&gt; &amp; Co") && !photo.caption.includes('<a href="https://phish'),
-      "customer-supplied HTML is escaped (no link injection into the staff chat)");
+    check(!photo?.caption?.includes("phish") && !photo?.caption?.includes("91 176"),
+      "the customer is named by User ID only (no name / phone in the staff chat)");
     check(sql(`select status from notifications_outbox where payload->>'order_number' = '${orderNumber}' and event_type = 'new_order'`) === "sent", "outbox row marked sent");
 
     // ---- 2. Telegram outage: order flow unaffected, message retried later, sent exactly once

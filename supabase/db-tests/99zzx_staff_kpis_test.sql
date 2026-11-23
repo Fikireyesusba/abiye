@@ -91,4 +91,11 @@ select pg_temp.login(:super);
 select public.admin_review_topup('e5900000-0000-0000-0000-000000000001', 'rejected', 'Not in the statement');
 reset role;
 select pg_temp.ok((select payload ->> 'reason' from public.notifications_outbox where event_type = 'topup_rejected') = 'Not in the statement', 'rejected top-up → "TOP-UP REJECTED" with the reason');
+-- 0060: Telegram alerts carry the User ID of the person concerned and of the staff member who acted
+select pg_temp.ok((select payload ->> 'user_id' from public.notifications_outbox where event_type = 'topup_rejected') = (select member_id from public.customer_accounts where id = :customer)
+  and (select payload ->> 'by_user_id' from public.notifications_outbox where event_type = 'topup_rejected') = (select member_id from public.customer_accounts where id = :super),
+  'Telegram alert: User ID of the customer and of the staff member who acted');
+select private.enqueue_notification('payment_verified', 'x60:1', jsonb_build_object('order_id', (select id from t_o), 'order_number', 'ET-X'));
+select pg_temp.ok((select payload ->> 'user_id' from public.notifications_outbox where dedupe_key = 'x60:1') = (select member_id from public.customer_accounts where id = :customer),
+  'User ID worked out from the order');
 rollback;

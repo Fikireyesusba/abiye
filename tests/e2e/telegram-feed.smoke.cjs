@@ -117,7 +117,7 @@ const cron = () => fetch(`${B}/api/cron/notifications`, { headers: { authorizati
     await o.fill("input[name=reason]", "Tried the admin panel");
     await o.click("form button:has-text('Block')");
     check(await waitFor(() => has("ADMIN ACTION: EMAIL BLOCKED", "Tried the admin panel")), "blocking reported with who and why");
-    check(has("Service: Security · Event: Email blocked"), "admin action service/event");
+    check(has("Service: Security · Type: Email blocked") && has("Suggested action"), "admin action: service, type and suggested action");
 
     // ---- copy of a customer notification
     const cid = await ensureCustomer(`feed-${RUN}@example.com`, "FeedE2E2026x");
@@ -224,7 +224,7 @@ const cron = () => fetch(`${B}/api/cron/notifications`, { headers: { authorizati
     await q.waitForSelector("[role=alert]");
     await sleep(2500);
     check(!tg.slice(before).some((t) => t.includes(`quiet-${RUN}@example.com`)), "no security messages when switched off");
-    check(tg.every((t) => /Service: .+ · Event: .+/.test(t)), `every message has service + event (${tg.length} messages)`);
+    check(tg.every((t) => /Service: .+ · Type: .+/.test(t)), `every message has service + type (${tg.length} messages)`);
   } catch (e) {
     check(false, `crashed: ${e.message.split("\n")[0]}`);
     console.log(logs.join("").slice(-1500));
