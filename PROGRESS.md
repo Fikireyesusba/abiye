@@ -121,7 +121,7 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - **Admin → Security → File scans**: list with counts, search by User ID / fingerprint / finding, result filter, dates.
 - Payment, top-up and printing pages show **"Virus scan: clean (Cloudmersive, time)"** for their exact file (matched by fingerprint).
 - Migration **0066** `20261123000066_upload_scan_history.sql`; tests `99zzzc_upload_scan_history_test.sql`, `wallet.smoke.cjs`.
-- ⏳ Owner: paste **0066** into the Supabase SQL Editor.
+- ✅ 0066 applied in production; first real scan recorded (clean, 0.7 s) — owner confirmed 2026-11-23.
 
 ## Virus scan of customer uploads — Cloudmersive (requested 2026-11-23)
 
