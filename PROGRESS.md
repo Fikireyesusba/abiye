@@ -145,7 +145,7 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - Payment receipts, wallet top-up receipts and printing documents: after the content-type check, every file goes to Cloudmersive's **advanced virus scan** (`src/lib/security/virus-scan.ts`, `upload-scan.ts`). Strict: no viruses, executables, scripts, macros, HTML, XXE, insecure deserialization, invalid files, **password-protected files** (owner's choice), only the expected format.
 - Not clean → file deleted, customer told "failed our security check", security event `upload_blocked` (Security page + security Telegram, User ID + what was found; the account becomes high-risk).
 - **Fails closed** (owner's choice): key missing / wrong, limit reached or outage → upload refused ("try again in a few minutes"), event `scan_unavailable`; Site health shows the scanner status.
-- Env: `CLOUDMERSIVE_API_KEY` (Vercel, Sensitive). `CLOUDMERSIVE_API_BASE` only for tests. Tests use a local fake scanner: `node tests/e2e/fake-scanner.cjs` (port 4599) with `.env.local` `CLOUDMERSIVE_API_KEY=test-cloudmersive-key`, `CLOUDMERSIVE_API_BASE=http://127.0.0.1:4599` — start it before the browser tests.
+- Env: `CLOUDMERSIVE_API_KEY` (Vercel, Sensitive). `CLOUDMERSIVE_API_BASE` only for tests. Tests use a local fake scanner: `node tests/e2e/fake-scanner.cjs` (port 4610) with `.env.local` `CLOUDMERSIVE_API_KEY=test-cloudmersive-key`, `CLOUDMERSIVE_API_BASE=http://127.0.0.1:4610` — start it before the browser tests.
 - Migration **0065** `20261123000065_upload_virus_scan.sql`; tests: unit `virus-scan.test.ts`, db `99zzzb_upload_scan_test.sql`, e2e `wallet.smoke.cjs`. Docs: DEPLOYMENT.md §6b.
 - ✅ 0065 applied in production and `CLOUDMERSIVE_API_KEY` added in Vercel (owner confirmed 2026-11-23).
 

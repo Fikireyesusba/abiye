@@ -1,7 +1,7 @@
 /**
  * Local stand-in for the Cloudmersive advanced virus scan (tests only; the real service is used in production).
- *   node tests/e2e/fake-scanner.cjs            (listens on 127.0.0.1:4599)
- * The app uses it with CLOUDMERSIVE_API_BASE=http://127.0.0.1:4599 and CLOUDMERSIVE_API_KEY=test-cloudmersive-key.
+ *   node tests/e2e/fake-scanner.cjs            (listens on 127.0.0.1:4610)
+ * The app uses it with CLOUDMERSIVE_API_BASE=http://127.0.0.1:4610 and CLOUDMERSIVE_API_KEY=test-cloudmersive-key.
  * Answers, by file content:
  *   EICAR test string      → CleanResult false, FoundViruses [EICAR-Test-File]
  *   "/Encrypt" (PDF)       → CleanResult false, ContainsPasswordProtectedFile
@@ -11,7 +11,7 @@
  */
 const http = require("http");
 
-const PORT = Number(process.env.FAKE_SCANNER_PORT ?? 4599);
+const PORT = Number(process.env.FAKE_SCANNER_PORT ?? 4610);
 const KEY = "test-cloudmersive-key";
 const EICAR = "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*";
 const stats = { scans: 0, clean: 0, blocked: 0, down: 0, unauthorized: 0, lastHeaders: {} };

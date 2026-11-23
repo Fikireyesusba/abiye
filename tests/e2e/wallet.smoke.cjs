@@ -77,7 +77,7 @@ async function requestTopup(page, amount, seed) {
 
     // ---- virus scan (Cloudmersive; a local fake in tests): infected → refused, deleted, security alert
     const EICAR = "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*";
-    const scanStats = async () => (await fetch("http://127.0.0.1:4599/stats")).json();
+    const scanStats = async () => (await fetch("http://127.0.0.1:4610/stats")).json();
     const before = await scanStats();
     check(before.scans > 0 && before.lastHeaders.allowexecutables === "false" && before.lastHeaders.allowpasswordprotectedfiles === "false"
       && /\.png/.test(before.lastHeaders.restrictfiletypes ?? ""), "the accepted receipt was virus-scanned (strict settings, only the expected file type)");
