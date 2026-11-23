@@ -199,6 +199,8 @@
     "promo_not_applicable": "ይህ የቅናሽ ኮድ በጋሪዎ ውስጥ ላሉት ዕቃዎች አይሰራም።",
     "promo_limit_reached": "ይህ የቅናሽ ኮድ የአጠቃቀም ገደቡ ላይ ደርሷል።",
     "promo_already_used": "ይህን የቅናሽ ኮድ አስቀድመው ተጠቅመውበታል።",
+    "promo_in_use": "This promotion is in use (an order has it) — revoke it instead.",
+    "promo_has_customers": "Remove this code from its customers first.",
     "staff_account": "የሰራተኛ መለያዎች ትዕዛዝ ማስገባት አይችሉም። እባክዎ በተለየ የግል ኢሜይል ይግዙ።",
     "service_unavailable": "ይህ አገልግሎት ለጊዜው አይገኝም። እባክዎ ቆይተው ይሞክሩ።",
     "wallet_insufficient": "ቀሪ ሂሳብዎ ይህን ትዕዛዝ አይሸፍንም። በምትኩ በባንክ ዝውውር ይክፈሉ።",

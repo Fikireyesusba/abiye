@@ -199,6 +199,8 @@
     "promo_not_applicable": "This promo code does not apply to the items in your cart.",
     "promo_limit_reached": "This promo code has reached its usage limit.",
     "promo_already_used": "You have already used this promo code.",
+    "promo_in_use": "This promotion is in use (an order has it) — revoke it instead.",
+    "promo_has_customers": "Remove this code from its customers first.",
     "staff_account": "Staff accounts cannot place orders. Please shop with a separate personal email.",
     "service_unavailable": "This service is temporarily unavailable. Please try again later.",
     "wallet_insufficient": "Your balance does not cover this order. Pay by bank transfer instead.",

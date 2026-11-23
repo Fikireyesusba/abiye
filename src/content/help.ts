@@ -166,7 +166,7 @@ export const HELP: HelpSection[] = [
       { kind: "list", items: [
         { en: "Current offers are shown on the home page; sale prices are shown on the products.", am: "የወቅቱ ቅናሾች በመነሻ ገጹ ላይ ይታያሉ፤ የቅናሽ ዋጋዎች በምርቶቹ ላይ ይታያሉ።" },
         { en: "Personal codes for you appear under My account → My offers.", am: "ለእርስዎ ብቻ የተሰጡ ኮዶች በየእኔ መለያ → የእኔ ቅናሾች ስር ይታያሉ።" },
-        { en: "Enter a code at checkout and tap “Apply”. Some codes have a minimum order, an end date, or can be used once per account.", am: "ኮዱን በክፍያ ጊዜ ያስገቡ እና «ተግብር»ን ይንኩ። አንዳንድ ኮዶች ዝቅተኛ የትዕዛዝ መጠን፣ የማብቂያ ቀን አላቸው ወይም በአንድ መለያ አንድ ጊዜ ብቻ ይሰራሉ።" },
+        { en: "Enter a code at checkout and tap “Apply”. Every code can be used once per account; some also have a minimum order or an end date. A personal code disappears from My offers once your order with it is paid and approved.", am: "ኮዱን በክፍያ ጊዜ ያስገቡ እና «ተግብር»ን ይንኩ። አንዳንድ ኮዶች ዝቅተኛ የትዕዛዝ መጠን፣ የማብቂያ ቀን አላቸው ወይም በአንድ መለያ አንድ ጊዜ ብቻ ይሰራሉ።" },
       ] },
     ],
   },
@@ -177,7 +177,7 @@ export const HELP: HelpSection[] = [
     blocks: [
       { kind: "steps", items: [
         { en: "Open My account → My balance → Top up.", am: "የእኔ መለያ → የእኔ ቀሪ ሂሳብ → ገንዘብ ይሙሉን ይክፈቱ።" },
-        { en: "Transfer the amount to our bank account and write your email as the reason.", am: "መጠኑን ወደ ባንክ ሂሳባችን ያስተላልፉ እና ኢሜይልዎን በምክንያት ላይ ይጻፉ።" },
+        { en: "Tap Top up to see our bank details. Transfer the exact amount and write “Top Up” as the reason.", am: "መጠኑን ወደ ባንክ ሂሳባችን ያስተላልፉ እና ኢሜይልዎን በምክንያት ላይ ይጻፉ።" },
         { en: "Enter the amount and upload the receipt. We add it to your balance after we see the money in our bank account (you get an email).", am: "መጠኑን ያስገቡ እና ደረሰኙን ይጫኑ። ገንዘቡን በባንክ ሂሳባችን ካየን በኋላ ወደ ቀሪ ሂሳብዎ እንጨምረዋለን (ኢሜይል ይደርስዎታል)።" },
         { en: "At checkout choose “Pay with my balance” — the order is confirmed immediately.", am: "በክፍያ ጊዜ «በቀሪ ሂሳቤ ክፈል»ን ይምረጡ — ትዕዛዙ ወዲያውኑ ይረጋገጣል።" },
       ] },

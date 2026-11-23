@@ -115,6 +115,17 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - Local dev: sign-ups + email confirmation on, local mail catcher on :54324 (dev:up no longer excludes it).
 - **Production TODO for the owner**: configure SMTP + email templates + URL configuration in Supabase (docs/DEPLOYMENT.md §2b).
 
+## Promotion rules: audience, once per customer, revoke / remove with a reason, Super Admin delete (requested 2026-11-23)
+
+- **Who can use it:** Every customer, or Selected customers only (personal code, given by User ID or email). A personal code given to customers cannot be switched to "every customer".
+- **Once per customer** for every code (database constraint). A use counts once the **payment is approved**: the personal code is marked used (with the order number) and disappears from the customer's My offers. An order waiting for payment holds it ("order waiting for payment"); a cancelled / expired / rejected order frees it.
+- **Revoke** (anyone with Promotions) needs a reason: the code stops working at once, the reason is shown on the promotion and in the Activity log. Only the Super Admin can bring a revoked promotion back (tick Active and save).
+- **Remove a code from a customer** needs a reason (recorded in the Activity log); not possible once used or while an order waiting for payment has it.
+- **Delete:** Super Admin only (with two-step sign-in), only when never used and nobody holds it — remove it from its customers first. Old expired / cancelled orders no longer block the delete (fixes "used 0 / 1" but "was used in orders").
+- Holders listed by User ID only. Help page updated (once per account; top-up reason "Top Up").
+- Migration **0062** `20261123000062_promotion_rules.sql`; tests `supabase/db-tests/99zzy_promotion_rules_test.sql`, `tests/e2e/personal-promo.smoke.cjs`.
+- ⏳ Owner: paste **0062** into the Supabase SQL Editor.
+
 ## Top-up page, wallet at checkout, Excel for Super Admin only (requested 2026-11-23)
 
 - Customer: **My balance → Top up** opens `/account/wallet/top-up` with Abiye's bank accounts (copy buttons), the steps (reason **"Top Up"**, type the **exact** amount, upload the receipt) and the request form.

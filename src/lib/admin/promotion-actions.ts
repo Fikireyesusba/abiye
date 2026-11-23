@@ -29,16 +29,15 @@ const promotionSchema = z
     starts_at: z.string().optional(),
     ends_at: z.string().optional(),
     max_redemptions: z.union([z.literal(""), z.coerce.number().int().min(1).max(1_000_000)]).transform((v) => (v === "" ? null : v)),
-    once_per_customer: checkbox,
     is_active: checkbox,
     show_on_homepage: checkbox,
-    restricted: checkbox,
+    audience: z.enum(["everyone", "selected"]),
   })
   .superRefine((v, ctx) => {
     if (v.discount_type === "percent" && v.discount_value > 90) ctx.addIssue({ code: "custom", path: ["discount_value"], message: "A percentage discount can be at most 90%." });
     if (v.scope === "category" && !v.category_id) ctx.addIssue({ code: "custom", path: ["category_id"], message: "Choose a category." });
     if (v.scope === "product" && !v.product_id) ctx.addIssue({ code: "custom", path: ["product_id"], message: "Choose a product." });
-    if (v.restricted && !v.code) ctx.addIssue({ code: "custom", path: ["code"], message: "A personal promotion needs a promo code." });
+    if (v.audience === "selected" && !v.code) ctx.addIssue({ code: "custom", path: ["code"], message: "A personal promotion needs a promo code." });
   });
 
 export async function savePromotion(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
@@ -54,10 +53,11 @@ export async function savePromotion(_prev: ActionResult | null, fd: FormData): P
     code: v.code, discount_type: v.discount_type, discount_value: v.discount_value, min_order_etb: v.min_order_etb,
     category_id: v.scope === "category" ? v.category_id : null,
     product_id: v.scope === "product" ? v.product_id : null,
-    starts_at: starts, ends_at: ends, max_redemptions: v.max_redemptions, once_per_customer: v.once_per_customer,
-    is_active: v.is_active, restricted: v.restricted,
+    // Every code: one use per customer account.
+    starts_at: starts, ends_at: ends, max_redemptions: v.max_redemptions, once_per_customer: true,
+    is_active: v.is_active, restricted: v.audience === "selected",
     // Personal codes are never advertised publicly.
-    show_on_homepage: v.restricted ? false : v.show_on_homepage,
+    show_on_homepage: v.audience === "selected" ? false : v.show_on_homepage,
   };
   const supabase = await createSupabaseServerClient();
   const { error } = v.id ? await supabase.from("promotions").update(row).eq("id", v.id) : await supabase.from("promotions").insert(row);
@@ -67,18 +67,32 @@ export async function savePromotion(_prev: ActionResult | null, fd: FormData): P
   return ok(v.id ? "Promotion saved." : "Promotion created.");
 }
 
+/** Delete: Super Admin only; only a promotion that was never used and that no customer holds. */
 export async function deletePromotion(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
-  await requirePermission("promotions.manage");
+  const ctx = await requirePermission("promotions.manage");
+  if (ctx.role !== "super_admin") return fail("Only the Super Admin can delete a promotion. Revoke it instead.");
   const id = z.guid().safeParse(fd.get("id"));
   if (!id.success) return fail("Invalid request.");
   const supabase = await createSupabaseServerClient();
-  const { count } = await supabase.from("orders").select("id", { count: "exact", head: true }).eq("promotion_id", id.data);
-  if (count) return fail("This promotion was used in orders — switch it off instead, so reports keep it.");
-  const { error } = await supabase.from("promotions").delete().eq("id", id.data);
+  const { error } = await supabase.rpc("admin_delete_promotion", { p_promotion_id: id.data });
   if (error) return dbError(error);
   revalidatePath("/admin/promotions");
   revalidatePath("/", "layout");
   return ok("Promotion deleted.");
+}
+
+/** Revoke (cancel) a promotion with a reason: it stops working at once and stays in the records. */
+export async function revokePromotion(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("promotions.manage");
+  const parsed = z.object({ id: z.guid(), reason: z.string().trim().min(5, "Give a reason (at least 5 characters).").max(300) }).safeParse(formObject(fd));
+  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Invalid request.");
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("admin_revoke_promotion", { p_promotion_id: parsed.data.id, p_reason: parsed.data.reason });
+  if (error) return error.message === "invalid_transition" ? fail("This promotion is already revoked.") : dbError(error);
+  revalidatePath("/admin/promotions");
+  revalidatePath("/admin/customers", "layout");
+  revalidatePath("/", "layout");
+  return ok("Promotion revoked — the code no longer works.");
 }
 
 // ---------------------------------------------------------------- homepage banners
@@ -150,21 +164,25 @@ export async function deleteBanner(_prev: ActionResult | null, fd: FormData): Pr
 }
 
 // ---------------------------------------------------------------- personal codes
-/** Give a personal promotion to customers, by email (one per line, or separated by commas/spaces). */
+/** Give a personal promotion to customers, by User ID or email (one per line, or separated by commas/spaces). */
 export async function assignPromotion(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   await requirePermission("promotions.manage");
   const id = z.guid().safeParse(fd.get("promotionId"));
   const emails = [...new Set(String(fd.get("emails") ?? "").split(/[\s,;]+/).map((e) => e.trim().toLowerCase()).filter(Boolean))];
   if (!id.success) return fail("Choose a promotion.");
-  if (!emails.length) return fail("Enter at least one email address.");
-  if (emails.length > 200) return fail("At most 200 emails at a time.");
-  const bad = emails.filter((e) => !z.email().safeParse(e).success);
-  if (bad.length) return fail(`Not an email address: ${bad.slice(0, 3).join(", ")}`);
+  if (!emails.length) return fail("Enter at least one User ID or email address.");
+  if (emails.length > 200) return fail("At most 200 customers at a time.");
+  const bad = emails.filter((e) => !/^[1-9][0-9]{5}$/.test(e) && !z.email().safeParse(e).success);
+  if (bad.length) return fail(`Not a User ID or email address: ${bad.slice(0, 3).join(", ")}`);
   const supabase = await createSupabaseServerClient();
   const note = String(fd.get("note") ?? "").trim().slice(0, 300) || undefined;
   const notify = fd.get("notify") === "on";
   const { data, error } = await supabase.rpc("admin_assign_promotion", { p_promotion_id: id.data, p_emails: emails, p_notify: notify, p_note: note });
-  if (error) return error.message === "invalid_request" ? fail("Tick “Only for selected customers” on this promotion first.") : dbError(error);
+  if (error) {
+    if (error.message === "invalid_request") return fail("Set this promotion's audience to “Selected customers” first.");
+    if (error.message === "invalid_transition") return fail("This promotion is revoked — it cannot be given any more.");
+    return dbError(error);
+  }
   const r = data as { added: string[]; already: string[]; not_found: string[] };
   if (notify && r.added.length) dispatchSoon(); // email + phone notification now
   revalidatePath("/admin/promotions");
@@ -172,19 +190,19 @@ export async function assignPromotion(_prev: ActionResult | null, fd: FormData):
   const parts = [
     r.added.length ? `Given to ${r.added.length} customer(s)${notify ? " and sent by email (and phone notification if turned on)" : ""}.` : null,
     r.already.length ? `Already had it: ${r.already.join(", ")}.` : null,
-    r.not_found.length ? `No account with: ${r.not_found.join(", ")} (they must sign up first).` : null,
+    r.not_found.length ? `No customer account with: ${r.not_found.join(", ")} (they must sign up first).` : null,
   ].filter(Boolean);
   return r.added.length || r.already.length ? ok(parts.join("\n")) : fail(parts.join("\n") || "Nothing changed.");
 }
 
+/** Remove a code from a customer (with a reason). Not possible once it was used. */
 export async function unassignPromotion(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   await requirePermission("promotions.manage");
-  const parsed = z.object({ promotionId: z.guid(), userId: z.guid() }).safeParse(formObject(fd));
-  if (!parsed.success) return fail("Invalid request.");
+  const parsed = z.object({ promotionId: z.guid(), userId: z.guid(), reason: z.string().trim().min(5, "Give a reason (at least 5 characters).").max(300) }).safeParse(formObject(fd));
+  if (!parsed.success) return fail(parsed.error.issues.find((i) => i.path[0] === "reason")?.message ?? "Invalid request.");
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.from("promotion_customers").delete()
-    .eq("promotion_id", parsed.data.promotionId).eq("user_id", parsed.data.userId);
-  if (error) return dbError(error);
+  const { error } = await supabase.rpc("admin_unassign_promotion", { p_promotion_id: parsed.data.promotionId, p_user_id: parsed.data.userId, p_reason: parsed.data.reason });
+  if (error) return error.message === "promo_in_use" ? fail("This customer already used the code (or has an order waiting for payment with it) — it stays.") : dbError(error);
   revalidatePath("/admin/promotions");
   revalidatePath("/admin/customers", "layout");
   return ok("Code removed from this customer.");

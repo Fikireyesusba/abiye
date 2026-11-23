@@ -34,6 +34,7 @@ const ACTION_LABELS: Record<string, string> = {
   email_unblocked: "Email unblocked",
   security_reviewed: "Security alert cleared (reviewed)",
   promo_unassigned: "Personal promo code removed",
+  promo_revoked: "Promotion revoked",
   // Supabase Auth events
   login: "Signed in",
   logout: "Signed out",

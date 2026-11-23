@@ -61,9 +61,17 @@ select pg_temp.login(:customer);
 select pg_temp.ok((select count(*) from public.my_offers()) = 0, 'a used once-per-customer code disappears from the offers');
 reset role;
 
--- Removing
+-- Removing: only with a reason, and not while an order has it
 select pg_temp.login(:manager);
-delete from public.promotion_customers where promotion_id = '90000000-0000-0000-0000-000000000001';
+select pg_temp.throws($$select public.admin_unassign_promotion('90000000-0000-0000-0000-000000000001', 'cccccccc-0000-0000-0000-000000000001', 'Given by mistake')$$,
+  'promo_in_use', 'a code on an order cannot be removed from the customer');
 reset role;
-select pg_temp.ok((select count(*) from public.audit_logs where action = 'promo_unassigned' and entity_id = :customer::text) = 1, 'removing a code is audited');
+update public.orders set status = 'cancelled' where promotion_id = '90000000-0000-0000-0000-000000000001';
+select pg_temp.login(:manager);
+select pg_temp.throws($$select public.admin_unassign_promotion('90000000-0000-0000-0000-000000000001', 'cccccccc-0000-0000-0000-000000000001', 'no')$$,
+  'invalid_reason', 'removing a code needs a reason');
+select public.admin_unassign_promotion('90000000-0000-0000-0000-000000000001', 'cccccccc-0000-0000-0000-000000000001', 'Given by mistake');
+reset role;
+select pg_temp.ok((select count(*) from public.audit_logs where action = 'promo_unassigned' and entity_id = :customer::text
+                     and metadata ->> 'reason' = 'Given by mistake') = 1, 'removing a code is audited with the reason');
 rollback;

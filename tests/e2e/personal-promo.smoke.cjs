@@ -43,6 +43,7 @@ async function tryCode(page, code) {
   const b = await chromium.launch();
   try {
     const op = await (await b.newContext()).newPage();
+    op.on("dialog", (d) => d.accept());
     await adminLogin(op, B, OWNER.email, OWNER.password);
 
     // create two personal promotions
@@ -51,7 +52,7 @@ async function tryCode(page, code) {
       await op.fill("#pt-en-new", title);
       await op.fill("#pc-new", code);
       await op.fill("#pdv-new", "20");
-      await op.check("main form input[name=restricted]");
+      await op.selectOption("#pa-new", "selected");
       await op.check("main form input[name=show_on_homepage]");
       await op.click("button:has-text('Create promotion')");
       await toast(op, "Promotion created");
@@ -65,9 +66,13 @@ async function tryCode(page, code) {
     await item.locator("textarea[name=emails]").fill(`${vip.toUpperCase()}\nnobody-${RUN.toLowerCase()}@example.com`);
     await item.locator("button:has-text('Give code')").click();
     await op.waitForSelector("text=Given to 1 customer(s)");
-    check(await op.locator(`text=No account with: nobody-${RUN.toLowerCase()}@example.com`).count() >= 1, "unknown emails are reported");
+    check(await op.locator(`text=No customer account with: nobody-${RUN.toLowerCase()}@example.com`).count() >= 1, "unknown emails are reported");
     await op.reload();
-    check(await op.locator(`text=Personal · 1 customer(s)`).count() >= 1, "promotion shows how many customers hold it");
+    check(await op.locator(`text=Selected customers · 1`).count() >= 1, "promotion shows how many customers hold it");
+    const vipMember = sql(`select member_id from customer_accounts where id = '${vipId}'`);
+    const vipItem = op.locator("li[data-row]", { has: op.locator(`text=VIP ${RUN}`) }).first();
+    await vipItem.locator("summary").click();
+    check(await vipItem.locator("[data-testid=promo-holder]").innerText().then((t) => t.includes(vipMember) && !t.includes("@")), "holders shown by User ID only");
 
     // give the second code from the customer's page
     await op.goto(`${B}/admin/customers/${vipId}?tab=promos`);
@@ -99,12 +104,40 @@ async function tryCode(page, code) {
     await home.goto(B);
     check(!(await home.locator("main").innerText()).includes(CODE), "personal codes never appear on the homepage");
 
-    // remove
+    // remove (with a reason)
     await op.goto(`${B}/admin/customers/${vipId}?tab=promos`);
-    await op.locator("li", { hasText: CODE2 }).locator("button:has-text('Remove')").click();
+    const row2 = op.locator("li", { hasText: CODE2 });
+    await row2.locator("input[name=reason]").fill("Given by mistake");
+    await row2.locator("button:has-text('Remove')").click();
     await toast(op, "Code removed");
+    check(sql(`select metadata->>'reason' from audit_logs where action = 'promo_unassigned' and entity_id = '${vipId}' order by id desc limit 1`) === "Given by mistake", "removal recorded with the reason");
     await cp.goto(`${B}/account/offers`);
     check(!(await cp.locator("main").innerText()).includes(CODE2), "a removed code disappears for the customer");
+
+    // delete: nobody holds CODE2 any more and it was never used → the Super Admin can delete it
+    await op.goto(`${B}/admin/promotions`);
+    const giftItem = op.locator("li[data-row]", { has: op.locator(`text=Gift ${RUN}`) }).first();
+    await giftItem.locator("summary").click();
+    await giftItem.locator("button:has-text('Delete')").click();
+    await toast(op, "Promotion deleted");
+    check(sql(`select count(*) from promotions where code = '${CODE2}'`) === "0", "unused promotion deleted by the Super Admin");
+    // CODE is still held by a customer → remove it from them first
+    await op.reload();
+    const vip2 = op.locator("li[data-row]", { has: op.locator(`text=VIP ${RUN}`) }).first();
+    await vip2.locator("summary").click();
+    check(await vip2.locator("text=first remove it from its 1 customer(s)").count() === 1 && await vip2.locator("button:has-text('Delete')").count() === 0,
+      "a promotion given to a customer must be removed from them before deleting");
+
+    // revoke with a reason → the code stops working
+    await vip2.locator("input[aria-label='Reason for revoking']").fill("Campaign cancelled");
+    await vip2.locator("button:has-text('Revoke')").click();
+    await toast(op, "Promotion revoked");
+    check(sql(`select is_active || ':' || revoked_reason from promotions where code = '${CODE}'`) === "false:Campaign cancelled", "revoked with the reason");
+    await op.reload();
+    check(await op.locator("[data-testid=promo-revoked]", { hasText: "Campaign cancelled" }).count() === 1, "revoked promotion shows the reason");
+    await cp.goto(`${B}/account/offers`);
+    check(!(await cp.locator("main").innerText()).includes(CODE), "a revoked code disappears for the customer");
+    check(await tryCode(cp, CODE) === "error", "a revoked code no longer works at checkout");
   } catch (e) {
     check(false, `crashed: ${e.message}`);
   } finally {

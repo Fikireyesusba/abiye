@@ -46,7 +46,7 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
   const [{ data: codes }, { data: personal }] = canPromo
     ? await Promise.all([
         supabase.rpc("admin_promotion_customers", { p_user_id: id }),
-        supabase.from("promotions").select("id, title_en, code").eq("restricted", true).eq("is_active", true).order("created_at", { ascending: false }),
+        supabase.from("promotions").select("id, title_en, code").eq("restricted", true).eq("is_active", true).is("revoked_at", null).order("created_at", { ascending: false }),
       ])
     : [{ data: null }, { data: null }];
   const canWallet = ctx.permissions.has("wallet.manage") && !c.is_staff;
@@ -218,8 +218,14 @@ export default async function CustomerPage({ params, searchParams }: PageProps<"
                       <li key={x.promotion_id} className="flex flex-wrap items-center gap-2 py-2">
                         <span className="font-mono">{x.code}</span>
                         <span className="text-xs text-muted-foreground">{x.title_en}</span>
-                        {x.used && <Badge variant="success">used</Badge>}
-                        <ActionForm action={unassignPromotion} hidden={{ promotionId: x.promotion_id, userId: c.id }} submitLabel="Remove" variant="outline" size="sm" className="ml-auto space-y-0" />
+                        {x.used && <Badge variant="success">used{x.used_order_number ? ` · ${x.used_order_number}` : ""}</Badge>}
+                        {x.reserved && <Badge variant="warning">order waiting for payment</Badge>}
+                        {x.revoked && <Badge variant="destructive">revoked</Badge>}
+                        {!x.used && !x.reserved && (
+                          <ActionForm action={unassignPromotion} hidden={{ promotionId: x.promotion_id, userId: c.id }} submitLabel="Remove" variant="outline" size="sm" className="ml-auto flex items-center gap-2 space-y-0">
+                            <input name="reason" required minLength={5} maxLength={300} placeholder="Reason" aria-label="Reason for removing the code" className={`${fieldClass} h-8 w-44`} />
+                          </ActionForm>
+                        )}
                       </li>
                     ))}
                   </ul>

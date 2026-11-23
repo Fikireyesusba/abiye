@@ -33,6 +33,9 @@ const ADMIN_MESSAGES: Record<string, string> = {
   product_unavailable: "A product is no longer available.",
   invalid_quantity: "Check the quantities (1–1000).",
   invalid_amount: "Check the amount (the discount must be lower than the total).",
+  invalid_reason: "Please give a reason (5–300 characters).",
+  promo_in_use: "This promotion was used (or an order waiting for payment has it). Revoke it instead — it stays in the records.",
+  promo_has_customers: "This code is given to customers. Remove it from each customer first.",
 };
 
 /** FormData → plain object of strings (files excluded). */
