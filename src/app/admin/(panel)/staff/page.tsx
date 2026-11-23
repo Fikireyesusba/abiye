@@ -58,10 +58,14 @@ export default async function StaffPage({ searchParams }: PageProps<"/admin/staf
   const email = new Map((users?.users ?? []).map((u) => [u.id, u.email ?? ""]));
   const memberId = await memberIds((profiles ?? []).map((p) => p.id));
   // Two-step login status per staff member (few accounts: one lookup each).
-  const twoStep = new Map(await Promise.all(current.map(async (p) => {
-    const { data } = await getSupabaseAdmin().auth.admin.mfa.listFactors({ userId: p.id });
-    return [p.id, (data?.factors ?? []).some((f) => f.status === "verified")] as const;
-  })));
+  // A few at a time: many parallel calls to the sign-in service fail (and would wrongly show "Not set up").
+  const twoStep = new Map<string, boolean>();
+  for (let i = 0; i < current.length; i += 8) {
+    await Promise.all(current.slice(i, i + 8).map(async (p) => {
+      const { data } = await getSupabaseAdmin().auth.admin.mfa.listFactors({ userId: p.id });
+      twoStep.set(p.id, (data?.factors ?? []).some((f) => f.status === "verified"));
+    }));
+  }
 
   const TABS = [
     { key: "team", label: "Team", count: current.length },
