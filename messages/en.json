@@ -561,7 +561,8 @@
     "waitingTitle": "Waiting for payment",
     "waitingText": "Not an order yet: it becomes an order once we accept your payment. Unpaid checkouts are released after 30 minutes.",
     "checkoutLabel": "Checkout",
-    "printRequestLabel": "Printing request"
+    "printRequestLabel": "Printing request",
+    "profileHint": "Theme, notifications, privacy and terms"
   },
   "payInfo": {
     "title": "How to pay",
@@ -747,5 +748,37 @@
     "rateThanks": "Thank you for your rating!",
     "rateClose": "Close",
     "yourRating": "Your rating: {count} / 5"
+  },
+  "drawer": {
+    "viewProfile": "View profile",
+    "signInPrompt": "Sign in to see your orders and balance",
+    "balance": "My balance",
+    "orders": "My orders",
+    "track": "Track order",
+    "offers": "My offers",
+    "notifications": "Notifications",
+    "support": "Support & feedback",
+    "help": "Help",
+    "about": "About us",
+    "contact": "Contact",
+    "printTitle": "Need something printed?",
+    "printText": "Upload your documents and collect them at our shop",
+    "close": "Close menu",
+    "guest": "Welcome"
+  },
+  "profile": {
+    "title": "Profile",
+    "personalDetails": "Personal details",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "Auto",
+    "notifications": "Notifications",
+    "savedAddress": "Saved delivery address",
+    "privacy": "Privacy policy",
+    "terms": "Terms & conditions",
+    "appVersion": "App version",
+    "userId": "User ID {id}",
+    "signOut": "Sign out"
   }
 }

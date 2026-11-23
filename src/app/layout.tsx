@@ -1,17 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Noto_Sans_Ethiopic } from "next/font/google";
+import { Inter } from "next/font/google";
+import { cookies } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
 import { ServiceWorkerRegister } from "@/components/pwa/pwa";
+import { ThemeSync } from "@/components/theme/theme";
+import { THEME_COOKIE, themeFromCookie } from "@/lib/theme";
 import "./globals.css";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"], display: "swap" });
-const ethiopic = Noto_Sans_Ethiopic({
-  variable: "--font-ethiopic",
-  subsets: ["ethiopic"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: { default: "Abiye", template: "%s · Abiye" },
@@ -35,12 +32,15 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
+  // Light / dark theme chosen on the Profile page (remembered on the device).
+  const theme = themeFromCookie((await cookies()).get(THEME_COOKIE)?.value);
   return (
-    <html lang={locale} className={`${inter.variable} ${ethiopic.variable} h-full`}>
+    <html lang={locale} className={`${inter.variable} h-full${theme === "dark" ? " dark" : ""}`}>
       <body className="flex min-h-full flex-col">
         <NextIntlClientProvider>
           {children}
           <ServiceWorkerRegister />
+          <ThemeSync choice={theme} />
         </NextIntlClientProvider>
       </body>
     </html>

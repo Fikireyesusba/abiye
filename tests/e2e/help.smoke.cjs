@@ -20,6 +20,7 @@ const check = (ok, msg) => results.push(`${ok ? "ok  " : "FAIL"} - ${msg}`);
     check(await d.locator("main section[id]").count() >= 10, "help guide has all sections");
     await d.click("header button[aria-controls=account-menu]");
     check(await d.locator("#account-menu a[href='/help']").count() === 1 && await d.locator("footer a[href='/help']").count() === 1, "linked from the profile menu and footer");
+    await d.keyboard.press("Escape");
     const txt = await d.locator("main").innerText();
     check(!/\{\w+\}/.test(txt) && /\d+ minutes/.test(txt), "settings values filled in (payment window, file limits)");
     await d.click("nav a[href='#paying']");

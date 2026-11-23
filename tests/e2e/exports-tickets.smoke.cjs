@@ -40,6 +40,23 @@ const OK = "20000000-0000-0000-0000-000000000007";
     check(cartNow.length === 1 && cartNow[0] === OK, "sold-out product removed from the basket, the rest kept");
     sql(`update products set stock_quantity = ${stockBefore} where id = '${SOLD}'`);
 
+    // ---- side menu → View profile → theme
+    const sm = await (await b.newContext()).newPage();
+    await loginCustomer(sm, B, email, "ExportsE2E2026x");
+    await sm.goto(`${B}/`);
+    await sm.click("header button[aria-controls=account-menu]");
+    check(await sm.locator("#account-menu a[href='/account/orders']").count() === 1 && await sm.locator("#account-menu a[href='/account/wallet']").count() === 1
+      && await sm.locator("[data-testid=drawer-printing]").count() === 1, "side menu: balance, orders, … and the printing card");
+    await sm.click("[data-testid=view-profile]");
+    await sm.waitForURL(/\/account\/profile$/);
+    check((await sm.locator("[data-testid=profile-user-id]").innerText()).includes(sql(`select member_id from customer_accounts where id = '${uid}'`)), "profile shows the User ID");
+    await sm.click("[data-testid=theme-dark]");
+    check(await sm.evaluate(() => document.documentElement.classList.contains("dark")), "dark theme applied at once");
+    await sm.reload();
+    check(await sm.evaluate(() => document.documentElement.classList.contains("dark")), "dark theme remembered");
+    await sm.click("[data-testid=theme-light]");
+    await sm.close();
+
     // ---- customer opens a ticket; staff close it; rating pop-up
     const c = await (await b.newContext()).newPage();
     await loginCustomer(c, B, email, "ExportsE2E2026x", "/support");

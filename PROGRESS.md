@@ -115,6 +115,13 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - Local dev: sign-ups + email confirmation on, local mail catcher on :54324 (dev:up no longer excludes it).
 - **Production TODO for the owner**: configure SMTP + email templates + URL configuration in Supabase (docs/DEPLOYMENT.md §2b).
 
+## Customer app: side menu + Profile page with theme (requested 2026-11-23, reference screenshots)
+
+No migration. Layout pattern from the owner's reference app, in Abiye's own colours and content (no copied name / logo / images).
+- **Side menu** (`AccountMenu` in header-client.tsx, opened by the profile icon; rendered in a portal so the sticky header does not clip it; id `account-menu` kept): green header with initials avatar, name and "View profile" (signed out: Sign in / Create account); rows My balance, My orders, Track order, My offers, Notifications, Support & feedback, Help, About us, Contact; printing card at the bottom (when printing is on). Closes on navigation / Escape / backdrop.
+- **Profile** (`/account/profile`): avatar, name, email, User ID; Personal details, **Theme** (Light / Dark / Auto = phone setting; cookie `theme`, applied by the root layout + `ThemeSync`), Notifications, Saved delivery address; App version (package.json), Privacy policy, Terms; Sign out. Linked from My account ("Profile").
+- Root layout: Ethiopic font removed (English only).
+
 ## English only — Amharic removed (requested 2026-11-23)
 
 No migration. The website, emails, phone notifications and Supabase auth emails are English only.

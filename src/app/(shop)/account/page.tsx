@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
-import { Bell, ChevronRight, LogOut, Package, Tag, UserRound, Wallet } from "lucide-react";
+import { Bell, ChevronRight, LogOut, Package, Settings, Tag, UserRound, Wallet } from "lucide-react";
 import { getServerEnv } from "@/lib/env";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -62,6 +62,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
       <nav aria-label={t("account.title")}>
         <ul className="divide-y overflow-hidden rounded-xl border bg-card" data-testid="account-menu">
           {[
+            { href: "/account/profile", icon: Settings, label: t("profile.title"), hint: t("account.profileHint") },
             { href: "/account/details", icon: UserRound, label: t("account.personalDetails"), hint: account?.full_name || user.email },
             { href: "/account/orders", icon: Package, label: t("account.myOrders"), hint: t("account.ordersCount", { count: orderCount ?? 0 }) },
             ...(vapid ? [{ href: "/account/notifications", icon: Bell, label: t("push.title"), hint: t("account.notificationsHint") }] : []),

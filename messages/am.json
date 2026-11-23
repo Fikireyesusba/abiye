@@ -561,7 +561,8 @@
     "waitingTitle": "ክፍያ በመጠበቅ ላይ",
     "waitingText": "ገና ትዕዛዝ አይደለም፤ ክፍያዎን ስንቀበል ትዕዛዝ ይሆናል። ያልተከፈሉ ግዢዎች ከ30 ደቂቃ በኋላ ይለቀቃሉ።",
     "checkoutLabel": "ግዢ",
-    "printRequestLabel": "የህትመት ጥያቄ"
+    "printRequestLabel": "የህትመት ጥያቄ",
+    "profileHint": "Theme, notifications, privacy and terms"
   },
   "payInfo": {
     "title": "እንዴት እንደሚከፍሉ",
@@ -747,5 +748,37 @@
     "rateThanks": "ስለ ግምገማዎ እናመሰግናለን!",
     "rateClose": "ዝጋ",
     "yourRating": "የእርስዎ ግምገማ፦ {count} / 5"
+  },
+  "drawer": {
+    "viewProfile": "View profile",
+    "signInPrompt": "Sign in to see your orders and balance",
+    "balance": "My balance",
+    "orders": "My orders",
+    "track": "Track order",
+    "offers": "My offers",
+    "notifications": "Notifications",
+    "support": "Support & feedback",
+    "help": "Help",
+    "about": "About us",
+    "contact": "Contact",
+    "printTitle": "Need something printed?",
+    "printText": "Upload your documents and collect them at our shop",
+    "close": "Close menu",
+    "guest": "Welcome"
+  },
+  "profile": {
+    "title": "Profile",
+    "personalDetails": "Personal details",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "Auto",
+    "notifications": "Notifications",
+    "savedAddress": "Saved delivery address",
+    "privacy": "Privacy policy",
+    "terms": "Terms & conditions",
+    "appVersion": "App version",
+    "userId": "User ID {id}",
+    "signOut": "Sign out"
   }
 }

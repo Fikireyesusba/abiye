@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Search } from "lucide-react";
+import { getCustomerAccount, getCustomerUser } from "@/lib/account/session";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import { publicImageUrl } from "@/lib/storage";
 import type { Locale } from "@/i18n/config";
@@ -43,14 +44,10 @@ export async function SiteHeader() {
     { href: "/electronics", label: t("nav.electronics") },
     { href: "/printing", label: t("nav.printing") },
   ];
-  const secondary = [
-    { href: "/account", label: t("account.title") },
-    { href: "/track-order", label: t("nav.trackOrder") },
-    { href: "/support", label: t("nav.support") },
-    { href: "/about", label: t("nav.about") },
-    { href: "/contact", label: t("nav.contact") },
-    { href: "/help", label: t("nav.help") },
-  ];
+  // The side menu shows who is signed in (customer only; a staff session is not a customer).
+  const user = await getCustomerUser();
+  const account = user ? await getCustomerAccount(user.id) : null;
+  const viewer = user ? { name: account?.full_name ?? "", email: user.email, memberId: account?.member_id ?? null } : null;
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
@@ -71,7 +68,7 @@ export async function SiteHeader() {
         <MainNav links={links} />
         <SearchForm className="ml-auto hidden w-full max-w-xs md:block" />
         <div className="ml-auto flex items-center gap-1 md:ml-0">
-          <AccountMenu links={secondary} />
+          <AccountMenu viewer={viewer} printingOn={settings.services.printing} />
           <CartButton />
         </div>
       </div>

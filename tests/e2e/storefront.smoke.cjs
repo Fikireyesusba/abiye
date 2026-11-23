@@ -159,6 +159,8 @@ function resetSampleStock() {
   await p.click('header button[aria-controls=account-menu]');
   check(await p.locator('#account-menu a[href="/track-order"]').count() === 1 && await p.locator('#account-menu a[href="/contact"]').count() === 1, 'profile menu: account, track order, about, contact');
   check(await p.locator('#account-menu button:has-text("አማርኛ")').count() === 0, 'no language switch (English only)');
+  check(await p.locator('#account-menu a[href="/account/login"]').count() === 1 && await p.locator('#account-menu a[href="/account/signup"]').count() === 1, 'signed out: side menu offers Sign in / Create account');
+  await p.keyboard.press('Escape');
   await p.context().addCookies([{ name: 'NEXT_LOCALE', value: 'am', url: B }]);
   await p.goto(B + '/products/sample-oud-perfume-100ml');
   check(!/[\u1200-\u137F]/.test(await p.locator('main').textContent()) && (await p.locator('main').textContent()).includes('ETB'), 'English and ETB even with an old Amharic language cookie');
