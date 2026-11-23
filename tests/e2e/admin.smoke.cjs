@@ -284,7 +284,7 @@ async function toast(page, text) {
 
   // ---- Deactivate staff → immediate loss of access
   await p.goto(`${B}/admin/staff`);
-  const srow = p.locator(`tr:has-text("User ID ${midOf(staffEmail)}")`);
+  const srow = p.locator(`tr:has-text("${midOf(staffEmail)}")`);
   await submitIn(p, srow.locator("form:has(button:has-text('Deactivate'))"));
   await toast(p, "Access removed");
   await srow.locator("button:has-text('Reactivate')").waitFor({ timeout: 10000 });
@@ -306,7 +306,7 @@ async function toast(page, text) {
   check(sql(`select banned_until > now() + interval '10 years' from auth.users where id = '${staffId}'`) === "t", "deleted: sign-in blocked");
   check(sql(`select count(*) from orders where assigned_to = '${staffId}' and status not in ('completed','cancelled','expired')`) === "0", "deleted: open orders unassigned");
   await p.goto(`${B}/admin/staff`);
-  check(await p.locator(`tr:has-text("User ID ${midOf(staffEmail)}")`).count() === 0 && await p.locator("nav a:has-text('Deleted staff')").count() === 1, "deleted staff leave the list (kept under Deleted staff)");
+  check(await p.locator(`tr:has-text("${midOf(staffEmail)}")`).count() === 0 && await p.locator("nav a:has-text('Deleted staff')").count() === 1, "deleted staff leave the list (kept under Deleted staff)");
   const gone = await (await b.newContext()).newPage();
   await gone.goto(`${B}/admin/login`);
   await gone.fill("#email", staffEmail);
@@ -316,7 +316,7 @@ async function toast(page, text) {
   check(gone.url().includes("/admin/login"), "deleted staff cannot sign in");
 
   // Super admin cannot demote themselves
-  check((await p.locator(`tr:has-text("User ID ${midOf(OWNER.email)}") select[name=role]`).count()) === 0, "own row has no role controls (no self-demotion)");
+  check((await p.locator(`tr:has-text("${midOf(OWNER.email)}") select[name=role]`).count()) === 0, "own row has no role controls (no self-demotion)");
 
   // ---- Phone-width layout of every admin page
   const phone = await b.newContext({ viewport: { width: 390, height: 844 } });

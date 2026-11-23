@@ -43,7 +43,7 @@ export default async function WalletAdminPage({ searchParams }: PageProps<"/admi
           <Button type="submit" variant="outline">Search</Button>
         </form>
         <p className="mb-3 text-sm text-muted-foreground">Total customer balances (money you owe as shop credit): <strong className="text-foreground">{etb(total)}</strong></p>
-        <Table scroll head={["User", "Balance", "Last activity"]} empty="No customer balances yet.">
+        <Table scroll head={["User ID", "Balance", "Last activity"]} empty="No customer balances yet.">
           {(data ?? []).map((r) => (
             <tr key={r.user_id}>
               <Td><UserIdLink id={ids.get(r.user_id)} /></Td>

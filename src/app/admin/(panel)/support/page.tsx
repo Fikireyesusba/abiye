@@ -59,7 +59,7 @@ export default async function SupportTicketsPage({ searchParams }: PageProps<"/a
           <a href={`/admin/exports/download?${new URLSearchParams({ kind: "support", from: from || `${today.slice(0, 7)}-01`, to: to || today })}`} data-testid="tickets-export"><Download /> Excel</a>
         </Button>
       </form>
-      <Table scroll head={["Ticket", "User", "Topic", "Status", "Assigned", "Last message", "Rating & feedback"]} empty="No tickets here.">
+      <Table scroll head={["Ticket", "User ID", "Topic", "Status", "Assigned", "Last message", "Rating & feedback"]} empty="No tickets here.">
         {list.map((r) => (
           <tr key={r.id} data-row>
             <Td>

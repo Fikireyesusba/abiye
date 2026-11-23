@@ -67,11 +67,13 @@ async function waitFor(fn, ms = 20000) {
 const cron = () => fetch(`${B}/api/cron/notifications`, { headers: { authorization: `Bearer ${process.env.CRON_SECRET}` } });
 
 (async () => {
+  // These tests cover the "payment waiting for approval" alerts (off by default since 0057): switch them on for the run.
+  require("child_process").execSync(`psql -q "postgresql://postgres:postgres@127.0.0.1:54322/postgres"`, { input: `insert into website_settings (key, value, is_public) values ('telegram_feed', '{"pending_payments": true}', false) on conflict (key) do update set value = website_settings.value || excluded.value;` });
   await new Promise((r) => tgServer.listen(TG_PORT, "127.0.0.1", r));
   await new Promise((r) => mailServer.listen(MAIL_PORT, "127.0.0.1", r));
   sql("update notifications_outbox set status = 'dead', last_error = 'e2e reset' where status in ('pending','failed','processing'); delete from rate_limits; delete from website_settings where key = 'telegram_feed';");
   // Copies of customer messages are off by default; this test checks them, so switch them on (order progress stays at its default: off).
-  sql(`insert into website_settings (key, value, is_public) values ('telegram_feed', '{"notifications": true}', false)`);
+  sql(`insert into website_settings (key, value, is_public) values ('telegram_feed', '{"notifications": true, "pending_payments": true}', false)`);
   sql("update products set stock_quantity = 80 where sku = 'SMP-CH-001'");
   const app = spawn("npx", ["next", "start", "-p", String(PORT)], {
     env: { ...process.env, TELEGRAM_BOT_TOKEN: TOKEN, TELEGRAM_ADMIN_CHAT_ID: "-100123", TELEGRAM_API_BASE: `http://127.0.0.1:${TG_PORT}`,
@@ -179,10 +181,14 @@ const cron = () => fetch(`${B}/api/cron/notifications`, { headers: { authorizati
     check(up.ok, "test document stored");
     await cron();
     await sleep(1000);
-    check(printMsgs.length === 0, "nothing sent to the printing group before the payment is submitted");
+    check(printMsgs.length === 0, "nothing sent to the printing group before the payment");
     sql(`update printing_jobs set status = 'payment_verification' where id = '${jobId}'`);
     await cron();
-    check(await waitFor(() => printMsgs.some((t) => t.includes("PAYMENT SUBMITTED") && t.includes("My thesis.pdf") && t.includes("double-sided"))), "payment submitted: document sent to the printing group with the print options");
+    await sleep(1000);
+    check(printMsgs.length === 0, "payment submitted: no document yet (only once approved)");
+    sql(`update printing_jobs set status = 'printing' where id = '${jobId}'`);
+    await cron();
+    check(await waitFor(() => printMsgs.some((t) => t.includes("PRINT — PAID") && t.includes("My thesis.pdf") && t.includes("double-sided"))), "payment approved: document sent to the printing group with the print options");
     check(printFiles.includes("My thesis.pdf"), "as a file with the customer's file name");
     check(!orderMsgs.some((t) => t.includes("PRINT —")) && !recMsgs.some((t) => t.includes("PRINT —")), "only in the printing group");
 

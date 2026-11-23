@@ -56,7 +56,7 @@ select pg_temp.throws($$select public.admin_set_telegram_feed(false, false, fals
 reset role;
 select pg_temp.login(:super);
 select public.admin_set_telegram_feed(false, false, false);
-select pg_temp.ok(public.admin_telegram_feed() = '{"admin": false, "security": false, "notifications": false, "order_progress": false, "printing_requests": true}'::jsonb, 'switches saved');
+select pg_temp.ok(public.admin_telegram_feed() = '{"admin": false, "security": false, "notifications": false, "order_progress": false, "printing_requests": true, "pending_payments": true}'::jsonb, 'switches saved');
 reset role;
 delete from public.notifications_outbox;
 insert into public.security_events (kind, email, ip_hash) values ('customer_login_failed', 'quiet@example.com', '1234123412341234');

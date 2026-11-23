@@ -78,6 +78,16 @@ export async function retryAllFailed(): Promise<ActionResult> {
   return failed ? fail(`${queued} message(s) retried — ${failed} still failing. See the error next to each.`) : ok(`${queued} message(s) retried and sent.`);
 }
 
+/** Telegram alerts for payments / top-ups waiting for approval (off by default: only approved payments are sent). */
+export async function savePendingPaymentAlerts(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("settings.manage");
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("admin_set_pending_payment_alerts", { p_on: fd.get("pending_payments") === "on" });
+  if (error) return dbError(error);
+  revalidatePath("/admin/notifications");
+  return ok("Saved.");
+}
+
 /** Test message for the stock or receipts group. */
 export async function sendGroupTest(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   await requirePermission("settings.manage");

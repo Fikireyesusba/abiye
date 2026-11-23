@@ -49,10 +49,10 @@ const RUN = Date.now().toString(36);
     check(await rows.count() === 1 && !(await rows.first().innerText()).includes(email) && (await rows.first().innerText()).includes(mid),
       "customers: search by User ID finds exactly that customer; only the User ID is listed");
     await o.goto(`${B}/admin/customers/${uid}`);
-    check((await o.locator("main").innerText()).includes(`User ID ${mid}`), "customer page shows the member ID");
+    check((await o.locator("main").innerText()).includes(`${mid}`), "customer page shows the member ID");
     await o.goto(`${B}/admin/staff`);
     const ownerMid = sql("select a.member_id from customer_accounts a join auth.users u on u.id = a.id where u.email = 'owner@abiye.local'");
-    check(/^[1-9][0-9]{5}$/.test(ownerMid) && (await o.locator("main").innerText()).includes(`User ID ${ownerMid}`), `staff list shows staff member IDs (${ownerMid})`);
+    check(/^[1-9][0-9]{5}$/.test(ownerMid) && (await o.locator("main").innerText()).includes(`${ownerMid}`), `staff list shows staff member IDs (${ownerMid})`);
   } catch (e) {
     check(false, `crashed: ${e.message.split("\n")[0]}`);
   } finally {

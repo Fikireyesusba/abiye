@@ -15,7 +15,7 @@ select pg_temp.ok(true, 'existing accounts are not affected');
 select pg_temp.ok(position('Europe/Warsaw' in pg_get_functiondef('public.admin_dashboard_stats(integer)'::regprocedure)) > 0
   and position('Africa/Addis_Ababa' in pg_get_functiondef('public.admin_sales_report(date, date)'::regprocedure)) = 0, 'days counted in Warsaw time');
 
--- Printing documents: once the payment is submitted (0052)
+-- Printing documents: once the payment is approved (0057)
 delete from public.notifications_outbox;
 insert into public.printing_jobs (id, user_id, access_token_hash, customer_name, customer_phone, color_mode, paper_size, sides, copies, page_count, total_etb, status)
 values ('e1000000-0000-0000-0000-000000000001', :customer, repeat('a', 64), 'Print Buyer', '+251911223344', 'bw', 'A4', 'single', 2, 3, 30, 'awaiting_payment');
@@ -24,10 +24,11 @@ insert into public.printing_files (job_id, storage_path, original_name, mime_typ
   ('e1000000-0000-0000-0000-000000000001', 'jobs/e1/b.pdf', 'cover.pdf', 'application/pdf', 500, repeat('c', 64), 1);
 select pg_temp.ok(not exists (select 1 from public.notifications_outbox where event_type = 'printing_document'), 'no documents before the payment is submitted');
 update public.printing_jobs set status = 'payment_verification' where id = 'e1000000-0000-0000-0000-000000000001';
-select pg_temp.ok((select count(*) from public.notifications_outbox where event_type = 'printing_document' and attachment_bucket = 'printing-files'
-                   and payload ->> 'stage' = 'payment_submitted') = 2,
-  'payment submitted: each document queued with its file');
+select pg_temp.ok(not exists (select 1 from public.notifications_outbox where event_type = 'printing_document'), 'payment submitted: no documents yet (0057)');
 update public.printing_jobs set status = 'printing' where id = 'e1000000-0000-0000-0000-000000000001';
+select pg_temp.ok((select count(*) from public.notifications_outbox where event_type = 'printing_document' and attachment_bucket = 'printing-files'
+                   and payload ->> 'stage' = 'paid') = 2,
+  'payment approved: each document queued with its file');
 select pg_temp.ok((select string_agg(payload ->> 'file_name', ',' order by payload ->> 'file_name') || ' ' || string_agg(payload ->> 'n', ',' order by payload ->> 'n')
                    || '/' || max(payload ->> 'of') from public.notifications_outbox where event_type = 'printing_document') = 'cover.pdf,thesis.pdf 1,2/2', 'with name and number');
 select pg_temp.ok(private.telegram_group('printing_document') = 'printing', 'printing group');

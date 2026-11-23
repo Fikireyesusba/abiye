@@ -23,7 +23,7 @@ const check = (ok, msg) => results.push(`${ok ? "ok  " : "FAIL"} - ${msg}`);
     o.on("dialog", (d) => d.accept());
     await adminLogin(o, B, OWNER.email, OWNER.password);
     await o.goto(`${B}/admin/performance`);
-    check(await o.locator(`tr:has-text("User ID ${ownerMid}")`).count() === 1, "KPI table lists each staff member by User ID");
+    check(await o.locator(`tr:has-text("${ownerMid}")`).count() === 1, "KPI table lists each staff member by User ID");
     check(await o.locator("th", { hasText: "Tickets resolved" }).count() === 1 && await o.locator("th", { hasText: "Payments approved" }).count() === 1
       && await o.locator("th", { hasText: "Ticket resolution time" }).count() === 1, "KPI columns: tickets, payments, resolution time …");
     await o.goto(`${B}/admin/performance?tab=targets`);
@@ -35,7 +35,7 @@ const check = (ok, msg) => results.push(`${ok ? "ok  " : "FAIL"} - ${msg}`);
     check(sql("select target || '/' || period || '/' || (profile_id is null) from kpi_targets where metric = 'payments_approved'") === "10.00/day/true", "Super Admin set a target for every staff member");
     const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw" }).format(new Date());
     await o.goto(`${B}/admin/performance?from=${today}&to=${today}`);
-    check((await o.locator(`tr:has-text("User ID ${ownerMid}")`).innerText()).includes("target 10"), "the target and % reached are shown per person");
+    check((await o.locator(`tr:has-text("${ownerMid}")`).innerText()).includes("target 10"), "the target and % reached are shown per person");
     const [dl] = await Promise.all([o.waitForEvent("download"), o.click("[data-testid=kpi-export]")]);
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.readFile(await dl.path());

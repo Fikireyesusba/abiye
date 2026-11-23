@@ -40,11 +40,11 @@ export default async function CustomersPage({ searchParams }: PageProps<"/admin/
         <input name="q" defaultValue={q} placeholder="Email, name, phone or User ID" maxLength={60} className={`${fieldClass} max-w-xs`} aria-label="Search customers" />
         <Button type="submit" variant="outline">Search</Button>
       </form>
-      <Table scroll head={["User", "Status", "Orders", "Joined"]} empty="No customers found.">
+      <Table scroll head={["User ID", "Status", "Orders", "Joined"]} empty="No customers found.">
         {(accounts ?? []).map((a) => (
           <tr key={a.id} className="hover:bg-muted/40">
             <Td>
-              <Link href={`/admin/customers/${a.id}`} className="font-mono font-medium text-primary hover:underline" data-testid="member-id">User ID {a.member_id}</Link>
+              <Link href={`/admin/customers/${a.id}`} className="font-mono font-medium text-primary hover:underline" data-testid="member-id">{a.member_id}</Link>
             </Td>
             <Td>{a.deactivated_at ? <Badge variant="destructive">Deactivated</Badge> : a.email_confirmed_at ? <Badge variant="success">Confirmed</Badge> : <Badge variant="warning">Not confirmed</Badge>}</Td>
             <Td className="tabular-nums">{a.order_count}{a.last_order_at && <span className="block text-xs text-muted-foreground">last {formatDateTime(a.last_order_at, "en")}</span>}</Td>

@@ -72,7 +72,7 @@ const RUN = Date.now().toString(36);
     o.on("dialog", (d) => d.accept());
     await adminLogin(o, B, OWNER.email, OWNER.password);
     await o.goto(`${B}/admin/support?q=${mid}`);
-    check((await o.locator("main").innerText()).includes(ticketNumber) && (await o.locator("main").innerText()).includes(`User ID ${mid}`) && !(await o.locator("main").innerText()).includes(email), "admin finds the ticket by User ID (only the User ID listed)");
+    check((await o.locator("main").innerText()).includes(ticketNumber) && (await o.locator("main").innerText()).includes(`${mid}`) && !(await o.locator("main").innerText()).includes(email), "admin finds the ticket by User ID (only the User ID listed)");
     check(await o.locator('nav a[href="/admin/support"] span[title*="open support"]').count() === 1, "menu shows a red count of open tickets");
     await o.goto(`${B}/admin/support/${ticketId}`);
     await o.fill("textarea[name=message]", "Thanks for the idea — we are looking into it.");
@@ -103,11 +103,11 @@ const RUN = Date.now().toString(36);
     // ---- activity: everything by / about this User ID
     await o.goto(`${B}/admin/activity?q=${mid}`);
     const act = await o.locator("main").innerText();
-    check(act.includes("Support ticket opened") && act.includes(`User ID ${mid}`), "activity log searched by User ID shows the customer's actions with their User ID");
+    check(act.includes("Support ticket opened") && act.includes(`${mid}`), "activity log searched by User ID shows the customer's actions with their User ID");
 
     // ---- signed-in users and sign out
     await o.goto(`${B}/admin/users?tab=now&q=${mid}`);
-    check((await o.locator("main").innerText()).includes(`User ID ${mid}`) && !(await o.locator("main").innerText()).includes(email), "customer listed as signed in now (only the User ID)");
+    check((await o.locator("main").innerText()).includes(`${mid}`) && !(await o.locator("main").innerText()).includes(email), "customer listed as signed in now (only the User ID)");
     const [xl] = await Promise.all([o.waitForEvent("download"), o.click("[data-testid=users-export]")]);
     const wb = new (require("exceljs").Workbook)();
     await wb.xlsx.readFile(await xl.path());
@@ -115,20 +115,20 @@ const RUN = Date.now().toString(36);
     let xrow = null;
     ws.eachRow((r) => { if (String(r.getCell(1).value) === mid) xrow = r; });
     check(!!xrow && String(xrow.getCell(3).value) === email && String(xrow.getCell(11).value).length > 0, "Excel export of signed-in users with all details (email, last active…)");
-    await o.locator(`tr:has-text("User ID ${mid}") button:has-text('Sign out')`).click();
+    await o.locator(`tr:has-text("${mid}") button:has-text('Sign out')`).click();
     await o.waitForSelector("[data-sonner-toast]:has-text('Signed out')");
     await c.goto(`${B}/support`);
     check(new URL(c.url()).pathname === "/account/login", "the customer is signed out at once");
     sql(`update auth.users set last_sign_in_at = now() - interval '60 days' where id = '${uid}'`);
     const day = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw" }).format(new Date(Date.now() - 30 * 86400000));
     await o.goto(`${B}/admin/users?tab=last&before=${day}&q=${mid}`);
-    check((await o.locator("main").innerText()).includes(`User ID ${mid}`), "last sign-in: 'not signed in since' filter finds them");
+    check((await o.locator("main").innerText()).includes(`${mid}`), "last sign-in: 'not signed in since' filter finds them");
     await o.goto(`${B}/admin/users?tab=last&from=${day}&q=${mid}`);
-    check(!(await o.locator("main").innerText()).includes(`User ID ${mid}`), "last sign-in: date range filter");
+    check(!(await o.locator("main").innerText()).includes(`${mid}`), "last sign-in: date range filter");
 
     // ---- app installs
     await o.goto(`${B}/admin/users?tab=installs`);
-    check(Number(await o.locator("[data-testid=install-count]").innerText()) >= 1 && (await o.locator("main").innerText()).includes(`User ID ${mid}`), "App installs: count and list with the person's User ID");
+    check(Number(await o.locator("[data-testid=install-count]").innerText()) >= 1 && (await o.locator("main").innerText()).includes(`${mid}`), "App installs: count and list with the person's User ID");
     await o.click(`a[href="/admin/users/${mid}"]`);
     await o.waitForURL(new RegExp(`/admin/customers/${uid}`));
     check((await o.locator("[data-testid=sign-in-panel]").innerText()).includes("App installed on: Android") || (await o.locator("[data-testid=sign-in-panel]").innerText()).includes("App installed on:"), "clicking a User ID opens the person (customer page with sign-in & devices)");

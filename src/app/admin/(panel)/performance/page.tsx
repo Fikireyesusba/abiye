@@ -69,10 +69,10 @@ export default async function PerformancePage({ searchParams }: PageProps<"/admi
             <StatCard label="Top-ups approved (team)" value={sum("topups_approved")} />
           </div>
           <p className="mb-2 text-xs text-muted-foreground">{rangeDays} day(s). Under each value: the target for these dates and the % reached (green = met). Times: lower is better.</p>
-          <Table scroll head={["Staff", ...KPI_METRICS.map((m) => m.label), "Other"]} empty="No staff members.">
+          <Table scroll head={["User ID", ...KPI_METRICS.map((m) => m.label), "Other"]} empty="No staff members.">
             {staff.map((r) => (
               <tr key={r.user_id} className="align-top" data-row>
-                <Td><UserIdLink id={r.member_id} /><span className="block text-xs text-muted-foreground">{r.full_name} · {r.role_name ?? "Staff"}{r.is_active ? "" : " · deactivated"}</span></Td>
+                <Td><UserIdLink id={r.member_id} />{!r.is_active && <span className="block text-xs text-muted-foreground">deactivated</span>}</Td>
                 {KPI_METRICS.map((m) => {
                   const v = value(r, m.key);
                   const target = targetFor(m.key, r.user_id);
@@ -117,7 +117,7 @@ export default async function PerformancePage({ searchParams }: PageProps<"/admi
                 <label className="block text-sm">For
                   <select name="profileId" defaultValue="" className={`${fieldClass} mt-1`}>
                     <option value="">Every staff member</option>
-                    {staff.map((s) => <option key={s.user_id} value={s.user_id}>User ID {s.member_id} · {s.full_name}</option>)}
+                    {staff.map((s) => <option key={s.user_id} value={s.user_id}>{s.member_id}</option>)}
                   </select>
                 </label>
                 <p className="text-xs text-muted-foreground">Counts are scaled to the dates you view (e.g. 20 per week shows as 40 for two weeks). Times (resolution, first reply, payment review) are a maximum. A target for one person replaces the “every staff member” target for them. Saving the same KPI for the same person changes it.</p>
@@ -134,7 +134,7 @@ export default async function PerformancePage({ searchParams }: PageProps<"/admi
                     <li key={t.id} className={cn("flex flex-wrap items-center gap-2 py-2")}>
                       <span className="font-medium">{m?.label ?? t.metric}</span>
                       <span>{m?.better === "lower" ? "≤ " : ""}{Number(t.target)}{m?.unit ? ` ${m.unit}` : ""} {m?.better === "lower" ? "" : KPI_PERIODS.find((p) => p.key === t.period)?.label}</span>
-                      <span className="text-muted-foreground">· {who ? <>User ID {who.member_id}</> : "every staff member"}</span>
+                      <span className="text-muted-foreground">· {who ? <UserIdLink id={who.member_id} /> : "every staff member"}</span>
                       {canManage && (
                         <ActionForm action={deleteKpiTarget} hidden={{ id: t.id }} submitLabel="Remove" variant="outline" size="sm" className="ml-auto space-y-0" />
                       )}

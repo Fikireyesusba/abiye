@@ -121,7 +121,7 @@ async function waitFor(fn, ms = 15000) {
     await p.waitForSelector("text=Notifications are on for this device");
     check(sql(`select count(*) from push_subscriptions where user_id = '${userId}' and endpoint = '${ENDPOINT}' and locale = 'en'`) === "1", "device saved for this customer");
 
-    // ---- order placed → encrypted notification to the device
+    // ---- payment accepted (the order now exists) → encrypted notification to the device
     const key = sql("select gen_random_uuid()");
     sql(`set role service_role; select public.create_order_for_user('${userId}', jsonb_build_object('idempotency_key','${key}',
       'access_token_hash',encode(sha256('a${key}'::bytea),'hex'),'tracking_code_hash',encode(sha256('b${key}'::bytea),'hex'),
@@ -129,13 +129,14 @@ async function waitFor(fn, ms = 15000) {
       'items',jsonb_build_array(jsonb_build_object('type','product','product_id','20000000-0000-0000-0000-000000000007','quantity',1))))`);
     const orderId = sql(`select id from orders where idempotency_key = '${key}'`);
     const number = sql(`select order_number from orders where id = '${orderId}'`);
+    sql(`update orders set status = 'confirmed', payment_status = 'verified', payment_verified_at = now() where id = '${orderId}'`);
     await fetch(`${B}/api/cron/notifications`, { headers: { authorization: `Bearer ${process.env.CRON_SECRET}` } });
     check(await waitFor(() => received.some((r) => r.path.endsWith(`e2e-${RUN}`))), "notification sent to the device's push service");
     const msg = received.find((r) => r.path.endsWith(`e2e-${RUN}`));
     check(msg.headers["content-encoding"] === "aes128gcm" && /^vapid t=.+, k=/.test(msg.headers.authorization ?? "") && Number(msg.headers.ttl) > 0,
       "sent encrypted with VAPID authentication");
     const note = decrypt(msg.body);
-    check(note.title === `Order ${number} placed` && note.body.includes("850") && note.url === `/order-success/${orderId}`, `device decrypts: "${note.title}" — ${note.body}`);
+    check(note.title === "Payment received ✓" && note.body.includes(number) && note.url === `/order-success/${orderId}`, `device decrypts: "${note.title}" — ${note.body}`);
 
     // ---- in the browser: the app's service worker shows it and opens the order on tap
     const cdp = await ctx.newCDPSession(p);

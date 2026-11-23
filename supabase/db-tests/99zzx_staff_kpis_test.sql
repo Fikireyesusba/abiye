@@ -58,4 +58,22 @@ select public.admin_delete_kpi_target((select id from public.kpi_targets where p
 select pg_temp.ok((select count(*) from public.kpi_targets) = 1, 'target removed');
 reset role;
 select pg_temp.ok(exists (select 1 from public.audit_logs where entity_type = 'kpi_targets'), 'target changes in the activity log');
+
+-- 0057: alerts for payments waiting for approval are off by default; printing documents only once approved
+update public.website_settings set value = value || '{"pending_payments": false}' where key = 'telegram_feed';
+select private.enqueue_notification('new_order', 'x57:1', '{}');
+select private.enqueue_notification('wallet_topup', 'x57:2', '{}');
+select private.enqueue_notification('payment_verified', 'x57:3', '{}');
+select pg_temp.ok((select array_agg(event_type order by event_type) from public.notifications_outbox where dedupe_key like 'x57:%') = array['payment_verified'],
+  'waiting-for-approval alerts switched off: only approved payments are sent');
+insert into public.printing_jobs (id, user_id, access_token_hash, customer_name, customer_phone, color_mode, paper_size, sides, copies, page_count, total_etb, status)
+values ('e5700000-0000-0000-0000-000000000001', :customer, repeat('c', 64), 'Print Buyer', '+251911223344', 'bw', 'A4', 'single', 1, 1, 10, 'awaiting_payment');
+insert into public.printing_files (job_id, storage_path, original_name, mime_type, size_bytes, sha256, page_count) values
+  ('e5700000-0000-0000-0000-000000000001', 'jobs/e57/a.pdf', 'a.pdf', 'application/pdf', 100, repeat('d', 64), 1);
+update public.printing_jobs set status = 'payment_verification' where id = 'e5700000-0000-0000-0000-000000000001';
+select pg_temp.ok(not exists (select 1 from public.notifications_outbox where event_type = 'printing_document' and payload ->> 'job_id' = 'e5700000-0000-0000-0000-000000000001'),
+  'payment submitted: no document yet');
+update public.printing_jobs set status = 'printing' where id = 'e5700000-0000-0000-0000-000000000001';
+select pg_temp.ok((select payload ->> 'stage' from public.notifications_outbox where event_type = 'printing_document' and payload ->> 'job_id' = 'e5700000-0000-0000-0000-000000000001') = 'paid',
+  'payment approved: the document goes to the printing group');
 rollback;

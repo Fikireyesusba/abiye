@@ -90,3 +90,6 @@ join public.admin_roles r on r.key = u.role;
 \set hairoil '''20000000-0000-0000-0000-000000000005'''
 \set draft   '''20000000-0000-0000-0000-000000000011'''
 \o /dev/null
+-- Most tests check the "payment waiting for approval" alerts: switch them on (production default is off since 0057).
+insert into public.website_settings (key, value, is_public) values ('telegram_feed', '{"pending_payments": true}', false)
+  on conflict (key) do update set value = public.website_settings.value || excluded.value;

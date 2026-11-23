@@ -60,6 +60,8 @@ async function waitFor(fn, ms = 15000) {
 const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: auth ? { authorization: `Bearer ${process.env.CRON_SECRET}` } : {} });
 
 (async () => {
+  // These tests cover the "payment waiting for approval" alerts (off by default since 0057): switch them on for the run.
+  require("child_process").execSync(`psql -q "postgresql://postgres:postgres@127.0.0.1:54322/postgres"`, { input: `insert into website_settings (key, value, is_public) values ('telegram_feed', '{"pending_payments": true}', false) on conflict (key) do update set value = website_settings.value || excluded.value;` });
   await new Promise((r) => mock.listen(MOCK_PORT, "127.0.0.1", r));
   // Quiet the queue: earlier local test runs left unsent rows (Telegram was not configured).
   sql("update notifications_outbox set status = 'dead', last_error = 'e2e reset' where status in ('pending','failed','processing'); delete from rate_limits;");

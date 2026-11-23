@@ -87,7 +87,7 @@ async function passwordStep(page, email, password) {
     o.on("dialog", (d) => d.accept());
     await adminLogin(o, B, OWNER.email, OWNER.password);
     await o.goto(`${B}/admin/staff`);
-    const row = o.locator("tr", { hasText: `User ID ${sql(`select member_id from customer_accounts where id = '${staffId}'`)}` });
+    const row = o.locator("tr", { hasText: `${sql(`select member_id from customer_accounts where id = '${staffId}'`)}` });
     check(await row.locator("text=On").count() >= 1, "Staff page shows two-step login is on");
     await row.locator("button:has-text('Reset')").last().click();
     await toast(o, "Two-step login reset");

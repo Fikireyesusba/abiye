@@ -60,7 +60,7 @@ const toast = (p, t) => p.waitForSelector(`[data-sonner-toast]:has-text("${t}")`
     const uid = await ensureCustomer(mail, "PermE2E2026x");
     sql(`insert into profiles (id, full_name, role_id) values ('${uid}', 'Perm Person', (select id from admin_roles where key = 'staff'))`);
     await o.goto(`${B}/admin/staff`);
-    const row = o.locator(`tr:has-text("User ID ${midOf(mail)}")`);
+    const row = o.locator(`tr:has-text("${midOf(mail)}")`);
     await row.locator("select[name=role]").selectOption(roleKey);
     await row.locator("form:has(select[name=role]) button[type=submit]").click();
     await toast(o, "updated");

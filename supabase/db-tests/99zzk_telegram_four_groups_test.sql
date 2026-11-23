@@ -12,7 +12,12 @@ select private.enqueue_notification('payment_resubmitted', 'x:5', '{}');
 select private.enqueue_notification('wallet_topup', 'x:6', '{}');
 select private.enqueue_notification('printing_request', 'x:7', '{}');
 select pg_temp.ok((select array_agg(event_type order by event_type) from public.notifications_outbox)
-                  = array['new_order', 'payment_resubmitted', 'payment_verified', 'wallet_topup'], 'only payments / top-ups to verify and completed payments (no printing requests)');
+                  = array['payment_verified'], 'defaults (0057): only approved payments; waiting-for-approval alerts and printing requests off');
+delete from public.notifications_outbox;
+insert into public.website_settings (key, value, is_public) values ('telegram_feed', '{"pending_payments": true}', false);
+select private.enqueue_notification('new_order', 'x:4b', '{}');
+select private.enqueue_notification('wallet_topup', 'x:6b', '{}');
+select pg_temp.ok((select count(*) from public.notifications_outbox where dedupe_key in ('x:4b', 'x:6b')) = 2, 'waiting-for-approval alerts can be switched on');
 select pg_temp.login(:super);
 select public.admin_set_telegram_feed(true, true, false, true, false);
 reset role;

@@ -56,8 +56,8 @@ select public.create_order_for_user(:customer, pg_temp.order_payload('b9900000-0
 select public.submit_payment(jsonb_build_object('order_id', (select id from public.orders where idempotency_key = 'b9900000-0000-0000-0000-000000000001'),
   'access_token_hash', pg_temp.hash('tok-b9900000-0000-0000-0000-000000000001'),
   'receipt', jsonb_build_object('path', 'orders/p/r9.pdf', 'mime', 'application/pdf', 'size', 5000, 'sha256', repeat('9', 64))));
-select pg_temp.ok((select count(*) from public.notifications_outbox where event_type = 'printing_document' and payload ->> 'job_id' = 'c9900000-0000-0000-0000-000000000001') = 1,
-  'payment submitted: the document goes to the printing group');
+select pg_temp.ok((select count(*) from public.notifications_outbox where event_type = 'printing_document' and payload ->> 'job_id' = 'c9900000-0000-0000-0000-000000000001') = 0,
+  'payment submitted: no document in Telegram yet (sent once approved, 0057)');
 reset role;
 select pg_temp.login(:super);
 select public.admin_review_payment((select s.id from public.payment_submissions s join public.orders o on o.id = s.order_id where o.idempotency_key = 'b9900000-0000-0000-0000-000000000001'),
@@ -66,9 +66,7 @@ reset role;
 select pg_temp.ok((select status from public.printing_jobs where id = 'c9900000-0000-0000-0000-000000000001') = 'cancelled'
   and (select status from public.orders where idempotency_key = 'b9900000-0000-0000-0000-000000000001') = 'cancelled', 'payment rejected: printing job and order cancelled');
 select pg_temp.ok((select files_delete_after <= now() from public.printing_jobs where id = 'c9900000-0000-0000-0000-000000000001'), 'its documents are due for deletion now');
-select pg_temp.ok(not exists (select 1 from public.printing_files_due_for_deletion(100) where job_id = 'c9900000-0000-0000-0000-000000000001'), '…after their Telegram copy is sent');
-update public.notifications_outbox set status = 'sent', sent_at = now() where event_type = 'printing_document' and payload ->> 'job_id' = 'c9900000-0000-0000-0000-000000000001';
-select pg_temp.ok(exists (select 1 from public.printing_files_due_for_deletion(100) where job_id = 'c9900000-0000-0000-0000-000000000001'), 'then deleted from storage (kept in Telegram)');
+select pg_temp.ok(exists (select 1 from public.printing_files_due_for_deletion(100) where job_id = 'c9900000-0000-0000-0000-000000000001'), 'deleted from storage right away');
 
 -- ---------------------------------------------------------------- support tickets
 select pg_temp.login(:customer);

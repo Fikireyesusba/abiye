@@ -93,7 +93,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/user
           <StatCard label="Staff signed in" value={new Set(rows.filter((r) => r.is_staff).map((r) => r.user_id)).size} />
         </div>
         <Search />
-        <Table scroll head={["User", "Signed in", "Last active", "Device", ""]} empty="Nobody is signed in.">
+        <Table scroll head={["User ID", "Signed in", "Last active", "Device", ""]} empty="Nobody is signed in.">
           {rows.map((r) => (
             <tr key={r.session_id} data-row>
               <Td><Person r={r} /></Td>
@@ -129,7 +129,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/user
           <label className="text-sm">Or: not signed in since<input type="date" name="before" defaultValue={before} max={today} className={`${fieldClass} mt-1 block`} /></label>
         </>} />
         <p className="mb-2 text-sm text-muted-foreground" data-testid="last-count">{rows.length} account(s){from || to ? ` signed in ${from || "…"} to ${to || "…"}` : ""}{before ? ` not signed in since ${before}` : ""}.</p>
-        <Table scroll head={["User", "Last sign-in", "Account created", "Now"]} empty="No accounts match.">
+        <Table scroll head={["User ID", "Last sign-in", "Account created", "Now"]} empty="No accounts match.">
           {rows.map((r) => (
             <tr key={r.user_id} data-row>
               <Td><Person r={r} /></Td>
@@ -157,7 +157,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/user
         </div>
         <Search />
         <p className="mb-3 text-sm text-muted-foreground">A device is counted the first time the installed app (home-screen shortcut) is opened on it. If nobody signed in on that device yet, it shows as “Not signed in”.</p>
-        <Table scroll head={["User", "Device", "Installed (first opened)", "Last opened", "Opens"]} empty="Nobody has opened the installed app yet.">
+        <Table scroll head={["User ID", "Device", "Installed (first opened)", "Last opened", "Opens"]} empty="Nobody has opened the installed app yet.">
           {rows.map((r) => (
             <tr key={r.device_id} data-row>
               <Td>{r.user_id ? <Person r={r} /> : <span className="text-muted-foreground">Not signed in</span>}</Td>

@@ -78,7 +78,7 @@ export default async function StaffPage({ searchParams }: PageProps<"/admin/staf
       <PageHeader title="Staff" description="Who can sign in to this dashboard and what they can do." />
       <SubTabs base="/admin/staff" tabs={TABS} active={tab} />
       {tab === "team" && (
-        <Table scroll head={["User", "Role", "Access", "Password", "Two-step login", "Delete"]}>
+        <Table scroll head={["User ID", "Role", "Access", "Password", "Two-step login", "Delete"]}>
           {current.map((p) => {
             const self = p.id === ctx.userId;
             const roleKey = (p.role as unknown as { key: string } | null)?.key ?? "staff";
@@ -216,7 +216,7 @@ export default async function StaffPage({ searchParams }: PageProps<"/admin/staf
             const mine = new Set((personal ?? []).filter((x) => x.profile_id === p.id).map((x) => x.permission_key));
             return (
               <details key={p.id} data-row className="rounded-xl border bg-card p-4" data-member={email.get(p.id)}>
-                <summary className="cursor-pointer text-sm"><span className="font-mono font-medium">User ID {memberId.get(p.id) ?? "—"}</span> <span className="text-muted-foreground">· {set?.label}{mine.size ? ` · +${mine.size} personal` : ""}</span></summary>
+                <summary className="cursor-pointer text-sm"><span className="font-mono font-medium">{memberId.get(p.id) ?? "—"}</span> <span className="text-muted-foreground">· {set?.label}{mine.size ? ` · +${mine.size} personal` : ""}</span></summary>
                 <ActionForm action={setMemberPermissions} hidden={{ userId: p.id }} submitLabel="Save personal permissions" size="sm" className="mt-3 space-y-3">
                   {permBoxes((k) => mine.has(k) || !!set?.perms.has(k), (k) => !!set?.perms.has(k))}
                 </ActionForm>

@@ -84,7 +84,7 @@ async function waitFor(fn, tries = 30) {
     const op = await (await b.newContext()).newPage();
     await adminLogin(op, B, OWNER.email, OWNER.password);
     check(await op.locator("a:has-text('Stalled checkouts (2h+)')").count() === 1, "dashboard shows stalled checkouts");
-    const midOf = (e) => `User ID ${sql(`select a.member_id from customer_accounts a join auth.users u on u.id = a.id where u.email = '${e}'`)}`;
+    const midOf = (e) => `${sql(`select a.member_id from customer_accounts a join auth.users u on u.id = a.id where u.email = '${e}'`)}`;
     await op.goto(`${B}/admin/follow-up?tab=baskets`);
     const basketRow = op.locator("section:has(h2:has-text('Baskets')) tr", { hasText: midOf(aEmail) });
     check(await basketRow.count() === 1 && (await basketRow.innerText()).includes("3 ×"), "follow-up lists the abandoned basket with items");
@@ -140,7 +140,7 @@ async function waitFor(fn, tries = 30) {
     // activity log
     await op.goto(`${B}/admin/activity?cat=customers`);
     const log = await op.locator("table").innerText();
-    check(log.includes("Account deactivated") && log.includes(`User ID ${sql(`select member_id from customer_accounts a join auth.users u on u.id = a.id where u.email = '${aEmail}'`)}`), "activity log lists the change with the account");
+    check(log.includes("Account deactivated") && log.includes(`${sql(`select member_id from customer_accounts a join auth.users u on u.id = a.id where u.email = '${aEmail}'`)}`), "activity log lists the change with the account");
 
     // invite, resend, delete
     await op.goto(`${B}/admin/customers`);
