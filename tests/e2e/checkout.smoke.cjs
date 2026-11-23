@@ -149,7 +149,9 @@ function resetSampleStock() {
   await p.waitForSelector(`h2:text("${orderNumber}")`);
   const html = await p.content();
   check(html.includes("Cancelled"), "tracking shows status of the customer's own order");
-  check(!html.includes("Abebe") && !html.includes("911223344") && !html.includes("Bole"), "tracking reveals no name/phone/address");
+  // (The side menu carries the signed-in customer's own name; the tracking result itself shows no personal data.)
+  const result = await p.locator("main").innerText();
+  check(!result.includes("Abebe") && !result.includes("911223344") && !result.includes("Bole"), "tracking result shows no name/phone/address");
   check(await p.locator("#trackingCode").count() === 0, "no tracking code asked");
   const otherOrder = sql("select order_number from orders where user_id is distinct from (select id from auth.users where email = '" + CUSTOMER.email + "') order by created_at desc limit 1");
   if (otherOrder) {
