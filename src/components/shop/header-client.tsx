@@ -4,7 +4,7 @@ import Link from "next/link";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Bell, CircleHelp, Headset, History, Info, Mail, Megaphone, PackageSearch, Printer, ShoppingBag, UserRound, Wallet, X } from "lucide-react";
+import { Bell, CircleHelp, Menu, Headset, History, Info, Mail, Megaphone, PackageSearch, Printer, ShoppingBag, UserRound, Wallet, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartCount } from "@/lib/cart/store";
 import { cn } from "@/lib/utils";
@@ -29,7 +29,7 @@ export function CartButton() {
 export interface DrawerViewer { name: string; email: string; memberId: string | null }
 
 /**
- * Profile icon (top right) → full-height side menu: a header with the customer's name and "View profile",
+ * Menu icon (☰, top left) → full-height side menu: a header with the customer's name and "View profile",
  * one row per section, and a printing card at the bottom. Signed-out visitors get Sign in / Create account.
  */
 export function AccountMenu({ viewer, printingOn }: { viewer: DrawerViewer | null; printingOn: boolean }) {
@@ -71,8 +71,8 @@ export function AccountMenu({ viewer, printingOn }: { viewer: DrawerViewer | nul
   return (
     <>
       <Button variant="ghost" size="icon" aria-label={ta("accountLink")} aria-haspopup="dialog" aria-expanded={open} aria-controls="account-menu"
-        onClick={() => setOpen(true)}>
-        <UserRound className="size-5" />
+        onClick={() => setOpen(true)} className="-ml-2">
+        <Menu className="size-6" />
       </Button>
       {open && createPortal(
         <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={ta("accountLink")}>

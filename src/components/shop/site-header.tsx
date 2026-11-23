@@ -55,6 +55,7 @@ export async function SiteHeader() {
         {t("header.skipToContent")}
       </a>
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-4 sm:gap-4">
+        <AccountMenu viewer={viewer} printingOn={settings.services.printing} />
         <Link href="/" aria-label={name} className="flex shrink-0 items-center gap-2 font-semibold tracking-tight">
           {logo ? (
             <Image src={logo} alt={name} width={120} height={36} className="h-9 w-auto" priority />
@@ -68,7 +69,6 @@ export async function SiteHeader() {
         <MainNav links={links} />
         <SearchForm className="ml-auto hidden w-full max-w-xs md:block" />
         <div className="ml-auto flex items-center gap-1 md:ml-0">
-          <AccountMenu viewer={viewer} printingOn={settings.services.printing} />
           <CartButton />
         </div>
       </div>
