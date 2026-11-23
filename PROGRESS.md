@@ -115,6 +115,13 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - Local dev: sign-ups + email confirmation on, local mail catcher on :54324 (dev:up no longer excludes it).
 - **Production TODO for the owner**: configure SMTP + email templates + URL configuration in Supabase (docs/DEPLOYMENT.md §2b).
 
+## Promotion alerts (security group) and Excel copies through the queue (requested 2026-11-23)
+
+- **Security Telegram group** gets every promotion change: created, changed (what changed), switched on / off, revoked (reason), brought back, deleted, code given to / removed from a customer (User ID, reason), and **code used** when the order is paid (User ID, order, original price, discount, price paid). Who acted = Action by User ID.
+- **Every Excel download** → the file with an alert in the **receipts** group, now through the notification queue: the file waits in the private `excel-exports` bucket, is retried if Telegram fails (visible under Notifications), and is deleted from storage once sent. Needs the receipts bot set up in Vercel (`TELEGRAM_RECEIPTS_BOT_TOKEN`, `TELEGRAM_RECEIPTS_CHAT_ID`).
+- Migration **0064** `20261123000064_promotion_alerts_excel_queue.sql`; tests `supabase/db-tests/99zzz_promotion_alerts_test.sql`, `tests/e2e/telegram-feed.smoke.cjs`, unit `telegram-format.test.ts`.
+- ⏳ Owner: paste **0063**, then **0064** into the Supabase SQL Editor.
+
 ## Excel of promotion uses (requested 2026-11-23)
 
 - **Promotions → Excel** (and Excel exports page → Promotion uses), Super Admin only: every order paid with a promo code whose payment was approved in the chosen dates — User ID, order, promo code, promotion, for whom, discount rule, items, products / delivery, **original price**, **discount**, **price after discount**, paid with, order status, ordered, payment approved, promotion now (active / off / revoked). Copied to the receipts Telegram group like every Excel.
