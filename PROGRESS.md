@@ -121,7 +121,7 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - Checkout: pay with the balance or by bank transfer; when the balance is too small a **Top up** link is shown.
 - Admin Wallet: one search (User ID, email/name on Balances; User ID, top-up number or reference on the top-up tabs); top-up lists show User ID and amount; **Excel** button for the Super Admin only.
 - **Every Excel download is Super Admin only** (with two-step sign-in): all export routes check the role, Excel buttons are hidden for other roles, the Excel exports page is hidden, and `admin_log_export` refuses anyone else (migration **0061** `20261123000061_super_admin_exports.sql`, which also lets the balances search match a User ID).
-- ⏳ Owner: paste **0061** into the Supabase SQL Editor.
+- ✅ 0061 applied in production (owner confirmed 2026-11-23).
 
 ## Telegram alerts: User ID only, type, who acted, suggested action (requested 2026-11-23)
 
