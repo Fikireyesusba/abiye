@@ -1043,6 +1043,11 @@ isOneToOne: false
               "assigned_at": string,"code": string,"email": string,"full_name": string,"member_id": string,"promotion_id": string,"reserved": boolean,"revoked": boolean,"title_en": string,"used": boolean,"used_at": string,"used_order_number": string,"user_id": string
             }[]
                            },
+"admin_promotion_uses":
+{ Args: { "p_from": string,"p_limit"?: number,"p_to": string }; Returns: {
+              "audience": string,"code": string,"delivery_fee_etb": number,"discount_etb": number,"discount_rule": string,"items": string,"member_id": string,"order_number": string,"order_status": string,"ordered_at": string,"original_total_etb": number,"paid_at": string,"payment_method": string,"promotion": string,"promotion_status": string,"subtotal_etb": number,"total_etb": number
+            }[]
+                           },
 "admin_queue_group_test":
 { Args: { "p_group": string }; Returns: undefined
                            },

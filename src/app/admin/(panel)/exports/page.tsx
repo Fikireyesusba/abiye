@@ -22,6 +22,7 @@ const ITEMS: Item[] = [
   { title: "Printing jobs", text: "Printing jobs with options, pages, price and status.", href: "/admin/exports/download", perm: "printing.view", dated: true, extra: { kind: "printing" } },
   { title: "Support tickets", text: "Tickets with topic, details, status, staff, messages and the customer's rating.", href: "/admin/exports/download", perm: "support.view", dated: true, extra: { kind: "support" }, clear: "tickets" },
   { title: "Staff performance", text: "KPIs per staff member with their targets and % reached.", href: "/admin/exports/download", perm: "kpi.view", dated: true, extra: { kind: "kpi" } },
+  { title: "Promotion uses", text: "Every order paid with a promo code: User ID, order, items, original price, discount and price paid.", href: "/admin/exports/download", perm: "promotions.manage", dated: true, extra: { kind: "promotions" } },
   { title: "Activity log", text: "Who did what and when (with User IDs).", href: "/admin/activity/export", perm: "audit.view", dated: true, extra: { type: "" }, clear: "/admin/activity" },
   { title: "Notifications", text: "Every message sent (Telegram, email, phone).", href: "/admin/notifications/export", perm: "settings.manage", dated: true, clear: "/admin/notifications?tab=messages" },
   { title: "Signed-in users", text: "Who is signed in, last sign-in of every account, app installs.", href: "/admin/users/export", perm: "security.manage", extra: { tab: "last" } },
@@ -31,7 +32,7 @@ const ITEMS: Item[] = [
 /** Every Excel export in one place. Each export is recorded and a copy goes to the receipts Telegram group. */
 export default async function ExportsPage() {
   const ctx = await requirePermission("orders.view_all", "payments.view", "customers.view", "products.view", "wallet.manage", "printing.view",
-    "support.view", "audit.view", "settings.manage", "security.manage", "data.manage", "kpi.view");
+    "support.view", "audit.view", "settings.manage", "security.manage", "data.manage", "kpi.view", "promotions.manage");
   if (ctx.role !== "super_admin") notFound(); // Excel downloads: Super Admin only
   const today = zoneToday();
   const monthStart = `${today.slice(0, 7)}-01`;

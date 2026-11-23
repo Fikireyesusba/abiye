@@ -22,6 +22,7 @@ const KINDS: Record<string, { perm: Permission; title: string; dated: boolean }>
   wallet: { perm: "wallet.manage", title: "Wallet", dated: true },
   printing: { perm: "printing.view", title: "Printing jobs", dated: true },
   kpi: { perm: "kpi.view", title: "Staff performance (KPIs)", dated: true },
+  promotions: { perm: "promotions.manage", title: "Promotion uses", dated: true },
 };
 type Sheet = { name: string; columns: { header: string; width: number }[]; rows: unknown[][] };
 
@@ -140,6 +141,24 @@ export async function GET(request: Request) {
         }),
         Number(r.ticket_replies), r.ticket_rating === null ? "" : Number(r.ticket_rating), Number(r.order_steps), Number(r.payments_rejected),
         Number(r.topups_rejected), Number(r.instore_sales_etb)]),
+    });
+  } else if (kind === "promotions") {
+    // Orders paid with a promo code (payment approved in the chosen dates): before / after the discount.
+    const { data, error } = await supabase.rpc("admin_promotion_uses", { p_from: pFrom!, p_to: pTo!, p_limit: 20000 });
+    if (error) return fail("promotion uses");
+    sheets.push({
+      name: "Promotion uses",
+      columns: [
+        { header: "User ID", width: 9 }, { header: "Order", width: 12 }, { header: "Promo code", width: 18 }, { header: "Promotion", width: 24 },
+        { header: "For", width: 18 }, { header: "Discount rule", width: 13 }, { header: "Items", width: 50 },
+        { header: "Products (ETB)", width: 13 }, { header: "Delivery (ETB)", width: 12 }, { header: "Original price (ETB)", width: 16 },
+        { header: "Discount (ETB)", width: 13 }, { header: "Price after discount (ETB)", width: 20 }, { header: "Paid with", width: 12 },
+        { header: "Order status", width: 14 }, { header: "Ordered", width: 17 }, { header: "Payment approved", width: 17 }, { header: "Promotion now", width: 13 },
+      ],
+      rows: (data ?? []).map((r) => [r.member_id ?? "", r.order_number, r.code ?? "", r.promotion, r.audience, r.discount_rule, r.items ?? "",
+        Number(r.subtotal_etb), Number(r.delivery_fee_etb), Number(r.original_total_etb), Number(r.discount_etb), Number(r.total_etb),
+        r.payment_method === "wallet" ? "Balance" : r.payment_method === "bank_transfer" ? "Bank transfer" : r.payment_method, r.order_status,
+        at(r.ordered_at), at(r.paid_at), r.promotion_status]),
     });
   } else if (kind === "printing") {
     const { data, error } = await supabase.from("printing_jobs")

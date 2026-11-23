@@ -5,6 +5,7 @@
  *   NODE_PATH=$(npm root -g) node --env-file=.env.local tests/e2e/personal-promo.smoke.cjs
  */
 const { chromium } = require("playwright");
+const ExcelJS = require("exceljs");
 const { adminLogin } = require("./_admin.cjs");
 const { execSync } = require("child_process");
 const { ensureCustomer, loginCustomer } = require("./_customer.cjs");
@@ -139,11 +140,41 @@ async function tryCode(page, code) {
     await cp.goto(`${B}/account/offers`);
     check(!(await cp.locator("main").innerText()).includes(CODE), "a revoked code disappears for the customer");
     check(await tryCode(cp, CODE) === "error", "a revoked code no longer works at checkout");
+
+    // Excel of codes used (Super Admin): User ID, order, original price, discount, price paid
+    // (a real order with a code for everyone, its payment approved)
+    sql(`insert into promotions (title_en, title_am, code, discount_type, discount_value) values ('Paid ${RUN}', 'Paid ${RUN}', 'PAID${RUN.toUpperCase()}', 'fixed', 100)`);
+    const paid = JSON.parse(sql(`set role service_role; select public.create_order_for_user('${vipId}', jsonb_build_object('idempotency_key', gen_random_uuid(),
+      'access_token_hash', encode(sha256(gen_random_uuid()::text::bytea), 'hex'), 'tracking_code_hash', encode(sha256(gen_random_uuid()::text::bytea), 'hex'),
+      'locale', 'en', 'customer', jsonb_build_object('full_name', 'VIP', 'phone', '+251911223344'), 'fulfillment', jsonb_build_object('method', 'pickup'),
+      'items', jsonb_build_array(jsonb_build_object('type', 'product', 'product_id', (select id from products where sku = 'SMP-CH-001'), 'quantity', 1)),
+      'promotion_code', 'PAID${RUN.toUpperCase()}'))`).split("\n").pop());
+    sql(`update orders set status = 'confirmed', payment_status = 'verified', payment_verified_at = now() where id = '${paid.order_id}'`);
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw" }).format(new Date());
+    await op.goto(`${B}/admin/promotions`);
+    const exp = op.locator("[data-testid=promo-uses-export]");
+    await exp.locator("input[name=from]").fill(today);
+    await exp.locator("input[name=to]").fill(today);
+    const [dl] = await Promise.all([op.waitForEvent("download"), exp.locator("button:has-text('Excel')").click()]);
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.readFile(await dl.path());
+    const ws = wb.getWorksheet("Promotion uses");
+    const heads = ws.getRow(1).values.slice(1);
+    const rows = [];
+    ws.eachRow((r, i) => { if (i > 1) rows.push(r.values.slice(1)); });
+    const expected = Number(sql(`select count(*) from orders where promotion_id is not null and payment_verified_at >= (timestamp '${today} 00:00' at time zone 'Europe/Warsaw')`));
+    check(["User ID", "Order", "Promo code", "Original price (ETB)", "Discount (ETB)", "Price after discount (ETB)"].every((h) => heads.includes(h)) && rows.length === expected,
+      `promotion uses Excel: User ID, order, original price, discount, price paid (${rows.length} row(s))`);
+    const iO = heads.indexOf("Original price (ETB)"), iD = heads.indexOf("Discount (ETB)"), iA = heads.indexOf("Price after discount (ETB)");
+    check(rows.every((r) => Math.abs(r[iO] - r[iD] - r[iA]) < 0.01 && /^[1-9][0-9]{5}$/.test(String(r[0]))), "each row: original − discount = price paid, User ID only");
+    const mine = rows.find((r) => r[heads.indexOf("Order")] === paid.order_number);
+    check(!!mine && String(mine[0]) === vipMember && mine[iD] === 100 && mine[iA] === mine[iO] - 100 && mine[heads.indexOf("Promo code")] === `PAID${RUN.toUpperCase()}`,
+      `the paid order is listed: ${paid.order_number}, User ID ${vipMember}, 100 ETB off`);
   } catch (e) {
     check(false, `crashed: ${e.message}`);
   } finally {
     await b.close();
-    sql(`update promotions set is_active = false where code in ('${CODE}', '${CODE2}')`);
+    sql(`update promotions set is_active = false where code in ('${CODE}', '${CODE2}', 'PAID${RUN.toUpperCase()}')`);
   }
   console.log(results.join("\n"));
   const failed = results.filter((r) => r.startsWith("FAIL")).length;

@@ -41,6 +41,20 @@ select pg_temp.ok((select used and not reserved and used_order_number is not nul
 select pg_temp.throws($$select public.admin_unassign_promotion('62000000-0000-0000-0000-000000000001', 'cccccccc-0000-0000-0000-000000000001', 'Changed my mind')$$,
   'promo_in_use', 'a used code stays with the customer');
 reset role;
+-- Excel of promotion uses (0063): only approved payments, original price and price after the discount
+select pg_temp.login(:super);
+create temp table t_uses as select * from public.admin_promotion_uses(now() - interval '1 hour', now() + interval '1 hour');
+select public.admin_log_export('promotions', '{"rows":1}');
+reset role;
+select pg_temp.ok((select count(*) from t_uses where code = 'GIFT62') = 1 and (select count(*) from t_uses where code = 'ALL62') = 0,
+  'promotion uses: only orders whose payment was approved');
+select pg_temp.ok((select member_id = (select member_id::text from public.customer_accounts where id = :customer) and audience = 'Selected customers'
+                     and original_total_etb = subtotal_etb + delivery_fee_etb and total_etb = original_total_etb - discount_etb and discount_etb > 0
+                     and items like '1 × %' and discount_rule = '10% off'
+                   from t_uses where code = 'GIFT62'), 'promotion uses: User ID, items, original price, discount and price paid');
+select pg_temp.login(:staff);
+select pg_temp.throws($$select * from public.admin_promotion_uses(now() - interval '1 day', now())$$, 'forbidden', 'staff cannot list promotion uses');
+reset role;
 select pg_temp.login(:customer);
 select pg_temp.ok((select count(*) from public.my_offers()) = 0, 'a used code disappears from the customer''s account');
 reset role;

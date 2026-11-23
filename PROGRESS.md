@@ -115,6 +115,12 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - Local dev: sign-ups + email confirmation on, local mail catcher on :54324 (dev:up no longer excludes it).
 - **Production TODO for the owner**: configure SMTP + email templates + URL configuration in Supabase (docs/DEPLOYMENT.md §2b).
 
+## Excel of promotion uses (requested 2026-11-23)
+
+- **Promotions → Excel** (and Excel exports page → Promotion uses), Super Admin only: every order paid with a promo code whose payment was approved in the chosen dates — User ID, order, promo code, promotion, for whom, discount rule, items, products / delivery, **original price**, **discount**, **price after discount**, paid with, order status, ordered, payment approved, promotion now (active / off / revoked). Copied to the receipts Telegram group like every Excel.
+- Migration **0063** `20261123000063_promotion_uses_export.sql` (`admin_promotion_uses`; export kind `promotions`).
+- ⏳ Owner: paste **0063** into the Supabase SQL Editor.
+
 ## Promotion rules: audience, once per customer, revoke / remove with a reason, Super Admin delete (requested 2026-11-23)
 
 - **Who can use it:** Every customer, or Selected customers only (personal code, given by User ID or email). A personal code given to customers cannot be switched to "every customer".

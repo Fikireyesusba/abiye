@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { UserIdLink } from "@/components/admin/user-id";
 import { assignPromotion, deleteBanner, deletePromotion, revokePromotion, savePromotion, unassignPromotion } from "@/lib/admin/promotion-actions";
 import { requirePermission } from "@/lib/auth/guards";
-import { formatDateTime, toZoneInput } from "@/lib/datetime";
+import { Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { formatDateTime, toZoneInput, zoneToday } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
 import { publicImageUrl } from "@/lib/storage";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -127,6 +129,15 @@ export default async function PromotionsPage({ searchParams }: PageProps<"/admin
       {tab === "codes" && (
       <section className="space-y-4">
         {(promos ?? []).length === 0 && <p className="text-sm text-muted-foreground">No promotions yet.</p>}
+        {superAdmin && (
+          <form method="get" action="/admin/exports/download" className="flex flex-wrap items-end gap-2 rounded-lg border bg-card p-3" data-testid="promo-uses-export">
+            <input type="hidden" name="kind" value="promotions" />
+            <p className="w-full text-sm font-medium">Excel: codes used (payment approved) — User ID, order, original price, discount, price paid</p>
+            <label className="text-xs">From<input type="date" name="from" required defaultValue={`${zoneToday().slice(0, 7)}-01`} className={`${fieldClass} mt-1 block h-8`} /></label>
+            <label className="text-xs">To<input type="date" name="to" required defaultValue={zoneToday()} className={`${fieldClass} mt-1 block h-8`} /></label>
+            <Button type="submit" variant="outline" size="sm"><Download /> Excel</Button>
+          </form>
+        )}
         <Frame search="Search promotions (title, code, customer)…" className="p-2">
         <ul className="space-y-3">
           {((promos ?? []) as Promo[]).map((p) => (
