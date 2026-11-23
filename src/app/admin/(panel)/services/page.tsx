@@ -46,11 +46,8 @@ export default async function ManageServicesPage() {
             ))}
           </ul>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Message to customers (English, optional)" htmlFor="note_en" hint="Shown with “temporarily unavailable”, e.g. “Back on Monday.”">
+            <Field label="Message to customers (optional)" htmlFor="note_en" hint="Shown with “temporarily unavailable”, e.g. “Back on Monday.”">
               <input id="note_en" name="note_en" maxLength={300} defaultValue={services.note.en} className={fieldClass} />
-            </Field>
-            <Field label="Message to customers (Amharic, optional)" htmlFor="note_am">
-              <input id="note_am" name="note_am" maxLength={300} defaultValue={services.note.am} lang="am" className={fieldClass} />
             </Field>
           </div>
         </ActionForm>

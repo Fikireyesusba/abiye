@@ -66,7 +66,6 @@ async function watchCsp(context) {
 
     await op.goto(`${B}/admin/promotions?tab=new`);
     await op.fill("#pt-en-new", `Phase seven ${RUN}`);
-    await op.fill("#pt-am-new", "የሙከራ ቅናሽ");
     await op.fill("#pc-new", CODE.toLowerCase());
     await op.fill("#pd-en-new", "Ten percent off everything");
     await op.fill("#pdv-new", "10");
@@ -77,7 +76,6 @@ async function watchCsp(context) {
 
     await op.goto(`${B}/admin/promotions?tab=new-banner`);
     await op.fill("#bt-en-new", `Banner ${RUN}`);
-    await op.fill("#bt-am-new", "ማስታወቂያ");
     await op.fill("#bl-new", "/electronics");
     await op.setInputFiles("#bi-new", bannerFile);
     await op.click("button:has-text('Create banner')");
@@ -86,7 +84,6 @@ async function watchCsp(context) {
     check(/^banners\/[0-9a-f-]{36}\.png$/.test(bannerPath), "banner image uploaded to storage");
     await op.setInputFiles("#bi-new", { name: "fake.png", mimeType: "image/png", buffer: Buffer.from("not really a png at all, just text") });
     await op.fill("#bt-en-new", "Fake");
-    await op.fill("#bt-am-new", "Fake");
     await op.click("button:has-text('Create banner')");
     await toast(op, "not a valid");
     check(sql("select count(*) from homepage_banners where title_en = 'Fake'") === "0", "a fake image is rejected by content check");

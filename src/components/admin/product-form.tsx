@@ -20,8 +20,7 @@ export function ProductForm({ values = {}, categories }: {
   return (
     <ActionForm action={saveProduct} hidden={{ id: values.id ?? "" }} submitLabel={isNew ? "Create product" : "Save changes"} className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2">
-        <Field label="Name (English)" htmlFor="name_en"><Input id="name_en" name="name_en" required maxLength={160} defaultValue={values.name_en} /></Field>
-        <Field label="Name (Amharic)" htmlFor="name_am"><Input id="name_am" name="name_am" required maxLength={160} defaultValue={values.name_am} lang="am" /></Field>
+        <Field label="Name" htmlFor="name_en"><Input id="name_en" name="name_en" required maxLength={160} defaultValue={values.name_en} /></Field>
         <Field label="SKU" htmlFor="sku" hint="Unique stock code, e.g. PF-OUD-100"><Input id="sku" name="sku" required maxLength={40} defaultValue={values.sku} /></Field>
         <Field label="URL slug" htmlFor="slug" hint="Leave empty to generate from the English name"><Input id="slug" name="slug" maxLength={100} defaultValue={values.slug} /></Field>
         <Field label="Category" htmlFor="category_id">
@@ -49,8 +48,7 @@ export function ProductForm({ values = {}, categories }: {
         </Field>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
-        <Field label="Description (English)" htmlFor="description_en"><Textarea id="description_en" name="description_en" rows={5} maxLength={5000} defaultValue={values.description_en} /></Field>
-        <Field label="Description (Amharic)" htmlFor="description_am"><Textarea id="description_am" name="description_am" rows={5} maxLength={5000} defaultValue={values.description_am} lang="am" /></Field>
+        <Field label="Description" htmlFor="description_en"><Textarea id="description_en" name="description_en" rows={5} maxLength={5000} defaultValue={values.description_en} /></Field>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         <Field label="Status" htmlFor="status" hint="Only Active products are visible in the shop">

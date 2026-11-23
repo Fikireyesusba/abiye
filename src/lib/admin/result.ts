@@ -39,5 +39,11 @@ const ADMIN_MESSAGES: Record<string, string> = {
 export function formObject(fd: FormData): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [k, v] of fd.entries()) if (typeof v === "string") out[k] = v;
+  // The website is English only: an Amharic field (…_am) the form no longer shows gets the English text.
+  for (const k of Object.keys(out)) {
+    if (!k.endsWith("_en")) continue;
+    const am = `${k.slice(0, -3)}_am`;
+    if (!out[am]?.trim()) out[am] = out[k];
+  }
   return out;
 }

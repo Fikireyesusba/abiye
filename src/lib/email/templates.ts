@@ -1,5 +1,5 @@
 /**
- * Customer notification emails (English + Amharic in every message, like the
+ * Customer notification emails (English only since 2026-11-23; the Amharic parts below are no longer sent), like the
  * account emails). Pure functions: no I/O, all values HTML-escaped.
  */
 import { formatETB, toSantim } from "@/lib/money";
@@ -237,9 +237,13 @@ function spec(row: EmailRow, ctx: EmailContext): Spec | null {
 }
 
 /** null for unknown event types (the worker drops them). */
+/** English only: drop a " / Amharic" ending from a label or subject. */
+const englishOnly = (v: string) => v.replace(/\s+\/\s+[^/]*[\u1200-\u137F][\s\S]*$/, "");
+
 export function buildCustomerEmail(row: EmailRow, ctx: EmailContext): BuiltEmail | null {
-  const s = spec(row, ctx);
-  if (!s) return null;
+  const spec0 = spec(row, ctx);
+  if (!spec0) return null;
+  const s: Spec = { ...spec0, am: undefined, details: spec0.details?.map(([k, v]) => [englishOnly(k), englishOnly(v)] as [string, string]) };
   const name = esc(ctx.business.en);
   const section = (part: Part, lang: "en" | "am") =>
     `<div lang="${lang}" style="margin:0 0 24px"><h2 style="font-size:18px;margin:0 0 12px;color:#14523f">${part.title}</h2>` +
@@ -250,23 +254,24 @@ export function buildCustomerEmail(row: EmailRow, ctx: EmailContext): BuiltEmail
       `</table>`
     : "";
   const button = s.button
-    ? `<p style="margin:0 0 28px"><a href="${esc(s.button.href)}" style="display:inline-block;background:#14523f;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600">${esc(s.button.en)}${s.button.am ? ` · ${esc(s.button.am)}` : ""}</a></p>`
+    ? `<p style="margin:0 0 28px"><a href="${esc(s.button.href)}" style="display:inline-block;background:#14523f;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600">${esc(s.button.en)}</a></p>`
     : "";
   const contact = ctx.phone ? ` · ${esc(ctx.phone)}` : "";
   const html =
-    `<!doctype html><html><body style="margin:0;background:#f6f5f1;font-family:Arial,'Noto Sans Ethiopic',sans-serif;color:#1a1a1a">` +
+    `<!doctype html><html><body style="margin:0;background:#f6f5f1;font-family:Arial,sans-serif;color:#1a1a1a">` +
     `<div style="max-width:560px;margin:0 auto;padding:24px"><div style="background:#fff;border-radius:12px;padding:28px">` +
     `<p style="margin:0 0 20px;font-weight:700;font-size:20px;color:#14523f">${name}</p>` +
-    section(s.en, "en") + details + (s.am ? section(s.am, "am") : "") + button +
+    section(s.en, "en") + details + button +
     `<p style="margin:0;color:#777;font-size:12px;line-height:1.5">${name}${contact} · <a href="${esc(ctx.appUrl)}/contact" style="color:#14523f">${esc(ctx.appUrl.replace(/^https?:\/\//, ""))}/contact</a><br>` +
-    (s.staff ? "Staff alert: you receive this because your role manages stock." : `You receive this email because you placed an order or asked us to. · ይህን ኢሜይል የተቀበሉት ትዕዛዝ ስላስገቡ ወይም ስለጠየቁ ነው።`) + `</p>` +
+    (s.staff ? "Staff alert: you receive this because your role manages stock." : "You receive this email because you placed an order or asked us to.") + `</p>` +
     `</div></div></body></html>`;
   const plain = (h: string) => h.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
   const text = [
     ctx.business.en, "", plain(s.en.title), ...s.en.lines.map(plain), "",
     ...(s.details ?? []).map(([k, v]) => `${k}: ${plain(v)}`), s.details?.length ? "" : null,
-    ...(s.am ? [plain(s.am.title), ...s.am.lines.map(plain), ""] : []),
     s.button ? `${s.button.en}: ${s.button.href}` : null,
   ].filter((x) => x !== null).join("\n");
-  return { subject: plain(s.subject).slice(0, 200), html, text };
+  // English only: drop the " / Amharic" part of the subject.
+  const subject = englishOnly(plain(s.subject));
+  return { subject: subject.slice(0, 200), html, text };
 }

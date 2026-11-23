@@ -16,13 +16,10 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Settings" };
 
-function Bilingual({ name, label, en, am, area }: { name: string; label: string; en?: string; am?: string; area?: boolean }) {
+function Bilingual({ name, label, en, area }: { name: string; label: string; en?: string; am?: string; area?: boolean }) {
   const C = area ? Textarea : Input;
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      <Field label={`${label} (English)`}><C name={`${name}_en`} defaultValue={en} maxLength={500} /></Field>
-      <Field label={`${label} (Amharic)`}><C name={`${name}_am`} defaultValue={am} maxLength={500} lang="am" /></Field>
-    </div>
+    <Field label={label}><C name={`${name}_en`} defaultValue={en} maxLength={500} /></Field>
   );
 }
 
@@ -124,12 +121,9 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
               Customers must accept the terms when they sign up and at checkout.
             </p>
             {(["terms", "privacy"] as const).map((doc) => (
-              <div key={doc} className="grid gap-3 lg:grid-cols-2">
-                <Field label={`${doc === "terms" ? "Terms & conditions" : "Privacy policy"} (English)`}>
+              <div key={doc}>
+                <Field label={doc === "terms" ? "Terms & conditions" : "Privacy policy"}>
                   <Textarea name={`${doc}_en`} rows={14} maxLength={30000} defaultValue={s.legal[doc].en} className="font-mono text-xs" />
-                </Field>
-                <Field label={`${doc === "terms" ? "Terms & conditions" : "Privacy policy"} (Amharic)`}>
-                  <Textarea name={`${doc}_am`} rows={14} maxLength={30000} defaultValue={s.legal[doc].am} lang="am" className="font-mono text-xs" />
                 </Field>
               </div>
             ))}
@@ -166,8 +160,7 @@ type Bank = Database["public"]["Tables"]["bank_accounts"]["Row"];
 function ZoneFields({ z }: { z?: Zone }) {
   return (
     <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
-      <Field label="City (English)" className="lg:col-span-2"><Input name="name_en" required defaultValue={z?.name_en} maxLength={80} /></Field>
-      <Field label="City (Amharic)"><Input name="name_am" required defaultValue={z?.name_am} maxLength={80} lang="am" /></Field>
+      <Field label="City" className="lg:col-span-2"><Input name="name_en" required defaultValue={z?.name_en} maxLength={80} /></Field>
       <Field label="Fee (ETB)"><Input name="fee_etb" type="number" min={0} step="0.01" required defaultValue={z?.fee_etb} /></Field>
       <Field label="Estimate"><Input name="estimated_days" defaultValue={z?.estimated_days ?? ""} placeholder="1–2 days" maxLength={40} /></Field>
       <Field label="Order"><Input name="sort_order" type="number" min={0} defaultValue={z?.sort_order ?? 0} /></Field>
@@ -186,8 +179,7 @@ function BankFields({ b }: { b?: Bank }) {
         <Field label="Branch (optional)"><Input name="branch" defaultValue={b?.branch ?? ""} maxLength={80} /></Field>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Instructions (English)"><Textarea name="instructions_en" rows={2} defaultValue={b?.instructions_en} maxLength={1000} /></Field>
-        <Field label="Instructions (Amharic)"><Textarea name="instructions_am" rows={2} defaultValue={b?.instructions_am} maxLength={1000} lang="am" /></Field>
+        <Field label="Instructions"><Textarea name="instructions_en" rows={2} defaultValue={b?.instructions_en} maxLength={1000} /></Field>
       </div>
       <div className="flex flex-wrap items-end gap-4">
         <Field label="Order shown"><Input name="sort_order" type="number" min={0} max={100} defaultValue={b?.sort_order ?? 0} className="w-24" /></Field>

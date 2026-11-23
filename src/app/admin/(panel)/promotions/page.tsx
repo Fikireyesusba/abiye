@@ -27,13 +27,11 @@ function PromotionFields({ p, categories, products }: { p?: Promo; categories: O
   const scope = p?.product_id ? "product" : p?.category_id ? "category" : "all";
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <Field label="Title (English)" htmlFor={`pt-en-${id}`}><input id={`pt-en-${id}`} name="title_en" required maxLength={120} defaultValue={p?.title_en} className={fieldClass} /></Field>
-      <Field label="Title (Amharic)" htmlFor={`pt-am-${id}`}><input id={`pt-am-${id}`} name="title_am" required maxLength={120} defaultValue={p?.title_am} lang="am" className={fieldClass} /></Field>
+      <Field label="Title" htmlFor={`pt-en-${id}`}><input id={`pt-en-${id}`} name="title_en" required maxLength={120} defaultValue={p?.title_en} className={fieldClass} /></Field>
       <Field label="Promo code" htmlFor={`pc-${id}`} hint="Customers type this at checkout. Empty = announcement only.">
         <input id={`pc-${id}`} name="code" maxLength={30} defaultValue={p?.code ?? ""} placeholder="e.g. WELCOME10" className={`${fieldClass} uppercase`} />
       </Field>
-      <Field label="Description (English)" htmlFor={`pd-en-${id}`} className="sm:col-span-2 lg:col-span-1"><input id={`pd-en-${id}`} name="description_en" maxLength={500} defaultValue={p?.description_en} className={fieldClass} /></Field>
-      <Field label="Description (Amharic)" htmlFor={`pd-am-${id}`} className="sm:col-span-2 lg:col-span-1"><input id={`pd-am-${id}`} name="description_am" maxLength={500} defaultValue={p?.description_am} lang="am" className={fieldClass} /></Field>
+      <Field label="Description" htmlFor={`pd-en-${id}`} className="sm:col-span-2 lg:col-span-1"><input id={`pd-en-${id}`} name="description_en" maxLength={500} defaultValue={p?.description_en} className={fieldClass} /></Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Discount" htmlFor={`pdt-${id}`}>
           <select id={`pdt-${id}`} name="discount_type" defaultValue={p?.discount_type ?? "percent"} className={fieldClass}>

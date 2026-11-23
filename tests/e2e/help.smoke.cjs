@@ -30,7 +30,7 @@ const check = (ok, msg) => results.push(`${ok ? "ok  " : "FAIL"} - ${msg}`);
     const m = await (await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true })).newPage();
     await m.context().addCookies([{ name: "NEXT_LOCALE", value: "am", url: B }]);
     await m.goto(`${B}/help`);
-    check((await m.locator("h1").innerText()).includes("እርዳታ"), "Amharic guide");
+    check(!/[\u1200-\u137F]/.test(await m.locator("main").innerText()), "English only, even with an old Amharic language cookie");
     check(!(await m.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)), "no horizontal overflow on phones");
 
     // An order placed by a different customer (created here, so the test never depends on leftover data).

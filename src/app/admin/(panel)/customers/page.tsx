@@ -32,7 +32,7 @@ export default async function CustomersPage({ searchParams }: PageProps<"/admin/
           <ActionForm action={inviteCustomer} submitLabel="Send invitation" resetOnSuccess className="mt-3 grid gap-3 sm:max-w-md">
             <Field label="Email" htmlFor="invite-email"><input id="invite-email" name="email" type="email" required maxLength={254} autoComplete="off" className={fieldClass} /></Field>
             <Field label="Name (optional)" htmlFor="invite-name"><input id="invite-name" name="fullName" maxLength={120} autoComplete="off" className={fieldClass} /></Field>
-            <p className="text-xs text-muted-foreground">They receive an email (English and Amharic) with a link to set their password. Then they can sign in and order.</p>
+            <p className="text-xs text-muted-foreground">They receive an email with a link to set their password. Then they can sign in and order.</p>
           </ActionForm>
         </details>
       )}

@@ -74,7 +74,7 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
       </Link>
       <PageHeader
         title={order.order_number}
-        description={`Placed ${formatDateTime(order.created_at, "en")} · ${order.locale === "am" ? "Amharic" : "English"} customer`}
+        description={`Placed ${formatDateTime(order.created_at, "en")}`}
         actions={
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5">Order <StatusBadge kind="order" status={order.status} /></span>

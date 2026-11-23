@@ -197,7 +197,7 @@ async function emailLink(to, subjectPart) {
       await sleep(500);
     }
   })();
-  check(invMsg?.HTML.includes("ወደ አብዬ ተጋብዘዋል") && invMsg.HTML.includes("You've been invited to Abiye"), "invitation email is bilingual (English + Amharic)");
+  check(invMsg?.HTML.includes("You've been invited to Abiye") && !/[\u1200-\u137F]/.test(invMsg.HTML), "invitation email is in English only");
   const invLink = invMsg.HTML.match(/href="([^"]*\/auth\/confirm[^"]*type=invite[^"]*)"/)?.[1]?.replace(/&amp;/g, "&");
   const ip = await (await b.newContext()).newPage();
   await ip.goto(invLink);

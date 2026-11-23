@@ -252,15 +252,15 @@ otp_expiry = 3600
 
 # Links use token_hash so they work even if opened on another device (no PKCE verifier needed).
 [auth.email.template.confirmation]
-subject = "Confirm your Abiye account / መለያዎን ያረጋግጡ"
+subject = "Confirm your Abiye account"
 content_path = "./supabase/templates/confirm.html"
 
 [auth.email.template.invite]
-subject = "You've been invited to Abiye / ወደ አብዬ ተጋብዘዋል"
+subject = "You've been invited to Abiye"
 content_path = "./supabase/templates/invite.html"
 
 [auth.email.template.recovery]
-subject = "Reset your Abiye password / የይለፍ ቃልዎን ይቀይሩ"
+subject = "Reset your Abiye password"
 content_path = "./supabase/templates/recovery.html"
 
 # Uncomment to customize email template

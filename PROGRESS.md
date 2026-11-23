@@ -115,6 +115,14 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - Local dev: sign-ups + email confirmation on, local mail catcher on :54324 (dev:up no longer excludes it).
 - **Production TODO for the owner**: configure SMTP + email templates + URL configuration in Supabase (docs/DEPLOYMENT.md §2b).
 
+## English only — Amharic removed (requested 2026-11-23)
+
+No migration. The website, emails, phone notifications and Supabase auth emails are English only.
+- `src/i18n/request.ts` always uses English (an old NEXT_LOCALE=am cookie or Amharic browser is ignored); the language switch and `setLocale` were removed. messages/am.json and the Amharic texts in content/ and the DB columns (*_am) stay but are not used.
+- Emails: no Amharic section, no " / Amharic" in subjects or detail labels (`englishOnly`); push: always English. Auth templates (supabase/templates/*.html, config.toml subjects, DEPLOYMENT.md) English only — **the owner should re-paste the three templates and subjects in Supabase → Authentication → Emails**.
+- Admin forms no longer show Amharic fields (products, categories, promotions, banners, cities, bank instructions, settings, services, legal texts); `formObject` fills any missing `*_am` with the English text, so required DB columns stay valid.
+- Offline page English only.
+
 ## Approved top-ups announced in Telegram (reported 2026-11-23)
 
 Migration **0058**: `wallet_topups_telegram_approved` → `topup_verified` ("✅ TOP-UP APPROVED": number, amount, reference, User ID, new balance, approved by) in the orders & payments group. Before, a top-up only reached Telegram as "waiting for approval" (off since 0057) or as the receipt file in the receipts group. SQL 99zzx + browser wallet check.

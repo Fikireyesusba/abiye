@@ -152,7 +152,7 @@ async function waitFor(fn, ms = 15000) {
       check(shown && titles.includes(note.title), "the app shows the notification on the phone");
     } else check(false, "service worker registration found");
 
-    // ---- Amharic device; a removed device is forgotten
+    // ---- a device saved with Amharic gets English (English only); a removed device is forgotten
     sql(`update push_subscriptions set locale = 'am' where endpoint = '${ENDPOINT}'`);
     const OLD = `https://fcm.googleapis.com/fcm/send/old-${RUN}`;
     sql(`insert into push_subscriptions (user_id, endpoint, p256dh, auth) values ('${userId}', '${OLD}', '${b64u(device.getPublicKey())}', '${b64u(authSecret)}')`);
@@ -161,8 +161,8 @@ async function waitFor(fn, ms = 15000) {
     void sid;
     sql(`update orders set status = 'cancelled', cancelled_at = now() where id = '${orderId}'`);
     await fetch(`${B}/api/cron/notifications`, { headers: { authorization: `Bearer ${process.env.CRON_SECRET}` } });
-    const am = received.filter((r) => r.path.endsWith(`e2e-${RUN}`)).map((r) => decrypt(r.body)).find((n) => n.title.includes("ተሰርዟል"));
-    check(!!am && am.title === `ትዕዛዝ ${number} ተሰርዟል`, `Amharic device gets Amharic text ("${am?.title}")`);
+    const am = received.filter((r) => r.path.endsWith(`e2e-${RUN}`)).map((r) => decrypt(r.body)).find((n) => n.title.includes("cancelled"));
+    check(!!am && am.title === `Order ${number} cancelled`, `English text for every device ("${am?.title}")`);
     check(sql(`select count(*) from push_subscriptions where endpoint = '${OLD}'`) === "0", "a device that uninstalled (410) is removed");
 
     // ---- turn off

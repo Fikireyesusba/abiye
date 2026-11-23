@@ -13,8 +13,7 @@ type Cat = { id: string; parent_id: string | null; department: string; slug: str
 function CategoryFields({ c, parents }: { c?: Cat; parents: Cat[] }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      <Field label="Name (English)"><Input name="name_en" required maxLength={80} defaultValue={c?.name_en} /></Field>
-      <Field label="Name (Amharic)"><Input name="name_am" required maxLength={80} defaultValue={c?.name_am} lang="am" /></Field>
+      <Field label="Name"><Input name="name_en" required maxLength={80} defaultValue={c?.name_en} /></Field>
       <Field label="URL slug"><Input name="slug" maxLength={100} defaultValue={c?.slug} placeholder="auto" /></Field>
       <Field label="Department">
         <select name="department" defaultValue={c?.department ?? "cosmetics"} className={fieldClass}>
@@ -48,14 +47,14 @@ export default async function CategoriesPage() {
       </Panel>
       <div className="space-y-6">
         {parents.map((p) => (
-          <Panel key={p.id} title={`${p.name_en} · ${p.name_am}`}>
+          <Panel key={p.id} title={p.name_en}>
             <ul className="divide-y">
               {[p, ...cats.filter((c) => c.parent_id === p.id)].map((c) => (
                 <li key={c.id} className="py-3">
                   <details>
                     <summary className="flex cursor-pointer list-none items-center gap-2">
                       <span className={c.parent_id ? "pl-4" : "font-semibold"}>{c.name_en}</span>
-                      <span className="text-sm text-muted-foreground">{c.name_am} · /{c.slug}</span>
+                      <span className="text-sm text-muted-foreground">/{c.slug}</span>
                       {!c.is_active && <Badge variant="secondary">hidden</Badge>}
                       <span className="ml-auto text-xs text-primary">Edit</span>
                     </summary>

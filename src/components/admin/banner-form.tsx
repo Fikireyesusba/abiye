@@ -40,10 +40,8 @@ export function BannerForm({ b }: { b?: BannerValues }) {
   return (
     <ActionForm action={submitBanner} hidden={{ id: b?.id ?? "" }} submitLabel={b ? "Save banner" : "Create banner"} resetOnSuccess={!b}>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Title (English)" htmlFor={`bt-en-${id}`}><input id={`bt-en-${id}`} name="title_en" required maxLength={120} defaultValue={b?.title_en} className={fieldClass} /></Field>
-        <Field label="Title (Amharic)" htmlFor={`bt-am-${id}`}><input id={`bt-am-${id}`} name="title_am" required maxLength={120} defaultValue={b?.title_am} lang="am" className={fieldClass} /></Field>
-        <Field label="Subtitle (English)" htmlFor={`bs-en-${id}`}><input id={`bs-en-${id}`} name="subtitle_en" maxLength={240} defaultValue={b?.subtitle_en} className={fieldClass} /></Field>
-        <Field label="Subtitle (Amharic)" htmlFor={`bs-am-${id}`}><input id={`bs-am-${id}`} name="subtitle_am" maxLength={240} defaultValue={b?.subtitle_am} lang="am" className={fieldClass} /></Field>
+        <Field label="Title" htmlFor={`bt-en-${id}`}><input id={`bt-en-${id}`} name="title_en" required maxLength={120} defaultValue={b?.title_en} className={fieldClass} /></Field>
+        <Field label="Subtitle" htmlFor={`bs-en-${id}`}><input id={`bs-en-${id}`} name="subtitle_en" maxLength={240} defaultValue={b?.subtitle_en} className={fieldClass} /></Field>
         <Field label="Link (optional)" htmlFor={`bl-${id}`} hint="A page on this website, e.g. /cosmetics or /products/…"><input id={`bl-${id}`} name="link_href" maxLength={200} defaultValue={b?.link_href ?? ""} placeholder="/cosmetics" className={fieldClass} /></Field>
         <Field label="Order" htmlFor={`bo-${id}`} hint="Lower numbers show first"><input id={`bo-${id}`} name="sort_order" type="number" min={0} max={1000} defaultValue={b?.sort_order ?? 0} className={fieldClass} /></Field>
         <Field label="Show from (optional)" htmlFor={`bf-${id}`}><input id={`bf-${id}`} name="starts_at" type="datetime-local" defaultValue={b?.starts} className={fieldClass} /></Field>

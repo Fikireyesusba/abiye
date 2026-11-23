@@ -95,7 +95,6 @@ async function toast(page, text) {
   await p.goto(`${B}/admin/products/new`);
   const sku = `E2E-${RUN}`.toUpperCase();
   await p.fill("input[name=name_en]", `E2E Lip Gloss ${RUN}`);
-  await p.fill("input[name=name_am]", "የሙከራ ሊፕ ግሎስ");
   await p.fill("input[name=sku]", sku);
   await p.selectOption("select[name=category_id]", { label: "Makeup" });
   await p.fill("input[name=price_etb]", "500");
@@ -154,14 +153,12 @@ async function toast(page, text) {
   await p.goto(`${B}/admin/categories`);
   const catForm = p.locator("form").filter({ has: p.locator("button:has-text('Create category')") });
   await catForm.locator("input[name=name_en]").fill(`Nail care ${RUN}`);
-  await catForm.locator("input[name=name_am]").fill("የጥፍር እንክብካቤ");
   await catForm.locator("select[name=parent_id]").selectOption({ label: "Cosmetics" });
   await submitIn(p, catForm);
   await toast(p, "Category created");
   check(sql(`select count(*) from categories where name_en = 'Nail care ${RUN}' and department = 'cosmetics'`) === "1", "subcategory created");
   const bad = p.locator("form").filter({ has: p.locator("button:has-text('Create category')") });
   await bad.locator("input[name=name_en]").fill(`Wrong dept ${RUN}`);
-  await bad.locator("input[name=name_am]").fill("x");
   await bad.locator("select[name=department]").selectOption("electronics");
   await bad.locator("select[name=parent_id]").selectOption({ label: "Cosmetics" });
   await submitIn(p, bad);
@@ -259,7 +256,6 @@ async function toast(page, text) {
   check(true, "cannot disable both delivery and pickup");
   const add = p.locator("form").filter({ has: p.locator("button:has-text('Add city')") });
   await add.locator("input[name=name_en]").fill(`Dire Dawa ${RUN}`);
-  await add.locator("input[name=name_am]").fill("ድሬዳዋ");
   await add.locator("input[name=fee_etb]").fill("600");
   await submitIn(p, add);
   await toast(p, "Delivery zone saved");

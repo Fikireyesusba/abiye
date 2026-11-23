@@ -135,7 +135,7 @@ const asManager = (q) => {
     check(await waitFor(() => mails(email, "confirmed").length === 1), "payment verified: confirmation email");
     const confirmed = mails(email, "confirmed")[0];
     check(confirmed?.from === FROM && confirmed?.idem?.startsWith("outbox-"), "sent from the configured address, with an idempotency key");
-    check(confirmed?.html.includes(`/order-success/${orderId}`) && confirmed?.html.includes("lang=\"am\""), "contains the order link and Amharic");
+    check(confirmed?.html.includes(`/order-success/${orderId}`) && !confirmed?.html.includes("lang=\"am\"") && !/[\u1200-\u137F]/.test(confirmed?.html ?? ""), "contains the order link; English only");
 
     // ---- 3. Temporary failure is retried; permanent failure gives up
     mode = "fail500";

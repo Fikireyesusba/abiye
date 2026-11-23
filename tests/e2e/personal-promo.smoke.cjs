@@ -49,7 +49,6 @@ async function tryCode(page, code) {
     for (const [code, title] of [[CODE, `VIP ${RUN}`], [CODE2, `Gift ${RUN}`]]) {
       await op.goto(`${B}/admin/promotions?tab=new`);
       await op.fill("#pt-en-new", title);
-      await op.fill("#pt-am-new", "የግል ቅናሽ");
       await op.fill("#pc-new", code);
       await op.fill("#pdv-new", "20");
       await op.check("main form input[name=restricted]");

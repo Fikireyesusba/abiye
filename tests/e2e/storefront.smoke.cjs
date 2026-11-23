@@ -157,13 +157,11 @@ function resetSampleStock() {
   // Language switch
   await p.goto(B + '/');
   await p.click('header button[aria-controls=account-menu]');
-  check(await p.locator('#account-menu a[href="/track-order"]').count() === 1 && await p.locator('#account-menu a[href="/contact"]').count() === 1, 'profile menu: account, track order, about, contact, language');
-  await p.click('#account-menu button:has-text("አማርኛ")');
-  await p.waitForFunction(() => document.documentElement.lang === 'am');
-  check((await p.locator('nav[aria-label=Main]').textContent()).includes('የውበት ምርቶች'), 'language switch to Amharic');
+  check(await p.locator('#account-menu a[href="/track-order"]').count() === 1 && await p.locator('#account-menu a[href="/contact"]').count() === 1, 'profile menu: account, track order, about, contact');
+  check(await p.locator('#account-menu button:has-text("አማርኛ")').count() === 0, 'no language switch (English only)');
+  await p.context().addCookies([{ name: 'NEXT_LOCALE', value: 'am', url: B }]);
   await p.goto(B + '/products/sample-oud-perfume-100ml');
-  check((await p.locator('h1').textContent()).includes('ኡድ'), 'product name shown in Amharic');
-  check((await p.locator('main').textContent()).includes('ብር'), 'prices shown in ብር');
+  check(!/[\u1200-\u137F]/.test(await p.locator('main').textContent()) && (await p.locator('main').textContent()).includes('ETB'), 'English and ETB even with an old Amharic language cookie');
 
   // Mobile
   const m = await b.newPage({ viewport: { width: 390, height: 844 } });

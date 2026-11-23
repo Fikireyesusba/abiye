@@ -60,7 +60,7 @@ export async function dispatchCustomerPush(limit = 20): Promise<PushSummary> {
     let delivered = 0;
     let transient: string | null = null;
     for (const d of devices ?? []) {
-      const locale = d.locale === "am" ? "am" : "en";
+      const locale = "en" as const; // English only
       const msg = buildPush(row.event_type, (row.payload ?? {}) as Record<string, unknown>, locale, business[locale] || business.en);
       if (!msg) continue;
       try {

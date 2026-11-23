@@ -1,11 +1,10 @@
 "use client";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
-import { CircleHelp, Info, Languages, Mail, PackageSearch, ShoppingBag, UserRound, LifeBuoy } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { CircleHelp, Info, Mail, PackageSearch, ShoppingBag, UserRound, LifeBuoy } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { setLocale } from "@/i18n/actions";
 import { useCartCount } from "@/lib/cart/store";
 import { cn } from "@/lib/utils";
 
@@ -28,7 +27,7 @@ export function CartButton() {
 
 const MENU_ICONS: Record<string, typeof UserRound> = { "/account": UserRound, "/track-order": PackageSearch, "/support": LifeBuoy, "/about": Info, "/contact": Mail, "/help": CircleHelp };
 
-/** Profile icon (top right): My account, Track order, About, Contact and the language switch. */
+/** Profile icon (top right): My account, Track order, Support, About, Contact, Help. */
 export function AccountMenu({ links }: { links: NavLink[] }) {
   const t = useTranslations("account");
   const [open, setOpen] = useState(false);
@@ -60,38 +59,9 @@ export function AccountMenu({ links }: { links: NavLink[] }) {
               );
             })}
           </nav>
-          <div className="mt-1 border-t pt-1">
-            <LanguageSwitcher className="w-full justify-start px-3 font-normal" />
-          </div>
         </div>
       )}
     </div>
-  );
-}
-
-export function LanguageSwitcher({ className }: { className?: string }) {
-  const locale = useLocale();
-  const router = useRouter();
-  const t = useTranslations("common");
-  const [pending, start] = useTransition();
-  const next = locale === "en" ? "am" : "en";
-  return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className={cn("gap-1.5", className)}
-      disabled={pending}
-      aria-label={`${t("language")}: ${next === "am" ? "አማርኛ" : "English"}`}
-      onClick={() =>
-        start(async () => {
-          await setLocale(next);
-          router.refresh();
-        })
-      }
-    >
-      <Languages className="size-4" />
-      <span lang={next}>{next === "am" ? "አማርኛ" : "English"}</span>
-    </Button>
   );
 }
 
