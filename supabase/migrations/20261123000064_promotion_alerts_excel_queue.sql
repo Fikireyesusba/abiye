@@ -116,6 +116,7 @@ begin
   return null;
 end;
 $$;
+drop trigger if exists promotions_telegram_alert on public.promotions;
 create trigger promotions_telegram_alert after insert or update or delete on public.promotions
   for each row execute function private.promotion_alert();
 
@@ -141,6 +142,7 @@ begin
   return null;
 end;
 $$;
+drop trigger if exists promotion_customers_telegram_alert on public.promotion_customers;
 create trigger promotion_customers_telegram_alert after insert or delete on public.promotion_customers
   for each row execute function private.promotion_customer_alert();
 
