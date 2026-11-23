@@ -26,6 +26,7 @@ export default async function AdminLoginPage({ searchParams }: PageProps<"/admin
         {sp.reason === "address" && <p className="mb-4 rounded-md bg-muted p-3 text-sm" role="status">This account signs in at a different address. Please use the sign-in address you were given.</p>}
         {sp.reason === "idle" && <p className="mb-4 rounded-md bg-muted p-3 text-sm" role="status">For security you were signed out after {IDLE_MINUTES.admin} minutes of inactivity. Please sign in again.</p>}
         <LoginForm next={next} />
+        <p className="mt-4 text-center text-sm"><a href="/admin/password" className="text-primary underline underline-offset-2">Change password</a></p>
       </div>
     </main>
   );

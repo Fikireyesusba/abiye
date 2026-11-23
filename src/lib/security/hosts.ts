@@ -55,7 +55,7 @@ export function surfaceUrl(surface: Surface): string | null {
 export function pathAllowed(surface: Surface, path: string): boolean {
   const admin = /^\/admin(\/|$)/.test(path);
   const courier = /^\/courier(\/|$)/.test(path);
-  const signIn = /^\/admin\/(login|mfa)(\/|$)/.test(path);
+  const signIn = /^\/admin\/(login|mfa|password)(\/|$)/.test(path);
   switch (surface) {
     case "customer": return !admin && !courier;
     case "staff":

@@ -28,7 +28,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(surface === "courier" ? "/courier" : "/admin", request.url));
   }
   const isAdmin = /^\/(admin|courier)(\/|$)/.test(path); // staff areas (courier app included)
-  const isLogin = path === "/admin/login";
+  const isLogin = path === "/admin/login" || path === "/admin/password"; // open without being signed in
   const needsSession = SESSION_PATHS.some((re) => re.test(path));
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

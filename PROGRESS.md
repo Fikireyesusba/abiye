@@ -115,6 +115,11 @@ Verified with `npm run test:smoke:account` (44 checks incl. real confirmation/re
 - Local dev: sign-ups + email confirmation on, local mail catcher on :54324 (dev:up no longer excludes it).
 - **Production TODO for the owner**: configure SMTP + email templates + URL configuration in Supabase (docs/DEPLOYMENT.md §2b).
 
+## Staff change-password page (requested 2026-11-23)
+
+- `/admin/password` on the staff, operations and courier addresses (not on the customer address), linked under the sign-in form: email → current password → **authenticator code** (so a stolen password alone cannot change it) → new password twice → Save → Done; signed out everywhere afterwards. Wrong-address accounts refused; rate-limited; failures are security events (`src/lib/auth/password-change.ts`). No database change.
+- Tests: e2e `courier.smoke.cjs` (wrong code refused, Done, other session signed out, old password refused, new one works).
+
 ## Separate addresses + courier app (requested 2026-11-23)
 
 - **Addresses** (`src/lib/security/hosts.ts`, proxy, guards, sign-in): `fantaf.xyz` customers · `ocs.fantaf.xyz` managers/staff · `operations.fantaf.xyz` Super Admin only · `courier.fantaf.xyz` couriers only. Switched on only when `CUSTOMER_HOST`, `STAFF_HOST`, `SUPER_ADMIN_HOST`, `COURIER_HOST` are all set in Vercel. Wrong-address sign-in refused + security event; every admin request re-checked; per-address app manifest; Telegram admin links use ocs / operations. Docs: DEPLOYMENT.md §6a.

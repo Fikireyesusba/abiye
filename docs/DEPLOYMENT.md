@@ -169,6 +169,8 @@ Setup, in this order (browser only):
 
 To switch the split off again, delete the four variables and redeploy.
 
+**Change password (staff, admins, couriers):** `https://ocs.fantaf.xyz/admin/password` (Super Admin: `https://operations.fantaf.xyz/admin/password`, couriers: `https://courier.fantaf.xyz/admin/password`; also linked under the sign-in form). Email → current password → 6-digit authenticator code → new password twice → **Save changes** → Done. The account is then signed out on every device. Forgotten passwords: the Super Admin resets them under Staff.
+
 ## 6b. Couriers
 
 - Admin → **Staff → Add staff member**, permission set **Courier**. Couriers sign in (password + two-step code, like all staff) at the courier address and see only the deliveries assigned to them.

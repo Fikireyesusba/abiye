@@ -5,7 +5,7 @@
  */
 const { chromium } = require("playwright");
 const { spawn, execSync } = require("child_process");
-const { adminLogin } = require("./_admin.cjs");
+const { adminLogin, nextCode } = require("./_admin.cjs");
 const { ensureCustomer, loginCustomer } = require("./_customer.cjs");
 
 const PORT = 3107;
@@ -136,6 +136,34 @@ async function tryLogin(page, base, email, password) {
       === "assigned,picked_up,delivered", "every step announced in the orders & payments Telegram group");
     await m.goto(`${U("ocs")}/admin/orders/${order.order_id}`);
     check((await m.locator("[data-testid=courier-panel]").innerText()).includes("customer's code checked"), "admin order page: courier, times and delivery confirmed");
+
+    // ---- change password page (staff / admin / courier): email + current password + code + new password twice
+    const sp = await fresh();
+    check((await sp.goto(`${U("shop")}/admin/password`)).status() === 404, "fantaf.xyz: no staff password page");
+    await sp.goto(`${U("courier")}/admin/password`);
+    check(new URL(sp.url()).pathname === "/admin/password", "courier address: the change-password page opens without signing in");
+    const secret = JSON.parse(require("fs").readFileSync(require("path").join(require("os").tmpdir(), "abiye-e2e-totp.json"), "utf8"))[mgrEmail];
+    const fillPw = async (code, next) => {
+      await sp.goto(`${U("ocs")}/admin/password`);
+      await sp.fill("#pc-email", mgrEmail);
+      await sp.fill("#pc-current", "ManagerE2E2026x");
+      await sp.fill("#pc-code", code);
+      await sp.fill("#pc-new", next);
+      await sp.fill("#pc-confirm", next);
+      await sp.click("button:has-text('Save changes')");
+    };
+    await fillPw("000000", "NewManager2026xY");
+    await sp.waitForSelector("form [role=alert]");
+    check((await sp.locator("form [role=alert]").innerText()).includes("not correct"), "wrong authenticator code: password not changed");
+    await fillPw(await nextCode(mgrEmail, secret), "NewManager2026xY");
+    await sp.waitForSelector("[data-testid=password-changed]", { timeout: 20000 });
+    check(true, "right code: Done — password changed");
+    await m.goto(`${U("ocs")}/admin/orders`);
+    check(new URL(m.url()).pathname === "/admin/login", "the manager's open session was signed out everywhere");
+    check(await tryLogin(sp, U("ocs"), mgrEmail, "ManagerE2E2026x") === false && (await sp.locator("text=Incorrect email or password").count()) === 1,
+      "the old password no longer works");
+    await adminLogin(sp, U("ocs"), mgrEmail, "NewManager2026xY");
+    check(new URL(sp.url()).pathname.startsWith("/admin") && !new URL(sp.url()).pathname.startsWith("/admin/login"), "the new password works");
   } catch (e) {
     check(false, `crashed: ${e.message.split("\n")[0]}`);
   } finally {
