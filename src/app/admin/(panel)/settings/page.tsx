@@ -254,7 +254,7 @@ async function DeliveryTab({ s, supabase, superAdmin }: { s: Awaited<ReturnType<
         </ul>
         {off.length > 0 && (
           <details className="mt-3 rounded-lg border p-3">
-            <summary className="cursor-pointer text-sm font-medium">Other Ethiopian cities — switched off ({off.length}): set a fee and tick “Active” to open one</summary>
+            <summary className="cursor-pointer text-sm font-medium">Other Ethiopian cities — switched off ({off.length}): set a fee, tick “Available” and press Save to open one</summary>
             <ul className="mt-2 divide-y">
               {off.map((z) => (
                 <li key={z.id} className="py-3">
