@@ -181,7 +181,7 @@ function ZoneFields({ z }: { z?: Zone }) {
       <Field label="City" className="lg:col-span-2"><Input name="name_en" required defaultValue={z?.name_en} maxLength={80} /></Field>
       <Field label="Fee (ETB)"><Input name="fee_etb" type="number" min={0} step="0.01" required defaultValue={z?.fee_etb} /></Field>
       <Field label="Estimate"><Input name="estimated_days" defaultValue={z?.estimated_days ?? ""} placeholder="1–2 days" maxLength={40} /></Field>
-      <Field label="Order"><Input name="sort_order" type="number" min={0} defaultValue={z?.sort_order ?? 0} /></Field>
+      <Field label="Order"><Input name="sort_order" type="number" min={0} max={100000} defaultValue={z?.sort_order ?? 0} /></Field>
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="is_active" defaultChecked={z?.is_active ?? true} className="size-4 accent-[var(--primary)]" /> Available</label>
     </div>
   );

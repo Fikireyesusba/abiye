@@ -190,7 +190,7 @@ const zoneSchema = z.object({
   name_am: z.string().trim().min(1).max(80),
   fee_etb: z.coerce.number().min(0).max(100000),
   estimated_days: z.string().trim().max(40),
-  sort_order: z.coerce.number().int().min(0).max(1000),
+  sort_order: z.coerce.number().int().min(0).max(100000),
   is_active: z.literal("on").optional(),
 });
 
