@@ -104,7 +104,14 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
             <Banner tone="danger" icon={<AlertTriangle className="size-5" />} title={t("order.rejectedTitle")}
               text={`${lastRejection.review_note ? t("order.rejectedReason", { reason: lastRejection.review_note }) + " " : ""}${t("order.rejectedHelp")}`} />
           )}
-          {order.status === "out_for_delivery" && order.delivery_code && (
+          {order.partner_snapshot && order.status === "ready_for_pickup" && order.delivery_code && (
+            <div className="rounded-xl border-2 border-primary/40 bg-primary/5 p-4 text-center" data-testid="pickup-code">
+              <p className="text-sm font-medium">{t("order.pickupCodeTitle", { shop: order.partner_snapshot.name })}</p>
+              <p className="my-1 font-mono text-3xl font-bold tracking-[0.4em]">{order.delivery_code}</p>
+              <p className="text-xs text-muted-foreground">{t("order.pickupCodeHint")}</p>
+            </div>
+          )}
+          {!order.partner_snapshot && order.status === "out_for_delivery" && order.delivery_code && (
             <div className="rounded-xl border-2 border-primary/40 bg-primary/5 p-4 text-center" data-testid="delivery-code">
               <p className="text-sm font-medium">{t("order.deliveryCodeTitle")}</p>
               <p className="my-1 font-mono text-3xl font-bold tracking-[0.4em]">{order.delivery_code}</p>
@@ -219,7 +226,20 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
             <Separator />
             <dl className="space-y-1">
               <dt className="text-muted-foreground">{t("order.fulfillment")}</dt>
-              <dd className="font-medium">{t(`fulfillment.${order.fulfillment_method}`)}</dd>
+              <dd className="font-medium">{order.partner_snapshot ? t("checkout.partnerPickup") : t(`fulfillment.${order.fulfillment_method}`)}</dd>
+              {order.partner_snapshot && (
+                <>
+                  <dt className="pt-2 text-muted-foreground">{t("checkoutPage.partnerShop")}</dt>
+                  <dd data-testid="order-partner-shop">
+                    <span className="block font-medium">{order.partner_snapshot.name} · {locale === "am" && order.partner_snapshot.city_am ? order.partner_snapshot.city_am : order.partner_snapshot.city}</span>
+                    <span className="block">{order.partner_snapshot.address_line}</span>
+                    {order.partner_snapshot.landmark && <span className="block text-muted-foreground">{t("checkoutPage.landmark")}: {order.partner_snapshot.landmark}</span>}
+                    {order.partner_snapshot.opening_hours && <span className="block text-muted-foreground">{t("checkoutPage.openingHours")}: {order.partner_snapshot.opening_hours}</span>}
+                    <a href={`tel:${order.partner_snapshot.phone}`} className="text-primary hover:underline">{order.partner_snapshot.phone}</a>
+                    {order.partner_snapshot.map_url && <> · <a href={order.partner_snapshot.map_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{t("checkoutPage.openMap")}</a></>}
+                  </dd>
+                </>
+              )}
               {order.fulfillment_method === "delivery" && (
                 <>
                   <dt className="pt-2 text-muted-foreground">{t("order.deliverTo")}</dt>

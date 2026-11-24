@@ -37,6 +37,23 @@ export async function deliver(_prev: ActionResult | null, fd: FormData): Promise
   return data === true ? ok("Delivered. Thank you!") : fail("That code is not right. Ask the customer to check their order page or email.");
 }
 
+/** Partner shop order: the courier enters the PIN the shop shows them (the shop enters the courier's PIN too). */
+export async function handOffToShop(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const ctx = await requirePermission("deliveries.own");
+  const v = z.object({ orderId: z.guid(), code: z.string().trim().regex(/^\d{4}$/, "Enter the shop's 4-digit PIN.") }).safeParse(formObject(fd));
+  if (!v.success) return fail(v.error.issues[0]?.message ?? "Invalid request.");
+  if (!(await rateLimitAll([[`deliver:${ctx.userId}`, 30, 3600]]))) return fail("Too many tries. Please wait a while.");
+  const { data, error } = await (await createSupabaseServerClient()).rpc("courier_handoff", { p_order_id: v.data.orderId, p_shop_code: v.data.code });
+  if (error) {
+    if (error.message === "handoff_locked") return fail("Too many wrong PINs — this hand-over is locked. Call the office.");
+    if (error.message === "invalid_transition") return fail("Mark the order as picked up first.");
+    return dbError(error);
+  }
+  dispatchSoon();
+  revalidatePath("/courier");
+  return data === true ? ok("Shop PIN checked. Handed over once the shop has entered your PIN.") : fail("That PIN is not right. Ask the shop to check the Abiye Business app.");
+}
+
 export async function couldNotDeliver(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   await requirePermission("deliveries.own");
   const v = z.object({ orderId: z.guid(), reason: z.string().trim().min(3, "Say what happened (at least 3 characters).").max(300) }).safeParse(formObject(fd));

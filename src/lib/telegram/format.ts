@@ -109,6 +109,7 @@ export function suggestedAction(row: OutboxRow): string | null {
     case "delivery_update":
       if (p.step === "failed") return "Call the customer, then re-assign the courier (or arrange pickup) on the order.";
       if (p.step === "declined") return "Give the order to another courier under Couriers & delivery → Dispatch.";
+      if (p.step === "handoff_locked") return "Call the courier and the shop; re-assign the same courier on the order to unlock the hand-over.";
       if (p.step === "code_locked") return "Call the customer and the courier; re-assign the courier on the order to unlock the code.";
       return "Nothing to do — the customer sees the progress on their order page.";
     case "excel_export":
@@ -166,7 +167,7 @@ const titleCase = (s: string) => s.replaceAll("_", " ").replace(/^./, (c) => c.t
 
 const DELIVERY_STEP: Record<string, string> = {
   assigned: "Assigned to a courier", picked_up: "Picked up — on the way", delivered: "Delivered (code checked)",
-  failed: "Could not deliver", code_locked: "Delivery code locked (5 wrong tries)", declined: "Declined by the courier",
+  failed: "Could not deliver", code_locked: "Delivery code locked (5 wrong tries)", declined: "Declined by the courier", at_shop: "At the partner shop (PINs checked)", collected: "Collected at the partner shop", handoff_locked: "Shop hand-over locked (5 wrong PINs)",
 };
 const PROMO_CHANGE: Record<string, string> = {
   created: "Created", changed: "Changed", switched_on: "Switched on", switched_off: "Switched off", revoked: "Revoked",
@@ -440,6 +441,7 @@ function buildBody(row: OutboxRow, appUrl: string): BuiltMessage {
           line("Order", p.order_number),
           ...(p.courier_user_id ? [line("Courier User ID", p.courier_user_id)] : []),
           ...(p.city ? [line("City", p.city)] : []),
+          ...(p.shop ? [line("Partner shop", p.shop)] : []),
           ...(p.reason ? [line("Reason", p.reason)] : []),
           line("When", addisTime(p.at)),
         ].join("\n") + orderLink,

@@ -5,7 +5,7 @@ import { fieldClass } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { CourierInstallCard } from "@/components/pwa/courier-install";
 import { requirePermission } from "@/lib/auth/guards";
-import { couldNotDeliver, declineDelivery, deliver, pickUp } from "@/lib/courier/actions";
+import { couldNotDeliver, declineDelivery, deliver, handOffToShop, pickUp } from "@/lib/courier/actions";
 import { formatDateTime } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -32,23 +32,30 @@ export default async function CourierPage() {
         {open.map((d) => {
           const onTheWay = d.status === "out_for_delivery";
           const items = (d.items as { name: string; quantity: number }[] | null) ?? [];
-          const map = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([d.address_line, d.city, "Ethiopia"].filter(Boolean).join(", "))}`;
+          const shop = d.partner_shop;
+          const map = (shop && d.partner_map_url) || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([d.address_line, d.city, "Ethiopia"].filter(Boolean).join(", "))}`;
           return (
             <li key={d.order_id} className="space-y-3 rounded-xl border bg-card p-4" data-testid="delivery">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-mono text-lg font-semibold">{d.order_number}</span>
                 <Badge variant={onTheWay ? "info" : "secondary"}>{onTheWay ? "On the way" : "To pick up"}</Badge>
+                {shop && <Badge variant="outline">Partner shop</Badge>}
                 <span className="ml-auto text-sm tabular-nums text-muted-foreground">{formatETB(toSantim(Number(d.total_etb)))} · paid</span>
               </div>
               {d.fail_reason && !onTheWay && <p className="rounded-md bg-warning/10 p-2 text-sm">Last try failed: {d.fail_reason}</p>}
               <div className="space-y-1 text-sm">
-                <p className="font-medium">{d.customer_name}</p>
-                {d.customer_phone && (
+                <p className="font-medium">{shop ? `Take it to: ${shop}` : d.customer_name}</p>
+                {shop && d.partner_phone && (
+                  <a href={`tel:${d.partner_phone}`} className="inline-flex items-center gap-1 text-primary"><Phone className="size-4" aria-hidden /> {d.partner_phone}</a>
+                )}
+                {!shop && d.customer_phone && (
                   <a href={`tel:${d.customer_phone}`} className="inline-flex items-center gap-1 text-primary"><Phone className="size-4" aria-hidden /> {formatEthiopianPhone(d.customer_phone)}</a>
                 )}
                 <a href={map} target="_blank" rel="noopener noreferrer" className="flex items-start gap-1 text-primary">
                   <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden /> <span>{[d.city, d.address_line].filter(Boolean).join(" — ")}</span>
                 </a>
+                {d.partner_landmark && <p className="text-muted-foreground">Landmark: {d.partner_landmark}</p>}
+                {d.partner_hours && <p className="text-muted-foreground">Open: {d.partner_hours}</p>}
                 {d.delivery_instructions && <p className="text-muted-foreground">Note: {d.delivery_instructions}</p>}
               </div>
               <ul className="list-inside list-disc text-sm text-muted-foreground">
@@ -67,11 +74,28 @@ export default async function CourierPage() {
                 </div>
               ) : (
                 <div className="space-y-3 border-t pt-3">
+                  {shop ? (
+                    <div className="space-y-3" data-testid="handoff">
+                      <div className="rounded-lg border-2 border-primary/40 bg-primary/5 p-3 text-center">
+                        <p className="text-xs font-medium">Your hand-over PIN — tell it to the shop</p>
+                        <p className="font-mono text-3xl font-bold tracking-[0.4em]" data-testid="courier-handoff-pin">{d.handoff_code}</p>
+                        <p className="text-xs text-muted-foreground">{d.handoff_shop_done ? "✓ The shop has entered it." : "Waiting for the shop to enter it."}</p>
+                      </div>
+                      {d.handoff_courier_done ? <p className="text-sm text-success">✓ You checked the shop&apos;s PIN.</p> : (
+                        <ActionForm action={handOffToShop} hidden={{ orderId: d.order_id }} submitLabel="Handed to shop" className="flex items-end gap-2 space-y-0 [&_button]:shrink-0">
+                          <label className="flex-1 text-sm">Shop&apos;s 4-digit PIN
+                            <input name="code" inputMode="numeric" pattern="[0-9]{4}" maxLength={4} required autoComplete="off" className={`${fieldClass} mt-1 text-center font-mono text-lg tracking-[0.5em]`} aria-label={`Shop PIN for ${d.order_number}`} />
+                          </label>
+                        </ActionForm>
+                      )}
+                    </div>
+                  ) : (
                   <ActionForm action={deliver} hidden={{ orderId: d.order_id }} submitLabel="Delivered" className="flex items-end gap-2 space-y-0 [&_button]:shrink-0">
                     <label className="flex-1 text-sm">Customer&apos;s 4-digit PIN
                       <input name="code" inputMode="numeric" pattern="[0-9]{4}" maxLength={4} required autoComplete="off" className={`${fieldClass} mt-1 text-center font-mono text-lg tracking-[0.5em]`} aria-label={`Delivery code for ${d.order_number}`} />
                     </label>
                   </ActionForm>
+                  )}
                   <details className="text-sm">
                     <summary className="cursor-pointer text-muted-foreground">Couldn&apos;t deliver?</summary>
                     <ActionForm action={couldNotDeliver} hidden={{ orderId: d.order_id }} submitLabel="Couldn't deliver" variant="outline" size="sm" className="mt-2 space-y-2">

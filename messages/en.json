@@ -71,7 +71,8 @@
     "verificationNote": "We will verify your transfer against our bank account. Your order is confirmed only after verification.",
     "branch": "Branch",
     "fromAccount": "Your name and phone come from your account and cannot be changed here. To change them, contact us (Support & feedback).",
-    "setOnce": "The details you enter here are saved to your account and cannot be changed later."
+    "setOnce": "The details you enter here are saved to your account and cannot be changed later.",
+    "partnerPickup": "Pick up at a partner shop (other cities)"
   },
   "fulfillment": {
     "delivery": "Delivery",
@@ -212,7 +213,9 @@
     "topup_pending_limit": "You already have 3 top-ups waiting for verification. Please wait until we check them.",
     "email_blocked": "This email cannot be used on this website. Please contact us.",
     "delivery_locked": "Too many wrong delivery codes. Call the office — they will check the order.",
-    "account_pending": "Your account is under verification. You can order once our team has approved it — usually within one working day."
+    "account_pending": "Your account is under verification. You can order once our team has approved it — usually within one working day.",
+    "handoff_locked": "Too many wrong hand-over PINs. Call the office — they will re-assign the courier.",
+    "invalid_pickup_point": "This pickup shop is not available any more. Please choose another one."
   },
   "header": {
     "menu": "Menu",
@@ -376,7 +379,13 @@
     "promoApplied": "{title} — code {code} applied",
     "promoRemove": "Remove",
     "discount": "Discount",
-    "promoMinOrder": "Minimum order for this code: {amount}."
+    "promoMinOrder": "Minimum order for this code: {amount}.",
+    "partnerShop": "Pickup shop",
+    "choosePartner": "Choose a shop…",
+    "landmark": "Landmark",
+    "openingHours": "Opening hours",
+    "openMap": "Open map",
+    "partnerInfo": "Our courier brings your order to this shop. We tell you when it is there; you collect it with the PIN shown on your order page. You pay the delivery price of that city."
   },
   "order": {
     "title": "Order {number}",
@@ -427,7 +436,9 @@
     "orderDate": "Ordered on {date}",
     "notFound": "Order not found. Open it using the private link from your checkout.",
     "deliveryCodeTitle": "Your delivery code",
-    "deliveryCodeHint": "Give this code to the courier only when you receive your order."
+    "deliveryCodeHint": "Give this code to the courier only when you receive your order.",
+    "pickupCodeTitle": "Your pickup PIN at {shop}",
+    "pickupCodeHint": "Your order is at the shop. Give this PIN to the shop only when you receive your order."
   },
   "track": {
     "title": "Track your order",

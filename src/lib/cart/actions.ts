@@ -1,6 +1,6 @@
 "use server";
 import { z } from "zod";
-import { getDeliveryZones, getProductsByIds, type DeliveryZone } from "@/lib/catalog/queries";
+import { getDeliveryZones, getPartnerShops, getProductsByIds, type DeliveryZone, type PartnerShop } from "@/lib/catalog/queries";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import { getCustomerUser } from "@/lib/account/session";
 import { getJobsForCart } from "@/lib/printing/access";
@@ -31,6 +31,8 @@ export interface CartDetails {
   products: CartProductView[];
   printing: CartPrintingView[];
   zones: DeliveryZone[];
+  /** Partner shops in other cities where the customer can collect the order. */
+  partnerShops: PartnerShop[];
   pickupEnabled: boolean;
   deliveryEnabled: boolean;
   freeDeliveryThresholdEtb: number | null;
@@ -46,11 +48,12 @@ const inputSchema = z.object({
 /** Fresh catalog data for the cart page. Read-only; anything missing is no longer for sale. */
 export async function getCartDetails(input: unknown): Promise<CartDetails> {
   const { productIds: ids, printing } = inputSchema.parse(input);
-  const [products, zones, settings, jobs] = await Promise.all([
+  const [products, zones, settings, jobs, partnerShops] = await Promise.all([
     getProductsByIds([...new Set(ids)]),
     getDeliveryZones(),
     getSiteSettings(),
     getCustomerUser().then((u) => getJobsForCart(printing, u?.id)),
+    getPartnerShops().catch(() => [] as PartnerShop[]),
   ]);
   return {
     printing: jobs.map((j) => ({
@@ -73,6 +76,7 @@ export async function getCartDetails(input: unknown): Promise<CartDetails> {
       department: p.category.department,
     })),
     zones,
+    partnerShops,
     pickupEnabled: settings.delivery.pickup_enabled,
     // Home delivery only when it is switched on AND at least one delivery city is active.
     deliveryEnabled: settings.delivery.delivery_enabled && zones.length > 0,

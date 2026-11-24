@@ -77,7 +77,7 @@ export default async function CouriersPage({ searchParams }: PageProps<"/admin/c
                   <li key={o.order_id} className="flex flex-wrap items-center gap-3 py-3 text-sm">
                     <div className="min-w-0 flex-1">
                       <Link href={`/admin/orders/${o.order_id}`} className="font-mono font-semibold text-primary hover:underline">{o.order_number}</Link>
-                      <span className="ml-2 text-muted-foreground">{o.city}{o.address_line ? ` — ${o.address_line}` : ""} · {o.items} item(s) · {etb(o.total_etb)}</span>
+                      <span className="ml-2 text-muted-foreground">{o.partner_shop ? <Badge variant="outline" className="mr-1">to partner shop {o.partner_shop}</Badge> : null}{o.city}{o.address_line ? ` — ${o.address_line}` : ""} · {o.items} item(s) · {etb(o.total_etb)}</span>
                       <span className="block text-xs text-muted-foreground">Courier pay {etb(o.courier_pay_etb)}{Number(o.delivery_fee_etb) < Number(o.courier_pay_etb) ? ` (customer paid ${etb(o.delivery_fee_etb)} after the bigger-purchase discount)` : ""}
                         {o.paid_at ? ` · paid ${formatDateTime(o.paid_at, "en")}` : ""}</span>
                       {o.fail_reason && <span className="block text-xs text-destructive">Last try failed ({o.delivery_attempts}×): {o.fail_reason}</span>}

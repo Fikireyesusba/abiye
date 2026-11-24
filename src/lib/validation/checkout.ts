@@ -46,6 +46,8 @@ export const checkoutSchema = z
     phone: ethiopianPhoneSchema,
     fulfillment: z.enum(["delivery", "pickup"]),
     deliveryZoneId: z.guid().optional(),
+    /** Pickup at a partner shop (fulfillment "pickup"). */
+    partnerShopId: z.guid().optional(),
     addressLine: cleanText(3, 300).optional(),
     instructions: cleanText(0, 500).optional(),
     items: z.array(cartItemSchema).min(1).max(MAX_CART_LINES),

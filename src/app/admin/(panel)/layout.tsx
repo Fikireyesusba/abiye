@@ -33,6 +33,8 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   const ctx = await requireAdmin();
   // Couriers use the courier app only.
   if (ctx.role === "courier") redirect("/courier");
+  // Partner shop staff use the Abiye Business app only.
+  if (ctx.role === "partner") redirect("/business");
   const badges = await getAdminBadges(ctx);
   // Excel exports are for the Super Admin only.
   const items: NavItem[] = ADMIN_ROUTES.filter((r) => r.anyOf.some((p) => ctx.permissions.has(p)) && (r.href !== "/admin/exports" || ctx.role === "super_admin"))

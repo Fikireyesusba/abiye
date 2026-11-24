@@ -136,6 +136,7 @@ export async function placeOrder(input: unknown): Promise<PlaceOrderResult> {
         delivery_zone_id: v.fulfillment === "delivery" ? v.deliveryZoneId : null,
         address_line: v.fulfillment === "delivery" ? v.addressLine : null,
         instructions: v.instructions || null,
+        ...(v.fulfillment === "pickup" && v.partnerShopId ? { partner_shop_id: v.partnerShopId } : {}),
       },
       items,
       ...(v.promotionCode ? { promotion_code: v.promotionCode } : {}),

@@ -80,9 +80,12 @@ export async function dispatchCustomerEmails(limit = 20): Promise<EmailSummary> 
     }
     const payload = { ...((row.payload ?? {}) as Record<string, unknown>) };
     // "On its way": the delivery code the customer gives the courier at the door (read fresh, never stored in the queue).
-    if (row.event_type === "customer_order_out_for_delivery" && typeof payload.order_id === "string") {
-      const { data: o } = await db.from("orders").select("delivery_code").eq("id", payload.order_id).maybeSingle();
-      if (o?.delivery_code) payload.delivery_code = o.delivery_code;
+    // Partner shop pickup: the shop's address, and the pickup PIN once the order is at the shop.
+    if ((row.event_type === "customer_order_out_for_delivery" || row.event_type === "customer_order_ready_for_pickup") && typeof payload.order_id === "string") {
+      const { data: o } = await db.from("orders").select("delivery_code, partner_snapshot").eq("id", payload.order_id).maybeSingle();
+      if (o?.partner_snapshot) payload.partner = o.partner_snapshot;
+      const pinNow = row.event_type === "customer_order_out_for_delivery" ? !o?.partner_snapshot : !!o?.partner_snapshot;
+      if (o?.delivery_code && pinNow) payload.delivery_code = o.delivery_code;
     }
     const built = buildCustomerEmail({ event_type: row.event_type, payload }, ctx);
     const { data: user } = row.recipient_user_id ? await db.auth.admin.getUserById(row.recipient_user_id) : { data: null };

@@ -23,8 +23,10 @@ export type CartItem = CartProductItem | CartPrintingItem;
 export const itemKey = (i: CartItem) => (i.type === "product" ? i.productId : i.printingJobId);
 
 export interface FulfillmentPrefs {
-  method: "delivery" | "pickup";
+  method: "delivery" | "pickup" | "partner";
   deliveryZoneId: string | null;
+  /** Pick up at a partner shop (method "partner"). */
+  partnerShopId?: string | null;
 }
 
 const CART_KEY = "cart:v1";
@@ -130,8 +132,9 @@ export const cart = {
 export function readFulfillmentPrefs(): FulfillmentPrefs {
   try {
     const v = JSON.parse(window.localStorage.getItem(PREFS_KEY) ?? "null");
-    if (v && (v.method === "delivery" || v.method === "pickup")) {
-      return { method: v.method, deliveryZoneId: typeof v.deliveryZoneId === "string" ? v.deliveryZoneId : null };
+    if (v && (v.method === "delivery" || v.method === "pickup" || v.method === "partner")) {
+      return { method: v.method, deliveryZoneId: typeof v.deliveryZoneId === "string" ? v.deliveryZoneId : null,
+        partnerShopId: typeof v.partnerShopId === "string" && GUID.test(v.partnerShopId) ? v.partnerShopId : null };
     }
   } catch {}
   return { method: "delivery", deliveryZoneId: null };

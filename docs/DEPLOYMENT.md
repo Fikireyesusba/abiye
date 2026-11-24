@@ -188,6 +188,24 @@ To switch the split off again, delete the four variables and redeploy.
 - **Cities:** about 85 Ethiopian cities are listed (switched off) under Settings → Delivery → "Other Ethiopian cities": set the fee and tick Active to open one.
 - **HR details** (Staff → a person → HR details; staff.manage): job title, start date, Fayda number, passport (optional), address, city, emergency contact, notes. Never copied into the Activity log or Telegram.
 
+## 6b-1. Partner shops — Abiye Business app (migration 0073)
+
+Customers in other cities can collect their order at a **partner shop**. The courier brings it there; the courier and the shop check **each other's PIN**; the customer collects it with **their own PIN**; the shop earns a **handling fee** per collected order.
+
+**Set up (once):**
+1. **Address for the app (recommended):** Vercel → Settings → Domains → add `business.abiye.site` (+ the DNS record Vercel shows); Supabase → Authentication → URL Configuration → Redirect URLs: add `https://business.abiye.site/**`; Vercel → Environment Variables (Production): `BUSINESS_HOST=business.abiye.site` → Redeploy. Until `BUSINESS_HOST` is set, shop staff sign in at the courier address (`courier.abiye.site`).
+2. **The shop's city** must be switched on with its delivery price (Settings → Delivery cities & fees).
+3. **Admin → Partner shops → Add shop** (Super Admin): name, city, full address, landmark, phone, opening hours, map link, handling fee per order.
+4. **Shop staff:** Staff → Add staff member with the permission set **Partner shop**, then Partner shops → **Shop staff** → choose their shop. They sign in at `https://business.abiye.site` (email, password, authenticator code) and can install it as **Abiye Business**.
+
+**How an order goes:**
+- **Checkout:** "Pick up at a partner shop (other cities)" → choose the shop; its full address, landmark, phone, hours and map link are shown. The customer pays the **delivery price of the shop's city** (same bigger-purchase discount). The order keeps a copy of the shop's details.
+- **Dispatch** (Couriers & delivery): the order shows "to partner shop …"; assign a courier as usual. Two 4-digit hand-over PINs are made.
+- **Courier app:** Picked up → at the shop, the courier tells the shop **their PIN** and types the **shop's PIN**. **Business app:** the shop sees the order under "Courier on the way" with **its PIN**, and types the **courier's PIN** → Received. When both PINs are checked the order is **at the shop** (ready for pickup); the courier earns the city price; the customer gets an email with the shop address and their **pickup PIN** (also on their order page).
+- **Customer at the shop:** the shop types the customer's PIN → **Handed over** → order completed; the shop earns its handling fee.
+- 5 wrong hand-over PINs lock the hand-over (re-assign the same courier on the order to unlock); 5 wrong customer PINs lock the pickup (call the office).
+- **Admin → Partner shops** (Super Admin): shops (on the way / at the shop / collected / to pay), **Shop staff**, **Add shop**, **Excel** (orders collected at partner shops). Shop page: details, open orders, unpaid → **Mark as paid**, payments. The shop sees its earnings and payments in the app. Every step is in the Activity log and the orders & payments Telegram group.
+
 ## 6b-2. New customer accounts need approval
 
 New sign-ups are **Under verification**: they can sign in, browse and use Support & feedback, but cannot order, top up, use printing or write reviews until approved. The security Telegram group announces each new account. **Admin → Account approvals** (permission "Approve or reject new customer accounts" — Super Admin; add it to other permission sets under Staff if needed): see the details, **Approve** (customer emailed, can order) or **Reject, delete & block** with a reason (customer emailed "due to security reasons…", account deleted, email on the block list with the reason). Customers invited from Admin → Customers are approved at once; existing customers stay approved.

@@ -5,14 +5,20 @@ Living tracker so work can continue across sessions. **Update this file at the e
 - Architecture & plan: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - Setup & deployment: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
 
+## Phase 2: partner shops — Abiye Business app (requested 2026-11-24)
+
+- Migration **0073** `20261124000073_partner_shops.sql`: permission set **Partner shop** (`partner.own`) + `partners.manage` (Super Admin); `partner_shops`, `partner_staff`, `partner_earnings`, `partner_payouts` (RLS: own shop or partners.manage); orders `partner_shop_id`, `partner_snapshot`, hand-over PINs (`handoff_courier_code` / `handoff_shop_code`, `handoff_*_at`, `handoff_tries`, `at_shop_at`); `create_order` accepts `fulfillment.partner_shop_id` (pickup, city price + discount); `admin_assign_courier` / `admin_dispatch_orders` include partner orders; `courier_deliveries` shows the shop (not the customer); `courier_handoff` + `partner_receive` (both PINs → ready_for_pickup, courier earns), `partner_hand_over` (customer PIN → completed, shop earns handling fee); `partner_orders`, `partner_me`; admin `admin_partner_shops`, `admin_save_partner_shop`, `admin_partner_staff`, `admin_set_partner_staff`, `admin_pay_partner`, `admin_partner_orders` + export kind `partner_orders`; reset clears partner earnings/payouts. New errors `handoff_locked`, `invalid_pickup_point`.
+- App: optional 5th address `BUSINESS_HOST` (until set, partner staff use the courier address); `/business` app (Orders, Earnings, My shop, installable "Abiye Business"); courier hand-over UI; checkout "Pick up at a partner shop" with full shop details; order page shop + pickup PIN; emails (on the way to the shop / ready at the shop with PIN); Admin → **Partner shops** (shops, staff, add, Excel) + shop page (details, open orders, pay); dispatch and order page show the partner shop / hand-over status.
+- Tests: db `99zzzi_partner_shops_test.sql` (35 checks), unit `hosts.test.ts`, e2e `partner.smoke.cjs` (27 checks).
+- ⏳ Owner: apply 0073; add `business.abiye.site` (domain, Supabase redirect URL, `BUSINESS_HOST`) — see DEPLOYMENT.md §6b-1.
+
 ## Couriers & staff phase 1 (requested 2026-11-24)
 
 - Migration **0071** `20261124000071_couriers_staff_phase1.sql`: no Telegram for duty changes (audit entity `courier`); vehicle set by admin (on_foot / bicycle / motorcycle / car; motorcycle & car require make, model, plate, insurance, licence); `staff_hr` (Fayda, passport optional, emergency contact…; staff.manage; values never logged); ~85 Ethiopian cities as inactive delivery zones; couriers go on duty for chosen cities (`courier_set_duty(on, zone_ids)`); `delivery_discounts` steps (Super Admin) applied in `create_order` (order keeps `delivery_fee_full_etb`); courier earns the full city price; `courier_decline` (back to dispatch, off duty); `app-sounds` bucket + ringtone; `admin_courier_orders` + export kind `courier_orders`.
 - App: courier duty page (cities), ringer (20 s refresh, ringtone or built-in, vibrate), decline, phone-only profile; admin Online now / Dispatch by city / Ringtone / Excel; courier vehicle & documents; Staff → HR details; checkout shows the delivery discount; CSP media-src allows the storage address.
 - Tests: db `99zzzh_courier_earnings_test.sql` (rewritten), unit `money-pricing.test.ts`, e2e `courier.smoke.cjs` (52 checks). Seed: sample cities replace the inactive copies.
-- Next: Phase 2 — Abiye Business app for partner shops (hand-off PINs, customer pickup PIN, shop address at checkout, handling fee per order + payouts).
 - ✅ 0071 applied in production (owner confirmed 2026-11-24).
-- Migration **0072** `20261124000072_delivery_discount_by_amount.sql`: delivery discount steps are now by purchase amount (`{min_amount_etb, percent}`, products + printing before promo), `private.delivery_discount_pct_for_amount`; old item-count steps cleared/ignored. ⏳ waiting for the owner to apply.
+- Migration **0072** `20261124000072_delivery_discount_by_amount.sql`: delivery discount steps are now by purchase amount (`{min_amount_etb, percent}`, products + printing before promo), `private.delivery_discount_pct_for_amount`; old item-count steps cleared/ignored. ✅ applied in production (owner confirmed 2026-11-24).
 
 ## Customer approval, courier app v2, Couriers & delivery (requested 2026-11-24)
 

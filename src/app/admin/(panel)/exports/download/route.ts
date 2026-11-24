@@ -24,6 +24,7 @@ const KINDS: Record<string, { perm: Permission; title: string; dated: boolean }>
   kpi: { perm: "kpi.view", title: "Staff performance (KPIs)", dated: true },
   promotions: { perm: "promotions.manage", title: "Promotion uses", dated: true },
   courier_orders: { perm: "couriers.manage", title: "Courier orders", dated: true },
+  partner_orders: { perm: "partners.manage", title: "Partner shop orders", dated: true },
 };
 type Sheet = { name: string; columns: { header: string; width: number }[]; rows: unknown[][] };
 
@@ -177,6 +178,23 @@ export async function GET(request: Request) {
       rows: (data ?? []).map((r) => [r.order_number, r.courier_user_id ?? "", r.courier_name ?? "", r.city ?? "", r.status, at(r.assigned_at), at(r.picked_up_at), at(r.delivered_at),
         r.delivery_attempts, r.fail_reason ?? "", Number(r.delivery_fee_etb), r.delivery_fee_full_etb === null ? "" : Number(r.delivery_fee_full_etb), Number(r.order_total_etb),
         r.courier_earned_etb === null ? "" : Number(r.courier_earned_etb), at(r.paid_out_at)]),
+    });
+  } else if (kind === "partner_orders") {
+    // Orders collected at partner shops in the chosen dates (optionally one shop): times, prices, what the shop earned and when paid.
+    const shop = url.searchParams.get("shop") ?? "";
+    const { data, error } = await supabase.rpc("admin_partner_orders", { p_from: pFrom!, p_to: pTo!, p_shop: /^[0-9a-f-]{36}$/.test(shop) ? shop : undefined });
+    if (error) return fail("partner shop orders");
+    sheets.push({
+      name: "Partner shop orders",
+      columns: [
+        { header: "Order", width: 12 }, { header: "Shop", width: 22 }, { header: "City", width: 16 }, { header: "Status", width: 16 },
+        { header: "Courier User ID", width: 10 }, { header: "Paid", width: 17 }, { header: "Picked up", width: 17 }, { header: "At the shop", width: 17 },
+        { header: "Collected", width: 17 }, { header: "Delivery fee paid (ETB)", width: 16 }, { header: "City price (ETB)", width: 13 },
+        { header: "Order total (ETB)", width: 13 }, { header: "Shop earned (ETB)", width: 14 }, { header: "Paid to shop", width: 17 },
+      ],
+      rows: (data ?? []).map((r) => [r.order_number, r.shop ?? "", r.city ?? "", r.status, r.courier_user_id ?? "", at(r.paid_at), at(r.picked_up_at), at(r.at_shop_at),
+        at(r.collected_at), Number(r.delivery_fee_etb), r.delivery_fee_full_etb === null ? "" : Number(r.delivery_fee_full_etb), Number(r.order_total_etb),
+        r.shop_earned_etb === null ? "" : Number(r.shop_earned_etb), at(r.paid_out_at)]),
     });
   } else if (kind === "printing") {
     const { data, error } = await supabase.from("printing_jobs")

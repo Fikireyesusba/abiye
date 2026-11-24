@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { headers } from "next/headers";
 import { getSiteSettings } from "@/lib/catalog/settings";
-import { appNameForSurface, surfaceForHost } from "@/lib/security/hosts";
+import { appNameForSurface, homePathForSurface, surfaceForHost } from "@/lib/security/hosts";
 
 /** Web app manifest: makes the shop installable on Android (and gives iPhone its name/colours). */
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
@@ -10,9 +10,8 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
   // Staff / Super Admin / courier addresses install their own app (own name and start page).
   const surface = surfaceForHost((await headers()).get("host"));
   if (surface && surface !== "customer") {
-    const courier = surface === "courier";
     const appName = appNameForSurface(surface, name);
-    const start = courier ? "/courier" : "/admin";
+    const start = homePathForSurface(surface);
     // Scope = the whole address, so signing in (/admin/login) stays inside the installed app.
     return {
       id: start, name: appName, short_name: appName.slice(0, 12), start_url: start, scope: "/",

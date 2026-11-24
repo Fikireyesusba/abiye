@@ -14,7 +14,7 @@ export const APP_ERROR_CODES = [
   "invalid_transition", "invalid_assignee", "invalid_reason", "insufficient_stock", "invalid_page_count",
   "no_price_rule", "invalid_amount", "cancel_order_instead", "invalid_role", "cannot_modify_self",
   "last_super_admin", "super_admin_exists", "user_not_found", "invalid_parent_category",
-  "rate_limited", "invalid_reference", "upload_too_large", "upload_invalid_type", "upload_failed", "upload_rejected", "scan_unavailable", "scan_too_large", "delivery_locked", "account_pending", "login_required", "terms_required", "account_deactivated", "cannot_manage_staff", "has_orders",
+  "rate_limited", "invalid_reference", "upload_too_large", "upload_invalid_type", "upload_failed", "upload_rejected", "scan_unavailable", "scan_too_large", "delivery_locked", "handoff_locked", "invalid_pickup_point", "account_pending", "login_required", "terms_required", "account_deactivated", "cannot_manage_staff", "has_orders",
   "invalid_promo_code", "promo_min_order", "promo_not_applicable", "promo_limit_reached", "promo_already_used", "promo_in_use", "promo_has_customers", "staff_account", "wallet_insufficient", "wallet_limit", "topup_pending_limit", "email_blocked", "service_unavailable", "unexpected",
 ] as const;
 

@@ -245,6 +245,27 @@ export interface DeliveryZone {
   estimated_days: string | null;
 }
 
+export interface PartnerShop {
+  id: string;
+  name: string;
+  zone_id: string;
+  city: string;
+  city_am: string;
+  fee_etb: number;
+  address_line: string;
+  landmark: string | null;
+  phone: string;
+  opening_hours: string | null;
+  map_url: string | null;
+}
+
+/** Partner shops customers can collect from (active shop in an active city). */
+export const getPartnerShops = cache(async (): Promise<PartnerShop[]> => {
+  const { data, error } = await getSupabasePublic().rpc("public_partner_shops");
+  if (error) throw new Error(`partner shops: ${error.message}`);
+  return (data ?? []).map((s) => ({ ...s, fee_etb: Number(s.fee_etb) }));
+});
+
 export const getDeliveryZones = cache(async (): Promise<DeliveryZone[]> => {
   const { data, error } = await getSupabasePublic()
     .from("delivery_zones")

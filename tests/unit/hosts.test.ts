@@ -55,3 +55,29 @@ describe("separate addresses", () => {
     expect(pathAllowed("courier", "/admin/orders")).toBe(false);
   });
 });
+
+describe("Abiye Business address (partner shops)", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it("without BUSINESS_HOST: partner shops use the courier address", () => {
+    set();
+    expect(roleAllowedOn("courier", "partner")).toBe(true);
+    expect(pathAllowed("courier", "/business")).toBe(true);
+    expect(homeSurfaceForRole("partner")).toBe("courier");
+    expect(roleAllowedOn("staff", "partner")).toBe(false);
+    expect(pathAllowed("customer", "/business")).toBe(false);
+  });
+  it("with BUSINESS_HOST: its own address, couriers and partners apart", () => {
+    set();
+    vi.stubEnv("BUSINESS_HOST", "business.abiye.site");
+    expect(surfaceForHost("business.abiye.site")).toBe("business");
+    expect(roleAllowedOn("business", "partner")).toBe(true);
+    expect(roleAllowedOn("business", "courier")).toBe(false);
+    expect(roleAllowedOn("courier", "partner")).toBe(false);
+    expect(pathAllowed("courier", "/business")).toBe(false);
+    expect(pathAllowed("business", "/business/earnings")).toBe(true);
+    expect(pathAllowed("business", "/admin/login")).toBe(true);
+    expect(pathAllowed("business", "/courier")).toBe(false);
+    expect(homeSurfaceForRole("partner")).toBe("business");
+    expect(surfaceUrl("business")).toBe("https://business.abiye.site");
+  });
+});

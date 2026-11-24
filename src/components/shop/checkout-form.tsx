@@ -80,22 +80,26 @@ export function CheckoutForm({
     const problem =
       lines.some(({ item, product }) => !product || (product.available !== null && product.available < item.quantity)) ||
       printLines.some((j) => !j?.payable);
-    const method: "delivery" | "pickup" =
-      prefs.method === "pickup" && details.pickupEnabled ? "pickup" : details.deliveryEnabled ? "delivery" : "pickup";
-    const zone = details.zones.find((z) => z.id === prefs.deliveryZoneId) ?? null;
+    const partnerOk = details.partnerShops.length > 0;
+    const method: "delivery" | "pickup" | "partner" =
+      prefs.method === "partner" && partnerOk ? "partner"
+        : prefs.method === "pickup" && details.pickupEnabled ? "pickup" : details.deliveryEnabled ? "delivery" : details.pickupEnabled || !partnerOk ? "pickup" : "partner";
+    const shop = method === "partner" ? (details.partnerShops.find((s) => s.id === prefs.partnerShopId) ?? null) : null;
+    // A partner shop costs the delivery price of its city (same bigger-purchase discount).
+    const zone = method === "partner" ? (shop ? { id: shop.zone_id, fee_etb: shop.fee_etb } : null) : (details.zones.find((z) => z.id === prefs.deliveryZoneId) ?? null);
     const totals = computeCartTotals(
       [
         ...lines.filter((l) => l.product).map((l) => ({ unitPrice: toSantim(l.product!.unit_price_etb), quantity: l.item.quantity })),
         ...printLines.filter((j) => j?.payable).map((j) => ({ unitPrice: toSantim(j!.total_etb!), quantity: 1 })),
       ],
       {
-        fulfillment: method,
+        fulfillment: method === "partner" ? "delivery" : method,
         zoneFee: zone ? toSantim(zone.fee_etb) : null,
         freeDeliveryThreshold: details.freeDeliveryThresholdEtb !== null ? toSantim(details.freeDeliveryThresholdEtb) : null,
         deliveryDiscounts: details.deliveryDiscounts,
       },
     );
-    return { lines, printLines, problem, method, zone, totals };
+    return { lines, printLines, problem, method, zone, shop, totals };
   }, [details, items, productItems, prefs]);
 
   // The previewed discount depends on the basket: it is dropped after any change.
@@ -165,14 +169,19 @@ export function CheckoutForm({
     e.preventDefault();
     setError(null);
     setFieldErrors({});
+    if (view.method === "partner" && !view.shop) {
+      setError("invalid_pickup_point");
+      return;
+    }
     startTransition(async () => {
       const result = await placeOrder({
         idempotencyKey: idempotencyKey(),
         locale,
         fullName: form.fullName,
         phone: form.phone,
-        fulfillment: view.method,
+        fulfillment: view.method === "partner" ? "pickup" : view.method,
         deliveryZoneId: view.method === "delivery" ? (view.zone?.id ?? undefined) : undefined,
+        partnerShopId: view.method === "partner" ? (view.shop?.id ?? undefined) : undefined,
         addressLine: view.method === "delivery" ? form.addressLine || undefined : undefined,
         instructions: form.instructions || undefined,
         acceptTerms,
@@ -272,6 +281,13 @@ export function CheckoutForm({
                   {t("checkout.pickup")}
                 </label>
               )}
+              {details.partnerShops.length > 0 && (
+                <label className="flex cursor-pointer items-center gap-2 rounded-md border p-3 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5 sm:col-span-2">
+                  <input type="radio" name="method" className="accent-[var(--primary)]" checked={view.method === "partner"}
+                    onChange={() => updatePrefs({ ...prefs, method: "partner" })} />
+                  {t("checkout.partnerPickup")}
+                </label>
+              )}
             </fieldset>
 
             {view.method === "delivery" ? (
@@ -298,6 +314,29 @@ export function CheckoutForm({
                   {fieldError("addressLine")}
                 </div>
               </>
+            ) : view.method === "partner" ? (
+              <div className="space-y-2">
+                <Label htmlFor="partnerShop">{t("checkoutPage.partnerShop")}</Label>
+                <select id="partnerShop" value={view.shop?.id ?? ""} onChange={(e) => updatePrefs({ ...prefs, method: "partner", partnerShopId: e.target.value || null })}
+                  aria-invalid={error === "invalid_pickup_point"}
+                  className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive">
+                  <option value="">{t("checkoutPage.choosePartner")}</option>
+                  {details.partnerShops.map((s) => (
+                    <option key={s.id} value={s.id}>{locale === "am" && s.city_am ? s.city_am : s.city} — {s.name} ({formatETB(toSantim(s.fee_etb), locale)})</option>
+                  ))}
+                </select>
+                {view.shop && (
+                  <div className="space-y-1 rounded-md bg-muted p-3 text-sm" data-testid="partner-shop-details">
+                    <p className="font-medium">{view.shop.name} · {locale === "am" && view.shop.city_am ? view.shop.city_am : view.shop.city}</p>
+                    <p>{view.shop.address_line}</p>
+                    {view.shop.landmark && <p className="text-muted-foreground">{t("checkoutPage.landmark")}: {view.shop.landmark}</p>}
+                    {view.shop.opening_hours && <p className="text-muted-foreground">{t("checkoutPage.openingHours")}: {view.shop.opening_hours}</p>}
+                    <p><a href={`tel:${view.shop.phone}`} className="text-primary hover:underline">{view.shop.phone}</a>
+                      {view.shop.map_url && <> · <a href={view.shop.map_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{t("checkoutPage.openMap")}</a></>}</p>
+                    <p className="pt-1 text-xs text-muted-foreground">{t("checkoutPage.partnerInfo")}</p>
+                  </div>
+                )}
+              </div>
             ) : (
               <p className="rounded-md bg-muted p-3 text-sm">{t("checkoutPage.pickupInfo", { address: shopAddress })}</p>
             )}
@@ -341,7 +380,7 @@ export function CheckoutForm({
               <dt className="text-muted-foreground">{t("cart.delivery")}</dt>
               <dd className="tabular-nums">
                 {view.method === "pickup" || view.totals.freeDeliveryApplied ? t("cart.freeDelivery") : view.zone ? formatETB(view.totals.deliveryFee, locale) : "—"}
-                {view.method === "delivery" && view.zone && view.totals.deliveryDiscountPercent > 0 && (
+                {view.method !== "pickup" && view.zone && view.totals.deliveryDiscountPercent > 0 && (
                   <span className="block text-xs text-success" data-testid="delivery-discount">{t("cart.deliveryDiscount", { percent: view.totals.deliveryDiscountPercent })}</span>
                 )}
               </dd>

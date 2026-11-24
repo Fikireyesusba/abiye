@@ -451,14 +451,14 @@ isOneToOne: false
                   ]
                 },"orders": {
                   Row: {
-                    "access_token_hash": string,"address_line": string | null,"assigned_to": string | null,"bank_account_id": string | null,"bank_snapshot": NonNullable<Json>,"cancelled_at": string | null,"channel": string,"city": string | null,"courier_assigned_at": string | null,"courier_id": string | null,"created_at": string,"currency": string,"customer_id": string,"customer_name": string,"customer_phone": string,"delivered_at": string | null,"delivery_attempts": number,"delivery_code": string | null,"delivery_code_tries": number,"delivery_fail_reason": string | null,"delivery_failed_at": string | null,"delivery_fee_etb": number,"delivery_fee_full_etb": number | null,"delivery_instructions": string | null,"delivery_zone_id": string | null,"discount_etb": number,"fulfillment_method": Database["public"]['Enums']["fulfillment_method"],"id": string,"idempotency_key": string,"locale": string,"order_number": string,"payment_due_at": string,"payment_method": string,"payment_status": Database["public"]['Enums']["payment_status"],"payment_verified_at": string | null,"payment_verified_by": string | null,"picked_up_at": string | null,"promotion_id": string | null,"status": Database["public"]['Enums']["order_status"],"subtotal_etb": number,"total_etb": number,"tracking_code_hash": string,"updated_at": string,"user_id": string | null
+                    "access_token_hash": string,"address_line": string | null,"assigned_to": string | null,"at_shop_at": string | null,"bank_account_id": string | null,"bank_snapshot": NonNullable<Json>,"cancelled_at": string | null,"channel": string,"city": string | null,"courier_assigned_at": string | null,"courier_id": string | null,"created_at": string,"currency": string,"customer_id": string,"customer_name": string,"customer_phone": string,"delivered_at": string | null,"delivery_attempts": number,"delivery_code": string | null,"delivery_code_tries": number,"delivery_fail_reason": string | null,"delivery_failed_at": string | null,"delivery_fee_etb": number,"delivery_fee_full_etb": number | null,"delivery_instructions": string | null,"delivery_zone_id": string | null,"discount_etb": number,"fulfillment_method": Database["public"]['Enums']["fulfillment_method"],"handoff_courier_at": string | null,"handoff_courier_code": string | null,"handoff_shop_at": string | null,"handoff_shop_code": string | null,"handoff_tries": number,"id": string,"idempotency_key": string,"locale": string,"order_number": string,"partner_shop_id": string | null,"partner_snapshot": Json | null,"payment_due_at": string,"payment_method": string,"payment_status": Database["public"]['Enums']["payment_status"],"payment_verified_at": string | null,"payment_verified_by": string | null,"picked_up_at": string | null,"promotion_id": string | null,"status": Database["public"]['Enums']["order_status"],"subtotal_etb": number,"total_etb": number,"tracking_code_hash": string,"updated_at": string,"user_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "access_token_hash": string,"address_line"?: string | null,"assigned_to"?: string | null,"bank_account_id"?: string | null,"bank_snapshot": NonNullable<Json>,"cancelled_at"?: string | null,"channel"?: string,"city"?: string | null,"courier_assigned_at"?: string | null,"courier_id"?: string | null,"created_at"?: string,"currency"?: string,"customer_id": string,"customer_name": string,"customer_phone": string,"delivered_at"?: string | null,"delivery_attempts"?: number,"delivery_code"?: string | null,"delivery_code_tries"?: number,"delivery_fail_reason"?: string | null,"delivery_failed_at"?: string | null,"delivery_fee_etb"?: number,"delivery_fee_full_etb"?: number | null,"delivery_instructions"?: string | null,"delivery_zone_id"?: string | null,"discount_etb"?: number,"fulfillment_method": Database["public"]['Enums']["fulfillment_method"],"id"?: string,"idempotency_key": string,"locale"?: string,"order_number"?: string,"payment_due_at": string,"payment_method"?: string,"payment_status"?: Database["public"]['Enums']["payment_status"],"payment_verified_at"?: string | null,"payment_verified_by"?: string | null,"picked_up_at"?: string | null,"promotion_id"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"subtotal_etb": number,"total_etb": number,"tracking_code_hash": string,"updated_at"?: string,"user_id"?: string | null
+                    "access_token_hash": string,"address_line"?: string | null,"assigned_to"?: string | null,"at_shop_at"?: string | null,"bank_account_id"?: string | null,"bank_snapshot": NonNullable<Json>,"cancelled_at"?: string | null,"channel"?: string,"city"?: string | null,"courier_assigned_at"?: string | null,"courier_id"?: string | null,"created_at"?: string,"currency"?: string,"customer_id": string,"customer_name": string,"customer_phone": string,"delivered_at"?: string | null,"delivery_attempts"?: number,"delivery_code"?: string | null,"delivery_code_tries"?: number,"delivery_fail_reason"?: string | null,"delivery_failed_at"?: string | null,"delivery_fee_etb"?: number,"delivery_fee_full_etb"?: number | null,"delivery_instructions"?: string | null,"delivery_zone_id"?: string | null,"discount_etb"?: number,"fulfillment_method": Database["public"]['Enums']["fulfillment_method"],"handoff_courier_at"?: string | null,"handoff_courier_code"?: string | null,"handoff_shop_at"?: string | null,"handoff_shop_code"?: string | null,"handoff_tries"?: number,"id"?: string,"idempotency_key": string,"locale"?: string,"order_number"?: string,"partner_shop_id"?: string | null,"partner_snapshot"?: Json | null,"payment_due_at": string,"payment_method"?: string,"payment_status"?: Database["public"]['Enums']["payment_status"],"payment_verified_at"?: string | null,"payment_verified_by"?: string | null,"picked_up_at"?: string | null,"promotion_id"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"subtotal_etb": number,"total_etb": number,"tracking_code_hash": string,"updated_at"?: string,"user_id"?: string | null
                   }
                   Update: {
-                    "access_token_hash"?: string,"address_line"?: string | null,"assigned_to"?: string | null,"bank_account_id"?: string | null,"bank_snapshot"?: NonNullable<Json>,"cancelled_at"?: string | null,"channel"?: string,"city"?: string | null,"courier_assigned_at"?: string | null,"courier_id"?: string | null,"created_at"?: string,"currency"?: string,"customer_id"?: string,"customer_name"?: string,"customer_phone"?: string,"delivered_at"?: string | null,"delivery_attempts"?: number,"delivery_code"?: string | null,"delivery_code_tries"?: number,"delivery_fail_reason"?: string | null,"delivery_failed_at"?: string | null,"delivery_fee_etb"?: number,"delivery_fee_full_etb"?: number | null,"delivery_instructions"?: string | null,"delivery_zone_id"?: string | null,"discount_etb"?: number,"fulfillment_method"?: Database["public"]['Enums']["fulfillment_method"],"id"?: string,"idempotency_key"?: string,"locale"?: string,"order_number"?: string,"payment_due_at"?: string,"payment_method"?: string,"payment_status"?: Database["public"]['Enums']["payment_status"],"payment_verified_at"?: string | null,"payment_verified_by"?: string | null,"picked_up_at"?: string | null,"promotion_id"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"subtotal_etb"?: number,"total_etb"?: number,"tracking_code_hash"?: string,"updated_at"?: string,"user_id"?: string | null
+                    "access_token_hash"?: string,"address_line"?: string | null,"assigned_to"?: string | null,"at_shop_at"?: string | null,"bank_account_id"?: string | null,"bank_snapshot"?: NonNullable<Json>,"cancelled_at"?: string | null,"channel"?: string,"city"?: string | null,"courier_assigned_at"?: string | null,"courier_id"?: string | null,"created_at"?: string,"currency"?: string,"customer_id"?: string,"customer_name"?: string,"customer_phone"?: string,"delivered_at"?: string | null,"delivery_attempts"?: number,"delivery_code"?: string | null,"delivery_code_tries"?: number,"delivery_fail_reason"?: string | null,"delivery_failed_at"?: string | null,"delivery_fee_etb"?: number,"delivery_fee_full_etb"?: number | null,"delivery_instructions"?: string | null,"delivery_zone_id"?: string | null,"discount_etb"?: number,"fulfillment_method"?: Database["public"]['Enums']["fulfillment_method"],"handoff_courier_at"?: string | null,"handoff_courier_code"?: string | null,"handoff_shop_at"?: string | null,"handoff_shop_code"?: string | null,"handoff_tries"?: number,"id"?: string,"idempotency_key"?: string,"locale"?: string,"order_number"?: string,"partner_shop_id"?: string | null,"partner_snapshot"?: Json | null,"payment_due_at"?: string,"payment_method"?: string,"payment_status"?: Database["public"]['Enums']["payment_status"],"payment_verified_at"?: string | null,"payment_verified_by"?: string | null,"picked_up_at"?: string | null,"promotion_id"?: string | null,"status"?: Database["public"]['Enums']["order_status"],"subtotal_etb"?: number,"total_etb"?: number,"tracking_code_hash"?: string,"updated_at"?: string,"user_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -492,10 +492,114 @@ isOneToOne: false
       referencedRelation: "delivery_zones"
       referencedColumns: ["id"]
     },{
+      foreignKeyName: "orders_partner_shop_id_fkey"
+      columns: ["partner_shop_id"]
+isOneToOne: false
+      referencedRelation: "partner_shops"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "orders_promotion_id_fkey"
       columns: ["promotion_id"]
 isOneToOne: false
       referencedRelation: "promotions"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"partner_earnings": {
+                  Row: {
+                    "amount_etb": number,"earned_at": string,"id": number,"order_id": string,"order_number": string,"payout_id": string | null,"shop_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "amount_etb": number,"earned_at"?: string,"id"?: never,"order_id": string,"order_number": string,"payout_id"?: string | null,"shop_id": string
+                  }
+                  Update: {
+                    "amount_etb"?: number,"earned_at"?: string,"id"?: never,"order_id"?: string,"order_number"?: string,"payout_id"?: string | null,"shop_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "partner_earnings_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: true
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "partner_earnings_payout_id_fkey"
+      columns: ["payout_id"]
+isOneToOne: false
+      referencedRelation: "partner_payouts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "partner_earnings_shop_id_fkey"
+      columns: ["shop_id"]
+isOneToOne: false
+      referencedRelation: "partner_shops"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"partner_payouts": {
+                  Row: {
+                    "amount_etb": number,"id": string,"note": string | null,"orders": number,"paid_at": string,"paid_by": string | null,"reference": string | null,"shop_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "amount_etb": number,"id"?: string,"note"?: string | null,"orders": number,"paid_at"?: string,"paid_by"?: string | null,"reference"?: string | null,"shop_id": string
+                  }
+                  Update: {
+                    "amount_etb"?: number,"id"?: string,"note"?: string | null,"orders"?: number,"paid_at"?: string,"paid_by"?: string | null,"reference"?: string | null,"shop_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "partner_payouts_shop_id_fkey"
+      columns: ["shop_id"]
+isOneToOne: false
+      referencedRelation: "partner_shops"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"partner_shops": {
+                  Row: {
+                    "address_line": string,"created_at": string,"handling_fee_etb": number,"id": string,"is_active": boolean,"landmark": string | null,"map_url": string | null,"name": string,"opening_hours": string | null,"phone": string,"updated_at": string,"zone_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "address_line": string,"created_at"?: string,"handling_fee_etb"?: number,"id"?: string,"is_active"?: boolean,"landmark"?: string | null,"map_url"?: string | null,"name": string,"opening_hours"?: string | null,"phone": string,"updated_at"?: string,"zone_id": string
+                  }
+                  Update: {
+                    "address_line"?: string,"created_at"?: string,"handling_fee_etb"?: number,"id"?: string,"is_active"?: boolean,"landmark"?: string | null,"map_url"?: string | null,"name"?: string,"opening_hours"?: string | null,"phone"?: string,"updated_at"?: string,"zone_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "partner_shops_zone_id_fkey"
+      columns: ["zone_id"]
+isOneToOne: false
+      referencedRelation: "delivery_zones"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"partner_staff": {
+                  Row: {
+                    "created_at": string,"profile_id": string,"shop_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"profile_id": string,"shop_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"profile_id"?: string,"shop_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "partner_staff_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: true
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "partner_staff_shop_id_fkey"
+      columns: ["shop_id"]
+isOneToOne: false
+      referencedRelation: "partner_shops"
       referencedColumns: ["id"]
     }
                   ]
@@ -1132,7 +1236,7 @@ isOneToOne: false
                            },
 "admin_dispatch_orders":
 { Args: Record<PropertyKey, never>; Returns: {
-              "address_line": string,"city": string,"courier_id": string,"courier_pay_etb": number,"delivery_attempts": number,"delivery_fee_etb": number,"fail_reason": string,"items": number,"order_id": string,"order_number": string,"paid_at": string,"status": string,"total_etb": number,"zone_id": string
+              "address_line": string,"city": string,"courier_id": string,"courier_pay_etb": number,"delivery_attempts": number,"delivery_fee_etb": number,"fail_reason": string,"items": number,"order_id": string,"order_number": string,"paid_at": string,"partner_shop": string,"status": string,"total_etb": number,"zone_id": string
             }[]
                            },
 "admin_find_user":
@@ -1184,8 +1288,26 @@ isOneToOne: false
               "attempts": number,"channel": string,"created_at": string,"event_type": string,"id": number,"last_error": string,"max_attempts": number,"next_attempt_at": string,"reference": string,"sent_at": string,"status": Database["public"]['Enums']["notification_status"]
             }[]
                            },
+"admin_partner_orders":
+{ Args: { "p_from": string,"p_shop"?: string,"p_to": string }; Returns: {
+              "at_shop_at": string,"city": string,"collected_at": string,"courier_user_id": string,"delivery_fee_etb": number,"delivery_fee_full_etb": number,"order_number": string,"order_total_etb": number,"paid_at": string,"paid_out_at": string,"picked_up_at": string,"shop": string,"shop_earned_etb": number,"status": string
+            }[]
+                           },
+"admin_partner_shops":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "address_line": string,"at_shop": number,"city": string,"collected_month": number,"handling_fee_etb": number,"id": string,"incoming": number,"is_active": boolean,"landmark": string,"last_collected_at": string,"map_url": string,"name": string,"opening_hours": string,"phone": string,"staff": string,"staff_count": number,"unpaid_etb": number,"zone_id": string
+            }[]
+                           },
+"admin_partner_staff":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "email": string,"full_name": string,"id": string,"is_active": boolean,"member_id": string,"shop": string,"shop_id": string
+            }[]
+                           },
 "admin_pay_courier":
 { Args: { "p_courier": string,"p_note"?: string,"p_reference"?: string }; Returns: Json
+                           },
+"admin_pay_partner":
+{ Args: { "p_note"?: string,"p_reference"?: string,"p_shop": string }; Returns: Json
                            },
 "admin_payments_export":
 { Args: { "p_from": string,"p_status"?: string,"p_to": string }; Returns: {
@@ -1260,6 +1382,9 @@ isOneToOne: false
 "admin_save_kpi_target":
 { Args: { "p_metric": string,"p_period": string,"p_profile_id"?: string,"p_target": number }; Returns: undefined
                            },
+"admin_save_partner_shop":
+{ Args: { "p": Json,"p_id": string }; Returns: string
+                           },
 "admin_save_role":
 { Args: { "p_description": string,"p_name": string,"p_permissions": (string)[],"p_role_id": number }; Returns: number
                            },
@@ -1287,6 +1412,9 @@ isOneToOne: false
                            },
 "admin_set_member_permissions":
 { Args: { "p_permissions": (string)[],"p_user_id": string }; Returns: undefined
+                           },
+"admin_set_partner_staff":
+{ Args: { "p_profile": string,"p_shop": string }; Returns: undefined
                            },
 "admin_set_pending_payment_alerts":
 { Args: { "p_on": boolean }; Returns: undefined
@@ -1510,11 +1638,14 @@ isOneToOne: false
                            },
 "courier_deliveries":
 { Args: Record<PropertyKey, never>; Returns: {
-              "active": boolean,"address_line": string,"assigned_at": string,"city": string,"customer_name": string,"customer_phone": string,"delivered_at": string,"delivery_instructions": string,"fail_reason": string,"items": Json,"order_id": string,"order_number": string,"picked_up_at": string,"status": string,"total_etb": number
+              "active": boolean,"address_line": string,"assigned_at": string,"city": string,"customer_name": string,"customer_phone": string,"delivered_at": string,"delivery_instructions": string,"fail_reason": string,"handoff_code": string,"handoff_courier_done": boolean,"handoff_shop_done": boolean,"items": Json,"order_id": string,"order_number": string,"partner_hours": string,"partner_landmark": string,"partner_map_url": string,"partner_phone": string,"partner_shop": string,"picked_up_at": string,"status": string,"total_etb": number
             }[]
                            },
 "courier_fail":
 { Args: { "p_order_id": string,"p_reason": string }; Returns: undefined
+                           },
+"courier_handoff":
+{ Args: { "p_order_id": string,"p_shop_code": string }; Returns: boolean
                            },
 "courier_mark_notifications_read":
 { Args: Record<PropertyKey, never>; Returns: undefined
@@ -1581,9 +1712,28 @@ isOneToOne: false
 "my_staff_status":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },
+"partner_hand_over":
+{ Args: { "p_order_id": string,"p_pin": string }; Returns: boolean
+                           },
+"partner_me":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"partner_orders":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "at_shop_at": string,"collected_at": string,"courier_confirmed": boolean,"courier_name": string,"courier_phone": string,"customer_name": string,"customer_phone": string,"handoff_locked": boolean,"items": Json,"order_id": string,"order_number": string,"paid_at": string,"pin_locked": boolean,"shop_code": string,"shop_confirmed": boolean,"stage": string,"status": string
+            }[]
+                           },
+"partner_receive":
+{ Args: { "p_courier_code": string,"p_order_id": string }; Returns: boolean
+                           },
 "printing_files_due_for_deletion":
 { Args: { "p_limit"?: number }; Returns: {
               "file_id": string,"job_id": string,"storage_path": string
+            }[]
+                           },
+"public_partner_shops":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "address_line": string,"city": string,"city_am": string,"fee_etb": number,"id": string,"landmark": string,"map_url": string,"name": string,"opening_hours": string,"phone": string,"zone_id": string
             }[]
                            },
 "purge_security_events":

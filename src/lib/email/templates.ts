@@ -60,6 +60,11 @@ function spec(row: EmailRow, ctx: EmailContext): Spec | null {
   const totalEn = esc(money(p.total_etb, "en"));
   const totalAm = esc(money(p.total_etb, "am"));
   const viewOrder = { href: orderUrl, en: "View your order", am: "ትዕዛዝዎን ይመልከቱ" };
+  const partner = p.partner && typeof p.partner === "object" ? (p.partner as Record<string, string | undefined>) : null;
+  const partnerAddress = partner
+    ? esc([partner.city, partner.address_line, partner.landmark, partner.phone, partner.opening_hours].filter(Boolean).join(" · "))
+    : "";
+  const pin = typeof p.delivery_code === "string" && /^\d{4}$/.test(p.delivery_code) ? p.delivery_code : null;
   const pickup = p.fulfillment === "pickup";
 
   switch (row.event_type) {
@@ -106,6 +111,20 @@ function spec(row: EmailRow, ctx: EmailContext): Spec | null {
         button: viewOrder,
       };
     case "customer_order_ready_for_pickup":
+      if (partner) {
+        return {
+          subject: `Order ${n} is ready at ${esc(partner.name)} / በአጋር ሱቁ ለመውሰድ ዝግጁ ነው`,
+          en: { title: `Order ${n} is ready for pickup at ${esc(partner.name)}.`, lines: [
+            `Address: ${partnerAddress}`,
+            ...(pin ? [`Your pickup PIN: <strong style="font-size:20px;letter-spacing:4px">${pin}</strong> — give it to the shop only when you receive your order.`] : []),
+          ] },
+          am: { title: `ትዕዛዝ ${n} በ${esc(partner.name)} ለመውሰድ ዝግጁ ነው።`, lines: [
+            `አድራሻ፦ ${partnerAddress}`,
+            ...(pin ? [`የመውሰጃ ፒንዎ፦ <strong style="font-size:20px;letter-spacing:4px">${pin}</strong> — ትዕዛዝዎን ሲቀበሉ ብቻ ለሱቁ ይስጡ።`] : []),
+          ] },
+          button: viewOrder,
+        };
+      }
       return {
         subject: `Order ${n} is ready for pickup / ለመውሰድ ዝግጁ ነው`,
         en: { title: `Order ${n} is ready for pickup.`, lines: [ctx.address.en ? `Collect it at: ${esc(ctx.address.en)}` : "You can collect it at our shop."] },
@@ -113,6 +132,14 @@ function spec(row: EmailRow, ctx: EmailContext): Spec | null {
         button: viewOrder,
       };
     case "customer_order_out_for_delivery":
+      if (partner) {
+        return {
+          subject: `Order ${n} is on its way to ${esc(partner.name)} / ወደ አጋር ሱቁ በመንገድ ላይ ነው`,
+          en: { title: `Order ${n} is on its way to ${esc(partner.name)}.`, lines: [`We will email you when it is at the shop, with your pickup PIN.`, `Address: ${partnerAddress}`] },
+          am: { title: `ትዕዛዝ ${n} ወደ ${esc(partner.name)} በመንገድ ላይ ነው።`, lines: ["ሱቁ ሲደርስ ከመውሰጃ ፒንዎ ጋር ኢሜል እንልካለን።", `አድራሻ፦ ${partnerAddress}`] },
+          button: viewOrder,
+        };
+      }
       return {
         subject: `Order ${n} is on its way / በመንገድ ላይ ነው`,
         en: { title: `Order ${n} is on its way.`, lines: [

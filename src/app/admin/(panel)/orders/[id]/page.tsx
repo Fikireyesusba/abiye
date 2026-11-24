@@ -191,14 +191,14 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
             <dl className="space-y-2 text-sm">
               <div><dt className="text-muted-foreground">Name</dt><dd className="font-medium">{order.customer_name}</dd></div>
               <div><dt className="text-muted-foreground">Phone</dt><dd><a href={`tel:${order.customer_phone}`} className="text-primary">{formatEthiopianPhone(order.customer_phone)}</a></dd></div>
-              <div><dt className="text-muted-foreground">Fulfillment</dt><dd>{order.fulfillment_method === "pickup" ? "Pickup at shop" : `Delivery · ${order.city}`}</dd></div>
+              <div><dt className="text-muted-foreground">Fulfillment</dt><dd>{order.partner_shop_id ? `Pickup at partner shop · ${order.city}` : order.fulfillment_method === "pickup" ? "Pickup at shop" : `Delivery · ${order.city}`}</dd></div>
               {order.address_line && <div><dt className="text-muted-foreground">Address</dt><dd>{order.address_line}</dd></div>}
               {order.delivery_instructions && <div><dt className="text-muted-foreground">Instructions</dt><dd>{order.delivery_instructions}</dd></div>}
               {can("customers.view") && order.user_id && <Link href={`/admin/customers/${order.user_id}`} className="inline-block pt-1 text-primary hover:underline">Customer account & history →</Link>}
             </dl>
           </Panel>
 
-          {order.fulfillment_method === "delivery" && (can("orders.manage") || order.courier_id) && (
+          {(order.fulfillment_method === "delivery" || order.partner_shop_id) && (can("orders.manage") || order.courier_id) && (
             <Panel title="Courier">
               <div className="space-y-3 text-sm" data-testid="courier-panel">
                 {order.courier_id ? (
@@ -206,7 +206,14 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
                     <div className="flex gap-2"><dt className="text-muted-foreground">Courier (User ID)</dt><dd><UserIdLink id={courierIds.get(order.courier_id)} /></dd></div>
                     {order.courier_assigned_at && <div className="flex gap-2"><dt className="text-muted-foreground">Assigned</dt><dd>{formatDateTime(order.courier_assigned_at, "en")}</dd></div>}
                     {order.picked_up_at && <div className="flex gap-2"><dt className="text-muted-foreground">Picked up</dt><dd>{formatDateTime(order.picked_up_at, "en")}</dd></div>}
-                    {order.delivered_at && <div className="flex gap-2"><dt className="text-muted-foreground">Delivered</dt><dd>{formatDateTime(order.delivered_at, "en")} (customer&apos;s code checked)</dd></div>}
+                    {order.partner_shop_id && (
+                      <div className="flex gap-2"><dt className="text-muted-foreground">Hand-over</dt><dd data-testid="handoff-status">
+                        {order.at_shop_at ? `at the shop since ${formatDateTime(order.at_shop_at, "en")} (PINs checked both ways)`
+                          : `courier PIN ${order.handoff_shop_at ? "✓" : "…"} · shop PIN ${order.handoff_courier_at ? "✓" : "…"}`}
+                        {order.handoff_tries >= 5 && !order.at_shop_at && <span className="block text-destructive">Locked after 5 wrong PINs — re-assign the same courier to unlock.</span>}
+                      </dd></div>
+                    )}
+                    {order.delivered_at && <div className="flex gap-2"><dt className="text-muted-foreground">{order.partner_shop_id ? "Collected" : "Delivered"}</dt><dd>{formatDateTime(order.delivered_at, "en")} (customer&apos;s code checked)</dd></div>}
                     {order.delivery_fail_reason && !order.delivered_at && <div className="flex gap-2 text-destructive"><dt>Last try failed</dt><dd>{order.delivery_fail_reason} ({order.delivery_attempts}×)</dd></div>}
                     {order.delivery_code_tries >= 5 && !order.delivered_at && <p className="text-destructive">Delivery code locked after 5 wrong tries — re-assign the courier to unlock it.</p>}
                   </dl>

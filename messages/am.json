@@ -71,7 +71,8 @@
     "verificationNote": "ዝውውርዎን ከባንክ ሂሳባችን ጋር እናረጋግጣለን። ትዕዛዝዎ የሚረጋገጠው ከማረጋገጫ በኋላ ብቻ ነው።",
     "branch": "ቅርንጫፍ",
     "fromAccount": "ስምዎ እና ስልክዎ ከመለያዎ የተወሰዱ ናቸው፤ እዚህ መቀየር አይቻልም። ለመቀየር ያግኙን (ድጋፍ እና አስተያየት)።",
-    "setOnce": "እዚህ የሚያስገቡት መረጃ በመለያዎ ይቀመጣል፤ በኋላ መቀየር አይቻልም።"
+    "setOnce": "እዚህ የሚያስገቡት መረጃ በመለያዎ ይቀመጣል፤ በኋላ መቀየር አይቻልም።",
+    "partnerPickup": "በሌላ ከተማ ካለ አጋር ሱቅ እወስዳለሁ"
   },
   "fulfillment": {
     "delivery": "ማድረስ",
@@ -212,7 +213,9 @@
     "topup_pending_limit": "ማረጋገጫ የሚጠብቁ 3 የገንዘብ መሙላት ጥያቄዎች አሉዎት። እስክናረጋግጣቸው ድረስ እባክዎ ይጠብቁ።",
     "email_blocked": "ይህ ኢሜይል በዚህ ድረ-ገጽ ላይ መጠቀም አይቻልም። እባክዎ ያግኙን።",
     "delivery_locked": "Too many wrong delivery codes. Call the office — they will check the order.",
-    "account_pending": "Your account is under verification. You can order once our team has approved it — usually within one working day."
+    "account_pending": "Your account is under verification. You can order once our team has approved it — usually within one working day.",
+    "handoff_locked": "በጣም ብዙ የተሳሳቱ የማስረከቢያ ፒኖች። ቢሮውን ይደውሉ።",
+    "invalid_pickup_point": "ይህ የመውሰጃ ሱቅ አሁን አይገኝም። እባክዎ ሌላ ይምረጡ።"
   },
   "header": {
     "menu": "ማውጫ",
@@ -376,7 +379,13 @@
     "promoApplied": "{title} — ኮድ {code} ተተግብሯል",
     "promoRemove": "አስወግድ",
     "discount": "ቅናሽ",
-    "promoMinOrder": "ለዚህ ኮድ ዝቅተኛው የትዕዛዝ መጠን፦ {amount}።"
+    "promoMinOrder": "ለዚህ ኮድ ዝቅተኛው የትዕዛዝ መጠን፦ {amount}።",
+    "partnerShop": "የመውሰጃ ሱቅ",
+    "choosePartner": "ሱቅ ይምረጡ…",
+    "landmark": "ምልክት",
+    "openingHours": "የስራ ሰዓት",
+    "openMap": "ካርታ ይክፈቱ",
+    "partnerInfo": "መልእክተኛችን ትዕዛዝዎን ወደዚህ ሱቅ ያመጣል። ሲደርስ እንነግርዎታለን፤ በትዕዛዝ ገጽዎ ላይ በሚታየው ፒን ይወስዱታል። ክፍያው የዚያ ከተማ የማድረሻ ዋጋ ነው።"
   },
   "order": {
     "title": "ትዕዛዝ {number}",
@@ -427,7 +436,9 @@
     "orderDate": "የታዘዘበት ቀን {date}",
     "notFound": "ትዕዛዙ አልተገኘም። ከክፍያ በኋላ በተሰጠዎት የግል ማገናኛ ይክፈቱት።",
     "deliveryCodeTitle": "Your delivery code",
-    "deliveryCodeHint": "Give this code to the courier only when you receive your order."
+    "deliveryCodeHint": "Give this code to the courier only when you receive your order.",
+    "pickupCodeTitle": "በ{shop} ለመውሰድ የሚጠቅም ፒንዎ",
+    "pickupCodeHint": "ትዕዛዝዎ ሱቁ ውስጥ ነው። ይህን ፒን ሲቀበሉ ብቻ ለሱቁ ይስጡ።"
   },
   "track": {
     "title": "ትዕዛዝዎን ይከታተሉ",
