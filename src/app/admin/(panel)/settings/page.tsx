@@ -227,24 +227,24 @@ async function DeliveryTab({ s, supabase, superAdmin }: { s: Awaited<ReturnType<
           </div>
         </ActionForm>
       </Panel>
-      <Panel title="Delivery discount for more items">
-        <p className="mb-3 text-sm text-muted-foreground">The more items in an order, the lower the delivery fee the customer pays (e.g. 3+ items 10 % off, 6+ items 25 % off). The courier still earns the city&apos;s full delivery price.</p>
+      <Panel title="Delivery discount for bigger purchases">
+        <p className="mb-3 text-sm text-muted-foreground">The bigger the purchase (products and printing, before any promo code), the lower the delivery fee the customer pays — e.g. from 5,000 ETB 10 % off, from 10,000 ETB 30 % off (a 1,000 ETB delivery becomes 900, then 700). The courier still earns the city&apos;s full delivery price.</p>
         {superAdmin ? (
           <ActionForm action={saveDeliveryDiscounts} submitLabel="Save discounts" className="space-y-2">
             {[0, 1, 2, 3, 4].map((i) => (
               <div key={i} className="flex flex-wrap items-center gap-2 text-sm">
-                <span className="w-16 text-muted-foreground">Step {i + 1}</span> from
-                <Input name={`min_${i}`} type="number" min={2} max={1000} defaultValue={steps[i]?.min_items ?? ""} className="w-24" aria-label={`Step ${i + 1}: number of items`} /> items:
+                <span className="w-16 text-muted-foreground">Step {i + 1}</span> purchase from
+                <Input name={`amount_${i}`} type="number" min={1} step="0.01" defaultValue={steps[i]?.min_amount_etb ?? ""} className="w-32" aria-label={`Step ${i + 1}: purchase amount (ETB)`} /> ETB:
                 <Input name={`pct_${i}`} type="number" min={1} max={100} step="0.5" defaultValue={steps[i]?.percent ?? ""} className="w-24" aria-label={`Step ${i + 1}: percent off`} /> % off delivery
               </div>
             ))}
           </ActionForm>
         ) : (
-          <p className="text-sm">{steps.length ? steps.map((d) => `${d.min_items}+ items: ${d.percent}% off`).join(" · ") : "No discount steps."} <span className="text-muted-foreground">(set by the Super Admin)</span></p>
+          <p className="text-sm">{steps.length ? steps.map((d) => `from ${d.min_amount_etb.toLocaleString("en-US")} ETB: ${d.percent}% off`).join(" · ") : "No discount steps."} <span className="text-muted-foreground">(set by the Super Admin)</span></p>
         )}
       </Panel>
       <Panel title="Delivery cities & fees">
-        <p className="mb-2 text-sm text-muted-foreground">Customers can choose the active cities. The fee is the city&apos;s full delivery price (before the many-items discount) — it is also what the courier earns.</p>
+        <p className="mb-2 text-sm text-muted-foreground">Customers can choose the active cities. The fee is the city&apos;s full delivery price (before the bigger-purchase discount) — it is also what the courier earns.</p>
         <ul className="divide-y">
           {on.map((z) => (
             <li key={z.id} className="py-3">

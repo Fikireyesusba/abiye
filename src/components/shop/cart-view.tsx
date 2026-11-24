@@ -180,7 +180,8 @@ export function CartView() {
           <p className="text-sm text-muted-foreground">{t("cartPage.deliveryAtCheckout")}</p>
           {details.deliveryEnabled && (details.deliveryDiscounts ?? []).length > 0 && (
             <p className="text-xs text-success" data-testid="delivery-discount-steps">
-              {[...details.deliveryDiscounts].sort((a, b) => a.min_items - b.min_items).map((d) => t("cartPage.deliveryStep", { items: d.min_items, percent: d.percent })).join(" · ")}
+              {[...details.deliveryDiscounts].sort((a, b) => a.min_amount_etb - b.min_amount_etb)
+                .map((d) => t("cartPage.deliveryStep", { amount: formatETB(toSantim(d.min_amount_etb), locale), percent: d.percent })).join(" · ")}
             </p>
           )}
           {details.deliveryEnabled && details.freeDeliveryThresholdEtb !== null && (

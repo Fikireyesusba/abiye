@@ -2,17 +2,21 @@
 -- decline, payouts, notifications, HR details, ringtone, courier orders Excel. Duty changes are not alerted.
 \ir _helpers.sql
 update public.profiles set role_id = (select id from public.admin_roles where key = 'courier') where id = :staff2;
--- Discount steps: 2+ items 10 %, 3+ items 20 % (Addis Ababa = 150 ETB in the test data).
-update public.website_settings set value = value || '{"delivery_discounts": [{"min_items": 2, "percent": 10}, {"min_items": 3, "percent": 20}]}' where key = 'delivery';
-select pg_temp.ok(private.delivery_discount_pct(1) = 0 and private.delivery_discount_pct(2) = 10 and private.delivery_discount_pct(5) = 20, 'discount steps by number of items');
+-- Discount steps: from 2,000 ETB 10 %, from 2,500 ETB 20 % (Addis Ababa = 150 ETB in the test data).
+update public.website_settings set value = value || '{"delivery_discounts": [{"min_amount_etb": 2000, "percent": 10}, {"min_amount_etb": 2500, "percent": 20}]}' where key = 'delivery';
+select pg_temp.ok(private.delivery_discount_pct_for_amount(1999.99) = 0 and private.delivery_discount_pct_for_amount(2000) = 10 and private.delivery_discount_pct_for_amount(9000) = 20,
+  'discount steps by purchase amount');
+update public.website_settings set value = value || '{"delivery_discounts": [{"min_items": 2, "percent": 50}]}' where key = 'delivery';
+select pg_temp.ok(private.delivery_discount_pct_for_amount(9000) = 0, 'old item-count steps are ignored');
+update public.website_settings set value = value || '{"delivery_discounts": [{"min_amount_etb": 2000, "percent": 10}, {"min_amount_etb": 2500, "percent": 20}]}' where key = 'delivery';
 
 set role service_role;
 create temp table t_o as select public.create_order_for_user(:customer, pg_temp.order_payload(gen_random_uuid(),
   jsonb_build_array(jsonb_build_object('type', 'product', 'product_id', '20000000-0000-0000-0000-000000000007', 'quantity', 3)), 'delivery')) as r;
 reset role;
 select r ->> 'order_id' as oid from t_o \gset
-select pg_temp.ok((select delivery_fee_etb = 120 and delivery_fee_full_etb = 150 and total_etb = subtotal_etb + 120 from public.orders where id = :'oid'::uuid),
-  '3 items: customer pays 120 ETB delivery (20 % off 150); the order keeps the full city price 150');
+select pg_temp.ok((select delivery_fee_etb = 120 and delivery_fee_full_etb = 150 and total_etb = subtotal_etb + 120 and subtotal_etb = 2550 from public.orders where id = :'oid'::uuid),
+  '2,550 ETB purchase: customer pays 120 ETB delivery (20 % off 150); the order keeps the full city price 150');
 update public.orders set status = 'confirmed', payment_status = 'verified', payment_verified_at = now() where id = :'oid'::uuid;
 
 -- going on duty needs cities; duty changes are not Telegram alerts

@@ -203,6 +203,18 @@ async function tryLogin(page, base, email, password) {
     await toast(o, "HR details saved");
     check(sql(`select fayda_number || ' ' || passport_number from staff_hr where profile_id = '${courierId}'`) === "123456789012 EP1234567", "HR details (Fayda, passport) saved");
 
+    // ---- Super Admin: delivery discount steps by purchase amount
+    await o.goto(`${U("ops")}/admin/settings?tab=delivery`);
+    await o.fill("input[name=amount_0]", "10000");
+    await o.fill("input[name=pct_0]", "30");
+    await o.fill("input[name=amount_1]", "5000");
+    await o.fill("input[name=pct_1]", "10");
+    await o.click("button:has-text('Save discounts')");
+    await toast(o, "Delivery discounts saved");
+    check(sql(`select value->'delivery_discounts' from website_settings where key = 'delivery'`).replace(/\s/g, "") === '[{"percent":10,"min_amount_etb":5000},{"percent":30,"min_amount_etb":10000}]',
+      "Super Admin: delivery discount steps by purchase amount saved (sorted)");
+    sql(`update website_settings set value = value || '{"delivery_discounts": []}' where key = 'delivery'`);
+
     // ---- Super Admin (operations): courier page → Mark as paid
     await o.goto(`${U("ops")}/admin/couriers/${courierId}`);
     check((await o.locator("[data-testid=unpaid-list]").innerText()).includes(order.order_number), "Super Admin: the courier's unpaid delivery");

@@ -77,23 +77,23 @@ export async function saveSettings(_prev: ActionResult | null, fd: FormData): Pr
   return ok("Settings saved — live on the website now.");
 }
 
-/** Super Admin: lower delivery fee for bigger orders (up to 5 steps: from N items, P% off the city's delivery price). */
+/** Super Admin: lower delivery fee for bigger purchases (up to 5 steps: from N ETB, P% off the city's delivery price). */
 export async function saveDeliveryDiscounts(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   const ctx = await requirePermission("settings.manage");
   if (ctx.role !== "super_admin") return fail("Only the Super Admin can change the delivery discounts.");
-  const steps: { min_items: number; percent: number }[] = [];
+  const steps: { min_amount_etb: number; percent: number }[] = [];
   for (let i = 0; i < 5; i++) {
-    const n = String(fd.get(`min_${i}`) ?? "").trim();
+    const a = String(fd.get(`amount_${i}`) ?? "").trim();
     const p = String(fd.get(`pct_${i}`) ?? "").trim();
-    if (!n && !p) continue;
-    const min = Number(n), pct = Number(p);
-    if (!Number.isInteger(min) || min < 2 || min > 1000 || !Number.isFinite(pct) || pct <= 0 || pct > 100) {
-      return fail(`Step ${i + 1}: items must be 2 or more and the discount between 1 and 100 %.`);
+    if (!a && !p) continue;
+    const amount = Number(a), pct = Number(p);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 100_000_000 || !Number.isFinite(pct) || pct <= 0 || pct > 100) {
+      return fail(`Step ${i + 1}: enter a purchase amount (ETB) and a discount between 1 and 100 %.`);
     }
-    steps.push({ min_items: min, percent: Math.round(pct * 100) / 100 });
+    steps.push({ min_amount_etb: Math.round(amount * 100) / 100, percent: Math.round(pct * 100) / 100 });
   }
-  if (new Set(steps.map((s) => s.min_items)).size !== steps.length) return fail("Each step needs a different number of items.");
-  steps.sort((a, b) => a.min_items - b.min_items);
+  if (new Set(steps.map((s) => s.min_amount_etb)).size !== steps.length) return fail("Each step needs a different amount.");
+  steps.sort((a, b) => a.min_amount_etb - b.min_amount_etb);
   const supabase = await createSupabaseServerClient();
   const { data: row } = await supabase.from("website_settings").select("value").eq("key", "delivery").maybeSingle();
   const value = { ...((row?.value as Record<string, unknown>) ?? {}), delivery_discounts: steps };

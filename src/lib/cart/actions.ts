@@ -35,7 +35,7 @@ export interface CartDetails {
   deliveryEnabled: boolean;
   freeDeliveryThresholdEtb: number | null;
   /** Lower delivery fee for many items (Super Admin). */
-  deliveryDiscounts: { min_items: number; percent: number }[];
+  deliveryDiscounts: { min_amount_etb: number; percent: number }[];
 }
 
 const inputSchema = z.object({

@@ -20,13 +20,13 @@ export interface CartTotals {
 }
 
 export interface DeliveryDiscount {
-  min_items: number;
+  min_amount_etb: number;
   percent: number;
 }
 
-/** Highest step reached by this many items (same rule as private.delivery_discount_pct in the database). */
-export function deliveryDiscountPercent(items: number, steps: readonly DeliveryDiscount[] = []): number {
-  return steps.reduce((best, s) => (items >= s.min_items ? Math.max(best, Math.min(Math.max(s.percent, 0), 100)) : best), 0);
+/** Highest step reached by this purchase amount (same rule as private.delivery_discount_pct_for_amount in the database). */
+export function deliveryDiscountPercent(subtotal: Santim, steps: readonly DeliveryDiscount[] = []): number {
+  return steps.reduce((best, s) => (subtotal >= Math.round(s.min_amount_etb * 100) ? Math.max(best, Math.min(Math.max(s.percent, 0), 100)) : best), 0);
 }
 
 export const MAX_LINE_QUANTITY = 100;
@@ -44,8 +44,7 @@ export function computeCartTotals(
   const subtotal = addSantim(...lines.map((l) => mulSantim(l.unitPrice, l.quantity)));
   let deliveryFee = santim(0);
   let freeDeliveryApplied = false;
-  const items = lines.reduce((n, l) => n + l.quantity, 0);
-  const pct = deliveryDiscountPercent(items, options.deliveryDiscounts);
+  const pct = deliveryDiscountPercent(subtotal, options.deliveryDiscounts);
   if (options.fulfillment === "delivery" && options.zoneFee !== null) {
     if (options.freeDeliveryThreshold !== null && subtotal >= options.freeDeliveryThreshold) {
       freeDeliveryApplied = true;

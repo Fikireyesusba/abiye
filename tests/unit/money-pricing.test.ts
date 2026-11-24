@@ -75,13 +75,18 @@ describe("printing quote (mirror of public.quote_printing)", () => {
   });
 });
 
-describe("delivery discount for more items (same rule as the database)", () => {
-  const steps = [{ min_items: 3, percent: 10 }, { min_items: 6, percent: 25 }];
-  it("highest step reached by the number of items", () => {
-    expect(deliveryDiscountPercent(2, steps)).toBe(0);
-    expect(deliveryDiscountPercent(3, steps)).toBe(10);
-    expect(deliveryDiscountPercent(9, steps)).toBe(25);
-    expect(deliveryDiscountPercent(9, [])).toBe(0);
+describe("delivery discount for bigger purchases (same rule as the database)", () => {
+  const steps = [{ min_amount_etb: 300, percent: 10 }, { min_amount_etb: 600, percent: 25 }];
+  it("highest step reached by the purchase amount", () => {
+    expect(deliveryDiscountPercent(toSantim(299.99), steps)).toBe(0);
+    expect(deliveryDiscountPercent(toSantim(300), steps)).toBe(10);
+    expect(deliveryDiscountPercent(toSantim(900), steps)).toBe(25);
+    expect(deliveryDiscountPercent(toSantim(900), [])).toBe(0);
+  });
+  it("example: 1,000 ETB delivery — 900 from 5,000 ETB, 700 from 10,000 ETB", () => {
+    const s = [{ min_amount_etb: 5000, percent: 10 }, { min_amount_etb: 10000, percent: 30 }];
+    const fee = (amount: number) => computeCartTotals([{ unitPrice: toSantim(amount), quantity: 1 }], { fulfillment: "delivery", zoneFee: toSantim(1000), freeDeliveryThreshold: null, deliveryDiscounts: s }).deliveryFee;
+    expect([fee(4999), fee(5000), fee(10000)]).toEqual([toSantim(1000), toSantim(900), toSantim(700)]);
   });
   it("applied to the delivery fee, rounded to the santim; not to pickup or free delivery", () => {
     const lines = [{ unitPrice: toSantim(100), quantity: 4 }];
