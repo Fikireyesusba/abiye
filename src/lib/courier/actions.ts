@@ -47,3 +47,34 @@ export async function couldNotDeliver(_prev: ActionResult | null, fd: FormData):
   revalidatePath("/courier");
   return ok("Recorded — the office has been told and will arrange the next step.");
 }
+
+/** On duty / off duty (the office sees who is available when dispatching). */
+export async function setDuty(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("deliveries.own");
+  const on = fd.get("on") === "true";
+  const { error } = await (await createSupabaseServerClient()).rpc("courier_set_duty", { p_on: on });
+  if (error) return dbError(error);
+  revalidatePath("/courier", "layout");
+  return ok(on ? "You are on duty — the office can give you deliveries." : "You are off duty.");
+}
+
+/** The courier keeps their own phone and vehicle up to date. */
+export async function updateMyDetails(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("deliveries.own");
+  const v = z.object({
+    phone: z.string().trim().regex(/^(\+251|0)?[79]\d{8}$/, "Enter an Ethiopian mobile number (e.g. 0911223344)."),
+    vehicle: z.enum(["motorbike", "bicycle", "car", "on_foot", "other"]),
+    plate: z.string().trim().max(20).regex(/^[A-Za-z0-9 -]*$/, "Plate number: letters, digits, spaces or -"),
+  }).safeParse(formObject(fd));
+  if (!v.success) return fail(v.error.issues[0]?.message ?? "Check your details.");
+  const phone = `+251${v.data.phone.replace(/^(\+251|0)/, "")}`;
+  const { error } = await (await createSupabaseServerClient()).rpc("courier_update_details", { p_phone: phone, p_vehicle: v.data.vehicle, p_plate: v.data.plate });
+  if (error) return dbError(error);
+  revalidatePath("/courier", "layout");
+  return ok("Details saved.");
+}
+
+export async function markNotificationsRead(): Promise<void> {
+  await requirePermission("deliveries.own");
+  await (await createSupabaseServerClient()).rpc("courier_mark_notifications_read");
+}

@@ -179,6 +179,15 @@ To switch the split off again, delete the four variables and redeploy.
 - The courier sees the customer's name, phone (call button) and address (map link) only while the delivery is assigned and open.
 - **Courier app on the phone:** open `https://courier.abiye.site`, sign in, then tap **Install** on the "Install the courier app" card (Android / Chrome), or on iPhone: Safari → Share → **Add to Home Screen**. It appears as **Abiye Courier** and opens straight on the deliveries. (Staff can do the same at `ocs` → "Abiye OCS"; Super Admin at `operations` → "Abiye Operations".) Every step is in the Activity log and the orders & payments Telegram group (with the courier's User ID).
 
+### Courier app and Couriers & delivery (admin)
+
+- **Courier app** (bottom tabs): **Deliveries** (assigned to me; Picked up → Delivered with the customer's code / Couldn't deliver), **Earnings** (today, this month, to be paid, per delivery, payments received), **Notifications** (new delivery, delivery taken back, payment recorded; red badge), **Profile** (phone, vehicle, plate; change password). **Go on duty / off duty** in the header.
+- **Admin → Couriers & delivery**: **Dispatch** (paid delivery orders without a courier — or back after "couldn't deliver" — assign in one click; on-duty couriers ● first with their current load; needs orders.manage), **Couriers** (status, vehicle, active, delivered this month, to pay), **Fee per delivery** (Super Admin, default 100 ETB; a courier can have their own amount on their page). Courier page (Super Admin): unpaid deliveries → **Mark as paid** (reference / note) → payment record + notification to the courier.
+
+## 6b-2. New customer accounts need approval
+
+New sign-ups are **Under verification**: they can sign in, browse and use Support & feedback, but cannot order, top up, use printing or write reviews until approved. The security Telegram group announces each new account. **Admin → Account approvals** (permission "Approve or reject new customer accounts" — Super Admin; add it to other permission sets under Staff if needed): see the details, **Approve** (customer emailed, can order) or **Reject, delete & block** with a reason (customer emailed "due to security reasons…", account deleted, email on the block list with the reason). Customers invited from Admin → Customers are approved at once; existing customers stay approved.
+
 ## 6c. Virus scan of customer uploads (Cloudmersive)
 
 Every file a customer uploads — payment receipts, wallet top-up receipts and printing documents — is checked by content (real file type) and then sent to Cloudmersive's **advanced virus scan** before it is accepted. It must be clean: no virus / malware, no programs, scripts, macros, embedded HTML or XML external entities, not broken or disguised, **not password-protected**, and of the expected format (`.pdf`, `.jpg`, `.png`, `.docx`).

@@ -48,12 +48,12 @@ const toast = (page, text) => page.waitForSelector(`[data-sonner-toast]:has-text
     await toast(o, "Approved");
     check(sql(`select approval_status from customer_accounts where id = '${goodId}'`) === "approved", "approved");
     const bad = o.locator("[data-testid=pending-account]", { hasText: badEmail });
-    await bad.locator("input[name=reason]").fill("Details could not be verified");
+    await bad.locator("input[name=reason]").fill(`Details could not be verified ${RUN}`);
     await bad.locator("button:has-text('Reject')").click();
     await toast(o, "Rejected");
     check(sql(`select count(*) from auth.users where id = '${badId}'`) === "0", "rejected: the account is deleted");
-    check(sql(`select reason from blocked_emails where email = '${badEmail}'`).includes("Details could not be verified"), "rejected: the email is on the block list with the reason");
-    check(sql(`select count(*) from audit_logs where action = 'account_rejected' and metadata->>'reason' = 'Details could not be verified'`) === "1", "rejection in the Activity log");
+    check(sql(`select reason from blocked_emails where email = '${badEmail}'`).includes(`Details could not be verified ${RUN}`), "rejected: the email is on the block list with the reason");
+    check(sql(`select count(*) from audit_logs where action = 'account_rejected' and metadata->>'reason' = 'Details could not be verified ${RUN}'`) === "1", "rejection in the Activity log");
 
     // ---- approved customer: notice gone
     await c.goto(`${B}/`);

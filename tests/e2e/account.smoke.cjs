@@ -104,6 +104,11 @@ async function emailLink(to, subjectPart) {
   check((await (await b.newContext()).newPage().then(async (x) => { await x.goto(link); return x.url(); })).includes("/account/login?error=link"),
     "a confirmation link cannot be reused");
 
+  // ---- 2b. New accounts are "Under verification" until approved (browse only; no ordering)
+  check((await other.locator("[data-testid=account-pending]").count()) === 1, "new account: “Under verification” notice after confirming");
+  check(sql(`select approval_status from customer_accounts c join auth.users u on u.id = c.id where u.email = '${email}'`) === "pending", "new account waits for approval");
+  sql(`select approve_invited_customer((select id from auth.users where email = '${email}'))`); // approved (Account approvals is tested in approval.smoke)
+
   // ---- 3. Sign in and order (terms required, details remembered)
   await loginCustomer(p, B, email, "Selam2026pass", "/checkout");
   await p.goto(B);

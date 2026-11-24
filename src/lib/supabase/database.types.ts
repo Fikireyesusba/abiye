@@ -129,6 +129,104 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"courier_earnings": {
+                  Row: {
+                    "amount_etb": number,"courier_id": string,"earned_at": string,"id": number,"order_id": string,"payout_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "amount_etb": number,"courier_id": string,"earned_at"?: string,"id"?: never,"order_id": string,"payout_id"?: string | null
+                  }
+                  Update: {
+                    "amount_etb"?: number,"courier_id"?: string,"earned_at"?: string,"id"?: never,"order_id"?: string,"payout_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "courier_earnings_courier_id_fkey"
+      columns: ["courier_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "courier_earnings_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: true
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "courier_earnings_payout_id_fkey"
+      columns: ["payout_id"]
+isOneToOne: false
+      referencedRelation: "courier_payouts"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"courier_notifications": {
+                  Row: {
+                    "body": string | null,"courier_id": string,"created_at": string,"id": number,"kind": string,"order_id": string | null,"read_at": string | null,"title": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body"?: string | null,"courier_id": string,"created_at"?: string,"id"?: never,"kind": string,"order_id"?: string | null,"read_at"?: string | null,"title": string
+                  }
+                  Update: {
+                    "body"?: string | null,"courier_id"?: string,"created_at"?: string,"id"?: never,"kind"?: string,"order_id"?: string | null,"read_at"?: string | null,"title"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "courier_notifications_courier_id_fkey"
+      columns: ["courier_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "courier_notifications_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"courier_payouts": {
+                  Row: {
+                    "amount_etb": number,"courier_id": string,"deliveries": number,"id": string,"note": string | null,"paid_at": string,"paid_by": string | null,"reference": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "amount_etb": number,"courier_id": string,"deliveries": number,"id"?: string,"note"?: string | null,"paid_at"?: string,"paid_by"?: string | null,"reference"?: string | null
+                  }
+                  Update: {
+                    "amount_etb"?: number,"courier_id"?: string,"deliveries"?: number,"id"?: string,"note"?: string | null,"paid_at"?: string,"paid_by"?: string | null,"reference"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "courier_payouts_courier_id_fkey"
+      columns: ["courier_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"courier_profiles": {
+                  Row: {
+                    "created_at": string,"fee_override_etb": number | null,"on_duty": boolean,"on_duty_since": string | null,"phone": string | null,"plate_number": string | null,"profile_id": string,"updated_at": string,"vehicle": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"fee_override_etb"?: number | null,"on_duty"?: boolean,"on_duty_since"?: string | null,"phone"?: string | null,"plate_number"?: string | null,"profile_id": string,"updated_at"?: string,"vehicle"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"fee_override_etb"?: number | null,"on_duty"?: boolean,"on_duty_since"?: string | null,"phone"?: string | null,"plate_number"?: string | null,"profile_id"?: string,"updated_at"?: string,"vehicle"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "courier_profiles_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: true
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"cron_runs": {
                   Row: {
                     "detail": NonNullable<Json>,"last_ok": boolean,"last_run_at": string,"name": string
@@ -965,6 +1063,11 @@ isOneToOne: false
 "admin_clear_tickets":
 { Args: { "p_from": string,"p_to": string }; Returns: number
                            },
+"admin_couriers":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "active_deliveries": number,"delivered_month": number,"delivered_total": number,"email": string,"failed_month": number,"fee_etb": number,"fee_override_etb": number,"full_name": string,"id": string,"is_active": boolean,"last_delivered_at": string,"member_id": string,"on_duty": boolean,"on_duty_since": string,"phone": string,"plate_number": string,"unpaid_etb": number,"vehicle": string
+            }[]
+                           },
 "admin_create_instore_sale":
 { Args: { "p_customer_name"?: string,"p_customer_phone"?: string,"p_discount_etb"?: number,"p_idempotency_key"?: string,"p_items": Json,"p_note"?: string,"p_payment_method": string }; Returns: Json
                            },
@@ -1001,6 +1104,11 @@ isOneToOne: false
                            },
 "admin_delete_role":
 { Args: { "p_role_id": number }; Returns: undefined
+                           },
+"admin_dispatch_orders":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "address_line": string,"city": string,"courier_id": string,"delivery_attempts": number,"fail_reason": string,"items": number,"order_id": string,"order_number": string,"paid_at": string,"status": string,"total_etb": number
+            }[]
                            },
 "admin_find_user":
 { Args: { "p_member_id": string }; Returns: {
@@ -1050,6 +1158,9 @@ isOneToOne: false
 { Args: { "p_from"?: string,"p_limit"?: number,"p_search"?: string,"p_to"?: string }; Returns: {
               "attempts": number,"channel": string,"created_at": string,"event_type": string,"id": number,"last_error": string,"max_attempts": number,"next_attempt_at": string,"reference": string,"sent_at": string,"status": Database["public"]['Enums']["notification_status"]
             }[]
+                           },
+"admin_pay_courier":
+{ Args: { "p_courier": string,"p_note"?: string,"p_reference"?: string }; Returns: Json
                            },
 "admin_payments_export":
 { Args: { "p_from": string,"p_status"?: string,"p_to": string }; Returns: {
@@ -1137,6 +1248,9 @@ isOneToOne: false
               "note": string,"reviewed_at": string,"reviewed_by_name": string,"subject": string,"subject_type": string
             }[]
                            },
+"admin_set_courier_fee":
+{ Args: { "p_fee": number }; Returns: undefined
+                           },
 "admin_set_customer_active":
 { Args: { "p_active": boolean,"p_reason"?: string,"p_user_id": string }; Returns: undefined
                            },
@@ -1204,6 +1318,9 @@ isOneToOne: false
                            },
 "admin_unblock_email":
 { Args: { "p_email": string }; Returns: Json
+                           },
+"admin_update_courier":
+{ Args: { "p_courier": string,"p_fee_override": number,"p_phone": string,"p_plate": string,"p_vehicle": string }; Returns: undefined
                            },
 "admin_update_customer_details":
 { Args: { "p_date_of_birth"?: string,"p_full_name": string,"p_old_email"?: string,"p_phone": string,"p_sex"?: string,"p_user_id": string }; Returns: undefined
@@ -1360,8 +1477,20 @@ isOneToOne: false
 "courier_fail":
 { Args: { "p_order_id": string,"p_reason": string }; Returns: undefined
                            },
+"courier_mark_notifications_read":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"courier_me":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "courier_pick_up":
 { Args: { "p_order_id": string }; Returns: undefined
+                           },
+"courier_set_duty":
+{ Args: { "p_on": boolean }; Returns: undefined
+                           },
+"courier_update_details":
+{ Args: { "p_phone": string,"p_plate": string,"p_vehicle": string }; Returns: undefined
                            },
 "create_order":
 { Args: { "p_input": Json }; Returns: Json

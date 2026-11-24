@@ -39,6 +39,7 @@ export const PERMISSIONS = [
   "kpi.manage",
   "deliveries.own",
   "customers.approve",
+  "couriers.manage",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -93,6 +94,7 @@ export const ADMIN_ROUTES: ReadonlyArray<{ href: string; label: string; anyOf: r
   { href: "/admin/inventory", label: "Inventory", anyOf: ["inventory.manage"] },
   { href: "/admin/customers", label: "Customers", anyOf: ["customers.view"] },
   { href: "/admin/approvals", label: "Account approvals", anyOf: ["customers.approve"] },
+  { href: "/admin/couriers", label: "Couriers & delivery", anyOf: ["couriers.manage", "orders.manage"] },
   { href: "/admin/support", label: "Support tickets", anyOf: ["support.view"] },
   { href: "/admin/follow-up", label: "Stalled checkouts", anyOf: ["customers.view"] },
   { href: "/admin/promotions", label: "Promotions", anyOf: ["promotions.manage"] },

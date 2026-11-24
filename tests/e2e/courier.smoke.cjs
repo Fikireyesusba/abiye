@@ -98,12 +98,23 @@ async function tryLogin(page, base, email, password) {
       "courier address serves the app's background script and offline page (needed to install)");
     check(await c.locator("[data-testid=courier-install]").count() === 1, "courier app shows the Install card (until installed)");
 
-    // ---- manager assigns the delivery to the courier (ocs)
-    await m.goto(`${U("ocs")}/admin/orders/${order.order_id}`);
-    const panel = m.locator("[data-testid=courier-panel]");
-    await panel.locator("select[name=courier]").selectOption(courierId);
-    await panel.locator("button:has-text('Assign courier')").click();
+    // ---- courier goes on duty
+    await c.click("button:has-text('Go on duty')");
+    await toast(c, "You are on duty");
+    check((await c.locator("[data-testid=duty-status]").innerText()).includes("On duty"), "courier: on duty");
+
+    // ---- manager: Couriers & delivery → Dispatch shows the order and the on-duty courier; assign there
+    await m.goto(`${U("ocs")}/admin/couriers?tab=dispatch`);
+    const row = m.locator("[data-testid=dispatch-list] li", { hasText: order.order_number });
+    check(await row.count() === 1 && (await row.locator(`select[name=courier] option[value="${courierId}"]`).innerText()).startsWith("● Test Courier"),
+      "Dispatch: paid delivery order waiting, on-duty courier marked ●");
+    await row.locator("select[name=courier]").selectOption(courierId);
+    await row.locator("button:has-text('Assign')").click();
     await toast(m, "Courier assigned");
+    await c.reload();
+    check((await c.locator('a[href="/courier/notifications"]').innerText()).includes("1"), "courier: notification badge (1 unread)");
+    await c.goto(`${U("courier")}/courier/notifications`);
+    check((await c.locator("[data-testid=courier-notifications]").innerText()).includes(`New delivery: ${order.order_number}`), "courier: “New delivery” notification");
     const code = sql(`select delivery_code from orders where id = '${order.order_id}'`);
     check(/^\d{4}$/.test(code), "assigned: a 4-digit delivery code is made");
 
@@ -137,6 +148,27 @@ async function tryLogin(page, base, email, password) {
     await c.reload();
     check(!(await c.locator("main").innerText()).includes("Bole, House 12") && (await c.locator(`text=${order.order_number}`).count()) === 1,
       "after delivery: listed as delivered, address no longer shown");
+    await c.goto(`${U("courier")}/courier/earnings`);
+    check((await c.locator("[data-testid=earning-cards]").innerText()).includes("100 ETB") && (await c.locator("[data-testid=earnings-list]").innerText()).includes(order.order_number),
+      "courier: Earnings shows the delivery (100 ETB, to be paid)");
+    await c.goto(`${U("courier")}/courier/profile`);
+    await c.fill("input[name=phone]", "0911556677");
+    await c.selectOption("select[name=vehicle]", "motorbike");
+    await c.fill("input[name=plate]", "aa-4521");
+    await c.click("button:has-text('Save')");
+    await toast(c, "Details saved");
+    check(sql(`select phone || ' ' || plate_number from courier_profiles where profile_id = '${courierId}'`) === "+251911556677 AA-4521", "courier: phone and plate saved");
+
+    // ---- Super Admin (operations): courier page → Mark as paid
+    await o.goto(`${U("ops")}/admin/couriers/${courierId}`);
+    check((await o.locator("[data-testid=unpaid-list]").innerText()).includes(order.order_number), "Super Admin: the courier's unpaid delivery");
+    o.on("dialog", (d) => d.accept());
+    await o.fill("input[name=reference]", "CASH-001");
+    await o.click("button:has-text('as paid')");
+    await toast(o, "Payment of 100 ETB");
+    check(sql(`select count(*) || ':' || sum(amount_etb) from courier_payouts where courier_id = '${courierId}'`) === "1:100.00", "payment recorded");
+    await c.goto(`${U("courier")}/courier/earnings`);
+    check((await c.locator("main").innerText()).includes("CASH-001"), "courier sees the payment (with the reference)");
     check(sql(`select string_agg(payload->>'step', ',' order by id) from notifications_outbox where event_type = 'delivery_update' and payload->>'order_id' = '${order.order_id}'`)
       === "assigned,picked_up,delivered", "every step announced in the orders & payments Telegram group");
     await m.goto(`${U("ocs")}/admin/orders/${order.order_id}`);
