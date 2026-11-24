@@ -131,14 +131,14 @@ isOneToOne: false
                   ]
                 },"courier_earnings": {
                   Row: {
-                    "amount_etb": number,"courier_id": string,"earned_at": string,"id": number,"order_id": string,"payout_id": string | null
+                    "amount_etb": number,"courier_id": string,"earned_at": string,"id": number,"order_id": string,"order_number": string,"payout_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "amount_etb": number,"courier_id": string,"earned_at"?: string,"id"?: never,"order_id": string,"payout_id"?: string | null
+                    "amount_etb": number,"courier_id": string,"earned_at"?: string,"id"?: never,"order_id": string,"order_number": string,"payout_id"?: string | null
                   }
                   Update: {
-                    "amount_etb"?: number,"courier_id"?: string,"earned_at"?: string,"id"?: never,"order_id"?: string,"payout_id"?: string | null
+                    "amount_etb"?: number,"courier_id"?: string,"earned_at"?: string,"id"?: never,"order_id"?: string,"order_number"?: string,"payout_id"?: string | null
                   }
                   Relationships: [
                     {

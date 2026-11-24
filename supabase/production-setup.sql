@@ -12253,6 +12253,7 @@ create table public.courier_earnings (
   id          bigint generated always as identity primary key,
   courier_id  uuid not null references public.profiles(id) on delete restrict,
   order_id    uuid not null unique references public.orders(id) on delete restrict,
+  order_number text not null,   -- shown to the courier (couriers cannot read the orders table)
   amount_etb  numeric(10,2) not null check (amount_etb >= 0),
   earned_at   timestamptz not null default now(),
   payout_id   uuid references public.courier_payouts(id) on delete restrict
@@ -12374,7 +12375,7 @@ begin
   end if;
   perform private.set_status_note('Delivered — customer''s code checked by the courier');
   update public.orders set status = 'completed', delivered_at = now() where id = v.id returning * into v;
-  insert into public.courier_earnings (courier_id, order_id, amount_etb) values (v.courier_id, v.id, private.courier_fee(v.courier_id))
+  insert into public.courier_earnings (courier_id, order_id, order_number, amount_etb) values (v.courier_id, v.id, v.order_number, private.courier_fee(v.courier_id))
   on conflict (order_id) do nothing;
   perform private.audit('delivery_completed', 'order', v.id::text, null, null, jsonb_build_object('order_number', v.order_number));
   perform private.delivery_event(v, 'delivered');
@@ -12565,6 +12566,76 @@ begin
        and (o.courier_id is null or o.delivery_failed_at is not null)
      order by o.payment_verified_at nulls last
      limit 200;
+end;
+$$;
+
+-- Reset test data (Admin → Export everything / reset) also clears courier earnings, payouts and notifications.
+create or replace function public.admin_reset_test_data(p_confirm text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_counts jsonb;
+  n_orders int; n_jobs int; n_customers int; n_accounts int; n_topups int; n_reviews int; n_audit int;
+begin
+  perform private.require_permission('data.manage');
+  if p_confirm is distinct from public.admin_reset_phrase() then
+    perform private.app_error('invalid_request', 'confirmation');
+  end if;
+  if not exists (select 1 from public.audit_logs where action = 'export_all' and actor_id = v_uid and created_at > now() - interval '30 minutes') then
+    perform private.app_error('invalid_request', 'export_first');
+  end if;
+  -- One reset at a time.
+  perform pg_advisory_xact_lock(hashtext('admin_reset_test_data'));
+
+  select count(*) into n_orders from public.orders;
+  select count(*) into n_jobs from public.printing_jobs;
+  select count(*) into n_customers from public.customers;
+  select count(*) into n_accounts from auth.users u where not exists (select 1 from public.profiles p where p.id = u.id);
+  select count(*) into n_topups from public.wallet_topups;
+  select count(*) into n_reviews from public.product_reviews;
+
+  perform set_config('app.data_reset', 'on', true);
+  perform set_config('app.audit_purge', 'on', true);
+
+  -- ("where true": Supabase refuses DELETE without WHERE on API calls)
+  delete from public.inventory_movements where order_id is not null;   -- stock levels stay as they are now
+  delete from public.wallet_ledger where true;
+  delete from public.wallet_topups where true;
+  delete from public.product_reviews where true;
+  delete from public.stock_alerts where true;
+  delete from public.customer_carts where true;
+  delete from public.push_subscriptions where true;
+  delete from public.courier_notifications where true;  -- courier app (0070): before the orders they point to
+  delete from public.courier_earnings where true;
+  delete from public.courier_payouts where true;
+  delete from public.orders where true;                -- items, payments, history, notes
+  delete from public.printing_jobs where true;         -- files, history
+  delete from public.customers where true;             -- addresses
+  delete from public.notifications_outbox where true;
+  delete from public.rate_limits where true;
+  delete from public.security_events where true;
+  -- Before the accounts: their activity entries would otherwise need an (forbidden) update.
+  delete from public.audit_logs where action not in ('audit_cleared', 'data_reset');
+  get diagnostics n_audit = row_count;
+  -- Customer sign-in accounts (staff are kept).
+  delete from auth.users u where not exists (select 1 from public.profiles p where p.id = u.id);
+
+  -- New numbering for the real shop.
+  alter sequence public.order_number_seq restart with 10001;
+  alter sequence public.print_job_number_seq restart with 10001;
+  alter sequence public.wallet_topup_number_seq restart with 1001;
+
+  perform set_config('app.data_reset', 'off', true);
+  perform set_config('app.audit_purge', 'off', true);
+
+  v_counts := jsonb_build_object('orders', n_orders, 'printing_jobs', n_jobs, 'customers', n_customers, 'customer_accounts', n_accounts,
+                                 'wallet_topups', n_topups, 'reviews', n_reviews, 'activity_entries', n_audit, 'reset_at', now());
+  perform private.audit('data_reset', 'data', null, null, null, v_counts);
+  return v_counts;
 end;
 $$;
 

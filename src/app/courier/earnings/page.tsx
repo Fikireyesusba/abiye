@@ -13,7 +13,7 @@ export default async function CourierEarningsPage() {
   const supabase = await createSupabaseServerClient();
   const [{ data: me }, { data: earnings }, { data: payouts }] = await Promise.all([
     supabase.rpc("courier_me"),
-    supabase.from("courier_earnings").select("id, amount_etb, earned_at, payout_id, order:orders(order_number)").eq("courier_id", ctx.userId)
+    supabase.from("courier_earnings").select("id, order_number, amount_etb, earned_at, payout_id").eq("courier_id", ctx.userId)
       .order("earned_at", { ascending: false }).limit(100),
     supabase.from("courier_payouts").select("id, amount_etb, deliveries, reference, paid_at").eq("courier_id", ctx.userId).order("paid_at", { ascending: false }).limit(24),
   ]);
@@ -43,7 +43,7 @@ export default async function CourierEarningsPage() {
           <ul className="divide-y rounded-xl border bg-card text-sm" data-testid="earnings-list">
             {(earnings ?? []).map((e) => (
               <li key={e.id} className="flex items-center gap-2 px-4 py-2">
-                <span className="font-mono">{(e.order as { order_number?: string } | null)?.order_number ?? "—"}</span>
+                <span className="font-mono">{e.order_number}</span>
                 <span className="text-xs text-muted-foreground">{formatDateTime(e.earned_at, "en")}</span>
                 <span className="ml-auto tabular-nums">{etb(e.amount_etb)}</span>
                 <span className={`w-12 text-right text-xs ${e.payout_id ? "text-success" : "text-muted-foreground"}`}>{e.payout_id ? "paid" : "unpaid"}</span>

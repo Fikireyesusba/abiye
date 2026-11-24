@@ -54,7 +54,7 @@ select pg_temp.ok((select count(*) from public.courier_notifications where couri
 select pg_temp.ok((select count(*) from public.audit_logs where action in ('courier_paid', 'courier_fee_set', 'courier_on_duty')) = 3, 'fee, payout and duty changes in the Activity log');
 select pg_temp.login(:staff2);
 select pg_temp.throws($$select public.admin_pay_courier('aaaaaaaa-0000-0000-0000-000000000004')$$, 'forbidden', 'couriers cannot pay themselves');
-select pg_temp.throws($$insert into public.courier_earnings (courier_id, order_id, amount_etb) values ('aaaaaaaa-0000-0000-0000-000000000004', gen_random_uuid(), 1)$$,
+select pg_temp.throws($$insert into public.courier_earnings (courier_id, order_id, order_number, amount_etb) values ('aaaaaaaa-0000-0000-0000-000000000004', gen_random_uuid(), 'X', 1)$$,
   '%permission denied%', 'nobody writes earnings directly');
 reset role;
 rollback;
