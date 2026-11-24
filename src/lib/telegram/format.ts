@@ -108,6 +108,7 @@ export function suggestedAction(row: OutboxRow): string | null {
       return "Check the details under Account approvals, then approve or reject (with a reason).";
     case "delivery_update":
       if (p.step === "failed") return "Call the customer, then re-assign the courier (or arrange pickup) on the order.";
+      if (p.step === "declined") return "Give the order to another courier under Couriers & delivery → Dispatch.";
       if (p.step === "code_locked") return "Call the customer and the courier; re-assign the courier on the order to unlock the code.";
       return "Nothing to do — the customer sees the progress on their order page.";
     case "excel_export":
@@ -165,7 +166,7 @@ const titleCase = (s: string) => s.replaceAll("_", " ").replace(/^./, (c) => c.t
 
 const DELIVERY_STEP: Record<string, string> = {
   assigned: "Assigned to a courier", picked_up: "Picked up — on the way", delivered: "Delivered (code checked)",
-  failed: "Could not deliver", code_locked: "Delivery code locked (5 wrong tries)",
+  failed: "Could not deliver", code_locked: "Delivery code locked (5 wrong tries)", declined: "Declined by the courier",
 };
 const PROMO_CHANGE: Record<string, string> = {
   created: "Created", changed: "Changed", switched_on: "Switched on", switched_off: "Switched off", revoked: "Revoked",

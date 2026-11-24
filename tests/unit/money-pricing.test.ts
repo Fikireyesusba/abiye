@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { formatETB, santim, toSantim } from "@/lib/money";
-import { computeCartTotals, effectivePrice } from "@/lib/pricing/cart";
+import { computeCartTotals, deliveryDiscountPercent, effectivePrice } from "@/lib/pricing/cart";
 import { quotePrinting, type PrintPriceRule } from "@/lib/pricing/printing";
 
 describe("money", () => {
@@ -27,7 +27,7 @@ describe("cart totals (mirror of public.create_order)", () => {
   ];
   it("matches the database test case (6,550 + 150 delivery = 6,700)", () => {
     const t = computeCartTotals(lines, { fulfillment: "delivery", zoneFee: toSantim(150), freeDeliveryThreshold: null });
-    expect(t).toEqual({ subtotal: 655000, deliveryFee: 15000, total: 670000, freeDeliveryApplied: false });
+    expect(t).toEqual({ subtotal: 655000, deliveryFee: 15000, total: 670000, freeDeliveryApplied: false, deliveryDiscountPercent: 0 });
   });
   it("pickup has no delivery fee", () => {
     const t = computeCartTotals(lines, { fulfillment: "pickup", zoneFee: toSantim(150), freeDeliveryThreshold: null });
@@ -72,5 +72,25 @@ describe("printing quote (mirror of public.quote_printing)", () => {
     expect(quotePrinting(rules, zero, { colorMode: "bw", paperSize: "A4", sides: "single", pageCount: null, copies: 1 })).toBeNull();
     expect(quotePrinting(rules, zero, { colorMode: "color", paperSize: "A3", sides: "double", pageCount: 5, copies: 1 })).toBeNull();
     expect(quotePrinting(rules, zero, { colorMode: "bw", paperSize: "A4", sides: "single", pageCount: 5, copies: 0 })).toBeNull();
+  });
+});
+
+describe("delivery discount for more items (same rule as the database)", () => {
+  const steps = [{ min_items: 3, percent: 10 }, { min_items: 6, percent: 25 }];
+  it("highest step reached by the number of items", () => {
+    expect(deliveryDiscountPercent(2, steps)).toBe(0);
+    expect(deliveryDiscountPercent(3, steps)).toBe(10);
+    expect(deliveryDiscountPercent(9, steps)).toBe(25);
+    expect(deliveryDiscountPercent(9, [])).toBe(0);
+  });
+  it("applied to the delivery fee, rounded to the santim; not to pickup or free delivery", () => {
+    const lines = [{ unitPrice: toSantim(100), quantity: 4 }];
+    const t = computeCartTotals(lines, { fulfillment: "delivery", zoneFee: toSantim(155.55), freeDeliveryThreshold: null, deliveryDiscounts: steps });
+    expect(t.deliveryFee).toBe(toSantim(140));
+    expect(t.deliveryDiscountPercent).toBe(10);
+    expect(computeCartTotals(lines, { fulfillment: "pickup", zoneFee: toSantim(150), freeDeliveryThreshold: null, deliveryDiscounts: steps }).deliveryFee).toBe(toSantim(0));
+    const free = computeCartTotals(lines, { fulfillment: "delivery", zoneFee: toSantim(150), freeDeliveryThreshold: toSantim(300), deliveryDiscounts: steps });
+    expect(free.deliveryFee).toBe(toSantim(0));
+    expect(free.deliveryDiscountPercent).toBe(0);
   });
 });

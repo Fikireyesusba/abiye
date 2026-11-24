@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import { LogOut, Truck } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
 import { CourierNav } from "@/components/courier/courier-nav";
+import { CourierRinger } from "@/components/courier/ringer";
+import { publicImageUrl } from "@/lib/storage";
+import Link from "next/link";
 import { AppOpenPing } from "@/components/pwa/app-open-ping";
 import { IdleSignOut } from "@/components/security/idle-sign-out";
 import { Button } from "@/components/ui/button";
@@ -27,7 +30,7 @@ export default async function CourierLayout({ children }: { children: React.Reac
   const ctx = await requireAdmin();
   if (!ctx.permissions.has("deliveries.own")) redirect("/admin");
   const { data } = await (await createSupabaseServerClient()).rpc("courier_me");
-  const me = (data ?? {}) as { on_duty?: boolean; unread?: number };
+  const me = (data ?? {}) as { on_duty?: boolean; unread?: number; latest_unread_assigned?: number | null; ringtone_path?: string | null; cities?: { name: string }[] };
   const onDuty = !!me.on_duty;
   return (
     <div className="min-h-screen bg-muted/30 pb-20">
@@ -36,16 +39,19 @@ export default async function CourierLayout({ children }: { children: React.Reac
         <Truck className="size-5 text-primary" aria-hidden />
         <span className="min-w-0 flex-1 leading-tight">
           <span className="block truncate font-semibold">{ctx.fullName}</span>
-          <span className={`block text-xs ${onDuty ? "text-success" : "text-muted-foreground"}`} data-testid="duty-status">{onDuty ? "● On duty" : "○ Off duty"}</span>
+          <span className={`block truncate text-xs ${onDuty ? "text-success" : "text-muted-foreground"}`} data-testid="duty-status">
+            {onDuty ? `● On duty · ${(me.cities ?? []).map((c) => c.name).join(", ")}` : "○ Off duty"}
+          </span>
         </span>
-        <ActionForm action={setDuty} hidden={{ on: String(!onDuty) }} submitLabel={onDuty ? "Go off duty" : "Go on duty"} size="sm"
-          variant={onDuty ? "outline" : "default"} className="space-y-0" />
+        {onDuty ? <ActionForm action={setDuty} hidden={{ on: "false" }} submitLabel="Go off duty" size="sm" variant="outline" className="space-y-0" />
+          : <Button asChild size="sm"><Link href="/courier/duty">Go on duty</Link></Button>}
         <form action={signOut}>
           <Button type="submit" variant="ghost" size="icon" aria-label="Sign out"><LogOut className="size-4" /></Button>
         </form>
       </header>
       <main className="mx-auto w-full max-w-xl p-4">{children}</main>
       <CourierNav unread={Number(me.unread ?? 0)} />
+      <CourierRinger latestAssigned={me.latest_unread_assigned ?? null} ringtoneUrl={publicImageUrl("app-sounds", me.ringtone_path)} />
       <Toaster />
       <IdleSignOut minutes={IDLE_MINUTES.courier} kind="admin" warning={{ text: "You will be signed out in 1 minute because of inactivity.", stay: "Stay signed in" }} />
     </div>

@@ -70,6 +70,8 @@ insert into public.bank_accounts (id, bank_name, account_holder, account_number,
    'Inactive sample account.', 'ንቁ ያልሆነ ናሙና ሂሳብ።', 2);
 update public.bank_accounts set is_active = false where id = '30000000-0000-0000-0000-000000000002';
 
+-- The Ethiopian city list (0071) already added these cities switched off: replace them with the priced sample cities.
+delete from public.delivery_zones where name_en in ('Addis Ababa', 'Adama', 'Bahir Dar', 'Hawassa') and id::text not like '40000000-%';
 insert into public.delivery_zones (id, name_en, name_am, fee_etb, estimated_days, sort_order) values
   ('40000000-0000-0000-0000-000000000001', 'Addis Ababa', 'አዲስ አበባ', 150.00, '1–2 days', 1),
   ('40000000-0000-0000-0000-000000000002', 'Adama',       'አዳማ',     350.00, '2–3 days', 2),

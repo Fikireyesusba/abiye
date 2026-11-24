@@ -42,7 +42,8 @@
     "total": "Total",
     "checkout": "Proceed to checkout",
     "remove": "Remove",
-    "quantity": "Quantity"
+    "quantity": "Quantity",
+    "deliveryDiscount": "{percent}% off delivery for buying more items"
   },
   "checkout": {
     "paymentMethod": "How do you want to pay?",
@@ -317,7 +318,8 @@
     "setQuantity": "Set to {count}",
     "deliveryAtCheckout": "Delivery or pickup is chosen at checkout, where you also see the delivery fee.",
     "itemsTotal": "Items total",
-    "soldOutRemoved": "Sold out and removed from your basket: {items}. Items are not reserved in the basket — the first to pay gets them."
+    "soldOutRemoved": "Sold out and removed from your basket: {items}. Items are not reserved in the basket — the first to pay gets them.",
+    "deliveryStep": "{items}+ items: {percent}% off delivery"
   },
   "footer": {
     "shop": "Shop",

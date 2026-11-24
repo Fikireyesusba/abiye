@@ -68,22 +68,39 @@ export default async function CourierPage({ params }: PageProps<"/admin/couriers
             {(active ?? []).length === 0 ? <p className="text-sm text-muted-foreground">No active deliveries.</p> : (
               <ul className="space-y-1 text-sm">{(active ?? []).map((o) => <li key={o.id}><Link href={`/admin/orders/${o.id}`} className="font-mono text-primary hover:underline">{o.order_number}</Link> <span className="text-xs text-muted-foreground">{o.status.replaceAll("_", " ")} · {o.city}</span></li>)}</ul>
             )}
-            <p className="mt-3 text-xs text-muted-foreground">{c.delivered_month} delivered this month · {c.delivered_total} in total{c.failed_month ? ` · ${c.failed_month} failed this month` : ""}</p>
+            <p className="mt-3 text-xs text-muted-foreground">{c.delivered_month} delivered this month · {c.delivered_total} in total{c.failed_month ? ` · ${c.failed_month} failed` : ""}{c.declined_month ? ` · ${c.declined_month} declined` : ""}</p>
+            <p className="mt-1 text-xs">{c.on_duty ? `● Online for: ${c.cities || "—"}` : "○ Offline"}</p>
           </Panel>
-          <Panel title="Details">
-            <ActionForm action={saveCourier} hidden={{ courierId: id }} submitLabel="Save" className="space-y-3">
+          <Panel title="Vehicle & documents">
+            <ActionForm action={saveCourier} hidden={{ courierId: id }} submitLabel="Save" className="space-y-3" >
               <Field label="Phone"><input name="phone" inputMode="tel" defaultValue={local} placeholder="0911223344" className={fieldClass} /></Field>
-              <Field label="Vehicle">
-                <select name="vehicle" defaultValue={c.vehicle} className={fieldClass}>
-                  <option value="motorbike">Motorbike</option><option value="bicycle">Bicycle</option><option value="car">Car</option><option value="on_foot">On foot</option><option value="other">Other</option>
+              <Field label="Delivers by" hint="Motorcycle or car: make, model, plate number, insurance and driving licence are required.">
+                <select name="vehicle" required defaultValue={c.vehicle ?? ""} className={fieldClass} data-testid="vehicle-select">
+                  <option value="" disabled>Choose…</option>
+                  <option value="on_foot">On foot</option><option value="bicycle">Bicycle</option><option value="motorcycle">Motorcycle</option><option value="car">Car</option>
                 </select>
               </Field>
-              <Field label="Plate number"><input name="plate" maxLength={20} defaultValue={c.plate_number ?? ""} className={`${fieldClass} uppercase`} /></Field>
-              <Field label="Own fee per delivery (ETB)" hint={`Empty = the shop's fee. Now: ${etb(c.fee_etb)}.`}>
-                <input name="fee" type="number" min={0} step="0.01" defaultValue={c.fee_override_etb ?? ""} className={fieldClass} />
-              </Field>
+              <fieldset className="space-y-3 rounded-md border p-3">
+                <legend className="px-1 text-xs text-muted-foreground">Motorcycle / car only</legend>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Make"><input name="vehicle_make" maxLength={40} defaultValue={c.vehicle_make ?? ""} placeholder="e.g. Bajaj" className={fieldClass} /></Field>
+                  <Field label="Model"><input name="vehicle_model" maxLength={40} defaultValue={c.vehicle_model ?? ""} placeholder="e.g. Boxer 150" className={fieldClass} /></Field>
+                </div>
+                <Field label="Plate number"><input name="plate_number" maxLength={20} defaultValue={c.plate_number ?? ""} className={`${fieldClass} uppercase`} /></Field>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Insurance company"><input name="insurance_company" maxLength={80} defaultValue={c.insurance_company ?? ""} className={fieldClass} /></Field>
+                  <Field label="Policy number"><input name="insurance_policy" maxLength={40} defaultValue={c.insurance_policy ?? ""} className={fieldClass} /></Field>
+                </div>
+                <Field label="Insurance valid until"><input name="insurance_expiry" type="date" defaultValue={c.insurance_expiry ?? ""} className={fieldClass} /></Field>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Driving licence number"><input name="licence_number" maxLength={30} defaultValue={c.licence_number ?? ""} className={`${fieldClass} uppercase`} /></Field>
+                  <Field label="Licence valid until"><input name="licence_expiry" type="date" defaultValue={c.licence_expiry ?? ""} className={fieldClass} /></Field>
+                </div>
+              </fieldset>
             </ActionForm>
-            <p className="mt-3 text-xs text-muted-foreground">Name, email, password and two-step login: Staff.</p>
+            {[["Insurance", c.insurance_expiry], ["Driving licence", c.licence_expiry]].map(([label, d]) => d && new Date(String(d)) < new Date()
+              ? <p key={String(label)} className="mt-2 text-sm text-destructive">{label} expired on {String(d)}.</p> : null)}
+            <p className="mt-3 text-xs text-muted-foreground">Name, email, password and HR details (Fayda, emergency contact…): Staff.</p>
           </Panel>
         </div>
       </div>

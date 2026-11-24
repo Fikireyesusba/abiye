@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ActionForm } from "@/components/admin/action-form";
 import { Field, Frame, PageHeader, Panel, SubTabs, Table, Td, fieldClass, pickTab } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
@@ -88,7 +89,8 @@ export default async function StaffPage({ searchParams }: PageProps<"/admin/staf
             const roleKey = (p.role as unknown as { key: string } | null)?.key ?? "staff";
             return (
               <tr key={p.id}>
-                <Td><UserIdLink id={memberId.get(p.id)} />{self && <Badge variant="secondary" className="ml-2">you</Badge>}</Td>
+                <Td><UserIdLink id={memberId.get(p.id)} />{self && <Badge variant="secondary" className="ml-2">you</Badge>}
+                  <Link href={`/admin/staff/${p.id}`} className="mt-1 block text-xs text-primary underline" data-testid="hr-link">HR details</Link></Td>
                 <Td>
                   {self ? ROLES.find((r) => r.key === roleKey)?.label : (
                     <ActionForm action={updateStaff} hidden={{ userId: p.id, active: String(p.is_active) }} submitLabel="Save" size="sm" variant="outline" className="flex flex-wrap gap-2 space-y-0">

@@ -7,7 +7,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export const metadata: Metadata = { title: "Earnings" };
 const etb = (n: number | string | null | undefined) => formatETB(toSantim(Number(n ?? 0)));
 
-/** What the courier earned (fixed fee per delivered order), what is still to be paid, and past payments. */
+/** What the courier earned (the city's delivery price per delivered order), what is still to be paid, and past payments. */
 export default async function CourierEarningsPage() {
   const ctx = await requirePermission("deliveries.own");
   const supabase = await createSupabaseServerClient();
@@ -22,7 +22,7 @@ export default async function CourierEarningsPage() {
     { label: "Today", value: etb(m.today_etb), hint: `${m.today_delivered ?? 0} deliveries` },
     { label: "This month", value: etb(m.month_etb) },
     { label: "To be paid", value: etb(m.unpaid_etb), strong: true },
-    { label: "Per delivery", value: etb(m.fee_etb) },
+    { label: "Delivered (all time)", value: String(m.total_delivered ?? 0) },
   ];
   return (
     <div className="space-y-5">
@@ -36,7 +36,7 @@ export default async function CourierEarningsPage() {
           </div>
         ))}
       </div>
-      <p className="text-xs text-muted-foreground">You earn a fixed amount for every order you deliver with the customer&apos;s code. The office pays you and records it here.</p>
+      <p className="text-xs text-muted-foreground">For every order you deliver with the customer&apos;s PIN you earn the full delivery price of that city. The office pays you and records it here.</p>
       <section className="space-y-2">
         <h2 className="text-sm font-medium">Deliveries</h2>
         {(earnings ?? []).length === 0 ? <p className="text-sm text-muted-foreground">No deliveries yet.</p> : (

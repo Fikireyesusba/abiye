@@ -5,7 +5,7 @@ import { fieldClass } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { CourierInstallCard } from "@/components/pwa/courier-install";
 import { requirePermission } from "@/lib/auth/guards";
-import { couldNotDeliver, deliver, pickUp } from "@/lib/courier/actions";
+import { couldNotDeliver, declineDelivery, deliver, pickUp } from "@/lib/courier/actions";
 import { formatDateTime } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -55,11 +55,20 @@ export default async function CourierPage() {
                 {items.map((i, k) => <li key={k}>{i.name} × {i.quantity}</li>)}
               </ul>
               {!onTheWay ? (
-                <ActionForm action={pickUp} hidden={{ orderId: d.order_id }} submitLabel="Picked up — on my way" className="[&_button]:w-full" />
+                <div className="space-y-2">
+                  <ActionForm action={pickUp} hidden={{ orderId: d.order_id }} submitLabel="Picked up — on my way" className="[&_button]:w-full" />
+                  <details className="text-sm">
+                    <summary className="cursor-pointer text-muted-foreground">Can&apos;t take this delivery?</summary>
+                    <ActionForm action={declineDelivery} hidden={{ orderId: d.order_id }} submitLabel="Decline" variant="outline" size="sm" className="mt-2 space-y-2"
+                      confirm="Decline this delivery? It goes back to the office and you are set off duty.">
+                      <input name="reason" required minLength={3} maxLength={300} placeholder="Why (e.g. motorbike broke down)" aria-label={`Reason for declining ${d.order_number}`} className={fieldClass} />
+                    </ActionForm>
+                  </details>
+                </div>
               ) : (
                 <div className="space-y-3 border-t pt-3">
                   <ActionForm action={deliver} hidden={{ orderId: d.order_id }} submitLabel="Delivered" className="flex items-end gap-2 space-y-0 [&_button]:shrink-0">
-                    <label className="flex-1 text-sm">Customer&apos;s 4-digit code
+                    <label className="flex-1 text-sm">Customer&apos;s 4-digit PIN
                       <input name="code" inputMode="numeric" pattern="[0-9]{4}" maxLength={4} required autoComplete="off" className={`${fieldClass} mt-1 text-center font-mono text-lg tracking-[0.5em]`} aria-label={`Delivery code for ${d.order_number}`} />
                     </label>
                   </ActionForm>

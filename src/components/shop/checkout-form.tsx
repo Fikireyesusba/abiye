@@ -92,6 +92,7 @@ export function CheckoutForm({
         fulfillment: method,
         zoneFee: zone ? toSantim(zone.fee_etb) : null,
         freeDeliveryThreshold: details.freeDeliveryThresholdEtb !== null ? toSantim(details.freeDeliveryThresholdEtb) : null,
+        deliveryDiscounts: details.deliveryDiscounts,
       },
     );
     return { lines, printLines, problem, method, zone, totals };
@@ -340,6 +341,9 @@ export function CheckoutForm({
               <dt className="text-muted-foreground">{t("cart.delivery")}</dt>
               <dd className="tabular-nums">
                 {view.method === "pickup" || view.totals.freeDeliveryApplied ? t("cart.freeDelivery") : view.zone ? formatETB(view.totals.deliveryFee, locale) : "—"}
+                {view.method === "delivery" && view.zone && view.totals.deliveryDiscountPercent > 0 && (
+                  <span className="block text-xs text-success" data-testid="delivery-discount">{t("cart.deliveryDiscount", { percent: view.totals.deliveryDiscountPercent })}</span>
+                )}
               </dd>
             </div>
             {promo && (

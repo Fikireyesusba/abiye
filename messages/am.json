@@ -42,7 +42,8 @@
     "total": "ጠቅላላ",
     "checkout": "ወደ ክፍያ ይቀጥሉ",
     "remove": "አስወግድ",
-    "quantity": "ብዛት"
+    "quantity": "ብዛት",
+    "deliveryDiscount": "{percent}% off delivery for buying more items"
   },
   "checkout": {
     "paymentMethod": "እንዴት መክፈል ይፈልጋሉ?",
@@ -317,7 +318,8 @@
     "setQuantity": "ወደ {count} ቀይር",
     "deliveryAtCheckout": "ማድረስ ወይም ከሱቅ መውሰድ በክፍያ ጊዜ ይመረጣል፤ የማድረሻ ክፍያውም እዚያ ይታያል።",
     "itemsTotal": "የዕቃዎች ድምር",
-    "soldOutRemoved": "ተሽጠው ስላለቁ ከጋሪዎ ተወግደዋል፦ {items}። ጋሪ ውስጥ ያሉ ዕቃዎች አይያዙም — መጀመሪያ የከፈለ ያገኛቸዋል።"
+    "soldOutRemoved": "ተሽጠው ስላለቁ ከጋሪዎ ተወግደዋል፦ {items}። ጋሪ ውስጥ ያሉ ዕቃዎች አይያዙም — መጀመሪያ የከፈለ ያገኛቸዋል።",
+    "deliveryStep": "{items}+ items: {percent}% off delivery"
   },
   "footer": {
     "shop": "ሱቅ",

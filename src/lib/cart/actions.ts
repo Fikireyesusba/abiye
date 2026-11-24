@@ -34,6 +34,8 @@ export interface CartDetails {
   pickupEnabled: boolean;
   deliveryEnabled: boolean;
   freeDeliveryThresholdEtb: number | null;
+  /** Lower delivery fee for many items (Super Admin). */
+  deliveryDiscounts: { min_items: number; percent: number }[];
 }
 
 const inputSchema = z.object({
@@ -75,5 +77,6 @@ export async function getCartDetails(input: unknown): Promise<CartDetails> {
     // Home delivery only when it is switched on AND at least one delivery city is active.
     deliveryEnabled: settings.delivery.delivery_enabled && zones.length > 0,
     freeDeliveryThresholdEtb: settings.delivery.free_delivery_threshold_etb,
+    deliveryDiscounts: settings.delivery.delivery_discounts ?? [],
   };
 }

@@ -33,6 +33,7 @@ function build(key: SettingsKey, f: Record<string, string>, current: Record<stri
       return {
         pickup_enabled: f.pickup_enabled === "on", delivery_enabled: f.delivery_enabled === "on",
         free_delivery_threshold_etb: num(f.free_delivery_threshold_etb), payment_window_minutes: Number(f.payment_window_minutes), payment_window_hours: Math.max(1, Math.ceil(Number(f.payment_window_minutes) / 60)),
+        delivery_discounts: Array.isArray(current.delivery_discounts) ? current.delivery_discounts : [], // edited separately (Super Admin)
       };
     case "printing":
       return { service_charge_etb: Number(f.service_charge_etb), max_file_mb: Number(f.max_file_mb), max_copies: Number(f.max_copies), retention_days: Number(f.retention_days) };
@@ -74,6 +75,34 @@ export async function saveSettings(_prev: ActionResult | null, fd: FormData): Pr
   if (error) return dbError(error);
   revalidatePath("/", "layout");
   return ok("Settings saved — live on the website now.");
+}
+
+/** Super Admin: lower delivery fee for bigger orders (up to 5 steps: from N items, P% off the city's delivery price). */
+export async function saveDeliveryDiscounts(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const ctx = await requirePermission("settings.manage");
+  if (ctx.role !== "super_admin") return fail("Only the Super Admin can change the delivery discounts.");
+  const steps: { min_items: number; percent: number }[] = [];
+  for (let i = 0; i < 5; i++) {
+    const n = String(fd.get(`min_${i}`) ?? "").trim();
+    const p = String(fd.get(`pct_${i}`) ?? "").trim();
+    if (!n && !p) continue;
+    const min = Number(n), pct = Number(p);
+    if (!Number.isInteger(min) || min < 2 || min > 1000 || !Number.isFinite(pct) || pct <= 0 || pct > 100) {
+      return fail(`Step ${i + 1}: items must be 2 or more and the discount between 1 and 100 %.`);
+    }
+    steps.push({ min_items: min, percent: Math.round(pct * 100) / 100 });
+  }
+  if (new Set(steps.map((s) => s.min_items)).size !== steps.length) return fail("Each step needs a different number of items.");
+  steps.sort((a, b) => a.min_items - b.min_items);
+  const supabase = await createSupabaseServerClient();
+  const { data: row } = await supabase.from("website_settings").select("value").eq("key", "delivery").maybeSingle();
+  const value = { ...((row?.value as Record<string, unknown>) ?? {}), delivery_discounts: steps };
+  const parsed = settingsSchemas.delivery.safeParse(value);
+  if (!parsed.success) return fail("Check the steps.");
+  const { error } = await supabase.from("website_settings").update({ value: parsed.data as NonNullable<Json> }).eq("key", "delivery");
+  if (error) return dbError(error);
+  revalidatePath("/", "layout");
+  return ok(steps.length ? "Delivery discounts saved — checkout uses them now." : "Delivery discounts removed.");
 }
 
 const SLOTS = {

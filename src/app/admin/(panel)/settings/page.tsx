@@ -6,7 +6,7 @@ import { Field, PageHeader, Panel, SubTabs } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { saveBankAccount, saveDeliveryZone, saveSettings } from "@/lib/admin/settings-actions";
+import { saveBankAccount, saveDeliveryDiscounts, saveDeliveryZone, saveSettings } from "@/lib/admin/settings-actions";
 import { requirePermission } from "@/lib/auth/guards";
 import { getSiteSettings } from "@/lib/catalog/settings";
 import { first } from "@/lib/catalog/search";
@@ -152,7 +152,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/admin/s
           </ActionForm>
         </Panel>
       )}
-      {tab === "delivery" && <DeliveryTab s={s} supabase={supabase} />}
+      {tab === "delivery" && <DeliveryTab s={s} supabase={supabase} superAdmin={ctx.role === "super_admin"} />}
       {tab === "banks" && <BanksTab supabase={supabase} />}
       {tab === "printing" && (
         <Panel title="Printing service" className="max-w-2xl">
@@ -208,8 +208,11 @@ function BankFields({ b }: { b?: Bank }) {
 }
 
 
-async function DeliveryTab({ s, supabase }: { s: Awaited<ReturnType<typeof getSiteSettings>>; supabase: Supa }) {
+async function DeliveryTab({ s, supabase, superAdmin }: { s: Awaited<ReturnType<typeof getSiteSettings>>; supabase: Supa; superAdmin: boolean }) {
   const { data: zones } = await supabase.from("delivery_zones").select("*").order("sort_order");
+  const steps = s.delivery.delivery_discounts ?? [];
+  const on = (zones ?? []).filter((z) => z.is_active);
+  const off = (zones ?? []).filter((z) => !z.is_active);
   return (
     <div className="space-y-6">
       <Panel title="Fulfillment & payment window">
@@ -224,14 +227,43 @@ async function DeliveryTab({ s, supabase }: { s: Awaited<ReturnType<typeof getSi
           </div>
         </ActionForm>
       </Panel>
+      <Panel title="Delivery discount for more items">
+        <p className="mb-3 text-sm text-muted-foreground">The more items in an order, the lower the delivery fee the customer pays (e.g. 3+ items 10 % off, 6+ items 25 % off). The courier still earns the city&apos;s full delivery price.</p>
+        {superAdmin ? (
+          <ActionForm action={saveDeliveryDiscounts} submitLabel="Save discounts" className="space-y-2">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="w-16 text-muted-foreground">Step {i + 1}</span> from
+                <Input name={`min_${i}`} type="number" min={2} max={1000} defaultValue={steps[i]?.min_items ?? ""} className="w-24" aria-label={`Step ${i + 1}: number of items`} /> items:
+                <Input name={`pct_${i}`} type="number" min={1} max={100} step="0.5" defaultValue={steps[i]?.percent ?? ""} className="w-24" aria-label={`Step ${i + 1}: percent off`} /> % off delivery
+              </div>
+            ))}
+          </ActionForm>
+        ) : (
+          <p className="text-sm">{steps.length ? steps.map((d) => `${d.min_items}+ items: ${d.percent}% off`).join(" · ") : "No discount steps."} <span className="text-muted-foreground">(set by the Super Admin)</span></p>
+        )}
+      </Panel>
       <Panel title="Delivery cities & fees">
+        <p className="mb-2 text-sm text-muted-foreground">Customers can choose the active cities. The fee is the city&apos;s full delivery price (before the many-items discount) — it is also what the courier earns.</p>
         <ul className="divide-y">
-          {(zones ?? []).map((z) => (
+          {on.map((z) => (
             <li key={z.id} className="py-3">
               <ActionForm action={saveDeliveryZone} hidden={{ id: z.id }} submitLabel="Save" size="sm" variant="outline"><ZoneFields z={z} /></ActionForm>
             </li>
           ))}
         </ul>
+        {off.length > 0 && (
+          <details className="mt-3 rounded-lg border p-3">
+            <summary className="cursor-pointer text-sm font-medium">Other Ethiopian cities — switched off ({off.length}): set a fee and tick “Active” to open one</summary>
+            <ul className="mt-2 divide-y">
+              {off.map((z) => (
+                <li key={z.id} className="py-3">
+                  <ActionForm action={saveDeliveryZone} hidden={{ id: z.id }} submitLabel="Save" size="sm" variant="outline"><ZoneFields z={z} /></ActionForm>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
         <div className="mt-4 rounded-lg bg-muted/40 p-3">
           <p className="mb-2 text-sm font-medium">Add a city</p>
           <ActionForm action={saveDeliveryZone} hidden={{ id: "" }} submitLabel="Add city" size="sm" resetOnSuccess><ZoneFields /></ActionForm>

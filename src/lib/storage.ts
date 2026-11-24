@@ -1,6 +1,6 @@
 import { getPublicSupabaseEnv } from "@/lib/supabase/public-env";
 
-export type PublicBucket = "product-images" | "site-assets";
+export type PublicBucket = "product-images" | "site-assets" | "app-sounds";
 
 /** Public URL for an object in a PUBLIC bucket. Private buckets never go through here. */
 export function publicImageUrl(bucket: PublicBucket, path: string | null | undefined): string | null {

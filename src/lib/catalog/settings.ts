@@ -10,7 +10,7 @@ const DEFAULTS: { [K in SettingsKey]: Settings<K> } = {
   contact: { phone: "", email: null, telegram: null, whatsapp: null, address: { en: "", am: "" }, map_url: null },
   hours: { en: "", am: "" },
   social: { facebook: null, instagram: null, tiktok: null, telegram: null },
-  delivery: { pickup_enabled: true, delivery_enabled: true, free_delivery_threshold_etb: null, payment_window_hours: 1, payment_window_minutes: 30 },
+  delivery: { pickup_enabled: true, delivery_enabled: true, free_delivery_threshold_etb: null, payment_window_hours: 1, payment_window_minutes: 30, delivery_discounts: [] },
   printing: { service_charge_etb: 0, max_file_mb: 25, max_copies: 500, retention_days: 30 },
   legal: {
     terms: { en: toLegalText(terms.en), am: toLegalText(terms.am) },

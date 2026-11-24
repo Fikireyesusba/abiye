@@ -20,7 +20,7 @@ export function buildContentSecurityPolicy({ nonce, supabaseUrl, dev }: { nonce:
     "img-src": ["'self'", "data:", "blob:", ...(supabase ? [supabase] : [])],
     "font-src": ["'self'"],
     "connect-src": ["'self'", ...(supabase ? [supabase] : []), ...(dev ? ["ws:", "wss:"] : [])],
-    "media-src": ["'self'"],
+    "media-src": ["'self'", "data:", ...(supabase ? [supabase] : [])], // courier ringtone (public app-sounds bucket)
     "worker-src": ["'self'", "blob:"],
     "manifest-src": ["'self'"],
     "frame-src": ["'none'"],

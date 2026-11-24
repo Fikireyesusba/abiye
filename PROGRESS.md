@@ -5,6 +5,14 @@ Living tracker so work can continue across sessions. **Update this file at the e
 - Architecture & plan: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - Setup & deployment: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
 
+## Couriers & staff phase 1 (requested 2026-11-24)
+
+- Migration **0071** `20261124000071_couriers_staff_phase1.sql`: no Telegram for duty changes (audit entity `courier`); vehicle set by admin (on_foot / bicycle / motorcycle / car; motorcycle & car require make, model, plate, insurance, licence); `staff_hr` (Fayda, passport optional, emergency contact…; staff.manage; values never logged); ~85 Ethiopian cities as inactive delivery zones; couriers go on duty for chosen cities (`courier_set_duty(on, zone_ids)`); `delivery_discounts` steps (Super Admin) applied in `create_order` (order keeps `delivery_fee_full_etb`); courier earns the full city price; `courier_decline` (back to dispatch, off duty); `app-sounds` bucket + ringtone; `admin_courier_orders` + export kind `courier_orders`.
+- App: courier duty page (cities), ringer (20 s refresh, ringtone or built-in, vibrate), decline, phone-only profile; admin Online now / Dispatch by city / Ringtone / Excel; courier vehicle & documents; Staff → HR details; checkout shows the delivery discount; CSP media-src allows the storage address.
+- Tests: db `99zzzh_courier_earnings_test.sql` (rewritten), unit `money-pricing.test.ts`, e2e `courier.smoke.cjs` (52 checks). Seed: sample cities replace the inactive copies.
+- Next: Phase 2 — Abiye Business app for partner shops (hand-off PINs, customer pickup PIN, shop address at checkout, handling fee per order + payouts).
+- ⏳ Owner: paste **0071**.
+
 ## Customer approval, courier app v2, Couriers & delivery (requested 2026-11-24)
 
 - **Approval** (migration **0069** `20261124000069_customer_approval.sql`): `customer_accounts.approval_status` (existing approved, new pending); `private.assert_confirmed_user` refuses pending (`account_pending`) → no orders / printing / top-ups / reviews / stock alerts; support allowed. Permission `customers.approve`; Admin → **Account approvals**: approve (email) / reject with reason (email sent directly, email blocked, account deleted). Security group alert `account_pending`. Shop notice on every page. Invited customers approved at once (`approve_invited_customer`, service role). Test helpers approve test customers.

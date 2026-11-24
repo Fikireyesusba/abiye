@@ -178,6 +178,11 @@ export function CartView() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">{t("cartPage.deliveryAtCheckout")}</p>
+          {details.deliveryEnabled && (details.deliveryDiscounts ?? []).length > 0 && (
+            <p className="text-xs text-success" data-testid="delivery-discount-steps">
+              {[...details.deliveryDiscounts].sort((a, b) => a.min_items - b.min_items).map((d) => t("cartPage.deliveryStep", { items: d.min_items, percent: d.percent })).join(" · ")}
+            </p>
+          )}
           {details.deliveryEnabled && details.freeDeliveryThresholdEtb !== null && (
             <p className="text-xs text-success">{t("cartPage.freeOver", { amount: formatETB(toSantim(details.freeDeliveryThresholdEtb), locale) })}</p>
           )}

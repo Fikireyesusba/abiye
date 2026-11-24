@@ -98,21 +98,41 @@ async function tryLogin(page, base, email, password) {
       "courier address serves the app's background script and offline page (needed to install)");
     check(await c.locator("[data-testid=courier-install]").count() === 1, "courier app shows the Install card (until installed)");
 
-    // ---- courier goes on duty
-    await c.click("button:has-text('Go on duty')");
+    // ---- courier goes on duty for the order's city
+    const fee = sql(`select fee_etb from delivery_zones where id = '${zone}'`);
+    const cityName = sql(`select name_en from delivery_zones where id = '${zone}'`);
+    const etbText = `${Number(fee).toLocaleString("en-US")} ETB`;
+    await c.click("a:has-text('Go on duty')");
+    await c.waitForURL(/\/courier\/duty$/);
+    await c.click("main button:has-text('Go on duty')");
+    await c.waitForSelector("main form [role=alert]");
+    check((await c.locator("main form [role=alert]").innerText()).includes("at least one city"), "going on duty needs at least one city");
+    await c.check(`input[name=zone][value="${zone}"]`);
+    await c.click("main button:has-text('Go on duty')");
     await toast(c, "You are on duty");
-    check((await c.locator("[data-testid=duty-status]").innerText()).includes("On duty"), "courier: on duty");
+    check((await c.locator("[data-testid=duty-status]").innerText()).includes(`On duty · ${cityName}`), `courier: on duty for ${cityName}`);
+    check(sql(`select count(*) from notifications_outbox where event_type = 'admin_action' and payload->>'action' = 'courier_on_duty' and created_at > now() - interval '5 minutes'`) === "0",
+      "going on duty is not a Telegram alert");
+    await o.goto(`${U("ops")}/admin/couriers`);
+    check((await o.locator("[data-testid=online-couriers]").innerText()).includes("Test Courier") && (await o.locator("[data-testid=online-couriers]").innerText()).includes(cityName),
+      "admin: Online now shows the courier and their city");
 
     // ---- manager: Couriers & delivery → Dispatch shows the order and the on-duty courier; assign there
     await m.goto(`${U("ocs")}/admin/couriers?tab=dispatch`);
     const row = m.locator("[data-testid=dispatch-list] li", { hasText: order.order_number });
-    check(await row.count() === 1 && (await row.locator(`select[name=courier] option[value="${courierId}"]`).innerText()).startsWith("● Test Courier"),
-      "Dispatch: paid delivery order waiting, on-duty courier marked ●");
+    check(await row.count() === 1 && (await row.locator(`select[name=courier] option[value="${courierId}"]`).innerText()).startsWith("● Test Courier")
+      && (await row.innerText()).includes(`available for ${cityName}`) && (await row.innerText()).includes(`Courier pay ${etbText}`),
+      "Dispatch: order waiting, courier available for its city (●), courier pay = the city price");
     await row.locator("select[name=courier]").selectOption(courierId);
     await row.locator("button:has-text('Assign')").click();
     await toast(m, "Courier assigned");
     await c.reload();
+    await c.waitForSelector("[data-testid=ringing]", { timeout: 10000 });
+    check(true, "courier app rings: “New delivery!” banner");
     check((await c.locator('a[href="/courier/notifications"]').innerText()).includes("1"), "courier: notification badge (1 unread)");
+    await c.click("[data-testid=ringing]");
+    await c.reload();
+    check(await c.locator("[data-testid=ringing]").count() === 0, "tapping the banner stops the ringing");
     await c.goto(`${U("courier")}/courier/notifications`);
     check((await c.locator("[data-testid=courier-notifications]").innerText()).includes(`New delivery: ${order.order_number}`), "courier: “New delivery” notification");
     const code = sql(`select delivery_code from orders where id = '${order.order_id}'`);
@@ -149,15 +169,39 @@ async function tryLogin(page, base, email, password) {
     check(!(await c.locator("main").innerText()).includes("Bole, House 12") && (await c.locator(`text=${order.order_number}`).count()) === 1,
       "after delivery: listed as delivered, address no longer shown");
     await c.goto(`${U("courier")}/courier/earnings`);
-    check((await c.locator("[data-testid=earning-cards]").innerText()).includes("100 ETB") && (await c.locator("[data-testid=earnings-list]").innerText()).includes(order.order_number),
-      "courier: Earnings shows the delivery (100 ETB, to be paid)");
+    check((await c.locator("[data-testid=earning-cards]").innerText()).includes(etbText) && (await c.locator("[data-testid=earnings-list]").innerText()).includes(order.order_number),
+      `courier: Earnings shows the delivery (${etbText} = the city price, to be paid)`);
     await c.goto(`${U("courier")}/courier/profile`);
+    check(await c.locator("select[name=vehicle]").count() === 0, "courier cannot change the vehicle (set by the office)");
     await c.fill("input[name=phone]", "0911556677");
-    await c.selectOption("select[name=vehicle]", "motorbike");
-    await c.fill("input[name=plate]", "aa-4521");
     await c.click("button:has-text('Save')");
     await toast(c, "Details saved");
-    check(sql(`select phone || ' ' || plate_number from courier_profiles where profile_id = '${courierId}'`) === "+251911556677 AA-4521", "courier: phone and plate saved");
+    check(sql(`select phone from courier_profiles where profile_id = '${courierId}'`) === "+251911556677", "courier: phone saved");
+
+    // ---- Super Admin: vehicle & documents, HR details
+    await o.goto(`${U("ops")}/admin/couriers/${courierId}`);
+    await o.selectOption("[data-testid=vehicle-select]", "motorcycle");
+    await o.click("button:has-text('Save')");
+    await toast(o, "Motorcycle or car");
+    check(true, "motorcycle without make / model / plate / insurance / licence is refused");
+    await o.fill("input[name=vehicle_make]", "Bajaj");
+    await o.fill("input[name=vehicle_model]", "Boxer 150");
+    await o.fill("input[name=plate_number]", "aa-4521");
+    await o.fill("input[name=insurance_company]", "Nyala Insurance");
+    await o.fill("input[name=insurance_policy]", "NY-77");
+    await o.fill("input[name=insurance_expiry]", "2027-12-31");
+    await o.fill("input[name=licence_number]", "dl-5544");
+    await o.fill("input[name=licence_expiry]", "2028-06-30");
+    await o.click("button:has-text('Save')");
+    await toast(o, "Courier saved");
+    check(sql(`select vehicle || ' ' || plate_number || ' ' || licence_number from courier_profiles where profile_id = '${courierId}'`) === "motorcycle AA-4521 DL-5544", "Super Admin: motorcycle with documents saved");
+    await o.goto(`${U("ops")}/admin/staff/${courierId}`);
+    await o.fill("input[name=fayda_number]", "123456789012");
+    await o.fill("input[name=passport_number]", "ep1234567");
+    await o.fill("input[name=job_title]", "Courier");
+    await o.click("button:has-text('Save HR details')");
+    await toast(o, "HR details saved");
+    check(sql(`select fayda_number || ' ' || passport_number from staff_hr where profile_id = '${courierId}'`) === "123456789012 EP1234567", "HR details (Fayda, passport) saved");
 
     // ---- Super Admin (operations): courier page → Mark as paid
     await o.goto(`${U("ops")}/admin/couriers/${courierId}`);
@@ -165,8 +209,11 @@ async function tryLogin(page, base, email, password) {
     o.on("dialog", (d) => d.accept());
     await o.fill("input[name=reference]", "CASH-001");
     await o.click("button:has-text('as paid')");
-    await toast(o, "Payment of 100 ETB");
-    check(sql(`select count(*) || ':' || sum(amount_etb) from courier_payouts where courier_id = '${courierId}'`) === "1:100.00", "payment recorded");
+    await toast(o, `Payment of ${Number(fee)} ETB`);
+    check(sql(`select count(*) || ':' || sum(amount_etb) from courier_payouts where courier_id = '${courierId}'`) === `1:${fee}`, "payment recorded");
+    const xl = await o.evaluate(async (u) => { const r = await fetch(u); return `${r.status} ${r.headers.get("content-type")}`; },
+      `${U("ops")}/admin/exports/download?kind=courier_orders&from=2026-01-01&to=2030-12-31&courier=${courierId}`);
+    check(xl.startsWith("200 application/vnd.openxmlformats"), "Super Admin downloads the courier orders Excel");
     await c.goto(`${U("courier")}/courier/earnings`);
     check((await c.locator("main").innerText()).includes("CASH-001"), "courier sees the payment (with the reference)");
     check(sql(`select string_agg(payload->>'step', ',' order by id) from notifications_outbox where event_type = 'delivery_update' and payload->>'order_id' = '${order.order_id}'`)

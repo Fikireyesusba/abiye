@@ -23,6 +23,7 @@ const KINDS: Record<string, { perm: Permission; title: string; dated: boolean }>
   printing: { perm: "printing.view", title: "Printing jobs", dated: true },
   kpi: { perm: "kpi.view", title: "Staff performance (KPIs)", dated: true },
   promotions: { perm: "promotions.manage", title: "Promotion uses", dated: true },
+  courier_orders: { perm: "couriers.manage", title: "Courier orders", dated: true },
 };
 type Sheet = { name: string; columns: { header: string; width: number }[]; rows: unknown[][] };
 
@@ -159,6 +160,23 @@ export async function GET(request: Request) {
         Number(r.subtotal_etb), Number(r.delivery_fee_etb), Number(r.original_total_etb), Number(r.discount_etb), Number(r.total_etb),
         r.payment_method === "wallet" ? "Balance" : r.payment_method === "bank_transfer" ? "Bank transfer" : r.payment_method, r.order_status,
         at(r.ordered_at), at(r.paid_at), r.promotion_status]),
+    });
+  } else if (kind === "courier_orders") {
+    // Orders handled by couriers in the chosen dates (optionally one courier): times, prices, what the courier earned and when paid.
+    const courier = url.searchParams.get("courier") ?? "";
+    const { data, error } = await supabase.rpc("admin_courier_orders", { p_from: pFrom!, p_to: pTo!, p_courier: /^[0-9a-f-]{36}$/.test(courier) ? courier : undefined });
+    if (error) return fail("courier orders");
+    sheets.push({
+      name: "Courier orders",
+      columns: [
+        { header: "Order", width: 12 }, { header: "Courier User ID", width: 10 }, { header: "Courier", width: 20 }, { header: "City", width: 16 },
+        { header: "Status", width: 16 }, { header: "Assigned", width: 17 }, { header: "Picked up", width: 17 }, { header: "Delivered", width: 17 },
+        { header: "Failed tries", width: 9 }, { header: "Last failure", width: 30 }, { header: "Delivery fee paid (ETB)", width: 16 },
+        { header: "City price (ETB)", width: 13 }, { header: "Order total (ETB)", width: 13 }, { header: "Courier earned (ETB)", width: 15 }, { header: "Paid to courier", width: 17 },
+      ],
+      rows: (data ?? []).map((r) => [r.order_number, r.courier_user_id ?? "", r.courier_name ?? "", r.city ?? "", r.status, at(r.assigned_at), at(r.picked_up_at), at(r.delivered_at),
+        r.delivery_attempts, r.fail_reason ?? "", Number(r.delivery_fee_etb), r.delivery_fee_full_etb === null ? "" : Number(r.delivery_fee_full_etb), Number(r.order_total_etb),
+        r.courier_earned_etb === null ? "" : Number(r.courier_earned_etb), at(r.paid_out_at)]),
     });
   } else if (kind === "printing") {
     const { data, error } = await supabase.from("printing_jobs")
