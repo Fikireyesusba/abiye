@@ -11,7 +11,7 @@ Living tracker so work can continue across sessions. **Update this file at the e
 - App: courier duty page (cities), ringer (20 s refresh, ringtone or built-in, vibrate), decline, phone-only profile; admin Online now / Dispatch by city / Ringtone / Excel; courier vehicle & documents; Staff → HR details; checkout shows the delivery discount; CSP media-src allows the storage address.
 - Tests: db `99zzzh_courier_earnings_test.sql` (rewritten), unit `money-pricing.test.ts`, e2e `courier.smoke.cjs` (52 checks). Seed: sample cities replace the inactive copies.
 - Next: Phase 2 — Abiye Business app for partner shops (hand-off PINs, customer pickup PIN, shop address at checkout, handling fee per order + payouts).
-- ⏳ Owner: paste **0071**.
+- ✅ 0071 applied in production (owner confirmed 2026-11-24).
 
 ## Customer approval, courier app v2, Couriers & delivery (requested 2026-11-24)
 
