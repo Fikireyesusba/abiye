@@ -17,7 +17,8 @@ Project → Settings → **Domains** → Add `abiye.site`, `www.abiye.site` (red
 
 ## 2. Resend — emails from the new domain
 Resend → Domains → **Add domain** `abiye.site`, add its DNS records (SPF, DKIM, and the MX for bounces) at the registrar,
-wait for **Verified**. Keep fantaf.xyz verified until step 4 is done.
+wait for **Verified**. Keep fantaf.xyz verified until step 4 is done. Then **API Keys → Create API key** (Sending access, domain **abiye.site**) and put it in Vercel as `RESEND_API_KEY` —
+a key limited to fantaf.xyz is refused for abiye.site ("This API key is not authorized to send emails from abiye.site").
 
 ## 3. Supabase — sign-in links
 Authentication → **URL Configuration**:

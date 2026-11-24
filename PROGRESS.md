@@ -8,7 +8,7 @@ Living tracker so work can continue across sessions. **Update this file at the e
 ## Domain move fantaf.xyz → abiye.site (requested 2026-11-24)
 
 - No code change needed (all addresses come from `APP_URL` and `*_HOST`); docs, comments and tests renamed to abiye.site. Owner checklist: **docs/DOMAIN-MOVE.md** (Vercel domains + DNS, Resend domain, Supabase URLs, env switch, old addresses redirected, checks).
-- ✅ Owner moved to abiye.site (domains, Resend, Supabase URLs, env, redeploy) — 2026-11-24. Remaining: old fantaf.xyz addresses set to redirect (step 5) and the checks (step 6).
+- ✅ Owner moved to abiye.site (domains, Resend, Supabase URLs, env, redeploy) — 2026-11-24. Resend: new API key for abiye.site (the old key was limited to fantaf.xyz → HTTP 403); failed emails retried and sent. Remaining: old fantaf.xyz addresses set to redirect (step 5) and the remaining checks (step 6).
 
 ## Current status
 
