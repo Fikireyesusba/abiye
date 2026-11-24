@@ -102,6 +102,8 @@ async function sendInvite(email: string, fullName: string | undefined): Promise<
     }
     return fail(error?.status === 429 ? "Email limit reached. Try again in a few minutes." : "Could not send the invitation.");
   }
+  // Invited by the shop: approved straight away (no "Under verification").
+  await getSupabaseAdmin().rpc("approve_invited_customer", { p_user_id: data.user.id });
   const supabase = await createSupabaseServerClient();
   const { error: logError } = await supabase.rpc("admin_log_customer_action", { p_user_id: data.user.id, p_action: "invite_sent", p_metadata: { email } });
   if (logError?.message === "cannot_manage_staff") return fail("That email belongs to a staff account.");

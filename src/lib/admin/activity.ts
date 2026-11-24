@@ -35,6 +35,8 @@ const ACTION_LABELS: Record<string, string> = {
   security_reviewed: "Security alert cleared (reviewed)",
   promo_unassigned: "Personal promo code removed",
   promo_revoked: "Promotion revoked",
+  account_approved: "Account approved",
+  account_rejected: "Account rejected (deleted, email blocked)",
   courier_assigned: "Courier assigned",
   courier_unassigned: "Courier removed",
   delivery_picked_up: "Picked up by the courier",

@@ -210,7 +210,8 @@
     "wallet_limit": "ይህ ገንዘብ መሙላት ቀሪ ሂሳብዎን ከ10,000 ብር ገደብ በላይ ያደርገዋል።",
     "topup_pending_limit": "ማረጋገጫ የሚጠብቁ 3 የገንዘብ መሙላት ጥያቄዎች አሉዎት። እስክናረጋግጣቸው ድረስ እባክዎ ይጠብቁ።",
     "email_blocked": "ይህ ኢሜይል በዚህ ድረ-ገጽ ላይ መጠቀም አይቻልም። እባክዎ ያግኙን።",
-    "delivery_locked": "Too many wrong delivery codes. Call the office — they will check the order."
+    "delivery_locked": "Too many wrong delivery codes. Call the office — they will check the order.",
+    "account_pending": "Your account is under verification. You can order once our team has approved it — usually within one working day."
   },
   "header": {
     "menu": "ማውጫ",
@@ -571,7 +572,9 @@
     "checkoutLabel": "ግዢ",
     "printRequestLabel": "የህትመት ጥያቄ",
     "profileHint": "Theme, notifications, privacy and terms",
-    "track": "Track"
+    "track": "Track",
+    "pendingTitle": "Your account is under verification.",
+    "pendingText": "For security, our team checks every new account. You can browse and contact Support & feedback; ordering, top-ups and printing open once it is approved (we will email you)."
   },
   "payInfo": {
     "title": "እንዴት እንደሚከፍሉ",

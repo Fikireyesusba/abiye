@@ -77,6 +77,8 @@ select u.id, u.email, r.id from (values
   ('aaaaaaaa-0000-0000-0000-000000000003'::uuid, 'staff@test.local', 'staff'),
   ('aaaaaaaa-0000-0000-0000-000000000004'::uuid, 'staff2@test.local', 'staff')) u(id, email, role)
 join public.admin_roles r on r.key = u.role;
+-- Test customers are approved (new accounts start "Under verification"; 99zzzg tests that).
+update public.customer_accounts set approval_status = 'approved' where id::text like 'cccccccc-%';
 
 \set super   '''aaaaaaaa-0000-0000-0000-000000000001'''
 \set manager '''aaaaaaaa-0000-0000-0000-000000000002'''

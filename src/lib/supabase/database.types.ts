@@ -145,14 +145,14 @@ isOneToOne: false
                   ]
                 },"customer_accounts": {
                   Row: {
-                    "accepted_terms_at": string | null,"created_at": string,"date_of_birth": string | null,"deactivated_at": string | null,"deactivated_by": string | null,"deactivation_reason": string | null,"default_address": string | null,"default_zone_id": string | null,"full_name": string | null,"id": string,"member_id": string,"phone": string | null,"sex": string | null,"updated_at": string,"wallet_balance_etb": number
+                    "accepted_terms_at": string | null,"approval_status": string,"approved_at": string | null,"approved_by": string | null,"created_at": string,"date_of_birth": string | null,"deactivated_at": string | null,"deactivated_by": string | null,"deactivation_reason": string | null,"default_address": string | null,"default_zone_id": string | null,"full_name": string | null,"id": string,"member_id": string,"phone": string | null,"sex": string | null,"updated_at": string,"wallet_balance_etb": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "accepted_terms_at"?: string | null,"created_at"?: string,"date_of_birth"?: string | null,"deactivated_at"?: string | null,"deactivated_by"?: string | null,"deactivation_reason"?: string | null,"default_address"?: string | null,"default_zone_id"?: string | null,"full_name"?: string | null,"id": string,"member_id": string,"phone"?: string | null,"sex"?: string | null,"updated_at"?: string,"wallet_balance_etb"?: number
+                    "accepted_terms_at"?: string | null,"approval_status"?: string,"approved_at"?: string | null,"approved_by"?: string | null,"created_at"?: string,"date_of_birth"?: string | null,"deactivated_at"?: string | null,"deactivated_by"?: string | null,"deactivation_reason"?: string | null,"default_address"?: string | null,"default_zone_id"?: string | null,"full_name"?: string | null,"id": string,"member_id": string,"phone"?: string | null,"sex"?: string | null,"updated_at"?: string,"wallet_balance_etb"?: number
                   }
                   Update: {
-                    "accepted_terms_at"?: string | null,"created_at"?: string,"date_of_birth"?: string | null,"deactivated_at"?: string | null,"deactivated_by"?: string | null,"deactivation_reason"?: string | null,"default_address"?: string | null,"default_zone_id"?: string | null,"full_name"?: string | null,"id"?: string,"member_id"?: string,"phone"?: string | null,"sex"?: string | null,"updated_at"?: string,"wallet_balance_etb"?: number
+                    "accepted_terms_at"?: string | null,"approval_status"?: string,"approved_at"?: string | null,"approved_by"?: string | null,"created_at"?: string,"date_of_birth"?: string | null,"deactivated_at"?: string | null,"deactivated_by"?: string | null,"deactivation_reason"?: string | null,"default_address"?: string | null,"default_zone_id"?: string | null,"full_name"?: string | null,"id"?: string,"member_id"?: string,"phone"?: string | null,"sex"?: string | null,"updated_at"?: string,"wallet_balance_etb"?: number
                   }
                   Relationships: [
                     {
@@ -927,6 +927,9 @@ isOneToOne: false
               "device_id": string,"email": string,"first_seen": string,"full_name": string,"is_staff": boolean,"last_seen": string,"member_id": string,"opens": number,"platform": string,"user_id": string
             }[]
                            },
+"admin_approve_customer":
+{ Args: { "p_user_id": string }; Returns: undefined
+                           },
 "admin_archive_past_receipts":
 { Args: { "p_from": string,"p_to": string }; Returns: number
                            },
@@ -1053,6 +1056,11 @@ isOneToOne: false
               "account_number": string,"amount_expected_etb": number,"bank_name": string,"customer_email": string,"customer_name": string,"customer_phone": string,"id": string,"order_number": string,"order_status": string,"order_total_etb": number,"payment_method": string,"receipt_original_name": string,"receipt_sha256": string,"receipt_used_elsewhere": number,"reference_used_elsewhere": number,"review_note": string,"reviewed_at": string,"reviewed_by_name": string,"status": string,"submitted_at": string,"transaction_reference": string
             }[]
                            },
+"admin_pending_customers":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "created_at": string,"date_of_birth": string,"default_address": string,"email": string,"email_confirmed": boolean,"full_name": string,"id": string,"last_sign_in_at": string,"member_id": string,"phone": string,"sex": string
+            }[]
+                           },
 "admin_prepare_customer_delete":
 { Args: { "p_user_id": string }; Returns: Json
                            },
@@ -1085,6 +1093,9 @@ isOneToOne: false
                            },
 "admin_receipt_archive_status":
 { Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"admin_reject_customer":
+{ Args: { "p_reason": string,"p_user_id": string }; Returns: Json
                            },
 "admin_remove_staff":
 { Args: { "p_user_id": string }; Returns: string
@@ -1216,6 +1227,9 @@ isOneToOne: false
 { Args: { "p_limit"?: number,"p_search"?: string }; Returns: {
               "balance_etb": number,"email": string,"full_name": string,"last_activity": string,"user_id": string
             }[]
+                           },
+"approve_invited_customer":
+{ Args: { "p_user_id": string }; Returns: undefined
                            },
 "bootstrap_super_admin":
 { Args: { "p_full_name": string,"p_user_id": string }; Returns: undefined

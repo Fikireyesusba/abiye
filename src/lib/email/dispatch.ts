@@ -37,6 +37,18 @@ async function send(to: string, built: { subject: string; html: string; text: st
   }
 }
 
+/** Send one customer email right now (not through the queue) — e.g. to an account that is about to be deleted. */
+export async function sendCustomerEmailNow(to: string, event: string, payload: Record<string, unknown>, key: string): Promise<boolean> {
+  if (!emailConfigured()) return false;
+  const s = await getSiteSettings();
+  const ctx: EmailContext = { appUrl: getServerEnv().APP_URL, business: s.business.name, phone: s.contact.phone, address: s.contact.address };
+  const built = buildCustomerEmail({ event_type: event, payload }, ctx);
+  if (!built) return false;
+  const res = await send(to, built, key);
+  if (!res.ok) console.error(`[email] ${event} could not be sent: ${res.error}`);
+  return res.ok;
+}
+
 export interface EmailSummary {
   configured: boolean;
   sent: number;

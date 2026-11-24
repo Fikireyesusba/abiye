@@ -169,6 +169,22 @@ function spec(row: EmailRow, ctx: EmailContext): Spec | null {
         button: { href: `${ctx.appUrl}/support/${esc(p.ticket_id)}`, en: "Open the ticket", am: "ጥያቄውን ይክፈቱ" },
       };
     }
+    case "customer_account_approved":
+      return {
+        subject: "Your account is approved / መለያዎ ጸድቋል",
+        en: { title: `${p.name ? `${esc(String(p.name).split(" ")[0])}, your` : "Your"} account is approved — welcome to ${esc(ctx.business.en)}!`, lines: ["You can now order, top up your balance and use our printing service."] },
+        am: { title: "መለያዎ ጸድቋል — እንኳን ደህና መጡ!", lines: ["አሁን ማዘዝ፣ ቀሪ ሂሳብ መሙላት እና የህትመት አገልግሎታችንን መጠቀም ይችላሉ።"] },
+        button: { href: `${ctx.appUrl}/`, en: "Start shopping", am: "ግዢ ይጀምሩ" },
+      };
+    case "customer_account_rejected":
+      return {
+        subject: "Your account request / የመለያ ጥያቄዎ",
+        en: { title: "Due to security reasons, you cannot create an account with us.", lines: [
+          p.reason ? `Reason: ${esc(p.reason)}` : "",
+          "Your details have been deleted and this email address cannot be used to sign up again.",
+        ].filter(Boolean) },
+        am: { title: "በደህንነት ምክንያት ከእኛ ጋር መለያ መክፈት አይችሉም።", lines: ["ያስገቡት መረጃ ተሰርዟል፤ ይህን ኢሜይል ዳግም ለመመዝገብ መጠቀም አይቻልም።"] },
+      };
     case "customer_topup_verified":
       return {
         subject: `Balance topped up: +${totalEn || esc(money(p.amount_etb, "en"))} / ቀሪ ሂሳብ ተሞልቷል`,

@@ -104,6 +104,8 @@ export function suggestedAction(row: OutboxRow): string | null {
       if (p.change === "used") return "Nothing to do — keep this for any complaint (the Promotions Excel lists every use).";
       if (p.change === "revoked" || p.change === "deleted" || p.change === "removed") return "Nothing to do if this was expected; otherwise ask the staff member why (Activity log).";
       return "If you did not expect this promotion change, revoke the promotion under Promotions and check the Activity log.";
+    case "account_pending":
+      return "Check the details under Account approvals, then approve or reject (with a reason).";
     case "delivery_update":
       if (p.step === "failed") return "Call the customer, then re-assign the courier (or arrange pickup) on the order.";
       if (p.step === "code_locked") return "Call the customer and the courier; re-assign the courier on the order to unlock the code.";
@@ -183,6 +185,7 @@ export function describe(row: OutboxRow): [string, string] {
     case "receipts_test": return ["Receipts group", "Test message"];
     case "promotion_alert": return ["Promotions", PROMO_CHANGE[String(p.change)] ?? titleCase(String(p.change ?? "change"))];
     case "excel_export": return ["Exports", `Excel: ${String(p.title ?? "file")}`];
+    case "account_pending": return ["Customer accounts", "New account waiting for approval"];
     case "delivery_update": return ["Deliveries", DELIVERY_STEP[String(p.step)] ?? titleCase(String(p.step ?? ""))];
     case "printing_test": return ["Printing group", "Test message"];
     case "support_test": return ["Support group", "Test message"];
@@ -422,6 +425,11 @@ function buildBody(row: OutboxRow, appUrl: string): BuiltMessage {
         ].join("\n") + (used && p.order_id ? admin(`/admin/orders/${p.order_id}`) : admin("/admin/promotions")),
       };
     }
+    case "account_pending":
+      return {
+        attachment: null,
+        text: ["🆕 <b>NEW CUSTOMER ACCOUNT — WAITING FOR APPROVAL</b>", "", line("When", addisTime(p.at))].join("\n") + admin("/admin/approvals"),
+      };
     case "delivery_update":
       return {
         attachment: null,

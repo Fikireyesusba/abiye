@@ -29,6 +29,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ShopLayout({ children }: LayoutProps<"/">) {
   const [t, viewer] = await Promise.all([getTranslations("account"), getCustomerUser()]);
   // A resolved / closed ticket not rated yet: ask for 1–5 stars (RLS: own tickets, closed ones for 24 h).
+  // New accounts wait for approval: shown on every page (they can browse and use Support meanwhile).
+  const { data: approval } = viewer
+    ? await (await createSupabaseServerClient()).from("customer_accounts").select("approval_status").eq("id", viewer.id).maybeSingle()
+    : { data: null };
+  const pending = approval?.approval_status === "pending";
   const { data: toRate } = viewer
     ? await (await createSupabaseServerClient()).from("support_tickets").select("id, ticket_number").eq("user_id", viewer.id)
         .in("status", ["resolved", "closed"]).is("rating", null).order("updated_at", { ascending: false }).limit(1).maybeSingle()
@@ -37,6 +42,13 @@ export default async function ShopLayout({ children }: LayoutProps<"/">) {
     <>
       <IdleSignOut minutes={IDLE_MINUTES.customer} kind="customer" warning={{ text: t("idleWarning"), stay: t("idleStay") }} />
       <SiteHeader />
+      {pending && (
+        <div role="status" className="border-b border-warning/40 bg-warning/10 px-4 py-3 text-sm" data-testid="account-pending">
+          <div className="mx-auto max-w-7xl">
+            <strong>{t("pendingTitle")}</strong> {t("pendingText")}
+          </div>
+        </div>
+      )}
       <main id="main" className="flex flex-1 flex-col">
         {children}
       </main>

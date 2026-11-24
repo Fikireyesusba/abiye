@@ -210,7 +210,8 @@
     "wallet_limit": "This top-up would take your balance above the 10,000 ETB limit.",
     "topup_pending_limit": "You already have 3 top-ups waiting for verification. Please wait until we check them.",
     "email_blocked": "This email cannot be used on this website. Please contact us.",
-    "delivery_locked": "Too many wrong delivery codes. Call the office — they will check the order."
+    "delivery_locked": "Too many wrong delivery codes. Call the office — they will check the order.",
+    "account_pending": "Your account is under verification. You can order once our team has approved it — usually within one working day."
   },
   "header": {
     "menu": "Menu",
@@ -571,7 +572,9 @@
     "checkoutLabel": "Checkout",
     "printRequestLabel": "Printing request",
     "profileHint": "Theme, notifications, privacy and terms",
-    "track": "Track"
+    "track": "Track",
+    "pendingTitle": "Your account is under verification.",
+    "pendingText": "For security, our team checks every new account. You can browse and contact Support & feedback; ordering, top-ups and printing open once it is approved (we will email you)."
   },
   "payInfo": {
     "title": "How to pay",
