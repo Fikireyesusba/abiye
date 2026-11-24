@@ -24,6 +24,23 @@ const order = {
 };
 
 describe("Telegram messages", () => {
+  it("payment alerts list every product with its price, the delivery fee with its discount, the promo code and the total", () => {
+    const breakdown = {
+      items: [{ name: "Perfume", quantity: 2, unit_etb: 2850, line_etb: 5700 }, { name: "Charger", quantity: 1, unit_etb: 850, line_etb: 850 }],
+      subtotal_etb: 6550, delivery_fee_etb: 135, delivery_full_etb: 150, delivery_discount_pct: 10,
+      promo_code: "SAVE5", promo_discount_etb: 300, total_etb: 6385, fulfillment: "delivery", city: "Addis Ababa", partner_shop: null,
+    };
+    const { text } = buildMessage({ ...order, payload: { ...order.payload, breakdown } }, "https://abiye.example");
+    for (const expected of [
+      "Products (2):", "• Perfume × 2 — 5,700 ETB (2,850 ETB each)", "• Charger × 1 — 850 ETB", "Subtotal: 6,550 ETB",
+      "Delivery (Addis Ababa): <b>135 ETB</b> — 10% off the full price 150 ETB", "Promo code SAVE5: <b>−300 ETB</b>", "Total: <b>6,385 ETB</b>",
+    ]) expect(text).toContain(expected);
+    const verified = buildMessage({ id: 2, event_type: "payment_verified", attachment_bucket: null, attachment_path: null,
+      payload: { order_number: "ET-1", total_etb: 850, breakdown: { ...breakdown, items: [breakdown.items[1]], subtotal_etb: 850, delivery_fee_etb: 0, delivery_discount_pct: 0,
+        delivery_full_etb: null, fulfillment: "pickup", city: null, promo_code: null, promo_discount_etb: 0, total_etb: 850 } } }, "").text;
+    expect(verified).toContain("Delivery: none (pickup at our shop)");
+    expect(verified).toContain("Promo code: none");
+  });
   it("matches the required new-order layout", () => {
     const { text, attachment } = buildMessage(order, "https://abiye.example");
     for (const expected of [

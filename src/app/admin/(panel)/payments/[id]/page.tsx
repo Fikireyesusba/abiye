@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { reviewPayment } from "@/lib/admin/order-actions";
 import { requirePermission } from "@/lib/auth/guards";
 import { isGuid } from "@/lib/orders/access";
+import { loadOrderBreakdown } from "@/lib/orders/breakdown";
 import { formatDateTime } from "@/lib/datetime";
 import { formatETB, toSantim } from "@/lib/money";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -32,12 +33,14 @@ export default async function PaymentDetailPage({ params }: PageProps<"/admin/pa
   if (!s?.order) notFound();
   const order = s.order;
   const bank = (order.bank_snapshot ?? {}) as Record<string, string>;
-  const [{ data: url }, { data: same }] = await Promise.all([
+  const [{ data: url }, { data: same }, breakdown] = await Promise.all([
     supabase.storage.from("payment-receipts").createSignedUrl(s.receipt_path, 300),
     s.transaction_reference
       ? supabase.from("payment_submissions").select("order_id, transaction_reference").ilike("transaction_reference", s.transaction_reference.replace(/[%_\\]/g, "\\$&"))
       : Promise.resolve({ data: [] as { order_id: string; transaction_reference: string | null }[] }),
+    loadOrderBreakdown(supabase, order.id),
   ]);
+  const etb = (n: number) => formatETB(toSantim(n));
   const reused = new Set((same ?? []).map((x) => x.order_id)).size > 1;
   const mismatch = Number(s.amount_expected_etb) !== Number(order.total_etb);
   const canVerify = ctx.permissions.has("payments.verify");
@@ -61,6 +64,40 @@ export default async function PaymentDetailPage({ params }: PageProps<"/admin/pa
             <div><dt className="text-muted-foreground">Reference</dt><dd className="font-mono">{s.transaction_reference ?? "—"}</dd></div>
             <div><dt className="text-muted-foreground">Customer</dt><dd>{order.customer_name} · {formatEthiopianPhone(order.customer_phone)}</dd></div>
           </dl>
+          {breakdown && (
+            <section className="rounded-lg border" data-testid="payment-breakdown">
+              <h2 className="border-b px-3 py-2 font-medium">What this payment is for ({breakdown.items.length} {breakdown.items.length === 1 ? "item" : "items"})</h2>
+              <table className="w-full text-sm">
+                <tbody className="divide-y">
+                  {breakdown.items.map((i, k) => (
+                    <tr key={k}>
+                      <td className="px-3 py-1.5">{i.name}</td>
+                      <td className="px-3 py-1.5 text-right tabular-nums text-muted-foreground">{i.quantity} × {etb(i.unit_etb)}</td>
+                      <td className="px-3 py-1.5 text-right tabular-nums">{etb(i.line_etb)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="border-t">
+                  <tr><td className="px-3 py-1.5 text-muted-foreground" colSpan={2}>Subtotal</td><td className="px-3 py-1.5 text-right tabular-nums">{etb(breakdown.subtotal_etb)}</td></tr>
+                  <tr>
+                    <td className="px-3 py-1.5 text-muted-foreground" colSpan={2}>
+                      {breakdown.fulfillment === "pickup" && !breakdown.partner_shop ? "Delivery (pickup at our shop)"
+                        : `Delivery${breakdown.partner_shop ? ` to partner shop ${breakdown.partner_shop}` : ""}${breakdown.city ? ` · ${breakdown.city}` : ""}`}
+                      {breakdown.delivery_discount_pct > 0 && breakdown.delivery_full_etb !== null && (
+                        <span className="ml-1 text-success" data-testid="delivery-discount-applied">— {breakdown.delivery_discount_pct}% off the full price {etb(breakdown.delivery_full_etb)}</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-1.5 text-right tabular-nums">{breakdown.delivery_fee_etb > 0 ? etb(breakdown.delivery_fee_etb) : "free"}</td>
+                  </tr>
+                  <tr className={breakdown.promo_discount_etb > 0 ? "text-success" : "text-muted-foreground"}>
+                    <td className="px-3 py-1.5" colSpan={2}>{breakdown.promo_discount_etb > 0 ? `Promo code ${breakdown.promo_code ?? ""}` : "Promo code: none"}</td>
+                    <td className="px-3 py-1.5 text-right tabular-nums">{breakdown.promo_discount_etb > 0 ? `−${etb(breakdown.promo_discount_etb)}` : ""}</td>
+                  </tr>
+                  <tr className="font-semibold"><td className="px-3 py-1.5" colSpan={2}>Total</td><td className="px-3 py-1.5 text-right tabular-nums">{etb(breakdown.total_etb)}</td></tr>
+                </tfoot>
+              </table>
+            </section>
+          )}
           {reused && (
             <p className="flex items-center gap-2 rounded-md bg-destructive/5 p-2 text-destructive">
               <AlertTriangle className="size-4" aria-hidden /> This transaction reference was also submitted for another order.

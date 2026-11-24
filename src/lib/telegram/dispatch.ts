@@ -1,4 +1,5 @@
 import "server-only";
+import { loadOrderBreakdown } from "@/lib/orders/breakdown";
 import { surfaceUrl } from "@/lib/security/hosts";
 import { after } from "next/server";
 import { getServerEnv } from "@/lib/env";
@@ -8,7 +9,7 @@ import { dispatchCustomerPush } from "@/lib/push/dispatch";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { deleteDuePrintingFilesQuietly } from "@/lib/printing/retention";
 import { sendMedia, sendMessage, type SendResult, type TelegramConfig } from "./client";
-import { buildMessage, CAPTION_LIMIT, MESSAGE_LIMIT, truncate, type OutboxRow } from "./format";
+import { buildMessage, CAPTION_LIMIT, esc, MESSAGE_LIMIT, truncate, type OutboxRow } from "./format";
 
 const ATTACHMENT_BUCKETS = new Set(["payment-receipts", "printing-files"]);
 const FEED_EVENTS = new Set(["security_event", "security_alert", "admin_action", "notification_copy", "security_test", "stock_test", "receipts_test"]);
@@ -53,7 +54,14 @@ function adminBase(group: TelegramGroup): string {
   return surfaceUrl(group === "security" || group === "receipts" ? "super" : "staff") ?? getServerEnv().APP_URL;
 }
 
+/** Payment alerts: what was bought, read fresh from the order (every line, delivery fee and discounts). */
+const BREAKDOWN_EVENTS = new Set(["new_order", "payment_resubmitted", "payment_verified"]);
+
 async function deliver(cfg: TelegramConfig, row: OutboxRow, group: TelegramGroup = "orders"): Promise<SendResult> {
+  if (BREAKDOWN_EVENTS.has(row.event_type) && typeof row.payload.order_id === "string") {
+    const breakdown = await loadOrderBreakdown(getSupabaseAdmin(), row.payload.order_id).catch(() => null);
+    if (breakdown) row = { ...row, payload: { ...row.payload, breakdown } };
+  }
   const msg = buildMessage(row, adminBase(group));
   // Excel exports: the file itself, then it is removed from storage (Telegram keeps the copy).
   if (row.event_type === "excel_export" && msg.attachment?.bucket === "excel-exports") {
@@ -71,6 +79,18 @@ async function deliver(cfg: TelegramConfig, row: OutboxRow, group: TelegramGroup
     if (!blob) return { ok: false, kind: "permanent", error: "document no longer in storage" };
     const name = String(row.payload.file_name ?? msg.attachment.path.split("/").pop() ?? "document").replace(/[\\/\r\n]/g, "_").slice(0, 120);
     return sendMedia(cfg, "document", blob, name, truncate(msg.text, CAPTION_LIMIT));
+  }
+  if (msg.attachment && ATTACHMENT_BUCKETS.has(msg.attachment.bucket) && msg.text.length > CAPTION_LIMIT) {
+    // Too long for a photo caption (many products): the receipt with a short caption, then the full message.
+    const { data: blob } = await getSupabaseAdmin().storage.from(msg.attachment.bucket).download(msg.attachment.path);
+    if (blob) {
+      const ext = msg.attachment.path.split(".").pop() ?? "bin";
+      const name = `receipt-${row.payload.order_number ?? row.payload.number ?? row.id}.${ext}`;
+      const caption = `🧾 Receipt for order ${esc(row.payload.order_number ?? "")} — details in the next message`;
+      const first = await sendMedia(cfg, "document", blob, name, caption);
+      if (!first.ok) return first;
+    }
+    return sendMessage(cfg, truncate(msg.text, MESSAGE_LIMIT));
   }
   if (msg.attachment && ATTACHMENT_BUCKETS.has(msg.attachment.bucket) && msg.text.length <= CAPTION_LIMIT) {
     const { data: blob } = await getSupabaseAdmin().storage.from(msg.attachment.bucket).download(msg.attachment.path);

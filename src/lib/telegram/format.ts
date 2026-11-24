@@ -1,3 +1,4 @@
+import type { OrderBreakdown } from "@/lib/orders/breakdown";
 /**
  * Telegram message builders (parse_mode = HTML). Every value that can come from
  * a customer is escaped: Telegram's HTML mode would otherwise let a crafted
@@ -223,6 +224,25 @@ const short = (v: unknown, n = 300) => {
   return s.length > n ? `${s.slice(0, n - 1)}…` : s;
 };
 
+/** Every product with its price, the delivery fee (and its discount), the promo code and the total (read fresh by the dispatcher). */
+function breakdownLines(b: OrderBreakdown): string[] {
+  const money = (n: number) => esc(etb(n));
+  const where = b.partner_shop ? `partner shop ${b.partner_shop}${b.city ? `, ${b.city}` : ""}` : b.city ?? "";
+  const delivery = b.fulfillment === "pickup" && !b.partner_shop
+    ? "Delivery: none (pickup at our shop)"
+    : `Delivery${where ? ` (${esc(where)})` : ""}: <b>${b.delivery_fee_etb > 0 ? money(b.delivery_fee_etb) : "free"}</b>`
+      + (b.delivery_discount_pct > 0 && b.delivery_full_etb ? ` — ${b.delivery_discount_pct}% off the full price ${money(b.delivery_full_etb)}` : "");
+  return [
+    `Products (${b.items.length}):`,
+    ...b.items.slice(0, 30).map((i) => `• ${esc(i.name)} × ${i.quantity} — ${money(i.line_etb)}${i.quantity > 1 ? ` (${money(i.unit_etb)} each)` : ""}`),
+    ...(b.items.length > 30 ? [`• … and ${b.items.length - 30} more`] : []),
+    `Subtotal: ${money(b.subtotal_etb)}`,
+    delivery,
+    b.promo_discount_etb > 0 ? `Promo code${b.promo_code ? ` ${esc(b.promo_code)}` : ""}: <b>−${money(b.promo_discount_etb)}</b>` : "Promo code: none",
+    `Total: <b>${money(b.total_etb)}</b>`,
+  ];
+}
+
 function buildBody(row: OutboxRow, appUrl: string): BuiltMessage {
   const p = row.payload ?? {};
   const admin = (path: string) => (appUrl ? `\n\n<a href="${esc(`${appUrl}${path}`)}">Open in admin</a>` : "");
@@ -245,11 +265,14 @@ function buildBody(row: OutboxRow, appUrl: string): BuiltMessage {
           line("Order ID", p.order_number),
           line("Customer", p.customer_name),
           line("Phone", phone(p.customer_phone)),
-          "Products:",
-          ...items.slice(0, 30).map((i) => `• ${esc(i.name)} × ${esc(i.quantity)}`),
-          ...(items.length > 30 ? [`• … and ${items.length - 30} more`] : []),
+          ...(p.breakdown ? ["", ...breakdownLines(p.breakdown as OrderBreakdown)] : [
+            "Products:",
+            ...items.slice(0, 30).map((i) => `• ${esc(i.name)} × ${esc(i.quantity)}`),
+            ...(items.length > 30 ? [`• … and ${items.length - 30} more`] : []),
+            "",
+            `Total: <b>${esc(etb(p.total_etb))}</b>`,
+          ]),
           "",
-          `Total: <b>${esc(etb(p.total_etb))}</b>`,
           "Payment Method: Bank Transfer",
           `Transaction Reference: ${ref}${reused}`,
           "Payment Status: Pending Verification",
@@ -275,7 +298,11 @@ function buildBody(row: OutboxRow, appUrl: string): BuiltMessage {
       };
     }
     case "payment_verified":
-      return { attachment: null, text: `✅ <b>PAYMENT VERIFIED</b>\n\n${line("Order", p.order_number)}\nAmount: ${esc(etb(p.total_etb))}${orderLink}` };
+      return {
+        attachment: null,
+        text: `✅ <b>PAYMENT VERIFIED</b>\n\n${line("Order", p.order_number)}\n`
+          + (p.breakdown ? breakdownLines(p.breakdown as OrderBreakdown).join("\n") : `Amount: ${esc(etb(p.total_etb))}`) + orderLink,
+      };
     case "topup_rejected":
       return {
         attachment: null,

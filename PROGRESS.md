@@ -5,6 +5,11 @@ Living tracker so work can continue across sessions. **Update this file at the e
 - Architecture & plan: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - Setup & deployment: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
 
+## Payment details for staff (requested 2026-11-25)
+
+- Payment review page (Admin → Payments → a payment) and the Telegram payment alerts (waiting / resubmitted / verified) list every product with quantity, unit and line price, subtotal, delivery fee (city, partner shop, % off the full city price), promo code discount and total — read fresh from the order (`src/lib/orders/breakdown.ts`). A receipt with a message too long for a photo caption is sent as a file, then the full message.
+- No Telegram alert for a waiting payment = the "Also alert order payments waiting for approval" switch (Admin → Notifications → Telegram activity feed) is off by default; approved payments are always sent.
+
 ## Phase 2: partner shops — Abiye Business app (requested 2026-11-24)
 
 - Migration **0073** `20261124000073_partner_shops.sql`: permission set **Partner shop** (`partner.own`) + `partners.manage` (Super Admin); `partner_shops`, `partner_staff`, `partner_earnings`, `partner_payouts` (RLS: own shop or partners.manage); orders `partner_shop_id`, `partner_snapshot`, hand-over PINs (`handoff_courier_code` / `handoff_shop_code`, `handoff_*_at`, `handoff_tries`, `at_shop_at`); `create_order` accepts `fulfillment.partner_shop_id` (pickup, city price + discount); `admin_assign_courier` / `admin_dispatch_orders` include partner orders; `courier_deliveries` shows the shop (not the customer); `courier_handoff` + `partner_receive` (both PINs → ready_for_pickup, courier earns), `partner_hand_over` (customer PIN → completed, shop earns handling fee); `partner_orders`, `partner_me`; admin `admin_partner_shops`, `admin_save_partner_shop`, `admin_partner_staff`, `admin_set_partner_staff`, `admin_pay_partner`, `admin_partner_orders` + export kind `partner_orders`; reset clears partner earnings/payouts. New errors `handoff_locked`, `invalid_pickup_point`.

@@ -111,7 +111,7 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
     check(await waitFor(() => received.some((r) => r.caption?.includes(orderNumber))), "new-order alert delivered right after the receipt upload (no cron needed)");
     const photo = received.find((r) => r.caption?.includes(orderNumber));
     check(photo?.method === "sendPhoto" && photo.hasFile && photo.chat_id === CHAT, "sent as a photo with the receipt attached, to the configured chat");
-    for (const s of ["NEW CUSTOMER ORDER", `Order ID: ${orderNumber}`, "User ID: ", "Suggested action:", "25W USB-C Fast Charger × 2", "Total: <b>1,850 ETB</b>",
+    for (const s of ["NEW CUSTOMER ORDER", `Order ID: ${orderNumber}`, "User ID: ", "Suggested action:", "25W USB-C Fast Charger × 2 — 1,700 ETB (850 ETB each)", "Subtotal: 1,700 ETB", "Delivery (Addis Ababa): <b>150 ETB</b>", "Promo code: none", "Total: <b>1,850 ETB</b>",
       "Payment Method: Bank Transfer", "Transaction Reference: FT26TG0001", "Payment Status: Pending Verification", "Delivery Address: Addis Ababa — Bole, near Edna Mall",
       `href="${B}/admin/orders/`]) {
       check(photo?.caption?.includes(s), `caption contains “${s}”`);
@@ -183,6 +183,9 @@ const cron = (auth = true) => fetch(`${B}/api/cron/notifications`, { headers: au
     const subOrder = sql(`select id from orders where order_number = '${orderNumber}'`);
     await a.goto(`${B}/admin/payments`);
     await a.click(`a:has-text("${orderNumber}")`);
+    const bd = await a.locator("[data-testid=payment-breakdown]").innerText();
+    check(bd.includes("25W USB-C Fast Charger") && bd.includes("2 × 850 ETB") && bd.includes("Delivery") && bd.includes("150 ETB") && bd.includes("1,850 ETB"),
+      "payment page lists each product with its price, the delivery fee and the total");
     await a.locator("main form:has(button:has-text('Reject')) textarea").fill("Amount not in statement");
     await a.locator("main form:has(button:has-text('Reject')) button").click();
     await a.waitForSelector('[data-sonner-toast]:has-text("Payment rejected")');
