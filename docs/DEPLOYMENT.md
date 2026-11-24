@@ -154,22 +154,22 @@ One website, four addresses — each opens only its own part, and each permissio
 
 | Address | Who | What |
 |---|---|---|
-| `fantaf.xyz` | customers | shop and customer app (no `/admin`, no courier app — "not found") |
-| `ocs.fantaf.xyz` | managers, staff and other permission sets | admin portal only |
-| `operations.fantaf.xyz` | Super Admins only | admin portal only |
-| `courier.fantaf.xyz` | couriers only | courier app only (installs as "Abiye Courier") |
+| `abiye.site` | customers | shop and customer app (no `/admin`, no courier app — "not found") |
+| `ocs.abiye.site` | managers, staff and other permission sets | admin portal only |
+| `operations.abiye.site` | Super Admins only | admin portal only |
+| `courier.abiye.site` | couriers only | courier app only (installs as "Abiye Courier") |
 
 A sign-in at the wrong address is refused ("This account signs in at a different address") and recorded as a security event. Telegram "Open in admin" links use `ocs` (security and receipts groups: `operations`).
 
 Setup, in this order (browser only):
-1. **Vercel → Settings → Domains → Add** `ocs.fantaf.xyz`, `operations.fantaf.xyz` and `courier.fantaf.xyz` (Production). Add the DNS records Vercel shows (usually a CNAME to `cname.vercel-dns.com`) at your domain registrar. Wait until each shows **Valid Configuration**.
-2. **Supabase → Authentication → URL Configuration → Redirect URLs**: add `https://ocs.fantaf.xyz/**`, `https://operations.fantaf.xyz/**`, `https://courier.fantaf.xyz/**`.
-3. **Vercel → Settings → Environment Variables (Production)**: `CUSTOMER_HOST=fantaf.xyz`, `STAFF_HOST=ocs.fantaf.xyz`, `SUPER_ADMIN_HOST=operations.fantaf.xyz`, `COURIER_HOST=courier.fantaf.xyz`, then **Redeploy** (and Promote if the deployment shows Stale). The split is switched on only when all four are set; until then everything keeps working on every address.
-4. Sign in as Super Admin at `https://operations.fantaf.xyz/admin`; tell staff to use `https://ocs.fantaf.xyz` and couriers `https://courier.fantaf.xyz` (each can install it on their phone).
+1. **Vercel → Settings → Domains → Add** `ocs.abiye.site`, `operations.abiye.site` and `courier.abiye.site` (Production). Add the DNS records Vercel shows (usually a CNAME to `cname.vercel-dns.com`) at your domain registrar. Wait until each shows **Valid Configuration**.
+2. **Supabase → Authentication → URL Configuration → Redirect URLs**: add `https://ocs.abiye.site/**`, `https://operations.abiye.site/**`, `https://courier.abiye.site/**`.
+3. **Vercel → Settings → Environment Variables (Production)**: `CUSTOMER_HOST=abiye.site`, `STAFF_HOST=ocs.abiye.site`, `SUPER_ADMIN_HOST=operations.abiye.site`, `COURIER_HOST=courier.abiye.site`, then **Redeploy** (and Promote if the deployment shows Stale). The split is switched on only when all four are set; until then everything keeps working on every address.
+4. Sign in as Super Admin at `https://operations.abiye.site/admin`; tell staff to use `https://ocs.abiye.site` and couriers `https://courier.abiye.site` (each can install it on their phone).
 
 To switch the split off again, delete the four variables and redeploy.
 
-**Change password (staff, admins, couriers):** `https://ocs.fantaf.xyz/admin/password` (Super Admin: `https://operations.fantaf.xyz/admin/password`, couriers: `https://courier.fantaf.xyz/admin/password`; also linked under the sign-in form). Email → current password → 6-digit authenticator code → new password twice → **Save changes** → Done. The account is then signed out on every device. Forgotten passwords: the Super Admin resets them under Staff.
+**Change password (staff, admins, couriers):** `https://ocs.abiye.site/admin/password` (Super Admin: `https://operations.abiye.site/admin/password`, couriers: `https://courier.abiye.site/admin/password`; also linked under the sign-in form). Email → current password → 6-digit authenticator code → new password twice → **Save changes** → Done. The account is then signed out on every device. Forgotten passwords: the Super Admin resets them under Staff.
 
 ## 6b. Couriers
 
@@ -177,7 +177,7 @@ To switch the split off again, delete the four variables and redeploy.
 - On a paid **delivery** order: Admin → order → **Courier** → choose → **Assign courier**. The customer gets a **4-digit delivery code** (order page and the "on its way" email).
 - Courier: **Picked up — on my way** (customer told it is on its way) → at the door, enter the customer's code → **Delivered** (order completed). Or **Couldn't deliver** with a reason (order back to preparing; the office decides). 5 wrong codes lock the delivery — re-assign the courier to unlock it.
 - The courier sees the customer's name, phone (call button) and address (map link) only while the delivery is assigned and open.
-- **Courier app on the phone:** open `https://courier.fantaf.xyz`, sign in, then tap **Install** on the "Install the courier app" card (Android / Chrome), or on iPhone: Safari → Share → **Add to Home Screen**. It appears as **Abiye Courier** and opens straight on the deliveries. (Staff can do the same at `ocs` → "Abiye OCS"; Super Admin at `operations` → "Abiye Operations".) Every step is in the Activity log and the orders & payments Telegram group (with the courier's User ID).
+- **Courier app on the phone:** open `https://courier.abiye.site`, sign in, then tap **Install** on the "Install the courier app" card (Android / Chrome), or on iPhone: Safari → Share → **Add to Home Screen**. It appears as **Abiye Courier** and opens straight on the deliveries. (Staff can do the same at `ocs` → "Abiye OCS"; Super Admin at `operations` → "Abiye Operations".) Every step is in the Activity log and the orders & payments Telegram group (with the courier's User ID).
 
 ## 6c. Virus scan of customer uploads (Cloudmersive)
 
@@ -219,10 +219,10 @@ Every admin account (Super Admin, Manager, Staff) signs in with password **and**
 
 Customers get an email (English + Amharic) when: the order is placed (amount, bank details, deadline, link to upload the receipt), the payment is verified, the payment is rejected (with the reason), the order is ready for pickup / out for delivery / completed / cancelled / expired, and a printing price is ready or the printing is ready.
 
-1. Resend → **API Keys** → Create API key: permission **Sending access**, domain `fantaf.xyz`. Copy it (shown once) — do not paste it anywhere else.
+1. Resend → **API Keys** → Create API key: permission **Sending access**, domain `abiye.site`. Copy it (shown once) — do not paste it anywhere else.
 2. Vercel → Project → Settings → **Environment Variables** (Production):
    - `RESEND_API_KEY` = the key
-   - `EMAIL_FROM` = `Abiye <orders@fantaf.xyz>` (any address at your verified domain)
+   - `EMAIL_FROM` = `Abiye <orders@abiye.site>` (any address at your verified domain)
 3. Redeploy (Deployments → … → Redeploy) so the variables take effect.
 4. Database: run `supabase/migrations/20261120000022_customer_emails.sql` in the SQL Editor.
 

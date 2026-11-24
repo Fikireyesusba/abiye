@@ -5,6 +5,11 @@ Living tracker so work can continue across sessions. **Update this file at the e
 - Architecture & plan: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - Setup & deployment: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
 
+## Domain move fantaf.xyz → abiye.site (requested 2026-11-24)
+
+- No code change needed (all addresses come from `APP_URL` and `*_HOST`); docs, comments and tests renamed to abiye.site. Owner checklist: **docs/DOMAIN-MOVE.md** (Vercel domains + DNS, Resend domain, Supabase URLs, env switch, old addresses redirected, checks).
+- ⏳ Owner: follow docs/DOMAIN-MOVE.md.
+
 ## Current status
 
 | Phase | Status |

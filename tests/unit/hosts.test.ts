@@ -2,31 +2,31 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { homeSurfaceForRole, pathAllowed, roleAllowedOn, surfaceForHost, surfaceUrl } from "@/lib/security/hosts";
 
 const set = () => {
-  vi.stubEnv("CUSTOMER_HOST", "fantaf.xyz");
-  vi.stubEnv("STAFF_HOST", "ocs.fantaf.xyz");
-  vi.stubEnv("SUPER_ADMIN_HOST", "https://operations.fantaf.xyz/");
-  vi.stubEnv("COURIER_HOST", "Courier.Fantaf.xyz");
+  vi.stubEnv("CUSTOMER_HOST", "abiye.site");
+  vi.stubEnv("STAFF_HOST", "ocs.abiye.site");
+  vi.stubEnv("SUPER_ADMIN_HOST", "https://operations.abiye.site/");
+  vi.stubEnv("COURIER_HOST", "Courier.Abiye.Site");
 };
 
 describe("separate addresses", () => {
   afterEach(() => vi.unstubAllEnvs());
 
   it("not configured (or only partly) → no split: everything allowed", () => {
-    expect(surfaceForHost("ocs.fantaf.xyz")).toBeNull();
-    vi.stubEnv("STAFF_HOST", "ocs.fantaf.xyz");
-    expect(surfaceForHost("ocs.fantaf.xyz")).toBeNull();
+    expect(surfaceForHost("ocs.abiye.site")).toBeNull();
+    vi.stubEnv("STAFF_HOST", "ocs.abiye.site");
+    expect(surfaceForHost("ocs.abiye.site")).toBeNull();
     expect(roleAllowedOn(null, "super_admin")).toBe(true);
     expect(surfaceUrl("staff")).toBeNull();
   });
 
   it("each address serves its own part (ports and letter case ignored; unknown → customer)", () => {
     set();
-    expect(surfaceForHost("fantaf.xyz")).toBe("customer");
-    expect(surfaceForHost("ocs.fantaf.xyz:443")).toBe("staff");
-    expect(surfaceForHost("operations.fantaf.xyz")).toBe("super");
-    expect(surfaceForHost("courier.fantaf.xyz")).toBe("courier");
+    expect(surfaceForHost("abiye.site")).toBe("customer");
+    expect(surfaceForHost("ocs.abiye.site:443")).toBe("staff");
+    expect(surfaceForHost("operations.abiye.site")).toBe("super");
+    expect(surfaceForHost("courier.abiye.site")).toBe("courier");
     expect(surfaceForHost("abiye-git-x.vercel.app")).toBe("customer");
-    expect(surfaceUrl("super")).toBe("https://operations.fantaf.xyz");
+    expect(surfaceUrl("super")).toBe("https://operations.abiye.site");
   });
 
   it("who may sign in where", () => {

@@ -59,9 +59,9 @@ async function tryLogin(page, base, email, password) {
 
     // ---- customer address: shop only
     const s = await fresh();
-    check((await s.goto(`${U("shop")}/`)).status() === 200, "fantaf.xyz: the shop opens");
+    check((await s.goto(`${U("shop")}/`)).status() === 200, "abiye.site: the shop opens");
     check((await s.goto(`${U("shop")}/admin/login`)).status() === 404 && (await s.goto(`${U("shop")}/courier`)).status() === 404,
-      "fantaf.xyz: no admin and no courier app (not found)");
+      "abiye.site: no admin and no courier app (not found)");
 
     // ---- staff address: admin only; Super Admin and couriers refused
     const st = await fresh();
@@ -144,7 +144,7 @@ async function tryLogin(page, base, email, password) {
 
     // ---- change password page (staff / admin / courier): email + current password + code + new password twice
     const sp = await fresh();
-    check((await sp.goto(`${U("shop")}/admin/password`)).status() === 404, "fantaf.xyz: no staff password page");
+    check((await sp.goto(`${U("shop")}/admin/password`)).status() === 404, "abiye.site: no staff password page");
     await sp.goto(`${U("courier")}/admin/password`);
     check(new URL(sp.url()).pathname === "/admin/password", "courier address: the change-password page opens without signing in");
     const secret = JSON.parse(require("fs").readFileSync(require("path").join(require("os").tmpdir(), "abiye-e2e-totp.json"), "utf8"))[mgrEmail];

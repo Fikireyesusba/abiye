@@ -1,6 +1,6 @@
 # Go-live checklist (owner)
 
-Everything here is done in the web dashboards: **Supabase**, **Vercel**, **Resend**, **GitHub**, and the website's own **Admin** (`https://fantaf.xyz/admin`). Tick each item before announcing the shop.
+Everything here is done in the web dashboards: **Supabase**, **Vercel**, **Resend**, **GitHub**, and the website's own **Admin** (`https://operations.abiye.site/admin` for the Super Admin). Tick each item before announcing the shop.
 
 ## 1. Database up to date (Supabase → SQL Editor)
 
@@ -44,7 +44,7 @@ Each should say "Success. No rows returned". If Supabase warns about RLS, choose
 
 ## 2. Accounts and email
 
-- [ ] Supabase → Authentication → **URL Configuration**: Site URL `https://fantaf.xyz`.
+- [ ] Supabase → Authentication → **URL Configuration**: Site URL `https://abiye.site`.
 - [ ] Supabase → Authentication → **SMTP**: Resend settings saved (docs/DEPLOYMENT.md §2b); the 3 bilingual email templates pasted.
 - [ ] Test: sign up a customer with a real email, confirm, sign in, use "Forgot password".
 - [ ] Super Admin can sign in at `/admin` with password + authenticator code (two-step login, docs/DEPLOYMENT.md §8). Create staff under **Staff** (each person their own account; never share passwords).
@@ -78,9 +78,9 @@ Each should say "Success. No rows returned". If Supabase warns about RLS, choose
 
 ## 6. Vercel
 
-- [ ] Project → Settings → **Environment Variables** complete for Production (docs/DEPLOYMENT.md §5), `APP_URL=https://fantaf.xyz`, a long random `CRON_SECRET`.
+- [ ] Project → Settings → **Environment Variables** complete for Production (docs/DEPLOYMENT.md §5), `APP_URL=https://abiye.site`, a long random `CRON_SECRET`.
 - [ ] Project → **Cron Jobs**: three daily jobs listed (expire unpaid orders, storage maintenance, notification retries).
-- [ ] Domains: `fantaf.xyz` (and `www`) show a valid certificate.
+- [ ] Domains: `abiye.site` (and `www`) show a valid certificate.
 - [ ] Latest deployment is **Ready** and is the one from the newest GitHub commit.
 
 ## 7. Daily routine after launch

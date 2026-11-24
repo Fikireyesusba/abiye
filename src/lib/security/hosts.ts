@@ -1,9 +1,9 @@
 /**
  * One website, four addresses (set in Vercel; all four must be set to switch the split on):
- *   CUSTOMER_HOST     fantaf.xyz             customers: shop and customer app only
- *   STAFF_HOST        ocs.fantaf.xyz         managers / staff (and other permission sets): admin portal
- *   SUPER_ADMIN_HOST  operations.fantaf.xyz  Super Admins only: admin portal
- *   COURIER_HOST      courier.fantaf.xyz     couriers only: their deliveries
+ *   CUSTOMER_HOST     abiye.site             customers: shop and customer app only
+ *   STAFF_HOST        ocs.abiye.site         managers / staff (and other permission sets): admin portal
+ *   SUPER_ADMIN_HOST  operations.abiye.site  Super Admins only: admin portal
+ *   COURIER_HOST      courier.abiye.site     couriers only: their deliveries
  * Not set (local development, before DNS is ready) → no split: everything works on every address.
  * When set, any other address (e.g. a *.vercel.app link) is treated like the customer address (no admin).
  * Used by the proxy (no server-only imports here) and by the server guards.
