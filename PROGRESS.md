@@ -10,7 +10,7 @@ Living tracker so work can continue across sessions. **Update this file at the e
 - **Approval** (migration **0069** `20261124000069_customer_approval.sql`): `customer_accounts.approval_status` (existing approved, new pending); `private.assert_confirmed_user` refuses pending (`account_pending`) → no orders / printing / top-ups / reviews / stock alerts; support allowed. Permission `customers.approve`; Admin → **Account approvals**: approve (email) / reject with reason (email sent directly, email blocked, account deleted). Security group alert `account_pending`. Shop notice on every page. Invited customers approved at once (`approve_invited_customer`, service role). Test helpers approve test customers.
 - **Courier app v2 + admin** (migration **0070** `20261124000070_courier_earnings.sql`): `courier_profiles` (phone, vehicle, plate, own fee, on duty), fixed fee per delivery (`website_settings.courier`, default 100 ETB), `courier_earnings` (one per delivered order), `courier_payouts` (Mark as paid), `courier_notifications`; courier tabs Deliveries / Earnings / Notifications / Profile + on-duty switch; Admin → **Couriers & delivery** (Dispatch, Couriers, Fee) + courier page (details, own fee, unpaid → Mark as paid, payments). Permission `couriers.manage` (Super Admin).
 - Tests: db `99zzzg_customer_approval_test.sql`, `99zzzh_courier_earnings_test.sql`; e2e `approval.smoke.cjs`, `courier.smoke.cjs`, `account.smoke.cjs`.
-- ⏳ Owner: paste **0069**, then **0070**.
+- ✅ 0069 and 0070 applied in production (owner confirmed 2026-11-24).
 
 ## Domain move fantaf.xyz → abiye.site (requested 2026-11-24)
 
