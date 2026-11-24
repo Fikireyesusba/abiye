@@ -113,6 +113,14 @@ export function suggestedAction(row: OutboxRow): string | null {
       if (p.step === "handoff_locked") return "Call the courier and the shop; re-assign the same courier on the order to unlock the hand-over.";
       if (p.step === "code_locked") return "Call the customer and the courier; re-assign the courier on the order to unlock the code.";
       return "Nothing to do — the customer sees the progress on their order page.";
+    case "delivery_alert":
+      if (p.kind === "not_dispatched") return "Assign a courier under Couriers & delivery → Dispatch (check who is on duty for that city).";
+      if (p.kind === "not_picked_up") return "Call the courier; if they cannot take it, assign another courier.";
+      if (p.kind === "delivery_late") return "Call the courier and the customer to find out where the order is.";
+      if (p.kind === "not_collected") return "Call the customer to remind them to collect the order (the shop has their phone too).";
+      return "Check the order in Admin → Delivery monitor.";
+    case "delivery_pin_alert":
+      return "Call the courier / shop and the customer. If this looks like someone guessing, keep the order on hold; 5 wrong PINs lock it.";
     case "excel_export":
       return "Keep this file as your copy. If nobody on your team downloaded it, check who did (Action by User ID).";
     case "notification_copy":
@@ -190,6 +198,8 @@ export function describe(row: OutboxRow): [string, string] {
     case "excel_export": return ["Exports", `Excel: ${String(p.title ?? "file")}`];
     case "account_pending": return ["Customer accounts", "New account waiting for approval"];
     case "delivery_update": return ["Deliveries", DELIVERY_STEP[String(p.step)] ?? titleCase(String(p.step ?? ""))];
+    case "delivery_alert": return ["Delivery monitor", MONITOR_KIND[String(p.kind)] ?? titleCase(String(p.kind ?? "alert"))];
+    case "delivery_pin_alert": return [p.app === "business" ? "Abiye Business app" : "Courier app", `Wrong PINs: ${PIN_KIND[String(p.pin)] ?? String(p.pin ?? "")}`];
     case "printing_test": return ["Printing group", "Test message"];
     case "support_test": return ["Support group", "Test message"];
     case "support_ticket": return ["Support", "New ticket"];
@@ -222,6 +232,14 @@ const addisTime = (iso: unknown) =>
 const short = (v: unknown, n = 300) => {
   const s = typeof v === "string" ? v : v === null || v === undefined ? "" : JSON.stringify(v);
   return s.length > n ? `${s.slice(0, n - 1)}…` : s;
+};
+
+const MONITOR_KIND: Record<string, string> = {
+  not_dispatched: "Paid order still without a courier", not_picked_up: "Courier has not picked up the order",
+  delivery_late: "Delivery taking too long", not_collected: "Order not collected at the partner shop",
+};
+const PIN_KIND: Record<string, string> = {
+  customer_pin_at_door: "customer PIN at the door", customer_pin_at_shop: "customer PIN at the partner shop", handover_pin: "courier ↔ shop hand-over PIN",
 };
 
 /** Every product with its price, the delivery fee (and its discount), the promo code and the total (read fresh by the dispatcher). */
@@ -458,6 +476,33 @@ function buildBody(row: OutboxRow, appUrl: string): BuiltMessage {
       return {
         attachment: null,
         text: ["🆕 <b>NEW CUSTOMER ACCOUNT — WAITING FOR APPROVAL</b>", "", line("When", addisTime(p.at))].join("\n") + admin("/admin/approvals"),
+      };
+    case "delivery_alert":
+      return {
+        attachment: null,
+        text: [
+          `⏰ <b>DELIVERY MONITOR: ${esc((MONITOR_KIND[String(p.kind)] ?? String(p.kind ?? "")).toUpperCase())}</b>`,
+          "",
+          line("Order", p.order_number),
+          ...(p.shop ? [line("Partner shop", p.shop)] : []),
+          ...(p.city ? [line("City", p.city)] : []),
+          ...(p.courier_user_id ? [line("Courier User ID", p.courier_user_id)] : []),
+          line("Waiting", `${esc(p.hours)} h (since ${addisTime(p.since)})`),
+        ].join("\n") + orderLink,
+      };
+    case "delivery_pin_alert":
+      return {
+        attachment: null,
+        text: [
+          `🔐 <b>WRONG PINS: ${esc((PIN_KIND[String(p.pin)] ?? String(p.pin ?? "")).toUpperCase())}</b>`,
+          "",
+          line("Order", p.order_number),
+          line("Wrong tries", `${esc(p.tries)} (locked at 5)`),
+          line("App", p.app === "business" ? "Abiye Business (partner shop)" : "Courier app"),
+          ...(p.shop ? [line("Partner shop", p.shop)] : []),
+          ...(p.courier_user_id ? [line("Courier User ID", p.courier_user_id)] : []),
+          line("When", addisTime(p.at)),
+        ].join("\n") + orderLink,
       };
     case "delivery_update":
       return {

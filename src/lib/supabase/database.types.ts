@@ -1234,6 +1234,9 @@ isOneToOne: false
 "admin_delete_role":
 { Args: { "p_role_id": number }; Returns: undefined
                            },
+"admin_delivery_monitor":
+{ Args: { "p_events"?: number }; Returns: Json
+                           },
 "admin_dispatch_orders":
 { Args: Record<PropertyKey, never>; Returns: {
               "address_line": string,"city": string,"courier_id": string,"courier_pay_etb": number,"delivery_attempts": number,"delivery_fee_etb": number,"fail_reason": string,"items": number,"order_id": string,"order_number": string,"paid_at": string,"partner_shop": string,"status": string,"total_etb": number,"zone_id": string
@@ -1409,6 +1412,9 @@ isOneToOne: false
                            },
 "admin_set_customer_active":
 { Args: { "p_active": boolean,"p_reason"?: string,"p_user_id": string }; Returns: undefined
+                           },
+"admin_set_delivery_monitor":
+{ Args: { "p": Json }; Returns: undefined
                            },
 "admin_set_member_permissions":
 { Args: { "p_permissions": (string)[],"p_user_id": string }; Returns: undefined
@@ -1638,7 +1644,7 @@ isOneToOne: false
                            },
 "courier_deliveries":
 { Args: Record<PropertyKey, never>; Returns: {
-              "active": boolean,"address_line": string,"assigned_at": string,"city": string,"customer_name": string,"customer_phone": string,"delivered_at": string,"delivery_instructions": string,"fail_reason": string,"handoff_code": string,"handoff_courier_done": boolean,"handoff_shop_done": boolean,"items": Json,"order_id": string,"order_number": string,"partner_hours": string,"partner_landmark": string,"partner_map_url": string,"partner_phone": string,"partner_shop": string,"picked_up_at": string,"status": string,"total_etb": number
+              "active": boolean,"address_line": string,"assigned_at": string,"city": string,"customer_name": string,"customer_phone": string,"delivered_at": string,"delivery_instructions": string,"fail_reason": string,"handoff_code": string,"handoff_courier_done": boolean,"handoff_shop_done": boolean,"order_id": string,"order_number": string,"partner_hours": string,"partner_landmark": string,"partner_map_url": string,"partner_phone": string,"partner_shop": string,"picked_up_at": string,"status": string
             }[]
                            },
 "courier_fail":
@@ -1689,6 +1695,9 @@ isOneToOne: false
 "delete_my_product_review":
 { Args: { "p_product_id": string }; Returns: undefined
                            },
+"delivery_monitor_tick":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "expire_unpaid_orders":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
@@ -1720,7 +1729,7 @@ isOneToOne: false
                            },
 "partner_orders":
 { Args: Record<PropertyKey, never>; Returns: {
-              "at_shop_at": string,"collected_at": string,"courier_confirmed": boolean,"courier_name": string,"courier_phone": string,"customer_name": string,"customer_phone": string,"handoff_locked": boolean,"items": Json,"order_id": string,"order_number": string,"paid_at": string,"pin_locked": boolean,"shop_code": string,"shop_confirmed": boolean,"stage": string,"status": string
+              "at_shop_at": string,"collected_at": string,"courier_confirmed": boolean,"courier_name": string,"courier_phone": string,"customer_name": string,"customer_phone": string,"handoff_locked": boolean,"order_id": string,"order_number": string,"paid_at": string,"pin_locked": boolean,"shop_code": string,"shop_confirmed": boolean,"stage": string,"status": string
             }[]
                            },
 "partner_receive":

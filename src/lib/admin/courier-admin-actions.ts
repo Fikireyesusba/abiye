@@ -87,3 +87,21 @@ export async function uploadRingtone(_prev: ActionResult | null, fd: FormData): 
   revalidatePath("/admin/couriers");
   return ok("Ringtone saved — couriers hear it when a delivery is assigned.");
 }
+
+/** Delivery monitor thresholds (Super Admin): when late deliveries and wrong PINs are alerted on Telegram. */
+export async function saveDeliveryMonitor(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("couriers.manage");
+  const v = z.object({
+    enabled: z.string().optional(),
+    dispatch_wait_hours: z.coerce.number().min(0.25, "Waiting for a courier: at least 0.25 h.").max(168),
+    pickup_hours: z.coerce.number().min(0.25, "Not picked up: at least 0.25 h.").max(168),
+    delivery_hours: z.coerce.number().min(0.25, "On the way: at least 0.25 h.").max(168),
+    shop_collect_days: z.coerce.number().int().min(1, "At the shop: 1–60 days.").max(60),
+    wrong_pin_alert: z.coerce.number().int().min(1, "Wrong PINs: 1–4.").max(4, "Wrong PINs: 1–4 (5 locks the order)."),
+  }).safeParse(formObject(fd));
+  if (!v.success) return fail(v.error.issues[0]?.message ?? "Check the values.");
+  const { error } = await (await createSupabaseServerClient()).rpc("admin_set_delivery_monitor", { p: { ...v.data, enabled: v.data.enabled === "on" } });
+  if (error) return dbError(error);
+  revalidatePath("/admin/delivery-monitor");
+  return ok("Monitor settings saved.");
+}

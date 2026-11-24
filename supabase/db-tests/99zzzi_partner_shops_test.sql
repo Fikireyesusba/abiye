@@ -43,8 +43,8 @@ select pg_temp.ok(:'ccode' ~ '^\d{4}$' and :'scode' ~ '^\d{4}$' and :'ccode' <> 
 
 -- Courier: sees the shop (not the customer), picks up; cannot "deliver" a shop order
 select pg_temp.login(:staff2);
-select pg_temp.ok((select partner_shop = 'Hawassa Corner' and customer_name is null and customer_phone is null and handoff_code is null from public.courier_deliveries() where order_id = :'oid'::uuid),
-  'courier sees the partner shop, not the customer');
+select pg_temp.ok((select partner_shop = 'Hawassa Corner' and customer_name = 'Test Customer' and customer_phone is null and handoff_code is null from public.courier_deliveries() where order_id = :'oid'::uuid),
+  'courier sees the partner shop and the customer name only');
 select public.courier_pick_up(:'oid'::uuid);
 select pg_temp.ok((select handoff_code = :'ccode' from public.courier_deliveries() where order_id = :'oid'::uuid), 'courier sees their hand-over PIN once on the way');
 select pg_temp.throws(format($$select public.courier_deliver(%L, %L)$$, :'oid', :'pin'), 'invalid_transition', 'shop orders are not delivered to the door');
@@ -52,8 +52,8 @@ reset role;
 
 -- Shop: incoming, enters the courier's PIN (wrong, then right)
 select pg_temp.login(:staff);
-select pg_temp.ok((select stage = 'incoming' and shop_code = :'scode' and customer_name is null from public.partner_orders() where order_id = :'oid'::uuid),
-  'Business app: incoming order with the shop PIN to give the courier');
+select pg_temp.ok((select stage = 'incoming' and shop_code = :'scode' and customer_name = 'Test Customer' and customer_phone is null from public.partner_orders() where order_id = :'oid'::uuid),
+  'Business app: incoming order (customer name, no phone) with the shop PIN to give the courier');
 select pg_temp.ok(not public.partner_receive(:'oid'::uuid, '0000') or :'ccode' = '0000', 'wrong courier PIN refused');
 select pg_temp.ok(public.partner_receive(:'oid'::uuid, :'ccode'), 'shop enters the courier''s PIN');
 select pg_temp.throws(format($$select public.partner_hand_over(%L, %L)$$, :'oid', :'pin'), 'invalid_transition', 'not at the shop until the courier enters the shop PIN too');

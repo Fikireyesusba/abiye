@@ -7,7 +7,6 @@ import { CourierInstallCard } from "@/components/pwa/courier-install";
 import { requirePermission } from "@/lib/auth/guards";
 import { couldNotDeliver, declineDelivery, deliver, handOffToShop, pickUp } from "@/lib/courier/actions";
 import { formatDateTime } from "@/lib/datetime";
-import { formatETB, toSantim } from "@/lib/money";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatEthiopianPhone } from "@/lib/validation/phone";
 
@@ -31,7 +30,6 @@ export default async function CourierPage() {
       <ul className="space-y-4">
         {open.map((d) => {
           const onTheWay = d.status === "out_for_delivery";
-          const items = (d.items as { name: string; quantity: number }[] | null) ?? [];
           const shop = d.partner_shop;
           const map = (shop && d.partner_map_url) || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([d.address_line, d.city, "Ethiopia"].filter(Boolean).join(", "))}`;
           return (
@@ -40,11 +38,11 @@ export default async function CourierPage() {
                 <span className="font-mono text-lg font-semibold">{d.order_number}</span>
                 <Badge variant={onTheWay ? "info" : "secondary"}>{onTheWay ? "On the way" : "To pick up"}</Badge>
                 {shop && <Badge variant="outline">Partner shop</Badge>}
-                <span className="ml-auto text-sm tabular-nums text-muted-foreground">{formatETB(toSantim(Number(d.total_etb)))} · paid</span>
               </div>
               {d.fail_reason && !onTheWay && <p className="rounded-md bg-warning/10 p-2 text-sm">Last try failed: {d.fail_reason}</p>}
               <div className="space-y-1 text-sm">
-                <p className="font-medium">{shop ? `Take it to: ${shop}` : d.customer_name}</p>
+                <p className="font-medium" data-testid="delivery-customer">Customer: {d.customer_name}</p>
+                {shop && <p className="font-medium">Take it to: {shop}</p>}
                 {shop && d.partner_phone && (
                   <a href={`tel:${d.partner_phone}`} className="inline-flex items-center gap-1 text-primary"><Phone className="size-4" aria-hidden /> {d.partner_phone}</a>
                 )}
@@ -58,9 +56,6 @@ export default async function CourierPage() {
                 {d.partner_hours && <p className="text-muted-foreground">Open: {d.partner_hours}</p>}
                 {d.delivery_instructions && <p className="text-muted-foreground">Note: {d.delivery_instructions}</p>}
               </div>
-              <ul className="list-inside list-disc text-sm text-muted-foreground">
-                {items.map((i, k) => <li key={k}>{i.name} × {i.quantity}</li>)}
-              </ul>
               {!onTheWay ? (
                 <div className="space-y-2">
                   <ActionForm action={pickUp} hidden={{ orderId: d.order_id }} submitLabel="Picked up — on my way" className="[&_button]:w-full" />

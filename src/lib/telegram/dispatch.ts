@@ -173,6 +173,22 @@ export function telegramSoon() {
   });
 }
 
+/**
+ * Delivery monitor: while staff, courier or shop apps are open, check for late deliveries (the database runs the
+ * check at most every 5 minutes) and send any new alert. After the response; never delays the page.
+ */
+export function deliveryMonitorSoon() {
+  after(async () => {
+    try {
+      const { createSupabaseServerClient } = await import("@/lib/supabase/server");
+      const { data } = await (await createSupabaseServerClient()).rpc("delivery_monitor_tick");
+      if (Number(data ?? 0) > 0) await dispatchNotifications(20);
+    } catch (e) {
+      console.error("[monitor] tick failed:", (e as Error).message);
+    }
+  });
+}
+
 /** Send queued notifications (staff Telegram + customer emails + phone notifications + receipt archive) right after the current response (does not delay the user). */
 export function dispatchSoon() {
   after(async () => {

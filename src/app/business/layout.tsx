@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import { signOut } from "@/lib/auth/actions";
 import { requireAdmin } from "@/lib/auth/guards";
+import { deliveryMonitorSoon } from "@/lib/telegram/dispatch";
 import { staffAppMetadata } from "@/lib/security/app-meta";
 import { IDLE_MINUTES } from "@/lib/security/idle";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -23,6 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
 /** Abiye Business app shell (partner shops, phone-first). Every page and action checks partner.own again. */
 export default async function BusinessLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireAdmin();
+  deliveryMonitorSoon();
   if (!ctx.permissions.has("partner.own")) redirect("/admin");
   const { data, error } = await (await createSupabaseServerClient()).rpc("partner_me");
   const me = (data ?? {}) as { shop?: string; city?: string; incoming?: number; at_shop?: number };

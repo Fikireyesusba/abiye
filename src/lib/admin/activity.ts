@@ -50,6 +50,8 @@ const ACTION_LABELS: Record<string, string> = {
   delivery_completed: "Delivered (customer's code checked)",
   delivery_failed: "Courier could not deliver",
   delivery_code_locked: "Delivery code locked (5 wrong tries)",
+  pin_wrong: "Wrong PIN entered",
+  delivery_monitor_set: "Delivery monitor settings changed",
   delivery_at_partner_shop: "Handed over at the partner shop (PINs checked)",
   handoff_courier_confirmed: "Courier entered the shop's PIN",
   handoff_shop_confirmed: "Shop entered the courier's PIN",

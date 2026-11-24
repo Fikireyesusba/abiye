@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import { signOut } from "@/lib/auth/actions";
 import { requireAdmin } from "@/lib/auth/guards";
+import { deliveryMonitorSoon } from "@/lib/telegram/dispatch";
 import { setDuty } from "@/lib/courier/actions";
 import { staffAppMetadata } from "@/lib/security/app-meta";
 import { IDLE_MINUTES } from "@/lib/security/idle";
@@ -28,6 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
 /** Courier app shell (phone-first): header with on-duty switch, bottom tabs. Every page and action checks deliveries.own again. */
 export default async function CourierLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireAdmin();
+  deliveryMonitorSoon();
   if (!ctx.permissions.has("deliveries.own")) redirect("/admin");
   const { data } = await (await createSupabaseServerClient()).rpc("courier_me");
   const me = (data ?? {}) as { on_duty?: boolean; unread?: number; latest_unread_assigned?: number | null; ringtone_path?: string | null; cities?: { name: string }[] };

@@ -140,7 +140,9 @@ const ZONE = "40000000-0000-0000-0000-000000000001";
     await adminLogin(c, U("courier"), courier.email, "PartnerE2E2026x", "/courier");
     const card = c.locator("[data-testid=delivery]", { hasText: orderNo });
     const text = await card.innerText();
-    check(text.includes(`Take it to: ${shopName}`) && !text.includes("Abebe"), "courier sees the partner shop, not the customer");
+    const custName = sql(`select customer_name from orders where id = '${orderId}'`);
+    check(text.includes(`Take it to: ${shopName}`) && text.includes(`Customer: ${custName}`) && !text.includes("Charger") && !text.includes("ETB"),
+      "courier sees the partner shop and the customer name — no products or prices");
     await card.locator("button:has-text('Picked up')").click();
     await toast(c, "Picked up");
     const courierPin = (await c.locator("[data-testid=delivery]", { hasText: orderNo }).locator("[data-testid=courier-handoff-pin]").innerText()).trim();
@@ -150,6 +152,8 @@ const ZONE = "40000000-0000-0000-0000-000000000001";
     await biz.goto(`${U("business")}/business`);
     const inc = biz.locator("[data-testid=incoming-order]", { hasText: orderNo });
     const shopPin = (await inc.locator("[data-testid=shop-pin] p.font-mono").innerText()).trim();
+    const incText = await inc.innerText();
+    check(incText.includes(custName) && !incText.includes("Charger") && !incText.includes("ETB"), "Business app: order number and customer name only — no products or prices");
     await inc.locator("input[name=code]").fill(courierPin === "0000" ? "1111" : "0000");
     await inc.locator("button:has-text('Received')").click();
     await toast(biz, "That PIN is not right");
@@ -196,6 +200,11 @@ const ZONE = "40000000-0000-0000-0000-000000000001";
     check(xl.startsWith("200 application/vnd.openxmlformats"), "Super Admin downloads the partner shop orders Excel");
     await o.goto(`${U("ops")}/admin/orders/${orderId}`);
     check((await o.locator("[data-testid=handoff-status]").innerText()).includes("PINs checked both ways"), "admin order page: hand-over status");
+    await o.goto(`${U("ops")}/admin/delivery-monitor?tab=log&app=business`);
+    const log = await o.locator("main").innerText();
+    check(log.includes("Wrong PIN entered") && log.includes(orderNo) && log.includes("hand-over PIN"), "Delivery monitor: the Business app's wrong PIN is in the app log");
+    await o.goto(`${U("ops")}/admin/delivery-monitor?tab=people`);
+    check((await o.locator("[data-testid=monitor-person]", { hasText: `Shop Clerk ${RUN}` }).innerText()).includes(shopName), "Delivery monitor: shop staff with their shop and last activity");
     check(sql(`select string_agg(payload->>'step', ',' order by id) from notifications_outbox where event_type = 'delivery_update' and payload->>'order_id' = '${orderId}'`)
       === "assigned,picked_up,at_shop,collected", "every step announced in the orders & payments Telegram group");
   } catch (e) {

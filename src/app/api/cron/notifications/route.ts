@@ -5,6 +5,7 @@ import { dispatchCustomerEmails } from "@/lib/email/dispatch";
 import { recordCronRun } from "@/lib/security/events";
 import { dispatchCustomerPush } from "@/lib/push/dispatch";
 import { dispatchNotifications } from "@/lib/telegram/dispatch";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 export const maxDuration = 60;
 
@@ -15,6 +16,8 @@ export const maxDuration = 60;
  */
 export async function GET(request: Request) {
   if (!isAuthorizedCron(request)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  // Daily safety net for the delivery monitor (late deliveries; also checked while the apps are open).
+  const monitor = await getSupabaseAdmin().rpc("delivery_monitor_tick").then((r) => Number(r.data ?? 0), () => 0);
   let sent = 0;
   let failed = 0;
   let configured = true;
@@ -49,6 +52,6 @@ export async function GET(request: Request) {
     archive.failed += r.failed;
     if (!r.configured || r.sent + r.failed < 10) break;
   }
-  await recordCronRun("notifications", true, { telegram: { configured, sent, failed }, emails, push, archive });
+  await recordCronRun("notifications", true, { telegram: { configured, sent, failed }, emails, push, archive, monitor });
   return NextResponse.json({ configured, sent, failed, emails, push, archive });
 }

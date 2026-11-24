@@ -13,7 +13,7 @@ import { formatEthiopianPhone } from "@/lib/validation/phone";
 export const metadata: Metadata = { title: "Orders" };
 
 type Row = {
-  order_id: string; order_number: string; stage: string; items: unknown; courier_name: string | null; courier_phone: string | null;
+  order_id: string; order_number: string; stage: string; courier_name: string | null; courier_phone: string | null;
   shop_code: string | null; shop_confirmed: boolean; courier_confirmed: boolean; handoff_locked: boolean;
   customer_name: string | null; customer_phone: string | null; pin_locked: boolean; paid_at: string | null; at_shop_at: string | null; collected_at: string | null;
 };
@@ -34,7 +34,6 @@ export default async function BusinessOrdersPage() {
   const { data } = await (await createSupabaseServerClient()).rpc("partner_orders");
   const rows = (data ?? []) as Row[];
   const by = (s: string) => rows.filter((r) => r.stage === s);
-  const items = (r: Row) => ((r.items as { name: string; quantity: number }[] | null) ?? []).map((i) => `${i.name} × ${i.quantity}`).join(", ");
   return (
     <div className="space-y-5">
       <BusinessInstallCard />
@@ -52,7 +51,7 @@ export default async function BusinessOrdersPage() {
               <span className="font-mono text-lg font-semibold">{r.order_number}</span>
               <Badge variant="info">On the way</Badge>
             </div>
-            <p className="text-sm text-muted-foreground">{items(r)}</p>
+            <p className="text-sm">Customer: <span className="font-medium">{r.customer_name}</span></p>
             {r.courier_name && (
               <p className="text-sm">Courier: <span className="font-medium">{r.courier_name}</span>
                 {r.courier_phone && <> · <a href={`tel:${r.courier_phone}`} className="inline-flex items-center gap-1 text-primary"><Phone className="size-3.5" aria-hidden />{formatEthiopianPhone(r.courier_phone)}</a></>}</p>
@@ -85,7 +84,6 @@ export default async function BusinessOrdersPage() {
               <Badge variant="accent">At the shop</Badge>
               {r.at_shop_at && <span className="ml-auto text-xs text-muted-foreground">since {formatDateTime(r.at_shop_at, "en")}</span>}
             </div>
-            <p className="text-sm text-muted-foreground">{items(r)}</p>
             <p className="text-sm">Customer: <span className="font-medium">{r.customer_name}</span>
               {r.customer_phone && <> · <a href={`tel:${r.customer_phone}`} className="inline-flex items-center gap-1 text-primary"><Phone className="size-3.5" aria-hidden />{formatEthiopianPhone(r.customer_phone)}</a></>}</p>
             {r.pin_locked ? <p className="rounded-md bg-destructive/10 p-2 text-sm text-destructive">Too many wrong PINs — order locked. Call the Abiye office.</p> : (
@@ -105,6 +103,7 @@ export default async function BusinessOrdersPage() {
             {by("expected").map((r) => (
               <li key={r.order_id} className="flex flex-wrap items-center gap-2 px-4 py-2" data-testid="expected-order">
                 <span className="font-mono">{r.order_number}</span>
+                <span>{r.customer_name}</span>
                 <span className="text-xs text-muted-foreground">{r.courier_name ? `courier ${r.courier_name}` : "no courier yet"}</span>
               </li>
             ))}

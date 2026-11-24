@@ -206,6 +206,13 @@ Customers in other cities can collect their order at a **partner shop**. The cou
 - 5 wrong hand-over PINs lock the hand-over (re-assign the same courier on the order to unlock); 5 wrong customer PINs lock the pickup (call the office).
 - **Admin → Partner shops** (Super Admin): shops (on the way / at the shop / collected / to pay), **Shop staff**, **Add shop**, **Excel** (orders collected at partner shops). Shop page: details, open orders, unpaid → **Mark as paid**, payments. The shop sees its earnings and payments in the app. Every step is in the Activity log and the orders & payments Telegram group.
 
+### Delivery monitor and alerts (migration 0074)
+
+- **Privacy:** couriers and partner shops see the **order number and the customer's name** only (plus the address / phone they need while the order is theirs) — no products, quantities or prices.
+- **Admin → Delivery monitor** (Couriers & delivery / Orders / Partner shops permissions): counts (waiting for a courier, to pick up, on the way, at partner shops, couriers online, delivered today, wrong PINs today, locked orders); **Now** (late orders); **Couriers & shop staff** (on duty, last activity, last sign-in, wrong PINs today); **App log** (every courier and Business app event: assigned, picked up, delivered, failed, declined, hand-over PINs, collected, on / off duty, **every wrong PIN**), filter Courier app / Business app; **Alert settings** (Super Admin).
+- **Telegram alerts:** late orders → orders & payments group, once per order and step: paid but no courier after 2 h, assigned but not picked up after 2 h, on the way more than 6 h, waiting at a partner shop more than 3 days. Wrong PINs → security group at the 3rd wrong PIN on an order (5 locks it). All limits are set in Alert settings.
+- The check runs at most every 5 minutes while the admin, courier or Business app is open, and once a day by the daily job.
+
 ## 6b-2. New customer accounts need approval
 
 New sign-ups are **Under verification**: they can sign in, browse and use Support & feedback, but cannot order, top up, use printing or write reviews until approved. The security Telegram group announces each new account. **Admin → Account approvals** (permission "Approve or reject new customer accounts" — Super Admin; add it to other permission sets under Staff if needed): see the details, **Approve** (customer emailed, can order) or **Reject, delete & block** with a reason (customer emailed "due to security reasons…", account deleted, email on the block list with the reason). Customers invited from Admin → Customers are approved at once; existing customers stay approved.

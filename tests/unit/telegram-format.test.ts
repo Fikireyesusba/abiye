@@ -24,6 +24,14 @@ const order = {
 };
 
 describe("Telegram messages", () => {
+  it("delivery monitor and wrong-PIN alerts", () => {
+    const late = buildMessage({ id: 3, event_type: "delivery_alert", attachment_bucket: null, attachment_path: null,
+      payload: { order_id: "11111111-2222-3333-4444-555555555555", order_number: "ET-7", kind: "not_picked_up", hours: 2.5, since: "2026-11-25T08:00:00Z", courier_user_id: "123456", city: "Adama" } }, "https://x").text;
+    for (const t of ["DELIVERY MONITOR: COURIER HAS NOT PICKED UP THE ORDER", "Order: ET-7", "Courier User ID: 123456", "Waiting: 2.5 h", "Suggested action:"]) expect(late).toContain(t);
+    const pin = buildMessage({ id: 4, event_type: "delivery_pin_alert", attachment_bucket: null, attachment_path: null,
+      payload: { order_number: "ET-8", pin: "handover_pin", tries: 3, app: "business", shop: "Corner" } }, "").text;
+    for (const t of ["WRONG PINS: COURIER ↔ SHOP HAND-OVER PIN", "Wrong tries: 3 (locked at 5)", "App: Abiye Business (partner shop)", "Partner shop: Corner"]) expect(pin).toContain(t);
+  });
   it("payment alerts list every product with its price, the delivery fee with its discount, the promo code and the total", () => {
     const breakdown = {
       items: [{ name: "Perfume", quantity: 2, unit_etb: 2850, line_etb: 5700 }, { name: "Charger", quantity: 1, unit_etb: 850, line_etb: 850 }],
