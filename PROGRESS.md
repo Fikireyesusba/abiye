@@ -10,7 +10,7 @@ Living tracker so work can continue across sessions. **Update this file at the e
 - Migration **0074** `20261125000074_delivery_monitor.sql`: `courier_deliveries` / `partner_orders` without products or prices (order number + customer name; phone / address only while needed); trigger `orders_wrong_pin` logs every wrong PIN (`pin_wrong`) and sends `delivery_pin_alert` (security group) at the Nth try (setting `wrong_pin_alert`, default 3); `private.delivery_overdue()` + `delivery_monitor_scan()` → `delivery_alert` (orders group, deduped per order/kind/step); `public.delivery_monitor_tick()` (staff or service role, at most every 5 min); `admin_delivery_monitor()`, `admin_set_delivery_monitor()`; settings key `delivery_monitor`.
 - App: tick after admin / courier / Business layouts and in the daily notifications cron; Admin → **Delivery monitor** (Now, Couriers & shop staff, App log, Alert settings); Telegram formats for both alerts.
 - Tests: db `99zzzj_delivery_monitor_test.sql` (14), `99zzzi` updated; unit telegram format; e2e `partner.smoke.cjs` (30). All 42 browser suites, unit and db tests pass.
-- ⏳ Owner: apply 0074.
+- ✅ 0074 applied in production (owner confirmed 2026-11-25).
 
 ## Payment details for staff (requested 2026-11-25)
 
