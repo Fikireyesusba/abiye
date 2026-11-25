@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Store, ToggleRight, LifeBuoy, MonitorSmartphone, FileSpreadsheet, Target,
+  Store, ToggleRight, LifeBuoy, UserCheck, Truck, Building2, Activity, FileText, Star, LineChart, DatabaseBackup, MonitorSmartphone, FileSpreadsheet, Target,
   BarChart3, Bell, Boxes, ShieldAlert, Wallet, Clock, History, Megaphone, CreditCard, FolderTree, LayoutDashboard, Menu, Package, Printer, Settings, ShoppingCart, UserCog, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,14 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "/admin/users": MonitorSmartphone,
   "/admin/exports": FileSpreadsheet,
   "/admin/performance": Target,
+  "/admin/approvals": UserCheck,
+  "/admin/couriers": Truck,
+  "/admin/partners": Building2,
+  "/admin/delivery-monitor": Activity,
+  "/admin/documents": FileText,
+  "/admin/reviews": Star,
+  "/admin/reports": LineChart,
+  "/admin/data": DatabaseBackup,
 };
 
 export interface NavItem {
@@ -49,7 +57,15 @@ const BADGE_LABEL: Record<string, string> = {
   "/admin/notifications": "failed Telegram notifications",
   "/admin/security": "high-risk emails to review",
   "/admin/support": "open support tickets",
+  "/admin/inventory": "products low or out of stock",
+  "/admin/reviews": "reviews waiting for approval",
+  "/admin/approvals": "new accounts waiting for approval",
+  "/admin/couriers": "paid orders without a courier",
+  "/admin/delivery-monitor": "late or locked deliveries",
+  "/admin/documents": "documents / licences / insurance expiring",
+  "/admin/partners": "shop staff not linked to a shop",
 };
+export { BADGE_LABEL };
 
 function Links({ items, onNavigate }: { items: NavItem[]; onNavigate?: boolean }) {
   const pathname = usePathname();
@@ -59,18 +75,23 @@ function Links({ items, onNavigate }: { items: NavItem[]; onNavigate?: boolean }
       {items.map((item) => {
         const Icon = ICONS[item.href] ?? LayoutDashboard;
         const active = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
+        const n = badges[item.href as keyof typeof badges] ?? 0;
+        const why = `${n} ${BADGE_LABEL[item.href] ?? "waiting"} — action needed`;
         const link = (
           <Link
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+              "flex items-center gap-3 rounded-md border-l-4 px-3 py-2 text-sm transition-colors",
+              n > 0 ? "border-amber-400 bg-amber-400/10" : "border-transparent",
               active ? "bg-sidebar-accent font-medium text-white" : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-white",
             )}
+            title={n > 0 ? why : undefined}
+            data-action-needed={n > 0 ? "true" : undefined}
           >
             <Icon className="size-4" />
             <span className="flex-1">{item.label}</span>
-            <CountBadge count={badges[item.href as keyof typeof badges] ?? 0} label={`${badges[item.href as keyof typeof badges]} ${BADGE_LABEL[item.href] ?? "waiting"}`} />
+            <CountBadge count={n} label={why} tone={item.href === "/admin/security" ? "red" : "yellow"} />
           </Link>
         );
         return <li key={item.href}>{onNavigate ? <SheetClose asChild>{link}</SheetClose> : link}</li>;

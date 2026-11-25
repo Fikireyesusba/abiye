@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BarChart } from "@/components/admin/bar-chart";
 import { PageHeader, Panel, StatCard } from "@/components/admin/ui";
+import { NeedsAction } from "@/components/admin/needs-action";
 import { StatusBadge } from "@/components/status/status-badge";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime } from "@/lib/datetime";
@@ -55,6 +56,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/admin"
       {mfaEnabled && <p className="mb-4 rounded-md bg-success/10 p-3 text-sm text-success" role="status">Two-step login is on. From now on you sign in with your password and a code from your authenticator app.</p>}
       {passwordChanged && <p className="mb-4 rounded-md bg-success/10 p-3 text-sm text-success" role="status">Your password was changed.</p>}
       <PageHeader title={`Welcome, ${ctx.fullName.split(" ")[0]}`} description="Overview of orders, payments and stock." />
+      <NeedsAction />
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4 [&>*]:min-w-0">
         {showRevenue && <StatCard label="Verified revenue" value={etb(s.revenue_verified_total!)} hint={`${etb(s.revenue_verified_period!)} in the last 14 days`} />}

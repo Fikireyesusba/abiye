@@ -79,6 +79,12 @@ const toast = (page, text) => page.waitForSelector(`[data-sonner-toast]:has-text
     await o.goto(`${B}/admin/documents?tab=expiring`);
     const exp = await o.locator("[data-testid=expiring-list]").innerText();
     check(exp.includes("Licence") && exp.includes(plate), "Expiring: the licence and the motorcycle insurance");
+    // yellow "action needed" markers: menu + dashboard
+    await o.goto(`${B}/admin`);
+    const nav = o.locator('aside a[href="/admin/documents"]');
+    check(await nav.getAttribute("data-action-needed") === "true" && (await nav.locator("[data-badge-tone=yellow]").count()) === 1
+      && /expiring — action needed/.test(await nav.getAttribute("title") ?? ""), "menu: Documents & vehicles marked yellow with the count (action needed)");
+    check((await o.locator("[data-testid=needs-action]").innerText()).includes("documents / licences / insurance expiring"), "dashboard: yellow “Needs your action” box lists it");
     // delete
     await o.goto(`${B}/admin/documents/staff/${sid}`);
     o.on("dialog", (d) => d.accept());

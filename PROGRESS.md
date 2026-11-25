@@ -5,6 +5,11 @@ Living tracker so work can continue across sessions. **Update this file at the e
 - Architecture & plan: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - Setup & deployment: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
 
+## Yellow "action needed" markers (requested 2026-11-25)
+
+- Admin menu: every section with something waiting gets a yellow left bar and a yellow count (tooltip says what; Security stays red). New sections counted: Account approvals, Couriers & delivery (paid orders without a courier), Delivery monitor (late + locked), Documents & vehicles (expiring ≤30 days), Partner shops (staff not linked). Dashboard: yellow "Needs your action" box. A yellow pop-up appears when a section gets new items (menu refreshes every minute). Icons for the newer sections. No migration.
+- Tests: e2e `documents.smoke.cjs` (11).
+
 ## Documents & vehicles + RLS check (requested 2026-11-25)
 
 - Migration **0076** `20261125000076_documents_vehicles.sql`: permission `documents.manage` (Super Admin); `vehicles` (register; rider can read own), `documents` (employee or vehicle, file in private bucket `staff-documents`, storage read policy for documents.manage); `admin_save_vehicle`, `admin_add_document` (path must be in that person's / vehicle's folder), `admin_delete_document` (returns path), `private.expiring_items` + `admin_expiring`; `delivery_monitor_scan` also enqueues `document_expiry` (security group, once per item/date); upload_scans source `staff_document`.
