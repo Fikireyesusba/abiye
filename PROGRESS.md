@@ -10,7 +10,7 @@ Living tracker so work can continue across sessions. **Update this file at the e
 - Migration **0076** `20261125000076_documents_vehicles.sql`: permission `documents.manage` (Super Admin); `vehicles` (register; rider can read own), `documents` (employee or vehicle, file in private bucket `staff-documents`, storage read policy for documents.manage); `admin_save_vehicle`, `admin_add_document` (path must be in that person's / vehicle's folder), `admin_delete_document` (returns path), `private.expiring_items` + `admin_expiring`; `delivery_monitor_scan` also enqueues `document_expiry` (security group, once per item/date); upload_scans source `staff_document`.
 - App: Admin → **Documents & vehicles** (Employees, Vehicles, Expiring, Add vehicle) + employee and vehicle pages (`src/app/admin/(panel)/documents/*`), `src/lib/admin/document-actions.ts` (content check, virus scan, secret-key upload after checks).
 - RLS answer: all 54 public tables already have RLS; new db guard test (every public table RLS on, anon read-only).
-- Tests: db `99zzzl_documents_vehicles_test.sql` (15); e2e `documents.smoke.cjs` (9).
+- Tests: db `99zzzl_documents_vehicles_test.sql` (15); e2e `documents.smoke.cjs` (9). All 43 browser suites, unit and db tests pass.
 - ⏳ Owner: apply 0076.
 
 ## Courier flow linked end to end (requested 2026-11-25)
