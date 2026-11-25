@@ -206,7 +206,36 @@ const ZONE = "40000000-0000-0000-0000-000000000001";
     await o.goto(`${U("ops")}/admin/delivery-monitor?tab=people`);
     check((await o.locator("[data-testid=monitor-person]", { hasText: `Shop Clerk ${RUN}` }).innerText()).includes(shopName), "Delivery monitor: shop staff with their shop and last activity");
     check(sql(`select string_agg(payload->>'step', ',' order by id) from notifications_outbox where event_type = 'delivery_update' and payload->>'order_id' = '${orderId}'`)
-      === "assigned,picked_up,at_shop,collected", "every step announced in the orders & payments Telegram group");
+      === "open,assigned,picked_up,at_shop,collected", "every step announced in the orders & payments Telegram group");
+
+    // ---- Auto-assign when paid, office cancels at the shop → courier and shop see it cancelled
+    await c.goto(`${U("courier")}/courier/duty`);
+    await c.check(`input[name=zone][value="${ZONE}"]`);
+    await c.click("main button:has-text('Go on duty')");
+    await toast(c, "You are on duty");
+    sql(`update profiles set is_active = false where id <> '${courier.id}' and role_id = (select id from admin_roles where key = 'courier')`);
+    const custId = sql(`select id from auth.users where email = '${custEmail}'`);
+    const o2 = JSON.parse(sql(`set role service_role; select public.create_order_for_user('${custId}', jsonb_build_object('idempotency_key', gen_random_uuid(),
+      'access_token_hash', encode(sha256(gen_random_uuid()::text::bytea), 'hex'), 'tracking_code_hash', encode(sha256(gen_random_uuid()::text::bytea), 'hex'),
+      'locale', 'en', 'customer', jsonb_build_object('full_name', 'Second Customer', 'phone', '+251911445577'),
+      'fulfillment', jsonb_build_object('method', 'pickup', 'partner_shop_id', '${shopId}'),
+      'items', jsonb_build_array(jsonb_build_object('type', 'product', 'product_id', '${charger}', 'quantity', 1))))`));
+    sql(`update orders set status = 'confirmed', payment_status = 'verified', payment_verified_at = now() where id = '${o2.order_id}'`);
+    check(sql(`select courier_id from orders where id = '${o2.order_id}'`) === courier.id, "payment verified → the on-duty courier for the city is assigned automatically");
+    await m.goto(`${U("ocs")}/admin/orders/${o2.order_id}`);
+    check((await m.locator("[data-testid=delivery-stage]").innerText()).includes("Courier assigned"), "admin order page: delivery stage matches the courier app");
+    check(await m.locator("button:has-text('Mark out for delivery'), button:has-text('Mark ready for pickup')").count() === 0
+      && await m.locator("[data-testid=app-run-note]").count() === 1, "admin cannot skip the courier / shop steps by hand");
+    await m.locator("form:has(button:has-text('Cancel order')) textarea").fill("Customer asked to cancel");
+    m.on("dialog", (d) => d.accept());
+    await m.click("button:has-text('Cancel order')");
+    await toast(m, "Order status updated");
+    await c.goto(`${U("courier")}/courier`);
+    check((await c.locator("[data-testid=cancelled-delivery]", { hasText: o2.order_number }).innerText()).includes("Customer asked to cancel"),
+      "courier app: “Cancelled by the office” with the reason");
+    await biz.goto(`${U("business")}/business`);
+    check((await biz.locator("[data-testid=cancelled-order]", { hasText: o2.order_number }).innerText()).includes("Customer asked to cancel"),
+      "Business app: the order shows as cancelled — do not hand over");
   } catch (e) {
     check(false, `crashed: ${e.message.split("\n").slice(0, 6).join(" / ")}`);
   } finally {

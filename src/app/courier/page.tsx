@@ -5,7 +5,8 @@ import { fieldClass } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
 import { CourierInstallCard } from "@/components/pwa/courier-install";
 import { requirePermission } from "@/lib/auth/guards";
-import { couldNotDeliver, declineDelivery, deliver, handOffToShop, pickUp } from "@/lib/courier/actions";
+import { couldNotDeliver, declineDelivery, deliver, handOffToShop, pickUp, takeDelivery } from "@/lib/courier/actions";
+import { formatETB, toSantim } from "@/lib/money";
 import { formatDateTime } from "@/lib/datetime";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatEthiopianPhone } from "@/lib/validation/phone";
@@ -15,10 +16,13 @@ export const metadata: Metadata = { title: "My deliveries" };
 /** The courier's deliveries: only those assigned to them (customer details only while the delivery is open). */
 export default async function CourierPage() {
   await requirePermission("deliveries.own");
-  const { data } = await (await createSupabaseServerClient()).rpc("courier_deliveries");
+  const supabase = await createSupabaseServerClient();
+  const [{ data }, { data: avail }] = await Promise.all([supabase.rpc("courier_deliveries"), supabase.rpc("courier_available")]);
   const rows = data ?? [];
   const open = rows.filter((r) => r.active);
-  const done = rows.filter((r) => !r.active);
+  const cancelled = rows.filter((r) => r.status === "cancelled");
+  const done = rows.filter((r) => !r.active && r.status !== "cancelled");
+  const available = avail ?? [];
   return (
     <div className="space-y-4">
       <CourierInstallCard />
@@ -26,6 +30,29 @@ export default async function CourierPage() {
         <h1 className="text-xl font-semibold">My deliveries <span className="text-muted-foreground">({open.length})</span></h1>
         <a href="/courier" className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm hover:bg-secondary"><RefreshCw className="size-4" aria-hidden /> Refresh</a>
       </div>
+      {cancelled.map((d) => (
+        <div key={d.order_id} className="rounded-xl border-2 border-destructive/40 bg-destructive/5 p-4 text-sm" data-testid="cancelled-delivery">
+          <p className="font-semibold text-destructive">Cancelled by the office: <span className="font-mono">{d.order_number}</span></p>
+          {d.customer_name && <p>Customer: {d.customer_name}</p>}
+          {d.cancel_note && <p>Reason: {d.cancel_note}</p>}
+          {d.picked_up_at && <p className="font-medium">Do not deliver — bring the parcel back to the office.</p>}
+        </div>
+      ))}
+      {available.length > 0 && (
+        <section className="space-y-2" data-testid="open-deliveries">
+          <h2 className="text-sm font-medium">Open deliveries for your cities ({available.length})</h2>
+          <ul className="divide-y rounded-xl border bg-card text-sm">
+            {available.map((a) => (
+              <li key={a.order_id} className="flex flex-wrap items-center gap-2 px-4 py-2">
+                <span className="font-mono font-semibold">{a.order_number}</span>
+                <span className="text-muted-foreground">{a.partner_shop ? `to partner shop ${a.partner_shop} · ` : ""}{a.city}</span>
+                <span className="text-xs text-muted-foreground">you earn {formatETB(toSantim(Number(a.pay_etb)))}</span>
+                <ActionForm action={takeDelivery} hidden={{ orderId: a.order_id }} submitLabel="Take it" size="sm" className="ml-auto space-y-0" />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {open.length === 0 && <p className="rounded-xl border bg-card p-6 text-center text-muted-foreground">No deliveries assigned to you right now.</p>}
       <ul className="space-y-4">
         {open.map((d) => {

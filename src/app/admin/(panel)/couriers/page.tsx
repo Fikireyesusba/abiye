@@ -6,7 +6,7 @@ import { Field, PageHeader, Panel, SubTabs, Table, Td, fieldClass, pickTab } fro
 import { UserIdLink } from "@/components/admin/user-id";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { uploadRingtone } from "@/lib/admin/courier-admin-actions";
+import { setAutoAssign, uploadRingtone } from "@/lib/admin/courier-admin-actions";
 import { assignCourier } from "@/lib/admin/order-actions";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime, zoneToday } from "@/lib/datetime";
@@ -42,6 +42,7 @@ export default async function CouriersPage({ searchParams }: PageProps<"/admin/c
   ];
   const tab = pickTab(TABS, (await searchParams).tab);
   const ringtone = (setting?.value as { ringtone_path?: string } | null)?.ringtone_path ?? null;
+  const autoAssign = (setting?.value as { auto_assign?: boolean } | null)?.auto_assign !== false;
   const ringUrl = ringtone ? publicImageUrl("app-sounds", ringtone) : null;
 
   return (
@@ -66,7 +67,13 @@ export default async function CouriersPage({ searchParams }: PageProps<"/admin/c
       <SubTabs base="/admin/couriers" tabs={TABS} active={tab} />
 
       {tab === "dispatch" && canDispatch && (
-        <Panel title="Waiting for a courier">
+        <Panel title="Waiting for a courier" actions={canManage ? (
+          <ActionForm action={setAutoAssign} hidden={{ on: autoAssign ? "false" : "true" }} submitLabel={autoAssign ? "Auto-assign: ON (switch off)" : "Auto-assign: OFF (switch on)"}
+            size="sm" variant={autoAssign ? "outline" : "default"} className="space-y-0" />
+        ) : undefined}>
+          <p className="mb-2 text-sm" data-testid="auto-assign-note">{autoAssign
+            ? "When a payment is verified, the least busy courier on duty for the order's city gets it automatically. Orders listed here had no courier free — couriers on duty for that city also see them in their app and can take them."
+            : "Automatic assignment is off: give each paid order to a courier here."}</p>
           <p className="mb-3 text-sm text-muted-foreground">Paid delivery orders without a courier (or back after “couldn’t deliver” / declined). For each order, couriers on duty for that city are listed first (●).</p>
           {(waiting ?? []).length === 0 ? <p className="text-sm text-muted-foreground">Nothing waiting — every paid delivery order has a courier.</p> : (
             <ul className="divide-y" data-testid="dispatch-list">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { scanMaxMb } from "@/lib/security/virus-scan";
 import Link from "next/link";
+import { deliveryStage } from "@/lib/orders/delivery-stage";
 import { getLocale, getTranslations } from "next-intl/server";
 import { AlertTriangle, Bell, CheckCircle2, Clock, Landmark, XCircle } from "lucide-react";
 import { CopyButton } from "@/components/shop/copy-button";
@@ -118,6 +119,10 @@ export default async function OrderSuccessPage({ params, searchParams }: PagePro
               <p className="text-xs text-muted-foreground">{t("order.deliveryCodeHint")}</p>
             </div>
           )}
+          {(() => {
+            const stage = deliveryStage({ ...order, partner_snapshot: order.partner_snapshot });
+            return stage ? <p className="rounded-lg border bg-card p-3 text-sm font-medium" data-testid="customer-delivery-stage">{locale === "am" ? stage.am : stage.en}</p> : null;
+          })()}
           {["confirmed", "processing", "ready_for_pickup", "out_for_delivery", "completed"].includes(order.status) && (
             <Banner tone="success" icon={<CheckCircle2 className="size-5" />} title={order.payment_method === "wallet" ? t("wallet.paidWithBalance") : t("order.confirmedTitle")} />
           )}

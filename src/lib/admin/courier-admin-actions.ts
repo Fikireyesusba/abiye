@@ -105,3 +105,13 @@ export async function saveDeliveryMonitor(_prev: ActionResult | null, fd: FormDa
   revalidatePath("/admin/delivery-monitor");
   return ok("Monitor settings saved.");
 }
+
+/** Assign a courier automatically when a delivery / partner-shop order is paid (Super Admin). */
+export async function setAutoAssign(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("couriers.manage");
+  const on = fd.get("on") === "true";
+  const { error } = await (await createSupabaseServerClient()).rpc("admin_set_auto_assign", { p_on: on });
+  if (error) return dbError(error);
+  revalidatePath("/admin/couriers");
+  return ok(on ? "Couriers are assigned automatically when the payment is verified." : "Automatic assignment off — assign couriers under Dispatch.");
+}

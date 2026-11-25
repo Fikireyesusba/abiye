@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Orders" };
 
 type Row = {
   order_id: string; order_number: string; stage: string; courier_name: string | null; courier_phone: string | null;
-  shop_code: string | null; shop_confirmed: boolean; courier_confirmed: boolean; handoff_locked: boolean;
+  shop_code: string | null; cancel_note?: string | null; cancelled_at?: string | null; shop_confirmed: boolean; courier_confirmed: boolean; handoff_locked: boolean;
   customer_name: string | null; customer_phone: string | null; pin_locked: boolean; paid_at: string | null; at_shop_at: string | null; collected_at: string | null;
 };
 
@@ -41,6 +41,15 @@ export default async function BusinessOrdersPage() {
         <h1 className="text-xl font-semibold">Orders</h1>
         <a href="/business" className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm hover:bg-secondary"><RefreshCw className="size-4" aria-hidden /> Refresh</a>
       </div>
+
+      {by("cancelled").map((r) => (
+        <article key={r.order_id} className="rounded-xl border-2 border-destructive/40 bg-destructive/5 p-4 text-sm" data-testid="cancelled-order">
+          <p className="font-semibold text-destructive">Cancelled by Abiye: <span className="font-mono">{r.order_number}</span></p>
+          {r.customer_name && <p>Customer: {r.customer_name}</p>}
+          {r.cancel_note && <p>Reason: {r.cancel_note}</p>}
+          <p className="font-medium">Do not hand it over. If the parcel is at your shop, keep it for the Abiye courier / office.</p>
+        </article>
+      ))}
 
       <section className="space-y-3">
         <h2 className="text-sm font-medium">Courier on the way <span className="text-muted-foreground">({by("incoming").length})</span></h2>

@@ -5,6 +5,13 @@ Living tracker so work can continue across sessions. **Update this file at the e
 - Architecture & plan: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - Setup & deployment: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
 
+## Courier flow linked end to end (requested 2026-11-25)
+
+- Migration **0075** `20261125000075_auto_assign_cancel_flow.sql`: `private.assign_courier` (core, used by admin / auto / take); trigger `orders_auto_assign` (payment_status → verified: `private.auto_assign_courier` — least busy on duty for the order's zone, never a decliner; none → `open` delivery_event + 'available' notifications); setting `courier.auto_assign` + `admin_set_auto_assign`, `admin_auto_assign_courier`; `courier_available()` + `courier_take()`; `courier_decline` re-assigns / re-opens; `courier_deliveries` + `partner_orders` show office cancellations (`cancel_note`); `admin_update_order_status`: cancel also from out_for_delivery / ready_for_pickup (courier notified, delivery_event `cancelled`), no manual on-the-way / at-shop / completed for courier-run orders, take back resets the hand-over. Notification kinds `available`, `cancelled`.
+- App: Verify message names the courier; Dispatch auto-assign switch; courier "Open deliveries" + Take it + cancelled cards; Business app cancelled cards; admin order page stage + no manual skips (`src/lib/orders/delivery-stage.ts`); customer order page stage.
+- Tests: db `99zzzk_auto_assign_cancel_test.sql` (16), `20_checkout_payment_test.sql` updated; e2e `partner.smoke.cjs` (35), `courier.smoke.cjs` (53).
+- ⏳ Owner: apply 0075.
+
 ## Courier / Business app privacy + delivery monitor (requested 2026-11-25)
 
 - Migration **0074** `20261125000074_delivery_monitor.sql`: `courier_deliveries` / `partner_orders` without products or prices (order number + customer name; phone / address only while needed); trigger `orders_wrong_pin` logs every wrong PIN (`pin_wrong`) and sends `delivery_pin_alert` (security group) at the Nth try (setting `wrong_pin_alert`, default 3); `private.delivery_overdue()` + `delivery_monitor_scan()` → `delivery_alert` (orders group, deduped per order/kind/step); `public.delivery_monitor_tick()` (staff or service role, at most every 5 min); `admin_delivery_monitor()`, `admin_set_delivery_monitor()`; settings key `delivery_monitor`.

@@ -37,6 +37,19 @@ export async function deliver(_prev: ActionResult | null, fd: FormData): Promise
   return data === true ? ok("Delivered. Thank you!") : fail("That code is not right. Ask the customer to check their order page or email.");
 }
 
+/** Take an open delivery for one of my cities (first courier wins). */
+export async function takeDelivery(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const ctx = await requirePermission("deliveries.own");
+  const v = orderId.safeParse(formObject(fd));
+  if (!v.success) return fail("Invalid request.");
+  if (!(await rateLimitAll([[`take:${ctx.userId}`, 30, 3600]]))) return fail("Too many tries. Please wait a while.");
+  const { error } = await (await createSupabaseServerClient()).rpc("courier_take", { p_order_id: v.data.orderId });
+  if (error) return error.message === "invalid_transition" ? fail("Another courier already took this delivery.") : dbError(error);
+  dispatchSoon();
+  revalidatePath("/courier", "layout");
+  return ok("It's yours — pick it up at the office.");
+}
+
 /** Partner shop order: the courier enters the PIN the shop shows them (the shop enters the courier's PIN too). */
 export async function handOffToShop(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   const ctx = await requirePermission("deliveries.own");

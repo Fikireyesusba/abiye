@@ -206,6 +206,14 @@ Customers in other cities can collect their order at a **partner shop**. The cou
 - 5 wrong hand-over PINs lock the hand-over (re-assign the same courier on the order to unlock); 5 wrong customer PINs lock the pickup (call the office).
 - **Admin → Partner shops** (Super Admin): shops (on the way / at the shop / collected / to pay), **Shop staff**, **Add shop**, **Excel** (orders collected at partner shops). Shop page: details, open orders, unpaid → **Mark as paid**, payments. The shop sees its earnings and payments in the app. Every step is in the Activity log and the orders & payments Telegram group.
 
+### Courier flow linked end to end (migration 0075)
+
+- **Automatic assignment:** when a delivery or partner-shop order is paid (payment verified, or paid with balance), the least busy courier **on duty for that city** (for a partner shop: the shop's city) gets it at once — never one who declined it. The Verify message on the payment page says who got it. Switch: Couriers & delivery → Dispatch → **Auto-assign ON / OFF** (Super Admin).
+- **No courier free:** the order is **open** — couriers on duty for that city see it under **Open deliveries** in their app (with what they will earn) and tap **Take it** (first one wins); it is also in Dispatch, and the office is told on Telegram.
+- **Courier declines:** the order goes to the next courier on duty for the city, or becomes open for the others; the courier who declined is set off duty and never gets it again.
+- **Office cancels** (also while it is with the courier or at the partner shop): the courier sees **"Cancelled by the office"** with the reason (and a notification: bring the parcel back); the Business app shows it as cancelled — do not hand over; the customer PIN no longer works.
+- **Statuses follow the apps:** for orders with a courier or going to a partner shop, "on the way", "at the shop" and "completed" are set only by the courier and Business apps (PINs). The office can re-assign, take it back (on the way → processing) or cancel. The order page and the customer's order page show the same stage the apps show (e.g. "Courier assigned — to be picked up", "On the way to <shop>", "At <shop> — waiting for the customer").
+
 ### Delivery monitor and alerts (migration 0074)
 
 - **Privacy:** couriers and partner shops see the **order number and the customer's name** only (plus the address / phone they need while the order is theirs) — no products, quantities or prices.

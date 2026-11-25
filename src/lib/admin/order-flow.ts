@@ -6,16 +6,17 @@ export type OrderStatus =
   | "awaiting_payment" | "pending_verification" | "payment_rejected" | "confirmed" | "processing"
   | "ready_for_pickup" | "out_for_delivery" | "completed" | "cancelled" | "expired";
 
-export function nextStatuses(status: OrderStatus, fulfillment: "delivery" | "pickup"): OrderStatus[] {
+/** `appRun`: a courier is on it or it goes to a partner shop — on the way / at the shop / completed come from the apps (PINs). */
+export function nextStatuses(status: OrderStatus, fulfillment: "delivery" | "pickup", appRun = false): OrderStatus[] {
   switch (status) {
     case "confirmed":
       return ["processing", "cancelled"];
     case "processing":
-      return [fulfillment === "pickup" ? "ready_for_pickup" : "out_for_delivery", "cancelled"];
+      return appRun ? ["cancelled"] : [fulfillment === "pickup" ? "ready_for_pickup" : "out_for_delivery", "cancelled"];
     case "ready_for_pickup":
-      return ["completed"];
+      return appRun ? ["cancelled"] : ["completed", "cancelled"];
     case "out_for_delivery":
-      return ["completed", "processing"];
+      return appRun ? ["processing", "cancelled"] : ["completed", "processing", "cancelled"];
     case "awaiting_payment":
     case "payment_rejected":
     case "pending_verification":

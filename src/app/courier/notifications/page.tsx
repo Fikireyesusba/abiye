@@ -28,7 +28,7 @@ export default async function CourierNotificationsPage() {
                 {n.body && <p className="text-sm text-muted-foreground">{n.body}</p>}
                 <p className="text-xs text-muted-foreground">{formatDateTime(n.created_at, "en")}</p>
               </div>
-              {n.kind === "assigned" && <Link href="/courier" className="self-center text-sm text-primary underline">Open</Link>}
+              {(n.kind === "assigned" || n.kind === "available" || n.kind === "cancelled") && <Link href="/courier" className="self-center text-sm text-primary underline">Open</Link>}
             </li>
           ))}
         </ul>

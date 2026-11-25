@@ -1164,6 +1164,9 @@ isOneToOne: false
 "admin_assign_promotion":
 { Args: { "p_emails": (string)[],"p_note"?: string,"p_notify"?: boolean,"p_promotion_id": string }; Returns: Json
                            },
+"admin_auto_assign_courier":
+{ Args: { "p_order_id": string }; Returns: string
+                           },
 "admin_block_email":
 { Args: { "p_email": string,"p_reason": string }; Returns: Json
                            },
@@ -1404,6 +1407,9 @@ isOneToOne: false
               "note": string,"reviewed_at": string,"reviewed_by_name": string,"subject": string,"subject_type": string
             }[]
                            },
+"admin_set_auto_assign":
+{ Args: { "p_on": boolean }; Returns: undefined
+                           },
 "admin_set_courier_fee":
 { Args: { "p_fee": number }; Returns: undefined
                            },
@@ -1631,6 +1637,11 @@ isOneToOne: false
 "complete_notification":
 { Args: { "p_error"?: string,"p_id": number,"p_success": boolean }; Returns: undefined
                            },
+"courier_available":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "city": string,"order_id": string,"order_number": string,"paid_at": string,"partner_shop": string,"pay_etb": number
+            }[]
+                           },
 "courier_cities":
 { Args: Record<PropertyKey, never>; Returns: {
               "id": string,"name_en": string
@@ -1644,7 +1655,7 @@ isOneToOne: false
                            },
 "courier_deliveries":
 { Args: Record<PropertyKey, never>; Returns: {
-              "active": boolean,"address_line": string,"assigned_at": string,"city": string,"customer_name": string,"customer_phone": string,"delivered_at": string,"delivery_instructions": string,"fail_reason": string,"handoff_code": string,"handoff_courier_done": boolean,"handoff_shop_done": boolean,"order_id": string,"order_number": string,"partner_hours": string,"partner_landmark": string,"partner_map_url": string,"partner_phone": string,"partner_shop": string,"picked_up_at": string,"status": string
+              "active": boolean,"address_line": string,"assigned_at": string,"cancel_note": string,"city": string,"customer_name": string,"customer_phone": string,"delivered_at": string,"delivery_instructions": string,"fail_reason": string,"handoff_code": string,"handoff_courier_done": boolean,"handoff_shop_done": boolean,"order_id": string,"order_number": string,"partner_hours": string,"partner_landmark": string,"partner_map_url": string,"partner_phone": string,"partner_shop": string,"picked_up_at": string,"status": string
             }[]
                            },
 "courier_fail":
@@ -1664,6 +1675,9 @@ isOneToOne: false
                            },
 "courier_set_duty":
 { Args: { "p_on": boolean,"p_zone_ids"?: (string)[] }; Returns: undefined
+                           },
+"courier_take":
+{ Args: { "p_order_id": string }; Returns: undefined
                            },
 "courier_update_details":
 { Args: { "p_phone": string }; Returns: undefined
@@ -1729,7 +1743,7 @@ isOneToOne: false
                            },
 "partner_orders":
 { Args: Record<PropertyKey, never>; Returns: {
-              "at_shop_at": string,"collected_at": string,"courier_confirmed": boolean,"courier_name": string,"courier_phone": string,"customer_name": string,"customer_phone": string,"handoff_locked": boolean,"order_id": string,"order_number": string,"paid_at": string,"pin_locked": boolean,"shop_code": string,"shop_confirmed": boolean,"stage": string,"status": string
+              "at_shop_at": string,"cancel_note": string,"cancelled_at": string,"collected_at": string,"courier_confirmed": boolean,"courier_name": string,"courier_phone": string,"customer_name": string,"customer_phone": string,"handoff_locked": boolean,"order_id": string,"order_number": string,"paid_at": string,"pin_locked": boolean,"shop_code": string,"shop_confirmed": boolean,"stage": string,"status": string
             }[]
                            },
 "partner_receive":

@@ -23,6 +23,17 @@ export async function reviewPayment(_prev: ActionResult | null, fd: FormData): P
   if (error) return dbError(error);
   dispatchSoon();
   revalidatePath("/admin", "layout");
+  if (decision === "verified") {
+    // Delivery / partner-shop orders get a courier automatically when the payment is verified (database trigger).
+    const { data: sub } = await supabase.from("payment_submissions")
+      .select("order:orders(fulfillment_method, partner_shop_id, city, courier:profiles!orders_courier_id_fkey(full_name))").eq("id", submissionId).maybeSingle();
+    const o = sub?.order as { fulfillment_method?: string; partner_shop_id?: string | null; city?: string | null; courier?: { full_name?: string } | null } | null;
+    if (o && (o.fulfillment_method === "delivery" || o.partner_shop_id)) {
+      return ok(o.courier?.full_name
+        ? `Payment verified — courier ${o.courier.full_name} assigned automatically.`
+        : `Payment verified — no courier on duty for ${o.city ?? "that city"} right now: the order is open in the courier app (couriers for that city can take it) and under Couriers & delivery → Dispatch.`);
+    }
+  }
   return ok(decision === "verified" ? "Payment verified — order confirmed." : "Payment rejected — the order was cancelled automatically (stock released; printing documents deleted from storage, kept in Telegram).");
 }
 

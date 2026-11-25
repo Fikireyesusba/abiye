@@ -229,7 +229,7 @@ async function tryLogin(page, base, email, password) {
     await c.goto(`${U("courier")}/courier/earnings`);
     check((await c.locator("main").innerText()).includes("CASH-001"), "courier sees the payment (with the reference)");
     check(sql(`select string_agg(payload->>'step', ',' order by id) from notifications_outbox where event_type = 'delivery_update' and payload->>'order_id' = '${order.order_id}'`)
-      === "assigned,picked_up,delivered", "every step announced in the orders & payments Telegram group");
+      === "open,assigned,picked_up,delivered", "every step announced in the orders & payments Telegram group");
     await m.goto(`${U("ocs")}/admin/orders/${order.order_id}`);
     check((await m.locator("[data-testid=courier-panel]").innerText()).includes("customer's code checked"), "admin order page: courier, times and delivery confirmed");
 

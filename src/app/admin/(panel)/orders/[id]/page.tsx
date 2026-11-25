@@ -8,6 +8,7 @@ import { PageHeader, Panel, SubTabs, fieldClass, pickTab } from "@/components/ad
 import { StatusBadge } from "@/components/status/status-badge";
 import { Textarea } from "@/components/ui/textarea";
 import { nextStatuses, type OrderStatus } from "@/lib/admin/order-flow";
+import { appRun, deliveryStage, type StageInput } from "@/lib/orders/delivery-stage";
 import { addOrderNote, assignCourier, assignOrder, reviewPayment, updateOrderStatus } from "@/lib/admin/order-actions";
 import { UserIdLink } from "@/components/admin/user-id";
 import { memberIds } from "@/lib/admin/member-ids";
@@ -58,7 +59,9 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
   const history = [...order.history].sort((a, b) => a.created_at.localeCompare(b.created_at));
   const notes = [...order.notes].sort((a, b) => a.created_at.localeCompare(b.created_at));
   const staffName = new Map((staff ?? []).map((s) => [s.id, s.full_name]));
-  const transitions = nextStatuses(order.status as OrderStatus, order.fulfillment_method).filter(
+  const runByApps = appRun(order as StageInput);
+  const stage = deliveryStage(order as StageInput);
+  const transitions = nextStatuses(order.status as OrderStatus, order.fulfillment_method, runByApps).filter(
     (s) => s !== "cancelled" || can("orders.manage"),
   );
   const canFulfil = can("orders.manage") || can("orders.update_fulfillment");
@@ -83,7 +86,7 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
         description={`Placed ${formatDateTime(order.created_at, "en")}`}
         actions={
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1.5">Order <StatusBadge kind="order" status={order.status} /></span>
+            <span className="flex items-center gap-1.5">Order <StatusBadge kind="order" status={order.status} />{stage && <span className="text-sm text-muted-foreground" data-testid="delivery-stage">{stage.en}</span>}</span>
             <span className="flex items-center gap-1.5">Payment <StatusBadge kind="payment" status={order.payment_status} /></span>
           </div>
         }
@@ -173,6 +176,9 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
           {canFulfil && transitions.length > 0 && (
             <Panel title="Update status">
               <div className="space-y-3">
+                {runByApps && ["confirmed", "processing", "out_for_delivery", "ready_for_pickup"].includes(order.status) && (
+                  <p className="text-xs text-muted-foreground" data-testid="app-run-note">“On the way”, “at the shop” and “completed” are set by the courier and Business apps (PINs). You can re-assign, take it back or cancel — the courier and the shop see it at once.</p>
+                )}
                 {transitions.filter((s) => s !== "cancelled").map((s) => (
                   <ActionForm key={s} action={updateOrderStatus} hidden={{ orderId: order.id, status: s }} submitLabel={STATUS_LABEL[s] ?? s} className="[&_button]:w-full" />
                 ))}

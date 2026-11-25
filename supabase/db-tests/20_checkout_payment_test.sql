@@ -165,7 +165,7 @@ select pg_temp.ok((select count(*) from public.payment_submissions) = 0, 'staff 
 select public.admin_update_order_status((select id from public.orders limit 1), 'processing', 'Packing');
 select public.admin_update_order_status((select id from public.orders limit 1), 'out_for_delivery');
 select pg_temp.throws(format($$select public.admin_update_order_status(%L, 'cancelled', 'x')$$,
-  (select id from public.orders limit 1)), 'invalid_transition', 'cannot cancel an order already out for delivery');
+  (select id from public.orders limit 1)), 'forbidden', 'staff cannot cancel an order on its way (only the office: orders.manage)');
 insert into public.order_notes (order_id, body) select id, 'Customer asked for evening delivery' from public.orders limit 1;
 select pg_temp.ok((select count(*) from public.order_notes) = 1, 'staff can add internal notes to assigned order');
 reset role;
