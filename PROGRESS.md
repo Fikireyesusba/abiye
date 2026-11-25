@@ -9,7 +9,7 @@ Living tracker so work can continue across sessions. **Update this file at the e
 
 - Migration **0075** `20261125000075_auto_assign_cancel_flow.sql`: `private.assign_courier` (core, used by admin / auto / take); trigger `orders_auto_assign` (payment_status → verified: `private.auto_assign_courier` — least busy on duty for the order's zone, never a decliner; none → `open` delivery_event + 'available' notifications); setting `courier.auto_assign` + `admin_set_auto_assign`, `admin_auto_assign_courier`; `courier_available()` + `courier_take()`; `courier_decline` re-assigns / re-opens; `courier_deliveries` + `partner_orders` show office cancellations (`cancel_note`); `admin_update_order_status`: cancel also from out_for_delivery / ready_for_pickup (courier notified, delivery_event `cancelled`), no manual on-the-way / at-shop / completed for courier-run orders, take back resets the hand-over. Notification kinds `available`, `cancelled`.
 - App: Verify message names the courier; Dispatch auto-assign switch; courier "Open deliveries" + Take it + cancelled cards; Business app cancelled cards; admin order page stage + no manual skips (`src/lib/orders/delivery-stage.ts`); customer order page stage.
-- Tests: db `99zzzk_auto_assign_cancel_test.sql` (16), `20_checkout_payment_test.sql` updated; e2e `partner.smoke.cjs` (35), `courier.smoke.cjs` (53).
+- Tests: db `99zzzk_auto_assign_cancel_test.sql` (16), `20_checkout_payment_test.sql` updated; e2e `partner.smoke.cjs` (35), `courier.smoke.cjs` (53). All 42 browser suites, unit and db tests pass.
 - ⏳ Owner: apply 0075.
 
 ## Courier / Business app privacy + delivery monitor (requested 2026-11-25)
