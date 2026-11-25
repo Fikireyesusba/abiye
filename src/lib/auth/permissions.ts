@@ -42,6 +42,7 @@ export const PERMISSIONS = [
   "couriers.manage",
   "partner.own",
   "partners.manage",
+  "documents.manage",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -99,6 +100,7 @@ export const ADMIN_ROUTES: ReadonlyArray<{ href: string; label: string; anyOf: r
   { href: "/admin/couriers", label: "Couriers & delivery", anyOf: ["couriers.manage", "orders.manage"] },
   { href: "/admin/partners", label: "Partner shops", anyOf: ["partners.manage"] },
   { href: "/admin/delivery-monitor", label: "Delivery monitor", anyOf: ["couriers.manage", "orders.manage", "partners.manage"] },
+  { href: "/admin/documents", label: "Documents & vehicles", anyOf: ["documents.manage"] },
   { href: "/admin/support", label: "Support tickets", anyOf: ["support.view"] },
   { href: "/admin/follow-up", label: "Stalled checkouts", anyOf: ["customers.view"] },
   { href: "/admin/promotions", label: "Promotions", anyOf: ["promotions.manage"] },

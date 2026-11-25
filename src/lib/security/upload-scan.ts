@@ -11,7 +11,7 @@ const EXT_OF: Record<string, string[]> = {
   "application/pdf": [".pdf"],
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
 };
-type Source = "payment_receipt" | "topup_receipt" | "printing_file";
+type Source = "payment_receipt" | "topup_receipt" | "printing_file" | "staff_document";
 
 /**
  * Scan one customer upload (after the content-type check). Clean → null. Otherwise the error code to show

@@ -115,6 +115,8 @@ export function suggestedAction(row: OutboxRow): string | null {
       if (p.step === "handoff_locked") return "Call the courier and the shop; re-assign the same courier on the order to unlock the hand-over.";
       if (p.step === "code_locked") return "Call the customer and the courier; re-assign the courier on the order to unlock the code.";
       return "Nothing to do — the customer sees the progress on their order page.";
+    case "document_expiry":
+      return "Renew it and upload the new copy under Documents & vehicles (set the new expiry date).";
     case "delivery_alert":
       if (p.kind === "not_dispatched") return "Assign a courier under Couriers & delivery → Dispatch (check who is on duty for that city).";
       if (p.kind === "not_picked_up") return "Call the courier; if they cannot take it, assign another courier.";
@@ -200,6 +202,7 @@ export function describe(row: OutboxRow): [string, string] {
     case "excel_export": return ["Exports", `Excel: ${String(p.title ?? "file")}`];
     case "account_pending": return ["Customer accounts", "New account waiting for approval"];
     case "delivery_update": return ["Deliveries", DELIVERY_STEP[String(p.step)] ?? titleCase(String(p.step ?? ""))];
+    case "document_expiry": return ["Documents & vehicles", p.expired ? "Expired" : "Expires soon"];
     case "delivery_alert": return ["Delivery monitor", MONITOR_KIND[String(p.kind)] ?? titleCase(String(p.kind ?? "alert"))];
     case "delivery_pin_alert": return [p.app === "business" ? "Abiye Business app" : "Courier app", `Wrong PINs: ${PIN_KIND[String(p.pin)] ?? String(p.pin ?? "")}`];
     case "printing_test": return ["Printing group", "Test message"];
@@ -478,6 +481,16 @@ function buildBody(row: OutboxRow, appUrl: string): BuiltMessage {
       return {
         attachment: null,
         text: ["🆕 <b>NEW CUSTOMER ACCOUNT — WAITING FOR APPROVAL</b>", "", line("When", addisTime(p.at))].join("\n") + admin("/admin/approvals"),
+      };
+    case "document_expiry":
+      return {
+        attachment: null,
+        text: [
+          `📄 <b>${p.expired ? "EXPIRED" : "EXPIRES SOON"}: ${esc(String(p.label ?? "document")).toUpperCase()}</b>`,
+          "",
+          line(String(p.item ?? "").startsWith("vehicle") ? "Vehicle" : String(p.item ?? "") === "document" ? "For" : "Courier", p.who),
+          line("Expiry date", p.expires_on),
+        ].join("\n") + admin("/admin/documents?tab=expiring"),
       };
     case "delivery_alert":
       return {

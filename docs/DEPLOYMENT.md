@@ -221,6 +221,17 @@ Customers in other cities can collect their order at a **partner shop**. The cou
 - **Telegram alerts:** late orders → orders & payments group, once per order and step: paid but no courier after 2 h, assigned but not picked up after 2 h, on the way more than 6 h, waiting at a partner shop more than 3 days. Wrong PINs → security group at the 3rd wrong PIN on an order (5 locks it). All limits are set in Alert settings.
 - The check runs at most every 5 minutes while the admin, courier or Business app is open, and once a day by the daily job.
 
+## 6b-3. Documents & vehicles (migration 0076)
+
+- **Admin → Documents & vehicles** (permission "Employee and vehicle documents" — Super Admin; can be given to an HR person under Staff → Permission sets):
+  - **Employees:** every staff member (staff, managers, couriers, partner shop staff); open one to upload Fayda, passport, contract, driving licence, CV, certificates, guarantee letter, medical, photo… with issue / expiry dates.
+  - **Vehicles:** the register of cars, motorcycles, bicycles and three-wheelers (shop-owned or the courier's own): plate, make, model, year, colour, chassis / engine / libre numbers, insurance (company, policy, expiry), annual inspection (Bolo) expiry, rider, status (in use / in repair / retired) — and their documents (libre, insurance, Bolo, photos, purchase papers).
+  - **Expiring:** everything that expired or expires within 60 days (documents, vehicle insurance / Bolo, couriers' driving licences and own-vehicle insurance).
+- Files: PDF, JPG, PNG or WEBP up to 10 MB, checked by content and virus-scanned (Cloudmersive), stored in the **private** `staff-documents` bucket under server-made names; they open through links that expire after 5 minutes, only for people with this permission. File names / numbers are not copied into the Activity log or Telegram.
+- **Alerts:** 30 days before an expiry (and when expired) a message goes to the **security** Telegram group, once per item and date.
+
+**Security (RLS):** every table already has Row Level Security switched on (a database test now fails if a table is ever added without it), visitors can only read the public catalogue, and all money / stock / status changes go through checked database functions. Nothing to switch on in Supabase.
+
 ## 6b-2. New customer accounts need approval
 
 New sign-ups are **Under verification**: they can sign in, browse and use Support & feedback, but cannot order, top up, use printing or write reviews until approved. The security Telegram group announces each new account. **Admin → Account approvals** (permission "Approve or reject new customer accounts" — Super Admin; add it to other permission sets under Staff if needed): see the details, **Approve** (customer emailed, can order) or **Reject, delete & block** with a reason (customer emailed "due to security reasons…", account deleted, email on the block list with the reason). Customers invited from Admin → Customers are approved at once; existing customers stay approved.

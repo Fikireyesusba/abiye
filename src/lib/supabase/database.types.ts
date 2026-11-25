@@ -303,6 +303,32 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"documents": {
+                  Row: {
+                    "created_at": string,"expires_on": string | null,"file_path": string,"id": string,"issued_on": string | null,"kind": string,"mime": string,"notes": string | null,"profile_id": string | null,"size_bytes": number,"title": string,"uploaded_by": string | null,"vehicle_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"expires_on"?: string | null,"file_path": string,"id"?: string,"issued_on"?: string | null,"kind": string,"mime": string,"notes"?: string | null,"profile_id"?: string | null,"size_bytes": number,"title": string,"uploaded_by"?: string | null,"vehicle_id"?: string | null
+                  }
+                  Update: {
+                    "created_at"?: string,"expires_on"?: string | null,"file_path"?: string,"id"?: string,"issued_on"?: string | null,"kind"?: string,"mime"?: string,"notes"?: string | null,"profile_id"?: string | null,"size_bytes"?: number,"title"?: string,"uploaded_by"?: string | null,"vehicle_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "documents_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "documents_vehicle_id_fkey"
+      columns: ["vehicle_id"]
+isOneToOne: false
+      referencedRelation: "vehicles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"homepage_banners": {
                   Row: {
                     "created_at": string,"ends_at": string | null,"id": string,"image_path": string,"is_active": boolean,"link_href": string | null,"sort_order": number,"starts_at": string | null,"subtitle_am": string,"subtitle_en": string,"title_am": string,"title_en": string,"updated_at": string
@@ -1055,6 +1081,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"vehicles": {
+                  Row: {
+                    "assigned_to": string | null,"chassis_number": string | null,"colour": string | null,"created_at": string,"engine_number": string | null,"id": string,"inspection_expiry": string | null,"insurance_company": string | null,"insurance_expiry": string | null,"insurance_policy": string | null,"kind": string,"libre_number": string | null,"make": string | null,"model": string | null,"notes": string | null,"owner": string,"plate_number": string | null,"status": string,"updated_at": string,"year": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "assigned_to"?: string | null,"chassis_number"?: string | null,"colour"?: string | null,"created_at"?: string,"engine_number"?: string | null,"id"?: string,"inspection_expiry"?: string | null,"insurance_company"?: string | null,"insurance_expiry"?: string | null,"insurance_policy"?: string | null,"kind": string,"libre_number"?: string | null,"make"?: string | null,"model"?: string | null,"notes"?: string | null,"owner"?: string,"plate_number"?: string | null,"status"?: string,"updated_at"?: string,"year"?: number | null
+                  }
+                  Update: {
+                    "assigned_to"?: string | null,"chassis_number"?: string | null,"colour"?: string | null,"created_at"?: string,"engine_number"?: string | null,"id"?: string,"inspection_expiry"?: string | null,"insurance_company"?: string | null,"insurance_expiry"?: string | null,"insurance_policy"?: string | null,"kind"?: string,"libre_number"?: string | null,"make"?: string | null,"model"?: string | null,"notes"?: string | null,"owner"?: string,"plate_number"?: string | null,"status"?: string,"updated_at"?: string,"year"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "vehicles_assigned_to_fkey"
+      columns: ["assigned_to"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"wallet_ledger": {
                   Row: {
                     "amount_etb": number,"balance_after_etb": number,"created_at": string,"created_by": string | null,"id": number,"kind": string,"note": string | null,"order_id": string | null,"topup_id": string | null,"user_id": string
@@ -1134,6 +1180,9 @@ isOneToOne: false
 { Args: { "p_before_id"?: number,"p_entity_type"?: string,"p_limit"?: number,"p_search"?: string }; Returns: {
               "action": string,"actor_id": string,"actor_name": string,"actor_role": string,"after_data": Json,"before_data": Json,"created_at": string,"entity_id": string,"entity_label": string,"entity_type": string,"id": number,"metadata": Json
             }[]
+                           },
+"admin_add_document":
+{ Args: { "p": Json }; Returns: string
                            },
 "admin_adjust_stock":
 { Args: { "p_change": number,"p_note"?: string,"p_product_id": string,"p_reason": Database["public"]['Enums']["inventory_reason"] }; Returns: number
@@ -1228,6 +1277,9 @@ isOneToOne: false
 "admin_data_export_areas":
 { Args: Record<PropertyKey, never>; Returns: (string)[]
                            },
+"admin_delete_document":
+{ Args: { "p_id": string }; Returns: string
+                           },
 "admin_delete_kpi_target":
 { Args: { "p_id": string }; Returns: undefined
                            },
@@ -1243,6 +1295,11 @@ isOneToOne: false
 "admin_dispatch_orders":
 { Args: Record<PropertyKey, never>; Returns: {
               "address_line": string,"city": string,"courier_id": string,"courier_pay_etb": number,"delivery_attempts": number,"delivery_fee_etb": number,"fail_reason": string,"items": number,"order_id": string,"order_number": string,"paid_at": string,"partner_shop": string,"status": string,"total_etb": number,"zone_id": string
+            }[]
+                           },
+"admin_expiring":
+{ Args: { "p_days"?: number }; Returns: {
+              "expires_on": string,"item": string,"kind": string,"label": string,"ref_id": string,"who": string
             }[]
                            },
 "admin_find_user":
@@ -1396,6 +1453,9 @@ isOneToOne: false
                            },
 "admin_save_staff_hr":
 { Args: { "p": Json,"p_profile": string }; Returns: undefined
+                           },
+"admin_save_vehicle":
+{ Args: { "p": Json,"p_id": string }; Returns: string
                            },
 "admin_security_events":
 { Args: { "p_email"?: string,"p_from"?: string,"p_kind"?: string,"p_limit"?: number,"p_search"?: string,"p_to"?: string }; Returns: {
