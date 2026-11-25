@@ -24,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
 /** Abiye Business app shell (partner shops, phone-first). Every page and action checks partner.own again. */
 export default async function BusinessLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireAdmin();
-  deliveryMonitorSoon();
+  await deliveryMonitorSoon();
   if (!ctx.permissions.has("partner.own")) redirect("/admin");
   const { data, error } = await (await createSupabaseServerClient()).rpc("partner_me");
   const me = (data ?? {}) as { shop?: string; city?: string; incoming?: number; at_shop?: number };

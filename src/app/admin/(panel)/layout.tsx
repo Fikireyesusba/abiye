@@ -36,7 +36,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   if (ctx.role === "courier") redirect("/courier");
   // Partner shop staff use the Abiye Business app only.
   if (ctx.role === "partner") redirect("/business");
-  deliveryMonitorSoon(); // late deliveries → Telegram (checked at most every 5 minutes)
+  await deliveryMonitorSoon(); // late deliveries → Telegram (checked at most every 5 minutes)
   const badges = await getAdminBadges(ctx);
   // Excel exports are for the Super Admin only.
   const items: NavItem[] = ADMIN_ROUTES.filter((r) => r.anyOf.some((p) => ctx.permissions.has(p)) && (r.href !== "/admin/exports" || ctx.role === "super_admin"))

@@ -29,7 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
 /** Courier app shell (phone-first): header with on-duty switch, bottom tabs. Every page and action checks deliveries.own again. */
 export default async function CourierLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireAdmin();
-  deliveryMonitorSoon();
+  await deliveryMonitorSoon();
   if (!ctx.permissions.has("deliveries.own")) redirect("/admin");
   const { data } = await (await createSupabaseServerClient()).rpc("courier_me");
   const me = (data ?? {}) as { on_duty?: boolean; unread?: number; latest_unread_assigned?: number | null; ringtone_path?: string | null; cities?: { name: string }[] };
