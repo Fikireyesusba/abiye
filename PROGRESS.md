@@ -8,7 +8,7 @@ Living tracker so work can continue across sessions. **Update this file at the e
 ## Yellow "action needed" markers (requested 2026-11-25)
 
 - Admin menu: every section with something waiting gets a yellow left bar and a yellow count (tooltip says what; Security stays red). New sections counted: Account approvals, Couriers & delivery (paid orders without a courier), Delivery monitor (late + locked), Documents & vehicles (expiring ≤30 days), Partner shops (staff not linked). Dashboard: yellow "Needs your action" box. A yellow pop-up appears when a section gets new items (menu refreshes every minute). Icons for the newer sections. No migration.
-- Tests: e2e `documents.smoke.cjs` (11).
+- Tests: e2e `documents.smoke.cjs` (11). Fix: delivery-monitor tick made its signed-in client inside after() (cookies not allowed there) — it failed silently on admin pages and could crash the Staff page; now created before after(). All 43 browser suites, unit and db tests pass.
 
 ## Documents & vehicles + RLS check (requested 2026-11-25)
 
