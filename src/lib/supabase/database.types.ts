@@ -1781,6 +1781,9 @@ isOneToOne: false
 "mark_printing_files_deleted":
 { Args: { "p_file_ids": (string)[] }; Returns: number
                            },
+"metrics_snapshot":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "my_admin_context":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },

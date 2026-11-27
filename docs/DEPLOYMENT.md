@@ -254,6 +254,11 @@ Plan limits: the free plan has a monthly scan limit and scans files up to **3.5 
 - After upgrading Cloudmersive, set `CLOUDMERSIVE_MAX_MB` in Vercel to the new limit (e.g. `10`) and redeploy. The printing limit is also capped by Admin → Settings → printing max file size and 25 MB.
 - When the monthly scan count is used up, uploads are refused ("security check unavailable") until the next month or an upgrade; Site health and the security Telegram group show it.
 
+## 6d. Grafana monitoring (optional, migration 0077)
+
+Private metrics link `/api/metrics` for Grafana Cloud (totals only, token-protected; off until `METRICS_TOKEN` is set in Vercel).
+Step-by-step: **docs/GRAFANA.md**; dashboard to import: **docs/grafana/abiye-dashboard.json**.
+
 ## 7. Security headers
 
 Every page carries a nonce-based Content-Security-Policy (`src/proxy.ts`, `src/lib/security/csp.ts`): scripts only from this site with the per-request nonce, network/images only to this site and the Supabase project, no framing. If you ever add a third-party script, widget or analytics service, its domain must be added there or the browser will block it. See docs/GO-LIVE.md for the launch checklist.

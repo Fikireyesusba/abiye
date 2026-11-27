@@ -5,6 +5,14 @@ Living tracker so work can continue across sessions. **Update this file at the e
 - Architecture & plan: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - Setup & deployment: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
 
+## Grafana monitoring (requested 2026-11-27)
+
+- Migration **0077** `20261127000077_metrics.sql`: `public.metrics_snapshot()` (service role only): totals only.
+- App: `/api/metrics` (Prometheus text; exists only when `METRICS_TOKEN` is set; Bearer or Basic auth with constant-time check; wrong tokens rate-limited per IP; secret key only after checks), `src/lib/monitoring/prometheus.ts`; optional env `METRICS_TOKEN`.
+- Owner guide **docs/GRAFANA.md** (token, Vercel, Grafana Cloud Metrics Endpoint, dashboard import, alert rules, optional Supabase integration); dashboard **docs/grafana/abiye-dashboard.json** (36 panels).
+- Tests: unit `prometheus.test.ts`, db `99zzzm_metrics_test.sql`, e2e `metrics.smoke.cjs` (8).
+- ⏳ Owner: apply 0077; set METRICS_TOKEN; Grafana Cloud setup.
+
 ## Yellow "action needed" markers (requested 2026-11-25)
 
 - Admin menu: every section with something waiting gets a yellow left bar and a yellow count (tooltip says what; Security stays red). New sections counted: Account approvals, Couriers & delivery (paid orders without a courier), Delivery monitor (late + locked), Documents & vehicles (expiring ≤30 days), Partner shops (staff not linked). Dashboard: yellow "Needs your action" box. A yellow pop-up appears when a section gets new items (menu refreshes every minute). Icons for the newer sections. No migration.

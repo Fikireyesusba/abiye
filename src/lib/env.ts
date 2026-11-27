@@ -38,6 +38,8 @@ const serverEnvSchema = z.object({
   CLOUDMERSIVE_API_KEY: z.string().trim().min(10, "Cloudmersive API key looks too short").max(200).optional(),
   // Largest file the Cloudmersive plan scans (MB). Larger files are refused with a clear message. Default 3.5.
   CLOUDMERSIVE_MAX_MB: z.coerce.number().min(0.5).max(500).optional(),
+  // Grafana: token for the private metrics link /api/metrics (not set → the link does not exist).
+  METRICS_TOKEN: z.string().trim().min(32, "METRICS_TOKEN must be at least 32 characters").max(200).optional(),
   // Only for tests (a local mock of the scanner). https anywhere, http only on localhost.
   CLOUDMERSIVE_API_BASE: z
     .url()
@@ -111,6 +113,7 @@ export function getServerEnv(): ServerEnv {
     CLOUDMERSIVE_API_KEY: process.env.CLOUDMERSIVE_API_KEY || undefined,
     CLOUDMERSIVE_API_BASE: process.env.CLOUDMERSIVE_API_BASE || undefined,
     CLOUDMERSIVE_MAX_MB: process.env.CLOUDMERSIVE_MAX_MB || undefined,
+    METRICS_TOKEN: process.env.METRICS_TOKEN || undefined,
     RESEND_API_KEY: process.env.RESEND_API_KEY || undefined,
     EMAIL_FROM: process.env.EMAIL_FROM || undefined,
     EMAIL_API_BASE: process.env.EMAIL_API_BASE || undefined,
