@@ -9,6 +9,18 @@ select pg_temp.ok((select (m ? 'payments_pending') and (m ? 'deliveries') and (m
                    from (select public.metrics_snapshot() as m) x), 'metrics: totals, no emails or phone numbers');
 reset role;
 
+-- 0079: token made by the Super Admin (fingerprint only)
+select pg_temp.login(:manager);
+select pg_temp.throws($$select public.admin_set_metrics_token(repeat('a', 64))$$, 'forbidden', 'only the Super Admin creates the Grafana token');
+reset role;
+select pg_temp.login(:super);
+select public.admin_set_metrics_token(encode(sha256(convert_to('grafana-test-token-0123456789-abcdefghij', 'UTF8')), 'hex'));
+reset role;
+set role anon;
+select pg_temp.ok((select public.metrics_snapshot_for('grafana-test-token-0123456789-abcdefghij') ? 'payments_pending'), 'the right token reads the totals');
+select pg_temp.throws($$select public.metrics_snapshot_for('grafana-test-token-0123456789-WRONGWRONG')$$, 'forbidden', 'a wrong token is refused');
+reset role;
+
 -- 0078: with "monitoring alerts from Grafana" on, the website's own copies are not queued; events still are.
 select pg_temp.login(:manager);
 select pg_temp.throws($$select public.admin_set_grafana_alerts(true)$$, 'forbidden', 'only settings.manage can switch it');

@@ -2,20 +2,21 @@
 
 The website has a **private metrics link** — `https://abiye.site/api/metrics` — that Grafana Cloud reads every minute.
 It returns **totals only** (no names, phones, emails or order contents) and only to someone who has the token.
-Without the token set in Vercel the link does not exist (404).
+Until the Super Admin creates a token, the link refuses everyone.
 
-## 1. Make the token (once)
+## 1. Make the token (once) — in the admin, no Vercel variable needed
 
-Make a random password of **40 letters and digits** (no spaces) with your password manager's generator
-(Chrome / Bitwarden / 1Password "generate password"). Keep it in your password manager. Never send it to anyone.
+Run migrations **0077, 0078 and 0079** in Supabase first. Then, signed in as **Super Admin** at operations.abiye.site:
+**Admin → Notifications → Telegram groups & alerts → "Grafana metrics link" → Create Grafana token**.
+The token (40 letters / digits) is shown **once** — copy it into your password manager. Only its fingerprint is stored, so nobody
+(not even you) can read it again; if it is lost, press **Create a new token** and put the new one in Grafana.
+**Remove token** switches the link off.
 
-## 2. Vercel
+(Alternative: a `METRICS_TOKEN` variable in Vercel also works — not needed.)
 
-Vercel → abiye project → **Settings → Environment Variables** → Add:
+## 2. Check
 
-- Key `METRICS_TOKEN`, Value = the token from step 1, Environment **Production** → Save → **Redeploy** (Promote if it shows Stale).
-
-Check: open `https://abiye.site/api/metrics` in the browser — it must ask for a user name and password (401). That is correct.
+Open `https://abiye.site/api/metrics` in the browser — it must ask for a user name and password (401). That is correct.
 
 ## 3. Grafana Cloud
 
@@ -118,4 +119,4 @@ Only do this if you are comfortable keeping that key in Grafana; the shop metric
 `abiye_security_events_24h{kind}`, `abiye_upload_scans_24h{result}`, `abiye_documents_expiring_30d`, `abiye_documents_expired`,
 `abiye_job_last_run_age_seconds{job}`, `abiye_job_last_ok{job}`, `abiye_delivery_monitor_last_check_age_seconds`, `abiye_database_size_bytes`.
 
-To stop: delete `METRICS_TOKEN` in Vercel (redeploy) — the link disappears. To change the token: change it in Vercel and in the Grafana scrape job.
+To stop: Admin → Notifications → Telegram groups & alerts → **Remove token**. To change it: **Create a new token**, then put it in the Grafana scrape job.

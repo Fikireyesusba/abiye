@@ -4,6 +4,7 @@ import { getServerEnv } from "@/lib/env";
 import { toPrometheus } from "@/lib/monitoring/prometheus";
 import { clientIpKey, rateLimit } from "@/lib/security/rate-limit";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getSupabasePublic } from "@/lib/supabase/public";
 
 export const dynamic = "force-dynamic";
 
@@ -22,13 +23,25 @@ const same = (a: string, b: string) => {
 };
 const headers = { "Cache-Control": "no-store", "X-Robots-Tag": "noindex" };
 
+const prom = (body: string) => new NextResponse(body, { status: 200, headers: { ...headers, "Content-Type": "text/plain; version=0.0.4; charset=utf-8" } });
+const unauthorized = () => new NextResponse("Unauthorized", { status: 401, headers: { ...headers, "WWW-Authenticate": 'Basic realm="metrics"' } });
+
 /**
- * Private metrics link for Grafana Cloud (Prometheus format). Exists only when METRICS_TOKEN is set in Vercel.
- * Totals only (no customer data). Wrong tokens are refused and limited per address.
+ * Private metrics link for Grafana Cloud (Prometheus format). Totals only (no customer data).
+ * Token: created by the Super Admin in Admin → Notifications → Telegram groups & alerts → Grafana (only its fingerprint
+ * is stored; checked in the database), or the METRICS_TOKEN variable in Vercel. Requests are limited per address.
  */
 export async function GET(request: Request) {
   const token = getServerEnv().METRICS_TOKEN;
-  if (!token) return new NextResponse("Not found", { status: 404, headers });
+  if (!token) {
+    // Token made in the admin: checked by the database (no secret key needed), after the per-address limit.
+    if (!(await rateLimit(`metrics-ip:${await clientIpKey()}`, 180, 3600))) return new NextResponse("Too many requests", { status: 429, headers });
+    const given = givenToken(request.headers.get("authorization") ?? "");
+    if (given.length < 32 || given.length > 200) return unauthorized();
+    const { data, error } = await getSupabasePublic().rpc("metrics_snapshot_for", { p_token: given });
+    if (error) return error.message === "forbidden" ? unauthorized() : prom("# TYPE abiye_up gauge\nabiye_up 0\n");
+    return prom(toPrometheus(data as Record<string, unknown>));
+  }
   if (!same(givenToken(request.headers.get("authorization") ?? ""), token)) {
     if (!(await rateLimit(`metrics-denied:${await clientIpKey()}`, 30, 3600))) return new NextResponse("Too many requests", { status: 429, headers });
     return new NextResponse("Unauthorized", { status: 401, headers: { ...headers, "WWW-Authenticate": 'Basic realm="metrics"' } });

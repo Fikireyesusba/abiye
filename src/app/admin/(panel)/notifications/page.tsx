@@ -4,7 +4,7 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
 import { PageHeader, Panel, SubTabs, Table, Td, fieldClass, pickTab } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
-import { clearNotifications, retryAllFailed, retryNotification, saveGrafanaAlerts, savePendingPaymentAlerts, saveTelegramFeed, sendGroupTest, sendSecurityTest, sendTestNotification } from "@/lib/admin/notification-actions";
+import { clearNotifications, retryAllFailed, retryNotification, createMetricsToken, saveGrafanaAlerts, savePendingPaymentAlerts, saveTelegramFeed, sendGroupTest, sendSecurityTest, sendTestNotification } from "@/lib/admin/notification-actions";
 import { Download, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { describe } from "@/lib/telegram/format";
@@ -12,6 +12,7 @@ import { archivePastReceipts, saveReceiptArchive, sendArchiveTest } from "@/lib/
 import { Input } from "@/components/ui/input";
 import { requirePermission } from "@/lib/auth/guards";
 import { formatDateTime, zoneDayStartIso, zoneToday } from "@/lib/datetime";
+import { getServerEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { groupConfig, securityTelegramConfig, telegramConfig } from "@/lib/telegram/dispatch";
 import { emailConfigured } from "@/lib/email/dispatch";
@@ -90,7 +91,9 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
     supabase.rpc("admin_telegram_feed"),
     supabase.from("website_settings").select("value").eq("key", "monitoring").maybeSingle(),
   ]);
-  const grafanaAlerts = (monitoringRow?.value as { grafana_alerts?: boolean } | null)?.grafana_alerts === true;
+  const monitoring = (monitoringRow?.value ?? {}) as { grafana_alerts?: boolean; metrics_token_hash?: string; metrics_token_at?: string };
+  const grafanaAlerts = monitoring.grafana_alerts === true;
+  const appUrl = getServerEnv().APP_URL;
   const feed = (feedRaw ?? null) as { security: boolean; admin: boolean; notifications: boolean; order_progress?: boolean; printing_requests?: boolean; pending_payments?: boolean } | null;
   const today = zoneToday();
   const monthAgo = new Date(Date.parse(`${today}T00:00:00Z`) - 30 * 86400000).toISOString().slice(0, 10);
@@ -237,6 +240,15 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
       {feed && (
         <Panel title="Telegram activity feed" className="mb-6">
           <p className="mb-3 text-sm text-muted-foreground">Approved payments go to the orders & payments group (payments waiting for approval only if switched on below); stock alerts and receipt files to their groups. Choose the rest below. Each message shows its <strong>service</strong> and <strong>event</strong> name with the details; identical security events within 5 minutes are grouped.</p>
+          {ctx.role === "super_admin" && (
+            <div className="mb-4 space-y-2 border-b pb-4 text-sm" data-testid="grafana-token">
+              <p><strong>Grafana metrics link:</strong> <span className="font-mono">{appUrl.replace(/\/$/, "")}/api/metrics</span> —{" "}
+                {monitoring.metrics_token_hash ? `token created ${formatDateTime(monitoring.metrics_token_at ?? "", "en")}` : "no token yet (the link refuses everyone)"}.</p>
+              <ActionForm action={createMetricsToken} keepSuccess submitLabel={monitoring.metrics_token_hash ? "Create a new token (the old one stops working)" : "Create Grafana token"} size="sm" variant="outline"
+                confirm={monitoring.metrics_token_hash ? "Create a new token? Grafana stops reading until you put the new one in its Metrics Endpoint." : undefined} />
+              {monitoring.metrics_token_hash && <ActionForm action={createMetricsToken} hidden={{ remove: "1" }} submitLabel="Remove token" size="sm" variant="secondary" confirm="Remove the token? Grafana can no longer read the metrics." />}
+            </div>
+          )}
           <ActionForm action={saveGrafanaAlerts} submitLabel="Save" size="sm" className="mb-4 space-y-2 border-b pb-4">
             <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="grafana_alerts" defaultChecked={grafanaAlerts} className="mt-0.5 size-4 accent-[var(--primary)]" data-testid="grafana-alerts-toggle" />
               <span><strong>Monitoring alerts are sent by Grafana</strong> — the website stops sending its own Telegram copies of: late deliveries, wrong PINs / locked orders, documents expiring, low / out of stock. Switch on only after the Grafana alert rules and Telegram contact point are set up (docs/GRAFANA.md). Payments, receipts, printing, support, Excel files, delivery steps and security events still come from the website.</span></label>

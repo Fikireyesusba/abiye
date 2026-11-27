@@ -1488,6 +1488,9 @@ isOneToOne: false
 "admin_set_member_permissions":
 { Args: { "p_permissions": (string)[],"p_user_id": string }; Returns: undefined
                            },
+"admin_set_metrics_token":
+{ Args: { "p_hash": string }; Returns: undefined
+                           },
 "admin_set_partner_staff":
 { Args: { "p_profile": string,"p_shop": string }; Returns: undefined
                            },
@@ -1786,6 +1789,9 @@ isOneToOne: false
                            },
 "metrics_snapshot":
 { Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"metrics_snapshot_for":
+{ Args: { "p_token": string }; Returns: Json
                            },
 "my_admin_context":
 { Args: Record<PropertyKey, never>; Returns: Json

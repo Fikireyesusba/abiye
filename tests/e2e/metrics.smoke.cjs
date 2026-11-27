@@ -15,7 +15,32 @@ const U = `http://127.0.0.1:${PORT}/api/metrics`;
 
 (async () => {
   sql("delete from rate_limits where key like 'metrics%'");
-  check((await fetch("http://localhost:3100/api/metrics").catch(() => ({ status: 0 }))).status === 404, "without METRICS_TOKEN the link does not exist (404)");
+  // ---- token made in the admin (no Vercel variable): Super Admin → Notifications → Telegram → Grafana
+  {
+    const { chromium } = require("playwright");
+    const { adminLogin } = require("./_admin.cjs");
+    const B = "http://localhost:3100";
+    sql("update website_settings set value = value - 'metrics_token_hash' where key = 'monitoring'");
+    check((await fetch(`${B}/api/metrics`)).status === 401, "no token created yet: the link refuses everyone (401)");
+    const b = await chromium.launch();
+    const o = await (await b.newContext({ viewport: { width: 1280, height: 1000 } })).newPage();
+    await adminLogin(o, B, "owner@abiye.local", process.env.ADMIN_E2E_PASSWORD ?? "LocalDevOwner2026");
+    await o.goto(`${B}/admin/notifications?tab=telegram`);
+    await o.click("[data-testid=grafana-token] button:has-text('Create Grafana token')");
+    await o.waitForSelector("[data-testid=grafana-token] [role=status]");
+    const shown = (await o.locator("[data-testid=grafana-token] [role=status]").innerText()).match(/\n([A-Za-z0-9_-]{40})\n/)?.[1];
+    check(!!shown && sql("select length(value->>'metrics_token_hash') from website_settings where key = 'monitoring'") === "64"
+      && sql("select count(*) from website_settings where value::text like '%" + shown + "%'") === "0", "Super Admin creates a token: shown once, only its fingerprint stored");
+    const ok = await fetch(`${B}/api/metrics`, { headers: { authorization: `Basic ${Buffer.from(`grafana:${shown}`).toString("base64")}` } });
+    check(ok.status === 200 && (await ok.text()).includes("abiye_up 1"), "Grafana reads the metrics with that token");
+    check((await fetch(`${B}/api/metrics`, { headers: { authorization: `Bearer ${"x".repeat(40)}` } })).status === 401, "a wrong token is refused");
+    o.on("dialog", (d) => d.accept());
+    await o.reload();
+    await o.click("[data-testid=grafana-token] button:has-text('Remove token')");
+    await o.waitForSelector('[data-sonner-toast]:has-text("Grafana token removed")');
+    check((await fetch(`${B}/api/metrics`, { headers: { authorization: `Bearer ${shown}` } })).status === 401, "removed: the old token no longer works");
+    await b.close();
+  }
   const app = spawn("npx", ["next", "start", "-p", String(PORT)], { env: { ...process.env, METRICS_TOKEN: TOKEN }, stdio: "ignore", detached: true });
   try {
     for (let i = 0; i < 60; i++) { if ((await fetch(`http://127.0.0.1:${PORT}/`).catch(() => null))?.ok) break; await sleep(500); }

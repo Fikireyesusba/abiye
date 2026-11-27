@@ -13,7 +13,8 @@ Living tracker so work can continue across sessions. **Update this file at the e
 - Tests: unit `prometheus.test.ts`, db `99zzzm_metrics_test.sql`, e2e `metrics.smoke.cjs` (8).
 - Migration **0078** `20261127000078_grafana_alerts.sql`: setting `monitoring.grafana_alerts` + `admin_set_grafana_alerts`; `telegram_filter` drops the website's delivery_alert / delivery_pin_alert / document_expiry / low_stock / out_of_stock when on. Admin → Notifications switch. Alert rules file **docs/grafana/abiye-alert-rules.yaml** (20 rules) + Telegram contact point / message template / switch-over in docs/GRAFANA.md.
 - Tests: all 44 browser suites, 188 unit tests and db tests pass.
-- ⏳ Owner: apply 0077 and 0078; set METRICS_TOKEN; Grafana Cloud setup; then tick the switch.
+- Migration **0079** `20261127000079_metrics_token.sql`: Super Admin creates the Grafana token in Admin → Notifications (shown once; only sha256 stored via `admin_set_metrics_token`); `/api/metrics` checks it with `metrics_snapshot_for(token)` (publishable key, after a per-IP limit) when no `METRICS_TOKEN` env (owner hit Vercel's variable limit). e2e `metrics.smoke.cjs` (12).
+- ⏳ Owner: apply 0077, 0078, 0079; create the token in the admin; Grafana Cloud setup; then tick the switch.
 
 ## Yellow "action needed" markers (requested 2026-11-25)
 

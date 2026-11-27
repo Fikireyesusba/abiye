@@ -88,6 +88,22 @@ export async function savePendingPaymentAlerts(_prev: ActionResult | null, fd: F
   return ok("Saved.");
 }
 
+/** Grafana metrics token (Super Admin): a new random token is shown ONCE; only its fingerprint is stored. */
+export async function createMetricsToken(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const ctx = await requirePermission("settings.manage");
+  if (ctx.role !== "super_admin") return fail("Only the Super Admin can do this.");
+  const remove = fd.get("remove") === "1";
+  const { randomBytes, createHash } = await import("node:crypto");
+  const token = randomBytes(30).toString("base64url"); // 40 characters
+  const { error } = await (await createSupabaseServerClient()).rpc("admin_set_metrics_token", {
+    p_hash: (remove ? null : createHash("sha256").update(token).digest("hex")) as unknown as string,
+  });
+  if (error) return dbError(error);
+  revalidatePath("/admin/notifications");
+  return ok(remove ? "Grafana token removed — the metrics link no longer answers."
+    : `Your Grafana token (copy it now — it is shown only once):\n${token}\n\nIn Grafana's Metrics Endpoint: Basic authentication, user name grafana, password = this token.`);
+}
+
 /** Monitoring alerts (late deliveries, wrong PINs, expiring documents, stock) are sent by Grafana instead of the website. */
 export async function saveGrafanaAlerts(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   await requirePermission("settings.manage");
