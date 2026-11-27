@@ -51,6 +51,7 @@ const ACTION_LABELS: Record<string, string> = {
   delivery_failed: "Courier could not deliver",
   delivery_code_locked: "Delivery code locked (5 wrong tries)",
   pin_wrong: "Wrong PIN entered",
+  grafana_alerts_set: "Grafana monitoring alerts switched",
   vehicle_added: "Vehicle added",
   vehicle_updated: "Vehicle changed",
   document_added: "Document uploaded",

@@ -1,0 +1,187 @@
+# Abiye alert rules (Prometheus rule format) for Grafana Cloud.
+# Grafana → Alerting → Alert rules → "More" / "Import" (Import to Grafana-managed rules) → upload this file,
+# or create each rule by hand from docs/GRAFANA.md. Data source: your Grafana Cloud Prometheus (grafanacloud-…-prom).
+groups:
+  - name: abiye
+    interval: 1m
+    rules:
+      - alert: Website or database down
+        expr: 'max(abiye_up) < 1 or absent(abiye_up)'
+        for: 5m
+        labels:
+          severity: critical
+          app: abiye
+        annotations:
+          summary: "The website cannot be reached or cannot read the database."
+          action: "Check Vercel (deployments) and Supabase (project status)."
+      - alert: Payment waiting too long
+        expr: 'max(abiye_payments_oldest_pending_minutes) > 60'
+        for: 0m
+        labels:
+          severity: warning
+          app: abiye
+        annotations:
+          summary: "A customer payment has waited {{ $value }} minutes for verification."
+          action: "Admin → Payments → verify or reject."
+      - alert: Top-up waiting
+        expr: 'max(abiye_topups_pending) > 0'
+        for: 60m
+        labels:
+          severity: warning
+          app: abiye
+        annotations:
+          summary: "{{ $value }} wallet top-up(s) waiting for more than an hour."
+          action: "Admin → Wallet."
+      - alert: Paid orders without a courier
+        expr: 'max(abiye_deliveries{stage="waiting_courier"}) > 0'
+        for: 30m
+        labels:
+          severity: warning
+          app: abiye
+        annotations:
+          summary: "{{ $value }} paid order(s) still without a courier."
+          action: "Couriers & delivery → Dispatch."
+      - alert: Late deliveries
+        expr: 'sum(abiye_deliveries_late) > 0'
+        for: 5m
+        labels:
+          severity: warning
+          app: abiye
+        annotations:
+          summary: "{{ $value }} delivery / pickup order(s) are late."
+          action: "Admin → Delivery monitor → Now."
+      - alert: Orders locked by wrong PINs
+        expr: 'max(abiye_deliveries{stage="locked"}) > 0'
+        for: 0m
+        labels:
+          severity: critical
+          app: abiye
+        annotations:
+          summary: "{{ $value }} order(s) locked after 5 wrong PINs."
+          action: "Call the courier / shop and customer; re-assign the courier to unlock."
+      - alert: Many wrong PINs today
+        expr: 'max(abiye_wrong_pins_today) > 3'
+        for: 0m
+        labels:
+          severity: warning
+          app: abiye
+        annotations:
+          summary: "{{ $value }} wrong PINs entered today in the courier / Business apps."
+          action: "Admin → Delivery monitor → App log."
+      - alert: No courier online
+        expr: 'max(abiye_couriers_online) < 1 and max(abiye_deliveries{stage="waiting_courier"}) > 0'
+        for: 15m
+        labels:
+          severity: warning
+          app: abiye
+        annotations:
+          summary: "Orders are waiting but no courier is on duty."
+          action: "Call the couriers."
+      - alert: Products sold out
+        expr: 'max(abiye_products_out_of_stock) > 0'
+        for: 0m
+        labels:
+          severity: warning
+          app: abiye
+        annotations:
+          summary: "{{ $value }} product(s) sold out."
+          action: "Admin → Inventory (restock)."
+      - alert: Products low on stock
+        expr: 'max(abiye_products_low_stock) > 0'
+        for: 0m
+        labels:
+          severity: info
+          app: abiye
+        annotations:
+          summary: "{{ $value }} product(s) at or below their low-stock level."
+          action: "Admin → Inventory."
+      - alert: Documents expiring
+        expr: 'max(abiye_documents_expiring_30d) > 0'
+        for: 0m
+        labels:
+          severity: info
+          app: abiye
+        annotations:
+          summary: "{{ $value }} document(s) / insurance / licence(s) expire within 30 days."
+          action: "Admin → Documents & vehicles → Expiring."
+      - alert: Documents expired
+        expr: 'max(abiye_documents_expired) > 0'
+        for: 0m
+        labels:
+          severity: warning
+          app: abiye
+        annotations:
+          summary: "{{ $value }} document(s) / insurance / licence(s) have expired."
+          action: "Renew and upload the new copy."
+      - alert: Notifications stuck
+        expr: 'max(abiye_notifications_backlog) > 0'
+        for: 15m
+        labels:
+          severity: warning
+          app: abiye
+        annotations:
+          summary: "{{ $value }} Telegram / email / phone notification(s) not sent after 10 minutes."
+          action: "Admin → Notifications (check the bot settings)."
+      - alert: Notifications failing
+        expr: 'max(abiye_notifications_24h{status="dead"}) > 0'
+        for: 0m
+        labels:
+          severity: warning
+          app: abiye
+        annotations:
+          summary: "{{ $value }} notification(s) failed for good in the last 24 h."
+          action: "Admin → Notifications → Retry."
+      - alert: Virus scan not working
+        expr: 'max(abiye_upload_scans_24h{result="unavailable"}) > 0'
+        for: 0m
+        labels:
+          severity: critical
+          app: abiye
+        annotations:
+          summary: "The virus scan was unavailable {{ $value }} time(s) in 24 h — customers cannot upload receipts."
+          action: "Check CLOUDMERSIVE_API_KEY in Vercel and the Cloudmersive plan."
+      - alert: Infected upload blocked
+        expr: 'max(abiye_upload_scans_24h{result="blocked"}) > 0'
+        for: 0m
+        labels:
+          severity: critical
+          app: abiye
+        annotations:
+          summary: "{{ $value }} infected upload(s) blocked in 24 h."
+          action: "Admin → Security → File scans."
+      - alert: Daily job not running
+        expr: 'max(abiye_job_last_run_age_seconds) > 93600'
+        for: 0m
+        labels:
+          severity: warning
+          app: abiye
+        annotations:
+          summary: "A daily job has not run for more than 26 hours."
+          action: "Vercel → Settings → Cron Jobs."
+      - alert: Many failed staff sign-ins
+        expr: 'sum(abiye_security_events_24h{kind=~"admin_login_failed|admin_mfa_failed|admin_login_not_staff"}) > 10'
+        for: 0m
+        labels:
+          severity: critical
+          app: abiye
+        annotations:
+          summary: "{{ $value }} failed staff sign-ins / codes in 24 h."
+          action: "Admin → Security."
+      - alert: Accounts waiting for approval
+        expr: 'max(abiye_accounts_pending_approval) > 0'
+        for: 120m
+        labels:
+          severity: info
+          app: abiye
+        annotations:
+          summary: "{{ $value }} new customer account(s) waiting for approval."
+          action: "Admin → Account approvals."
+      - alert: Database nearly full
+        expr: 'max(abiye_database_size_bytes) > 450000000'
+        for: 0m
+        labels:
+          severity: warning
+          app: abiye
+        annotations:
+          summary: "Database is {{ humanize1024 $value }}B (free plan limit 500 MB)."
+          action: "Upgrade Supabase or clear old data."

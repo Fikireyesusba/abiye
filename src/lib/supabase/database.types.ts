@@ -1482,6 +1482,9 @@ isOneToOne: false
 "admin_set_delivery_monitor":
 { Args: { "p": Json }; Returns: undefined
                            },
+"admin_set_grafana_alerts":
+{ Args: { "p_on": boolean }; Returns: undefined
+                           },
 "admin_set_member_permissions":
 { Args: { "p_permissions": (string)[],"p_user_id": string }; Returns: undefined
                            },

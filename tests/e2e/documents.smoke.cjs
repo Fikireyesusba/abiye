@@ -92,6 +92,15 @@ const toast = (page, text) => page.waitForSelector(`[data-sonner-toast]:has-text
     await toast(o, "Document deleted");
     check(sql(`select count(*) from documents where profile_id = '${sid}'`) === "0" && sql(`select count(*) from storage.objects where name = '${file}'`) === "0",
       "deleted: the record and the file");
+    // Grafana switch (Admin → Notifications): on and off again
+    await o.goto(`${B}/admin/notifications`);
+    await o.check("[data-testid=grafana-alerts-toggle]");
+    await o.locator("form:has([data-testid=grafana-alerts-toggle]) button[type=submit]").click();
+    await toast(o, "Monitoring alerts now come from Grafana");
+    check(sql("select value->>'grafana_alerts' from website_settings where key = 'monitoring'") === "true", "switch: monitoring alerts handed to Grafana");
+    await o.uncheck("[data-testid=grafana-alerts-toggle]");
+    await o.locator("form:has([data-testid=grafana-alerts-toggle]) button[type=submit]").click();
+    await toast(o, "The website sends its monitoring alerts again");
     // other staff cannot open the section
     const s = await (await b.newContext()).newPage();
     await adminLogin(s, B, email, "DocStaffE2E2026x");

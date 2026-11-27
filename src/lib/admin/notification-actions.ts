@@ -88,6 +88,16 @@ export async function savePendingPaymentAlerts(_prev: ActionResult | null, fd: F
   return ok("Saved.");
 }
 
+/** Monitoring alerts (late deliveries, wrong PINs, expiring documents, stock) are sent by Grafana instead of the website. */
+export async function saveGrafanaAlerts(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  await requirePermission("settings.manage");
+  const on = fd.get("grafana_alerts") === "on";
+  const { error } = await (await createSupabaseServerClient()).rpc("admin_set_grafana_alerts", { p_on: on });
+  if (error) return dbError(error);
+  revalidatePath("/admin/notifications");
+  return ok(on ? "Monitoring alerts now come from Grafana (the website stops sending its copies)." : "The website sends its monitoring alerts again.");
+}
+
 /** Test message for the stock or receipts group. */
 export async function sendGroupTest(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   await requirePermission("settings.manage");

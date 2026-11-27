@@ -8,4 +8,23 @@ set role service_role;
 select pg_temp.ok((select (m ? 'payments_pending') and (m ? 'deliveries') and (m ? 'cron_last_run_age_seconds') and m::text !~ '@' and m::text !~ '\+2519'
                    from (select public.metrics_snapshot() as m) x), 'metrics: totals, no emails or phone numbers');
 reset role;
+
+-- 0078: with "monitoring alerts from Grafana" on, the website's own copies are not queued; events still are.
+select pg_temp.login(:manager);
+select pg_temp.throws($$select public.admin_set_grafana_alerts(true)$$, 'forbidden', 'only settings.manage can switch it');
+reset role;
+select pg_temp.login(:super);
+select public.admin_set_grafana_alerts(true);
+reset role;
+select private.enqueue_notification('low_stock', 'test-low-' || gen_random_uuid(), '{"name":"x"}');
+select private.enqueue_notification('delivery_alert', 'test-late-' || gen_random_uuid(), '{"kind":"delivery_late"}');
+select private.enqueue_notification('security_event', 'test-sec-' || gen_random_uuid(), '{"kind":"admin_login_failed"}');
+select pg_temp.ok((select count(*) from public.notifications_outbox where dedupe_key like 'test-low-%' or dedupe_key like 'test-late-%') = 0
+                  and (select count(*) from public.notifications_outbox where dedupe_key like 'test-sec-%') = 1,
+  'Grafana on: no website copies of monitoring alerts; events still sent');
+select pg_temp.login(:super);
+select public.admin_set_grafana_alerts(false);
+reset role;
+select private.enqueue_notification('low_stock', 'test-low2-' || gen_random_uuid(), '{"name":"x"}');
+select pg_temp.ok((select count(*) from public.notifications_outbox where dedupe_key like 'test-low2-%') = 1, 'Grafana off: the website sends them again');
 rollback;

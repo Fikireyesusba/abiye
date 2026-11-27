@@ -11,7 +11,8 @@ Living tracker so work can continue across sessions. **Update this file at the e
 - App: `/api/metrics` (Prometheus text; exists only when `METRICS_TOKEN` is set; Bearer or Basic auth with constant-time check; wrong tokens rate-limited per IP; secret key only after checks), `src/lib/monitoring/prometheus.ts`; optional env `METRICS_TOKEN`.
 - Owner guide **docs/GRAFANA.md** (token, Vercel, Grafana Cloud Metrics Endpoint, dashboard import, alert rules, optional Supabase integration); dashboard **docs/grafana/abiye-dashboard.json** (36 panels).
 - Tests: unit `prometheus.test.ts`, db `99zzzm_metrics_test.sql`, e2e `metrics.smoke.cjs` (8).
-- ⏳ Owner: apply 0077; set METRICS_TOKEN; Grafana Cloud setup.
+- Migration **0078** `20261127000078_grafana_alerts.sql`: setting `monitoring.grafana_alerts` + `admin_set_grafana_alerts`; `telegram_filter` drops the website's delivery_alert / delivery_pin_alert / document_expiry / low_stock / out_of_stock when on. Admin → Notifications switch. Alert rules file **docs/grafana/abiye-alert-rules.yaml** (20 rules) + Telegram contact point / message template / switch-over in docs/GRAFANA.md.
+- ⏳ Owner: apply 0077 and 0078; set METRICS_TOKEN; Grafana Cloud setup; then tick the switch.
 
 ## Yellow "action needed" markers (requested 2026-11-25)
 

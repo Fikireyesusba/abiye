@@ -34,28 +34,72 @@ Deliveries (waiting for a courier, late, couriers online, delivered today, wrong
 Customers, stock, support and documents, System health and security (stuck / failed notifications, virus scan problems,
 delivery monitor and daily jobs running, database size, security events).
 
-## 4. Alerts (Grafana → Alerting)
+## 4. Alerts from Grafana to Telegram
 
-**Contact point** (Alerting → Contact points → Add): **Telegram** (bot token + chat id of one of your groups — typed in Grafana only)
-or **Email**. Then Alerting → Alert rules → New alert rule, data source Prometheus, one rule per line below
-(Folder `Abiye`, evaluate every 1 m):
+Grafana sends the **monitoring alerts** (numbers crossing a limit). The website keeps sending the **event messages**
+(payments with the receipt, printing documents, support tickets, Excel files, delivery steps, security events with details).
 
-| Alert | Query | Condition | Pending for |
+### 4a. Telegram contact point
+
+Use one of your existing bots and groups (or make a new "Abiye Monitoring" group with @BotFather → /newbot, add the bot to the group).
+
+1. Grafana → **Alerting → Contact points → + Add contact point** → Name `Telegram – Abiye` → Integration **Telegram**.
+2. **BOT API Token**: the bot's token (from @BotFather; also in Vercel as `TELEGRAM_BOT_TOKEN` / `TELEGRAM_SECURITY_BOT_TOKEN` — type it here, in Grafana only).
+3. **Chat ID**: the group's id (in Vercel as `TELEGRAM_ADMIN_CHAT_ID` or `TELEGRAM_SECURITY_CHAT_ID`, starts with `-100…`).
+4. Optional settings → **Parse mode: HTML**, and **Message**:
+
+```
+{{ range .Alerts }}{{ if eq .Status "firing" }}🚨 <b>{{ .Labels.alertname }}</b>{{ else }}✅ <b>Resolved: {{ .Labels.alertname }}</b>{{ end }}
+{{ .Annotations.summary }}
+👉 {{ .Annotations.action }}
+Severity: {{ .Labels.severity }}
+{{ end }}
+```
+
+5. **Test** (a test message arrives in the group) → **Save contact point**.
+6. **Alerting → Notification policies** → Default policy → **Edit** → Default contact point `Telegram – Abiye`
+   → Group by `alertname`; Group wait `30s`; Repeat interval `4h` (a firing alert is repeated every 4 h until fixed) → **Update default policy**.
+   (Optional: a second contact point for the security group and a nested policy `severity = critical` → that group.)
+
+### 4b. Alert rules (20)
+
+**Fastest:** Grafana → **Alerting → Alert rules** → **More → Import** (“Import to Grafana-managed rules”) → *YAML file* →
+upload **docs/grafana/abiye-alert-rules.yaml** (download it from GitHub → "Download raw file") → choose the Prometheus data source
+→ target folder `Abiye` → **Import**. (If your Grafana has no Import button, create the rules by hand from the table below:
+Alert rules → **New alert rule** → query = the expression, condition "is above 0" is already in the expression → folder `Abiye`,
+evaluation group `abiye` every `1m`, pending period as listed, labels `severity`, annotations `summary` and `action` from the YAML file.)
+
+| Alert | Expression | Pending | Severity |
 |---|---|---|---|
-| Website / database down | `max(abiye_up)` (and "No data" → Alerting) | below 1 | 5 m |
-| Payment waiting too long | `max(abiye_payments_oldest_pending_minutes)` | above 60 | 0 |
-| Paid orders without a courier | `max(abiye_deliveries{stage="waiting_courier"})` | above 0 | 30 m |
-| Late deliveries | `sum(abiye_deliveries_late)` | above 0 | 10 m |
-| Orders locked by wrong PINs | `max(abiye_deliveries{stage="locked"})` | above 0 | 0 |
-| Many wrong PINs | `max(abiye_wrong_pins_today)` | above 5 | 0 |
-| Notifications stuck | `max(abiye_notifications_backlog)` | above 0 | 15 m |
-| Virus scan not working | `max(abiye_upload_scans_24h{result="unavailable"})` | above 0 | 0 |
-| Daily job not running | `max(abiye_job_last_run_age_seconds)` | above 93600 (26 h) | 0 |
-| Many failed staff sign-ins | `sum(abiye_security_events_24h{kind=~"admin_login_failed|admin_mfa_failed"})` | above 10 | 0 |
-| Database nearly full (free plan 500 MB) | `max(abiye_database_size_bytes)` | above 450000000 | 0 |
+| Website or database down | `max(abiye_up) < 1 or absent(abiye_up)` | 5m | critical |
+| Payment waiting too long | `max(abiye_payments_oldest_pending_minutes) > 60` | 0m | warning |
+| Top-up waiting | `max(abiye_topups_pending) > 0` | 60m | warning |
+| Paid orders without a courier | `max(abiye_deliveries{stage="waiting_courier"}) > 0` | 30m | warning |
+| Late deliveries | `sum(abiye_deliveries_late) > 0` | 5m | warning |
+| Orders locked by wrong PINs | `max(abiye_deliveries{stage="locked"}) > 0` | 0m | critical |
+| Many wrong PINs today | `max(abiye_wrong_pins_today) > 3` | 0m | warning |
+| No courier online | `max(abiye_couriers_online) < 1 and max(abiye_deliveries{stage="waiting_courier"}) > 0` | 15m | warning |
+| Products sold out | `max(abiye_products_out_of_stock) > 0` | 0m | warning |
+| Products low on stock | `max(abiye_products_low_stock) > 0` | 0m | info |
+| Documents expiring | `max(abiye_documents_expiring_30d) > 0` | 0m | info |
+| Documents expired | `max(abiye_documents_expired) > 0` | 0m | warning |
+| Notifications stuck | `max(abiye_notifications_backlog) > 0` | 15m | warning |
+| Notifications failing | `max(abiye_notifications_24h{status="dead"}) > 0` | 0m | warning |
+| Virus scan not working | `max(abiye_upload_scans_24h{result="unavailable"}) > 0` | 0m | critical |
+| Infected upload blocked | `max(abiye_upload_scans_24h{result="blocked"}) > 0` | 0m | critical |
+| Daily job not running | `max(abiye_job_last_run_age_seconds) > 93600` | 0m | warning |
+| Many failed staff sign-ins | `sum(abiye_security_events_24h{kind=~"admin_login_failed|admin_mfa_failed|admin_login_not_staff"}) > 10` | 0m | critical |
+| Accounts waiting for approval | `max(abiye_accounts_pending_approval) > 0` | 120m | info |
+| Database nearly full | `max(abiye_database_size_bytes) > 450000000` | 0m | warning |
 
-(The shop already sends most of these to Telegram itself; Grafana adds history charts and alerts when the **website itself** is down,
-which the website cannot report.)
+### 4c. Switch over (no double alerts)
+
+When a test alert from Grafana has reached Telegram: website **Admin → Notifications → Telegram activity feed** → tick
+**“Monitoring alerts are sent by Grafana”** → Save. From then on the website no longer sends its own copies of: late deliveries,
+wrong PINs / locked orders, documents expiring, low / out of stock. Untick it to get them from the website again
+(e.g. if you stop using Grafana).
+
+The yellow "action needed" markers, the Delivery monitor page and the Documents page in the admin keep working as before.
 
 ## 5. Optional: Supabase server metrics
 

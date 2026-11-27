@@ -4,7 +4,7 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import { ActionForm } from "@/components/admin/action-form";
 import { PageHeader, Panel, SubTabs, Table, Td, fieldClass, pickTab } from "@/components/admin/ui";
 import { Badge } from "@/components/ui/badge";
-import { clearNotifications, retryAllFailed, retryNotification, savePendingPaymentAlerts, saveTelegramFeed, sendGroupTest, sendSecurityTest, sendTestNotification } from "@/lib/admin/notification-actions";
+import { clearNotifications, retryAllFailed, retryNotification, saveGrafanaAlerts, savePendingPaymentAlerts, saveTelegramFeed, sendGroupTest, sendSecurityTest, sendTestNotification } from "@/lib/admin/notification-actions";
 import { Download, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { describe } from "@/lib/telegram/format";
@@ -86,7 +86,11 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
   const problems = rows.filter(isProblem).length;
   const { data: archiveRaw } = await supabase.rpc("admin_receipt_archive_status");
   const archive = (archiveRaw ?? null) as { email: string | null; sent: number; waiting: number; dead: number; last_sent_at: string | null; last_error: string | null } | null;
-  const { data: feedRaw } = await supabase.rpc("admin_telegram_feed");
+  const [{ data: feedRaw }, { data: monitoringRow }] = await Promise.all([
+    supabase.rpc("admin_telegram_feed"),
+    supabase.from("website_settings").select("value").eq("key", "monitoring").maybeSingle(),
+  ]);
+  const grafanaAlerts = (monitoringRow?.value as { grafana_alerts?: boolean } | null)?.grafana_alerts === true;
   const feed = (feedRaw ?? null) as { security: boolean; admin: boolean; notifications: boolean; order_progress?: boolean; printing_requests?: boolean; pending_payments?: boolean } | null;
   const today = zoneToday();
   const monthAgo = new Date(Date.parse(`${today}T00:00:00Z`) - 30 * 86400000).toISOString().slice(0, 10);
@@ -233,6 +237,10 @@ export default async function NotificationsPage({ searchParams }: PageProps<"/ad
       {feed && (
         <Panel title="Telegram activity feed" className="mb-6">
           <p className="mb-3 text-sm text-muted-foreground">Approved payments go to the orders & payments group (payments waiting for approval only if switched on below); stock alerts and receipt files to their groups. Choose the rest below. Each message shows its <strong>service</strong> and <strong>event</strong> name with the details; identical security events within 5 minutes are grouped.</p>
+          <ActionForm action={saveGrafanaAlerts} submitLabel="Save" size="sm" className="mb-4 space-y-2 border-b pb-4">
+            <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="grafana_alerts" defaultChecked={grafanaAlerts} className="mt-0.5 size-4 accent-[var(--primary)]" data-testid="grafana-alerts-toggle" />
+              <span><strong>Monitoring alerts are sent by Grafana</strong> — the website stops sending its own Telegram copies of: late deliveries, wrong PINs / locked orders, documents expiring, low / out of stock. Switch on only after the Grafana alert rules and Telegram contact point are set up (docs/GRAFANA.md). Payments, receipts, printing, support, Excel files, delivery steps and security events still come from the website.</span></label>
+          </ActionForm>
           <ActionForm action={savePendingPaymentAlerts} submitLabel="Save" size="sm" className="mb-4 space-y-2 border-b pb-4">
             <label className="flex items-start gap-2 text-sm"><input type="checkbox" name="pending_payments" defaultChecked={feed.pending_payments ?? false} className="mt-0.5 size-4 accent-[var(--primary)]" data-testid="pending-payments-toggle" />
               <span><strong>Also alert order payments waiting for approval</strong> → orders &amp; payments group. Off: only approved payments are sent; waiting ones show as red counts under Payments. (Top-ups are always alerted: waiting, approved and rejected.)</span></label>
